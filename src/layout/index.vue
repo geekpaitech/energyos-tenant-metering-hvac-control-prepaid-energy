@@ -250,7 +250,7 @@
           </div>
           <!-- 面包屑 -->
           <div class="breadcrumb-container">
-            <breadcrumb />
+            <TagsView />
           </div>
         </div>
       </div>
@@ -266,7 +266,7 @@
 
 <script>
 import { mapGetters, mapActions } from "vuex";
-import Breadcrumb from "@/components/Breadcrumb";
+import TagsView from "@/components/TagsView";
 import SidebarItem from "./components/Sidebar/SidebarItem";
 import SettingsPanel from "@/components/SettingsPanel";
 import path from "path";
@@ -274,14 +274,14 @@ import path from "path";
 export default {
   name: "Layout",
   components: {
-    Breadcrumb,
+    TagsView,
     SidebarItem,
     SettingsPanel,
   },
   data() {
     return {
       originalSelectedItem: null, // 记录打开子菜单前的选中项
-    currentRouteItem: null, // 记录当前路由对应的菜单项
+      currentRouteItem: null, // 记录当前路由对应的菜单项
       platformSwitching: false, // 平台切换状态
       isFullscreen: false, // 全屏状态
       currentSubmenu: null, // 当前展开的子菜单
@@ -378,7 +378,6 @@ export default {
       return this.availablePlatforms.length > 1;
     },
 
-
     // 是否只有单一平台权限
     hasSinglePlatform() {
       return this.availablePlatforms.length === 1;
@@ -403,32 +402,32 @@ export default {
   },
 
   watch: {
-  // 监听路由变化 - 修改逻辑
-  $route(to, from) {
-    console.log("路由变化:", from.path, "->", to.path);
-    
-    // 更新选中状态（新的逻辑会处理子菜单状态）
-    this.updateSelectionFromRoute(to.path);
-  },
+    // 监听路由变化 - 修改逻辑
+    $route(to, from) {
+      console.log("路由变化:", from.path, "->", to.path);
+      
+      // 更新选中状态（新的逻辑会处理子菜单状态）
+      this.updateSelectionFromRoute(to.path);
+    },
 
-  // 监听侧边栏状态变化 - 保持现有逻辑
-  "sidebar.opened"(val) {
-    if (!val) {
-      this.closeSubmenu();
-    }
-  },
-
-  // 监听当前平台变化，决定是否需要加载管理方列表 - 保持现有逻辑
-  currentPlatformKey: {
-    handler(newPlatform) {
-      if (newPlatform === "console") {
-        // 切换到控制台时加载管理方列表
-        this.loadManagerList();
+    // 监听侧边栏状态变化 - 保持现有逻辑
+    "sidebar.opened"(val) {
+      if (!val) {
+        this.closeSubmenu();
       }
     },
-    immediate: true,
+
+    // 监听当前平台变化，决定是否需要加载管理方列表 - 保持现有逻辑
+    currentPlatformKey: {
+      handler(newPlatform) {
+        if (newPlatform === "console") {
+          // 切换到控制台时加载管理方列表
+          this.loadManagerList();
+        }
+      },
+      immediate: true,
+    },
   },
-},
 
   async mounted() {
     console.log("Layout组件已挂载");
@@ -501,27 +500,28 @@ export default {
         this.$message.error("退出登录失败");
       }
     },
+
     handleCollapseSubmenu() {
-    console.log("=== 手动收起子菜单 ===");
-    console.log("收起前状态 - expandedItem:", this.expandedItem);
-    console.log("收起前状态 - originalSelectedItem:", this.originalSelectedItem);
-    
-    // 恢复到基于当前路由的选中状态
-    if (this.originalSelectedItem) {
-      this.selectedItem = this.originalSelectedItem;
-    } else if (this.currentRouteItem) {
-      this.selectedItem = this.currentRouteItem;
-    }
-    
-    // 清空子菜单相关状态
-    this.expandedItem = null;
-    this.currentSubmenu = null;
-    this.basePath = "";
-    this.originalSelectedItem = null;
-    
-    console.log("收起后状态 - selectedItem:", this.selectedItem);
-    console.log("=== 收起子菜单完成 ===");
-  },
+      console.log("=== 手动收起子菜单 ===");
+      console.log("收起前状态 - expandedItem:", this.expandedItem);
+      console.log("收起前状态 - originalSelectedItem:", this.originalSelectedItem);
+      
+      // 恢复到基于当前路由的选中状态
+      if (this.originalSelectedItem) {
+        this.selectedItem = this.originalSelectedItem;
+      } else if (this.currentRouteItem) {
+        this.selectedItem = this.currentRouteItem;
+      }
+      
+      // 清空子菜单相关状态
+      this.expandedItem = null;
+      this.currentSubmenu = null;
+      this.basePath = "";
+      this.originalSelectedItem = null;
+      
+      console.log("收起后状态 - selectedItem:", this.selectedItem);
+      console.log("=== 收起子菜单完成 ===");
+    },
 
     // 加载管理方列表
     async loadManagerList() {
@@ -535,7 +535,7 @@ export default {
       }
     },
 
-    // 处理管理方切换
+    // 处理管理方切换 - 修改此方法
     async handleManagerSwitch(managerId) {
       if (managerId === this.currentManagerId) {
         return;
@@ -557,6 +557,13 @@ export default {
           background: "rgba(0, 0, 0, 0.7)",
         });
 
+        // 清空 TagsView - 新增
+        console.log('管理方切换：清空 TagsView');
+        await this.$store.dispatch('tagsView/delAllViews');
+        
+        // 触发 TagsView 组件的平台切换事件 - 新增
+        this.$bus && this.$bus.$emit('platform-switched', this.currentPlatformKey);
+
         // 调用store中的切换方法
         await this.switchManager(managerId);
 
@@ -569,8 +576,22 @@ export default {
           duration: 2000,
         });
 
+        // 刷新当前页面或跳转到首页 - 新增
+        this.$nextTick(() => {
+          // 如果当前不在首页，跳转到首页
+          const homePath = this.currentPlatformKey === 'console' 
+            ? '/console/dashboard' 
+            : '/admin/dashboard';
+          
+          if (this.$route.path !== homePath) {
+            this.$router.push(homePath);
+          } else {
+            // 如果已经在首页，强制刷新
+            this.$router.replace('/redirect' + homePath);
+          }
+        });
+
         // 可选：刷新页面数据
-        // 这里可以触发其他需要根据管理方ID重新加载的数据
         this.$emit("manager-changed", managerId);
       } catch (error) {
         console.error("管理方切换失败:", error);
@@ -578,129 +599,180 @@ export default {
       }
     },
 
-    // 设置选中项
+    // 设置选中项 - 错误修复：这个方法在原代码中缺失
     setSelectedItem(path) {
-    // 如果当前没有展开的子菜单，记录原始选中项
-    if (!this.expandedItem) {
-      this.originalSelectedItem = this.selectedItem;
-    }
-    
-    this.previousSelectedItem = this.selectedItem;
-    this.selectedItem = path;
-    console.log("设置选中项:", path);
-  },
+      // 如果当前没有展开的子菜单，记录原始选中项
+      if (!this.expandedItem) {
+        this.originalSelectedItem = this.selectedItem;
+      }
+      
+      this.previousSelectedItem = this.selectedItem;
+      this.selectedItem = path;
+      console.log("设置选中项:", path);
+    },
 
     // 根据路由更新选中状态
     updateSelectionFromRoute(routePath) {
-    // 查找匹配的菜单项
-    const findMatchingMenu = (routes, targetPath) => {
-      for (const route of routes) {
-        // 检查当前路由
-        if (route.path === targetPath) {
-          return { path: route.path, isParent: false, parentItem: null };
-        }
+      console.log("=== updateSelectionFromRoute 开始 ===");
+      console.log("目标路由:", routePath);
+      console.log("当前展开的子菜单:", this.currentSubmenu);
+      
+      // 查找匹配的菜单项
+      const findMatchingMenu = (routes, targetPath) => {
+        for (const route of routes) {
+          // 检查当前路由
+          if (route.path === targetPath) {
+            return { 
+              path: route.path, 
+              isParent: false, 
+              parentItem: null,
+              matchedRoute: route
+            };
+          }
 
-        // 检查子路由
-        if (route.children) {
-          for (const child of route.children) {
-            if (!child.hidden) {
-              const childPath = path.resolve(route.path, child.path);
-              if (childPath === targetPath) {
-                return { path: childPath, isParent: false, parentItem: route };
+          // 检查子路由
+          if (route.children) {
+            for (const child of route.children) {
+              if (!child.hidden) {
+                const childPath = path.resolve(route.path, child.path);
+                if (childPath === targetPath) {
+                  return { 
+                    path: childPath, 
+                    isParent: false, 
+                    parentItem: route,
+                    matchedRoute: child,
+                    isChildRoute: true
+                  };
+                }
               }
             }
           }
         }
-      }
-      return null;
-    };
+        return null;
+      };
 
-    const matchingResult = findMatchingMenu(this.permission_routes, routePath);
-    if (matchingResult) {
-      // 记录当前路由对应的菜单项
-      this.currentRouteItem = matchingResult.path;
+      const matchingResult = findMatchingMenu(this.permission_routes, routePath);
+      console.log("匹配结果:", matchingResult);
       
-      // 如果没有展开的子菜单，正常设置选中项
-      if (!this.expandedItem) {
-        this.setSelectedItem(matchingResult.path);
-      }
-      // 如果有展开的子菜单，需要判断当前路由是否属于该子菜单
-      else {
-        const currentSubmenuChildren = this.visibleSubmenuChildren;
-        const isCurrentRouteInSubmenu = currentSubmenuChildren.some(child => {
-          return this.resolvePath(child.path) === routePath;
-        });
+      if (matchingResult) {
+        // 记录当前路由对应的菜单项
+        this.currentRouteItem = matchingResult.path;
         
-        if (isCurrentRouteInSubmenu) {
-          // 如果当前路由在展开的子菜单中，更新选中项但不影响子菜单状态
-          this.selectedItem = matchingResult.path;
+        // 如果是子路由，需要展开对应的父菜单
+        if (matchingResult.isChildRoute && matchingResult.parentItem) {
+          console.log("检测到子路由，父菜单:", matchingResult.parentItem);
+          
+          // 如果当前没有展开任何子菜单，或者展开的不是正确的父菜单
+          if (!this.expandedItem || this.expandedItem !== matchingResult.parentItem.path) {
+            console.log("需要展开父菜单:", matchingResult.parentItem.path);
+            
+            // 记录原始选中项（如果还没有记录的话）
+            if (!this.expandedItem) {
+              this.originalSelectedItem = this.selectedItem;
+            }
+            
+            // 展开正确的父菜单
+            this.expandedItem = matchingResult.parentItem.path;
+            this.currentSubmenu = matchingResult.parentItem;
+            this.basePath = matchingResult.parentItem.path;
+            
+            // 设置父菜单为选中状态
+            this.selectedItem = matchingResult.parentItem.path;
+            
+            console.log("父菜单已展开，设置状态:");
+            console.log("expandedItem:", this.expandedItem);
+            console.log("selectedItem:", this.selectedItem);
+          }
+          
+          // 无论如何都要更新当前路由项
+          this.currentRouteItem = matchingResult.path;
+          
         } else {
-          // 如果当前路由不在展开的子菜单中，需要关闭子菜单并设置新的选中项
-          this.handleCollapseSubmenu();
-          this.setSelectedItem(matchingResult.path);
+          // 如果不是子路由，检查是否需要关闭当前展开的子菜单
+          if (this.expandedItem) {
+            console.log("当前路由不是子路由，检查是否需要关闭子菜单");
+            
+            // 检查当前路由是否就是展开的父菜单本身
+            if (matchingResult.path === this.expandedItem) {
+              console.log("当前路由就是展开的父菜单，保持子菜单展开");
+              this.selectedItem = matchingResult.path;
+            } else {
+              console.log("当前路由不属于展开的子菜单，关闭子菜单");
+              this.handleCollapseSubmenu();
+              this.setSelectedItem(matchingResult.path);
+            }
+          } else {
+            // 没有展开的子菜单，正常设置选中项
+            console.log("没有展开的子菜单，正常设置选中项");
+            this.setSelectedItem(matchingResult.path);
+          }
         }
       }
-    }
-  },
+      
+      console.log("=== updateSelectionFromRoute 结束 ===");
+      console.log("最终状态 - selectedItem:", this.selectedItem);
+      console.log("最终状态 - expandedItem:", this.expandedItem);
+      console.log("最终状态 - currentRouteItem:", this.currentRouteItem);
+    },
 
     // 切换子菜单显示
     toggleSubmenu(item) {
-    console.log("=== toggleSubmenu 被调用 ===");
-    console.log("点击的菜单项:", item);
-    console.log("当前展开项:", this.expandedItem);
+      console.log("=== toggleSubmenu 被调用 ===");
+      console.log("点击的菜单项:", item);
+      console.log("当前展开项:", this.expandedItem);
 
-    if (this.expandedItem === item.path) {
-      // 如果点击的是当前展开的菜单，不做任何操作（需要手动收起）
-      console.log("点击已展开的菜单，不执行收起操作");
-      return;
-    } else {
-      // 展开新的子菜单
-      console.log("展开新的子菜单");
-      
-      // 记录展开前的原始选中项（基于当前路由）
-      if (!this.expandedItem) {
-        this.originalSelectedItem = this.currentRouteItem || this.selectedItem;
+      if (this.expandedItem === item.path) {
+        // 如果点击的是当前展开的菜单，不做任何操作（需要手动收起）
+        console.log("点击已展开的菜单，不执行收起操作");
+        return;
+      } else {
+        // 展开新的子菜单
+        console.log("展开新的子菜单");
+        
+        // 记录展开前的原始选中项（基于当前路由）
+        if (!this.expandedItem) {
+          this.originalSelectedItem = this.currentRouteItem || this.selectedItem;
+        }
+        
+        this.expandedItem = item.path;
+        this.currentSubmenu = item;
+        this.basePath = item.path;
+        
+        // 立即高亮父菜单
+        this.selectedItem = item.path;
+
+        console.log("设置后的状态:");
+        console.log("expandedItem:", this.expandedItem);
+        console.log("selectedItem:", this.selectedItem);
+        console.log("originalSelectedItem:", this.originalSelectedItem);
       }
-      
-      this.expandedItem = item.path;
-      this.currentSubmenu = item;
-      this.basePath = item.path;
-      
-      // 立即高亮父菜单
-      this.selectedItem = item.path;
-
-      console.log("设置后的状态:");
-      console.log("expandedItem:", this.expandedItem);
-      console.log("selectedItem:", this.selectedItem);
-      console.log("originalSelectedItem:", this.originalSelectedItem);
-    }
-    console.log("=== toggleSubmenu 结束 ===");
-  },
+      console.log("=== toggleSubmenu 结束 ===");
+    },
 
     // 关闭子菜单
     closeSubmenu() {
-    // 只在侧边栏收起时自动关闭，其他情况需要手动收起
-    if (!this.sidebar.opened) {
-      this.expandedItem = null;
-      this.currentSubmenu = null;
-      this.basePath = "";
-      
-      // 恢复原始选中状态
-      if (this.originalSelectedItem) {
-        this.selectedItem = this.originalSelectedItem;
-        this.originalSelectedItem = null;
+      // 只在侧边栏收起时自动关闭，其他情况需要手动收起
+      if (!this.sidebar.opened) {
+        this.expandedItem = null;
+        this.currentSubmenu = null;
+        this.basePath = "";
+        
+        // 恢复原始选中状态
+        if (this.originalSelectedItem) {
+          this.selectedItem = this.originalSelectedItem;
+          this.originalSelectedItem = null;
+        }
       }
-    }
-  },
+    },
 
     // 处理子菜单点击
     handleSubmenuClick(childPath) {
-    const fullPath = this.resolvePath(childPath);
-    this.setSelectedItem(fullPath);
-    // 更新当前路由项
-    this.currentRouteItem = fullPath;
-    console.log("子菜单项被点击:", fullPath);
-  },
+      const fullPath = this.resolvePath(childPath);
+      this.setSelectedItem(fullPath);
+      // 更新当前路由项
+      this.currentRouteItem = fullPath;
+      console.log("子菜单项被点击:", fullPath);
+    },
 
     // 判断子菜单项是否激活 - 使用正确的路径解析
     isSubmenuItemActive(childPath) {
@@ -902,7 +974,7 @@ export default {
       try {
         // 先跳转到切换页面，避免在当前页面显示404
         if (this.$route.path !== '/switching') {
-          this.$router.push('/switching').catch(() => {});
+          await this.$router.push('/switching').catch(() => {});
         }
 
         const loading = this.$loading({
@@ -912,20 +984,30 @@ export default {
           background: "rgba(0, 0, 0, 0.7)",
         });
 
-        console.log('开始切换平台到:', platformKey)
+        console.log('开始切换平台到:', platformKey);
 
-        // 直接使用 store 的 switchPlatform action
-        await this.$store.dispatch('permission/switchPlatform', platformKey)
+        // 1. 强制清空TagsView（使用新的 action）
+        console.log('清空TagsView...');
+        await this.$store.dispatch('tagsView/clearAllForPlatformSwitch');
+        
+        // 2. 触发 TagsView 组件的平台切换事件
+        this.$bus && this.$bus.$emit('platform-switched', platformKey);
 
-        // 处理管理方状态
+        // 3. 切换平台路由
+        await this.$store.dispatch('permission/switchPlatform', platformKey);
+
+        // 4. 处理管理方状态
         if (platformKey === 'admin') {
           await this.$store.dispatch('manager/resetManager');
         } else if (platformKey === 'console') {
           await this.loadManagerList();
         }
 
-        // 更新当前平台状态
+        // 5. 更新当前平台状态
         this.currentPlatformKey = platformKey;
+
+        // 6. 等待一段时间确保状态更新完成
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         loading.close();
 
@@ -937,30 +1019,27 @@ export default {
         });
 
         // 跳转到新平台的首页
-        let redirectPath = '/'
+        let redirectPath = '/';
         if (platformKey === 'console') {
-          redirectPath = '/console/dashboard'
+          redirectPath = '/console/dashboard';
         } else if (platformKey === 'admin') {
-          redirectPath = '/admin/dashboard'
+          redirectPath = '/admin/dashboard';
         }
         
-        console.log('跳转到新平台首页:', redirectPath)
-        
-        // 等待足够时间确保路由添加完成
-        await new Promise(resolve => setTimeout(resolve, 300))
+        console.log('跳转到新平台首页:', redirectPath);
         
         // 使用 replace 跳转
         this.$router.replace(redirectPath).catch(err => {
-          console.error('路由跳转失败:', err)
+          console.error('路由跳转失败:', err);
           // 如果失败，强制刷新到目标页面
-          window.location.href = redirectPath
-        })
+          window.location.href = redirectPath;
+        });
 
       } catch (error) {
         console.error("平台切换失败:", error);
         this.$message.error(`平台切换失败: ${error.message || '请稍后重试'}`);
         // 切换失败时回到原来的路由
-        this.$router.go(-1)
+        this.$router.go(-1);
       } finally {
         this.platformSwitching = false;
       }

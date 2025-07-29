@@ -1,3 +1,4 @@
+import Vue from 'vue'
 import { getManagerListByUser } from '@/api/manager'
 
 const state = {
@@ -72,8 +73,8 @@ const actions = {
     }
   },
   
-  // 切换管理方
-  switchManager({ commit, state }, managerId) {
+  // 切换管理方 - 修改此方法，添加事件触发
+  async switchManager({ commit, state }, managerId) {
     console.log('切换管理方到:', managerId)
     
     const manager = state.managerList.find(item => item.managerId === managerId)
@@ -81,10 +82,17 @@ const actions = {
       commit('SET_CURRENT_MANAGER_ID', managerId)
       commit('SET_CURRENT_MANAGER', manager)
       console.log('管理方切换成功:', manager)
+      
+      // 触发管理方切换事件
+      if (Vue.prototype.$bus) {
+        console.log('触发管理方切换事件')
+        Vue.prototype.$bus.$emit('manager-switched', managerId)
+      }
+      
       return manager
     } else {
       console.error('未找到管理方:', managerId)
-      return null
+      throw new Error('未找到指定的管理方')
     }
   },
   

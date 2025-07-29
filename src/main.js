@@ -27,7 +27,8 @@ import '@/permission'
 // if (process.env.NODE_ENV === 'development') {
 //   require('./mock')
 // }
-
+// 创建事件总线
+Vue.prototype.$bus = new Vue()
 
 // 捕获路由错误，避免控制台报错
 router.onError(error => {

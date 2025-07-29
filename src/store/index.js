@@ -4,17 +4,25 @@ import user from './modules/user'
 import permission from './modules/permission'
 import app from './modules/app'
 import manager from './modules/manager'
+import tagsView from './modules/tagsView' // 添加 tagsView 模块
 
 Vue.use(Vuex)
 
-console.log('Store modules loaded:', { user: !!user, app: !!app, permission: !!permission, manager: !!manager })
+console.log('Store modules loaded:', { 
+  user: !!user, 
+  app: !!app, 
+  permission: !!permission, 
+  manager: !!manager,
+  tagsView: !!tagsView  // 添加调试信息
+})
 
 const store = new Vuex.Store({
   modules: {
     user,
     app,
     permission,
-    manager 
+    manager,
+    tagsView  // 注册 tagsView 模块
   },
   getters: {
     sidebar: state => state.app.sidebar,
@@ -33,7 +41,10 @@ const store = new Vuex.Store({
     currentManagerId: state => state.manager.currentManagerId,
     currentManager: state => state.manager.currentManager,
     hasMultipleManagers: state => state.manager.hasMultipleManagers,
-    shouldShowManagerSwitcher: state => state.manager.shouldShowManagerSwitcher
+    shouldShowManagerSwitcher: state => state.manager.shouldShowManagerSwitcher,
+    // tagsView 相关 getters
+    visitedViews: state => state.tagsView.visitedViews,
+    cachedViews: state => state.tagsView.cachedViews
   }
 })
 
