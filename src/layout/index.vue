@@ -1910,7 +1910,7 @@ export default {
 /* 主内容区样式 */
 .app-main {
   flex: 1;
-  padding: 24px;
+  // padding: 24px;
   background: transparent;
   overflow-y: auto;
   position: relative;
