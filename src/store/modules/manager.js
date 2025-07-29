@@ -1,10 +1,12 @@
+// @/store/modules/manager.js - 修正后的版本
+
 import Vue from 'vue'
 import { getManagerListByUser } from '@/api/manager'
 
 const state = {
-  managerList: [], // 管理方列表
-  currentManagerId: null, // 当前选中的管理方ID
-  currentManager: null // 当前选中的管理方信息
+  managerList: [], // 企业列表
+  currentManagerId: null, // 当前选中的企业ID
+  currentManager: null // 当前选中的企业信息
 }
 
 const mutations = {
@@ -26,83 +28,106 @@ const mutations = {
 }
 
 const actions = {
-  // 获取管理方列表
+  // 获取企业列表
   async getManagerList({ commit }) {
     try {
-      console.log('获取管理方列表...')
+      console.log('获取企业列表...')
       const response = await getManagerListByUser()
-      console.log('管理方列表响应:', response)
+      console.log('企业列表响应:', response)
       
       if (response.code === 200 && response.data) {
         const managerList = response.data
         commit('SET_MANAGER_LIST', managerList)
         
-        // 优先从localStorage恢复之前选择的管理方
+        // 优先从localStorage恢复之前选择的企业
         const savedManagerId = localStorage.getItem('selectedManagerId')
         if (savedManagerId) {
           const savedManager = managerList.find(item => item.managerId === parseInt(savedManagerId))
           if (savedManager) {
             commit('SET_CURRENT_MANAGER_ID', savedManager.managerId)
             commit('SET_CURRENT_MANAGER', savedManager)
-            console.log('从localStorage恢复管理方:', savedManager)
+            console.log('从localStorage恢复企业:', savedManager)
             return managerList
           }
         }
         
-        // 如果localStorage没有或找不到，则设置默认管理方
+        // 如果localStorage没有或找不到，则设置默认企业
         const defaultManager = managerList.find(item => item.isDefault === 1)
         if (defaultManager) {
           commit('SET_CURRENT_MANAGER_ID', defaultManager.managerId)
           commit('SET_CURRENT_MANAGER', defaultManager)
-          console.log('设置默认管理方:', defaultManager)
+          console.log('设置默认企业:', defaultManager)
         } else if (managerList.length > 0) {
           // 如果没有默认的，选择第一个
           commit('SET_CURRENT_MANAGER_ID', managerList[0].managerId)
           commit('SET_CURRENT_MANAGER', managerList[0])
-          console.log('设置第一个管理方为默认:', managerList[0])
+          console.log('设置第一个企业为默认:', managerList[0])
         }
         
         return managerList
       } else {
-        console.error('获取管理方列表失败:', response.msg)
+        console.error('获取企业列表失败:', response.msg)
         return []
       }
     } catch (error) {
-      console.error('获取管理方列表异常:', error)
+      console.error('获取企业列表异常:', error)
       return []
     }
   },
   
-  // 切换管理方 - 修改此方法，添加事件触发
-  async switchManager({ commit, state }, managerId) {
-    console.log('切换管理方到:', managerId)
+  // 切换企业 - 明确这是企业切换，不是平台切换
+  async switchManager({ commit, state, rootGetters }, managerId) {
+    console.log('=== Manager Store: 企业切换开始 ===')
+    console.log('当前企业ID:', state.currentManagerId)
+    console.log('目标企业ID:', managerId)
+    
+    // 获取当前平台信息
+    const currentPlatform = rootGetters['permission/currentPlatform']
+    console.log('当前平台:', currentPlatform)
+    
+    // 验证这是否为有效的企业切换
+    if (currentPlatform !== 'console') {
+      console.warn('企业切换只能在控制台平台进行')
+      throw new Error('企业切换只能在控制台平台进行')
+    }
     
     const manager = state.managerList.find(item => item.managerId === managerId)
     if (manager) {
+      const previousManagerId = state.currentManagerId
+      
       commit('SET_CURRENT_MANAGER_ID', managerId)
       commit('SET_CURRENT_MANAGER', manager)
-      console.log('管理方切换成功:', manager)
+      console.log('企业切换成功:', manager)
       
-      // 触发管理方切换事件
+      // 重要：明确标识这是企业切换事件，不会清空TagsView
       if (Vue.prototype.$bus) {
-        console.log('触发管理方切换事件')
-        Vue.prototype.$bus.$emit('manager-switched', managerId)
+        console.log('触发企业切换事件（不清空TagsView）')
+        Vue.prototype.$bus.$emit('manager-switched', {
+          managerId: managerId,
+          managerInfo: manager,
+          previousManagerId: previousManagerId,
+          type: 'manager-switch', // 明确标识这是企业切换
+          platform: currentPlatform,
+          clearTagsView: false // 明确标识不清空TagsView
+        })
       }
       
+      console.log('=== Manager Store: 企业切换完成 ===')
       return manager
     } else {
-      console.error('未找到管理方:', managerId)
-      throw new Error('未找到指定的管理方')
+      console.error('未找到企业:', managerId)
+      throw new Error('未找到指定的企业')
     }
   },
   
-  // 重置管理方状态
+  // 重置企业状态（平台切换时调用）
   resetManager({ commit }) {
+    console.log('=== Manager Store: 重置企业状态 ===')
     commit('SET_MANAGER_LIST', [])
     commit('SET_CURRENT_MANAGER_ID', null)
     commit('SET_CURRENT_MANAGER', null)
     localStorage.removeItem('selectedManagerId')
-    console.log('重置管理方状态')
+    console.log('企业状态已重置')
   }
 }
 
@@ -111,7 +136,13 @@ const getters = {
   currentManagerId: state => state.currentManagerId,
   currentManager: state => state.currentManager,
   hasMultipleManagers: state => state.managerList.length > 1,
-  shouldShowManagerSwitcher: state => state.managerList.length > 1
+  shouldShowManagerSwitcher: state => state.managerList.length > 1,
+  
+  // 新增：判断是否为有效的企业切换环境
+  canSwitchManager: (state, getters, rootState, rootGetters) => {
+    const currentPlatform = rootGetters['permission/currentPlatform']
+    return currentPlatform === 'console' && state.managerList.length > 1
+  }
 }
 
 export default {

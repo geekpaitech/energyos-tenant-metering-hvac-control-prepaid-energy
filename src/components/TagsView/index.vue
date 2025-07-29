@@ -59,8 +59,12 @@
   </div>
 </template>
 
+
+// TagsView.vue 完整修正版本
+
 <script>
-// TagsView.vue 的修复版本
+import path from "path";
+
 export default {
   name: "TagsView",
   data() {
@@ -70,8 +74,9 @@ export default {
       left: 0,
       selectedTag: {},
       affixTags: [],
+      // 添加平台相关状态
       currentPlatformCache: null,
-      isInitialized: false,
+      isInitialized: false, // 添加初始化标志
     };
   },
   computed: {
@@ -81,15 +86,18 @@ export default {
     routes() {
       return this.$store.state.permission.routes;
     },
+    // 修正：当前平台应该是computed属性，不是watch
     currentPlatform() {
       return this.$store.getters['permission/currentPlatform'];
     },
+    // 添加当前管理方ID监听
     currentManagerId() {
       return this.$store.getters['manager/currentManagerId'];
     }
   },
   watch: {
     $route(route) {
+      // 添加过滤检查
       if (this.shouldAddToTagsView(route)) {
         this.addTags()
         this.moveToCurrentTag()
@@ -102,7 +110,7 @@ export default {
         document.body.removeEventListener("click", this.closeMenu);
       }
     },
-    // 只监听平台切换，不监听企业切换
+    // 修正：平台切换监听器
     currentPlatform: {
       handler(newPlatform, oldPlatform) {
         console.log('TagsView: 平台变化检测', { 
@@ -113,9 +121,13 @@ export default {
           timestamp: new Date().toISOString()
         });
         
-        // 确保组件已初始化，且真的发生了平台切换
-        if (this.isInitialized && this.currentPlatformCache && this.currentPlatformCache !== newPlatform) {
-          console.log('TagsView: 检测到平台切换，执行清空操作');
+        // 只有在组件已初始化且发生真正的平台切换时才处理
+        if (this.isInitialized && 
+            this.currentPlatformCache && 
+            this.currentPlatformCache !== newPlatform &&
+            this.isPlatformSwitch(this.currentPlatformCache, newPlatform)) {
+          
+          console.log('TagsView: 检测到真正的平台切换，执行清空操作');
           this.handlePlatformSwitch(newPlatform);
         }
         
@@ -124,8 +136,7 @@ export default {
       },
       immediate: false
     },
-    // 移除对管理方切换的监听，因为企业切换不应该清空TagsView
-    // 如果需要在管理方切换时做某些操作，在这里添加特定逻辑
+    // 监听企业切换但不清空TagsView
     currentManagerId: {
       handler(newManagerId, oldManagerId) {
         console.log('TagsView: 管理方ID变化检测', { 
@@ -135,12 +146,16 @@ export default {
           timestamp: new Date().toISOString()
         });
         
-        // 注意：根据需求，管理方(企业)切换时不清空TagsView
-        // 这里可以添加其他需要的逻辑，比如更新某些标签的标题等
-        if (this.isInitialized && oldManagerId && newManagerId && oldManagerId !== newManagerId) {
-          console.log('TagsView: 检测到管理方切换，但保留TagsView内容');
-          // 可以在这里添加其他逻辑，比如刷新当前页面内容等
-          this.refreshCurrentPageContent();
+        // 注意：根据需求，企业切换时不清空TagsView
+        // 这里只做必要的内容刷新
+        if (this.isInitialized && 
+            oldManagerId && 
+            newManagerId && 
+            oldManagerId !== newManagerId &&
+            this.isManagerSwitch(oldManagerId, newManagerId, this.currentPlatform)) {
+          
+          console.log('TagsView: 检测到企业切换，但保留TagsView内容');
+          this.handleManagerSwitch();
         }
       },
       immediate: false
@@ -159,7 +174,7 @@ export default {
     // 只监听平台切换事件
     this.$bus && this.$bus.$on('platform-switched', this.handlePlatformSwitchEvent);
     
-    // 监听管理方切换事件，但不清空TagsView
+    // 监听企业切换事件，但不清空TagsView
     this.$bus && this.$bus.$on('manager-switched', this.handleManagerSwitchEvent);
     
     // 设置初始化完成标志
@@ -254,7 +269,7 @@ export default {
         }
       }
       
-      // 确保首页标签始终存在且在第一位
+      // 确保首页标签始终在第一位
       this.ensureHomeTagFirst();
     },
 
@@ -268,85 +283,188 @@ export default {
       return false;
     },
 
-    // 处理平台切换事件 - 只有平台切换才清空TagsView
-    handlePlatformSwitchEvent(newPlatform) {
-      console.log('TagsView: 接收到平台切换事件', newPlatform);
-      this.handlePlatformSwitch(newPlatform);
-    },
-
-    // 处理管理方切换事件 - 不清空TagsView，只刷新内容
-    handleManagerSwitchEvent(managerInfo) {
-      console.log('TagsView: 接收到管理方切换事件', managerInfo);
-      // 不清空TagsView，只做必要的内容刷新
-      this.refreshCurrentPageContent();
-    },
-
-    // 处理平台切换 - 只有这个方法才清空TagsView
-    handlePlatformSwitch(newPlatform) {
-      console.log('TagsView: 开始处理平台切换到', newPlatform);
+    // 处理平台切换事件 - 确保完全清空TagsView
+    handlePlatformSwitchEvent(eventData) {
+      console.log('=== TagsView: 接收到平台切换事件 ===');
+      console.log('事件数据:', eventData);
       
-      // 强制清空所有标签页
-      this.forceCleanAll().then(() => {
-        console.log('TagsView: 清空完成，重新初始化');
+      // 验证这确实是平台切换事件
+      if (eventData.type !== 'platform-switch' || !eventData.clearTagsView) {
+        console.warn('TagsView: 接收到的不是平台切换事件或不需要清空TagsView');
+        return;
+      }
+      
+      this.handlePlatformSwitch(eventData.to, eventData);
+    },
+
+    // 处理企业切换事件 - 保留TagsView，只清空缓存
+    handleManagerSwitchEvent(eventData) {
+      console.log('=== TagsView: 接收到企业切换事件 ===');
+      console.log('事件数据:', eventData);
+      
+      // 验证这确实是企业切换事件
+      if (eventData.type !== 'manager-switch' || eventData.clearTagsView !== false) {
+        console.warn('TagsView: 接收到的不是企业切换事件或配置错误');
+        return;
+      }
+      
+      this.handleManagerSwitch(eventData);
+    },
+
+    // 处理平台切换的具体逻辑
+    handlePlatformSwitch(newPlatform, eventData = {}) {
+      console.log('=== TagsView: 开始处理平台切换 ===');
+      console.log('目标平台:', newPlatform);
+      console.log('事件数据:', eventData);
+      
+      // 检查TagsView store模块是否存在
+      if (!this.$store.hasModule('tagsView')) {
+        console.error('TagsView: store模块不存在');
+        return;
+      }
+      
+      // 记录切换前的状态
+      const beforeState = {
+        visitedViews: this.visitedViews.length,
+        cachedViews: this.$store.state.tagsView.cachedViews.length,
+        currentPlatformCache: this.currentPlatformCache
+      };
+      console.log('切换前状态:', beforeState);
+      
+      // 执行完全清空
+      this.$store.dispatch('tagsView/clearAllForPlatformSwitch').then(() => {
+        console.log('TagsView: 平台切换 - 完全清空完成');
         
-        // 延迟重新初始化，确保平台路由已更新
+        // 更新平台缓存
+        this.currentPlatformCache = newPlatform;
+        
+        // 记录切换后的状态
+        const afterState = {
+          visitedViews: this.visitedViews.length,
+          cachedViews: this.$store.state.tagsView.cachedViews.length,
+          currentPlatformCache: this.currentPlatformCache
+        };
+        console.log('切换后状态:', afterState);
+        
+        // 验证清空结果
+        if (afterState.visitedViews === 0 && afterState.cachedViews === 0) {
+          console.log('✅ TagsView: 平台切换清空成功');
+        } else {
+          console.error('❌ TagsView: 平台切换清空失败', afterState);
+        }
+        
+        // 延迟重新初始化，确保新平台路由已准备就绪
         this.$nextTick(() => {
           setTimeout(() => {
-            this.reinitialize();
-          }, 100);
+            this.reinitializeForNewPlatform(newPlatform);
+          }, 300); // 增加延迟时间，确保路由完全准备好
         });
+        
       }).catch(error => {
-        console.error('TagsView: 处理平台切换失败', error);
+        console.error('TagsView: 平台切换清空失败', error);
       });
     },
 
-    // 新增：刷新当前页面内容（管理方切换时调用）
+    // 新增：为新平台重新初始化TagsView
+    reinitializeForNewPlatform(platform) {
+      console.log('=== TagsView: 为新平台重新初始化 ===');
+      console.log('新平台:', platform);
+      console.log('当前路由:', this.$route);
+      
+      try {
+        // 确保首页标签存在并在第一位
+        this.$store.dispatch('tagsView/ensureHomeTagFirst').then(() => {
+          console.log('首页标签已确保在第一位');
+          
+          // 如果当前路由是有效路由且不是首页，添加当前路由标签
+          if (this.$route.name && this.shouldAddToTagsView(this.$route)) {
+            this.addTags();
+          }
+          
+          console.log('新平台重新初始化完成');
+          console.log('当前访问的视图:', this.visitedViews);
+        }).catch(error => {
+          console.error('确保首页标签失败:', error);
+        });
+        
+      } catch (error) {
+        console.error('TagsView: 新平台重新初始化失败', error);
+      }
+    },
+
+    // 处理企业切换的具体逻辑 - 保留TagsView，只清空缓存
+    handleManagerSwitch(eventData = {}) {
+      console.log('=== TagsView: 开始处理企业切换 ===');
+      console.log('事件数据:', eventData);
+      
+      // 检查TagsView store模块是否存在
+      if (!this.$store.hasModule('tagsView')) {
+        console.error('TagsView: store模块不存在');
+        return;
+      }
+      
+      // 记录切换前的状态
+      const beforeState = {
+        visitedViews: this.visitedViews.length,
+        cachedViews: this.$store.state.tagsView.cachedViews.length
+      };
+      console.log('企业切换前状态:', beforeState);
+      
+      // 使用企业切换专用方法：只清空缓存，保留TagsView
+      this.$store.dispatch('tagsView/clearCacheForManagerSwitch').then(() => {
+        console.log('TagsView: 企业切换 - 缓存已清空，TagsView保留');
+        
+        // 记录切换后的状态
+        const afterState = {
+          visitedViews: this.visitedViews.length,
+          cachedViews: this.$store.state.tagsView.cachedViews.length
+        };
+        console.log('企业切换后状态:', afterState);
+        
+        // 验证结果：visitedViews应该保持不变，cachedViews应该为0
+        if (afterState.visitedViews === beforeState.visitedViews && afterState.cachedViews === 0) {
+          console.log('✅ TagsView: 企业切换处理成功 - TagsView保留，缓存已清空');
+        } else {
+          console.warn('⚠️ TagsView: 企业切换处理异常', { beforeState, afterState });
+        }
+        
+        // 确保首页标签始终在第一位
+        this.ensureHomeTagFirst();
+        
+        // 刷新当前页面内容
+        this.refreshCurrentPageContent();
+        
+      }).catch(error => {
+        console.error('TagsView: 企业切换处理失败', error);
+      });
+    },
+
+    // 新增：刷新当前页面内容（企业切换时调用）
     refreshCurrentPageContent() {
       console.log('TagsView: 刷新当前页面内容');
-      // 这里可以添加刷新当前页面内容的逻辑
-      // 例如：重新获取数据、更新页面状态等
+      
+      // 方法1: 如果当前路由配置了需要在管理方切换时刷新，则刷新
+      if (this.$route.meta && this.$route.meta.refreshOnManagerSwitch !== false) {
+        // 通过查询参数触发页面更新，但保持在当前页面
+        const newQuery = { 
+          ...this.$route.query, 
+          _t: Date.now(),  // 添加时间戳强制更新
+          _m: this.currentManagerId    // 添加管理方ID
+        };
+        
+        this.$router.replace({
+          path: this.$route.path,
+          query: newQuery
+        }).catch(err => {
+          console.log('路由更新完成或无需更新');
+        });
+      }
       
       // 确保首页标签始终在第一位
       this.ensureHomeTagFirst();
-      
-      // 可以触发当前页面的数据刷新
-      this.$nextTick(() => {
-        // 可以在这里添加刷新当前路由的逻辑
-        if (this.$route.meta && this.$route.meta.refreshOnManagerSwitch) {
-          // 如果路由配置了需要在管理方切换时刷新，则刷新
-          this.refreshSelectedTag(this.$route);
-        }
-      });
     },
 
-    // 强制清空所有标签（只在平台切换时使用）
-    forceCleanAll() {
-      return new Promise((resolve, reject) => {
-        console.log('TagsView: 强制清空所有标签');
-        
-        try {
-          // 使用强制清空的 action
-          this.$store.dispatch('tagsView/clearAllForPlatformSwitch').then(() => {
-            // 清空本地缓存
-            this.affixTags = [];
-            
-            console.log('TagsView: 清空完成');
-            console.log('TagsView: 当前visitedViews:', this.visitedViews);
-            console.log('TagsView: 当前cachedViews:', this.$store.state.tagsView.cachedViews);
-            
-            resolve();
-          }).catch(error => {
-            console.error('TagsView: 清空失败', error);
-            reject(error);
-          });
-        } catch (error) {
-          console.error('TagsView: 清空过程出错', error);
-          reject(error);
-        }
-      });
-    },
-
-    // 重新初始化（只在平台切换时使用）
+    // 重新初始化（平台切换时使用）
     reinitialize() {
       console.log('TagsView: 重新初始化开始');
       console.log('TagsView: 当前路由', this.$route);
@@ -358,7 +476,7 @@ export default {
         this.initTags();
         
         // 添加当前路由标签
-        if (this.$route.name) {
+        if (this.$route.name && this.shouldAddToTagsView(this.$route)) {
           this.addTags();
         }
         
@@ -374,83 +492,41 @@ export default {
 
     // 确保首页标签始终在第一位
     ensureHomeTagFirst() {
-      const homeInfo = this.getCurrentPlatformHome();
-      console.log('TagsView: ensureHomeTagFirst - 首页信息', homeInfo);
+      console.log('TagsView: 确保首页标签在第一位');
       
-      if (homeInfo) {
-        const homeTag = {
-          path: homeInfo.path,
-          fullPath: homeInfo.path,
-          name: this.getHomeRouteName(),
-          title: homeInfo.meta.title,
-          meta: { ...homeInfo.meta, affix: true },
-        };
-
-        console.log('TagsView: ensureHomeTagFirst - 准备添加首页标签', homeTag);
-
-        // 检查首页标签是否存在
-        const existingHomeIndex = this.visitedViews.findIndex(
-          (view) => view.path === homeInfo.path
-        );
-        
-        if (existingHomeIndex === -1) {
-          // 首页标签不存在，添加到第一位
-          console.log('TagsView: ensureHomeTagFirst - 添加首页标签到第一位');
-          this.$store.dispatch("tagsView/addVisitedViewToFirst", homeTag);
-        } else if (existingHomeIndex !== 0) {
-          // 首页标签存在但不在第一位，移动到第一位
-          console.log('TagsView: ensureHomeTagFirst - 移动首页标签到第一位');
-          this.$store.dispatch("tagsView/moveTagToFirst", homeTag);
-        } else {
-          console.log('TagsView: ensureHomeTagFirst - 首页标签已在第一位');
-        }
-      } else {
-        console.warn('TagsView: ensureHomeTagFirst - 无法获取首页信息');
-      }
+      // 使用store的新方法
+      this.$store.dispatch('tagsView/ensureHomeTagFirst').then(() => {
+        console.log('TagsView: 首页标签位置已确保');
+      }).catch(error => {
+        console.error('TagsView: 确保首页标签位置失败', error);
+      });
     },
 
-    // 获取当前平台的首页信息
-    getCurrentPlatformHome() {
-      const currentPlatform = this.$store.getters['permission/currentPlatform'];
+    // 新增辅助方法：判断是否为平台切换
+    isPlatformSwitch(fromPlatform, toPlatform) {
+      // 判断是否为不同平台之间的切换
+      const platformMap = {
+        'admin': '管理系统',
+        'console': '控制台'
+      };
       
-      console.log('TagsView: getCurrentPlatformHome - 当前平台', currentPlatform);
-      console.log('TagsView: getCurrentPlatformHome - 当前路由', this.$route.path);
-      
-      switch (currentPlatform) {
-        case "console":
-          return {
-            path: "/console/dashboard",
-            meta: { title: "控制台", affix: true },
-          };
-        case "admin":
-          return {
-            path: "/admin/dashboard",
-            meta: { title: "管理后台首页", affix: true },
-          };
-        default:
-          // 兜底逻辑：根据当前路径判断
-          const currentPath = this.$route.path;
-          if (currentPath.startsWith("/console")) {
-            return {
-              path: "/console/dashboard",
-              meta: { title: "控制台", affix: true },
-            };
-          } else if (currentPath.startsWith("/admin")) {
-            return {
-              path: "/admin/dashboard",
-              meta: { title: "管理后台首页", affix: true },
-            };
-          }
-          return null;
-      }
+      const isValid = fromPlatform !== toPlatform && 
+             platformMap[fromPlatform] && 
+             platformMap[toPlatform];
+             
+      console.log('isPlatformSwitch检查:', { fromPlatform, toPlatform, isValid });
+      return isValid;
     },
 
-    // 获取首页路由名称
-    getHomeRouteName() {
-      const currentPlatform = this.$store.getters['permission/currentPlatform'];
-      return currentPlatform === "admin"
-        ? "AdminDashboard"
-        : "ConsoleDashboard";
+    // 新增辅助方法：判断是否为企业切换
+    isManagerSwitch(fromManagerId, toManagerId, currentPlatform) {
+      // 只有在控制台平台内，且企业ID不同时，才是企业切换
+      const isValid = currentPlatform === 'console' && 
+             fromManagerId !== toManagerId && 
+             fromManagerId && toManagerId;
+             
+      console.log('isManagerSwitch检查:', { fromManagerId, toManagerId, currentPlatform, isValid });
+      return isValid;
     },
 
     // ... 其他方法保持不变
@@ -471,7 +547,47 @@ export default {
     },
 
     moveToTarget(currentTag) {
-      // ... 保持原有实现
+      const $container = this.$refs.scrollContainer;
+      const $containerWidth = $container.offsetWidth;
+      const $scrollWrapper = this.$refs.scrollContainer;
+      const tagList = this.$refs.tag;
+
+      let firstTag = null;
+      let lastTag = null;
+
+      // find first tag and last tag
+      if (tagList.length > 0) {
+        firstTag = tagList[0];
+        lastTag = tagList[tagList.length - 1];
+      }
+
+      if (firstTag === currentTag) {
+        $scrollWrapper.scrollLeft = 0;
+      } else if (lastTag === currentTag) {
+        $scrollWrapper.scrollLeft =
+          $scrollWrapper.scrollWidth - $containerWidth;
+      } else {
+        // find preTag and nextTag
+        const currentIndex = tagList.findIndex((item) => item === currentTag);
+        const prevTag = tagList[currentIndex - 1];
+        const nextTag = tagList[currentIndex + 1];
+
+        // the tag's offsetLeft after of nextTag
+        const afterNextTagOffsetLeft =
+          nextTag.$el.offsetLeft + nextTag.$el.offsetWidth + 4;
+
+        // the tag's offsetLeft before of prevTag
+        const beforePrevTagOffsetLeft = prevTag.$el.offsetLeft - 4;
+
+        if (
+          afterNextTagOffsetLeft >
+          $scrollWrapper.scrollLeft + $containerWidth
+        ) {
+          $scrollWrapper.scrollLeft = afterNextTagOffsetLeft - $containerWidth;
+        } else if (beforePrevTagOffsetLeft < $scrollWrapper.scrollLeft) {
+          $scrollWrapper.scrollLeft = beforePrevTagOffsetLeft;
+        }
+      }
     },
 
     refreshSelectedTag(view) {
@@ -564,12 +680,48 @@ export default {
       }
     },
 
+    // 获取当前平台的首页信息
+    getCurrentPlatformHome() {
+      const currentPlatform = this.$store.getters['permission/currentPlatform'];
+      
+      console.log('TagsView: getCurrentPlatformHome - 当前平台', currentPlatform);
+      console.log('TagsView: getCurrentPlatformHome - 当前路由', this.$route.path);
+      
+      switch (currentPlatform) {
+        case "console":
+          return {
+            path: "/console/dashboard",
+            meta: { title: "控制台", affix: true },
+          };
+        case "admin":
+          return {
+            path: "/admin/dashboard",
+            meta: { title: "管理后台首页", affix: true },
+          };
+        default:
+          // 兜底逻辑：根据当前路径判断
+          const currentPath = this.$route.path;
+          if (currentPath.startsWith("/console")) {
+            return {
+              path: "/console/dashboard",
+              meta: { title: "控制台", affix: true },
+            };
+          } else if (currentPath.startsWith("/admin")) {
+            return {
+              path: "/admin/dashboard",
+              meta: { title: "管理后台首页", affix: true },
+            };
+          }
+          return null;
+      }
+    },
+
     openMenu(tag, e) {
       const menuMinWidth = 105;
-      const offsetLeft = this.$el.getBoundingClientRect().left;
-      const offsetWidth = this.$el.offsetWidth;
-      const maxLeft = offsetWidth - menuMinWidth;
-      const left = e.clientX - offsetLeft + 15;
+      const offsetLeft = this.$el.getBoundingClientRect().left; // container margin left
+      const offsetWidth = this.$el.offsetWidth; // container width
+      const maxLeft = offsetWidth - menuMinWidth; // left boundary
+      const left = e.clientX - offsetLeft + 15; // 15: margin right
 
       if (left > maxLeft) {
         this.left = maxLeft;
@@ -960,6 +1112,131 @@ export default {
       opacity: 0.3;
       filter: blur(1px);
     }
+  }
+}
+
+/* 首页标签特殊标识 */
+.tags-view-item:first-child {
+  /* 给第一个标签（首页）添加特殊标识 */
+  position: relative;
+  
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #1890ff, #40a9ff);
+    border-radius: 0 3px 3px 0;
+    opacity: 0.8;
+  }
+  
+  /* 确保首页标签有特殊的视觉效果 */
+  &.active::after {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(24, 144, 255, 0.3);
+  }
+}
+
+/* 标签拖拽效果（预留，如果后续需要拖拽排序功能） */
+.tags-view-item.dragging {
+  opacity: 0.8;
+  transform: scale(1.05);
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 空状态样式（当没有标签时） */
+.tags-view-container:empty::after {
+  content: "暂无标签页";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted, #909399);
+  font-size: 14px;
+}
+
+/* 滚动指示器（当内容超出容器时显示） */
+.tags-view-wrapper {
+  position: relative;
+  
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+  }
+  
+  &::before {
+    left: 0;
+    background: linear-gradient(to right, var(--card-bg), transparent);
+  }
+  
+  &::after {
+    right: 0;
+    background: linear-gradient(to left, var(--card-bg), transparent);
+  }
+  
+  &.has-scroll-left::before {
+    opacity: 1;
+  }
+  
+  &.has-scroll-right::after {
+    opacity: 1;
+  }
+}
+
+/* 提升无障碍访问性 */
+.tags-view-item[aria-selected="true"] {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+.contextmenu {
+  /* 改善右键菜单的无障碍访问 */
+  li {
+    &:focus {
+      background: var(--hover-bg, #f5f7fa);
+      color: var(--primary-color, #409eff);
+      outline: none;
+    }
+    
+    &[aria-disabled="true"] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .tags-view-item {
+    border-width: 2px;
+    
+    &.active {
+      border-color: #000;
+      background: #fff;
+      color: #000;
+    }
+  }
+}
+
+/* 减少动画模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  .tags-view-item,
+  .contextmenu li,
+  .tags-view-scroll {
+    transition: none;
+    animation: none;
   }
 }
 </style>
