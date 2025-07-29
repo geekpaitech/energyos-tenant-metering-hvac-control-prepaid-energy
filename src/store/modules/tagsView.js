@@ -1,4 +1,4 @@
-// @/store/modules/tagsView.js - 修复后的版本
+// @/store/modules/tagsView.js - 修复标题显示问题的版本
 
 const state = {
   visitedViews: [],
@@ -8,9 +8,17 @@ const state = {
 const mutations = {
   ADD_VISITED_VIEW: (state, view) => {
     if (state.visitedViews.some(v => v.path === view.path)) return
+    
+    // 修复：确保title正确获取
+    const title = view.title || 
+                 (view.meta && view.meta.title) || 
+                 view.name || 
+                 view.path.split('/').pop() || 
+                 'no-name'
+    
     state.visitedViews.push(
       Object.assign({}, view, {
-        title: view.meta.title || 'no-name'
+        title: title
       })
     )
   },
@@ -70,33 +78,51 @@ const mutations = {
     }
   },
 
- // 平台切换时完全清空
-CLEAR_ALL_FOR_PLATFORM_SWITCH: state => {
-  console.log('CLEAR_ALL_FOR_PLATFORM_SWITCH mutation executed - 完全清空所有TagsView')
-  state.visitedViews = []
-  state.cachedViews = []
-},
+  // 平台切换时完全清空
+  CLEAR_ALL_FOR_PLATFORM_SWITCH: state => {
+    console.log('CLEAR_ALL_FOR_PLATFORM_SWITCH mutation executed - 完全清空所有TagsView')
+    state.visitedViews = []
+    state.cachedViews = []
+  },
 
+  // 企业切换时只清空缓存，保留标签页
+  CLEAR_CACHE_FOR_MANAGER_SWITCH: state => {
+    console.log('CLEAR_CACHE_FOR_MANAGER_SWITCH mutation executed - 只清空缓存，保留TagsView')
+    state.cachedViews = []
+    // visitedViews 保持不变
+  },
 
-// 企业切换时只清空缓存，保留标签页
-CLEAR_CACHE_FOR_MANAGER_SWITCH: state => {
-  console.log('CLEAR_CACHE_FOR_MANAGER_SWITCH mutation executed - 只清空缓存，保留TagsView')
-  state.cachedViews = []
-  // visitedViews 保持不变
-},
-
-  // 新增：确保首页标签在第一位
+  // 修复：确保首页标签在第一位且title正确
   ENSURE_HOME_TAG_FIRST: (state, homeTag) => {
     if (!homeTag) return
+    
+    console.log('ENSURE_HOME_TAG_FIRST - 输入的homeTag:', homeTag)
     
     // 移除现有的首页标签
     state.visitedViews = state.visitedViews.filter(v => v.path !== homeTag.path)
     
-    // 在第一位插入首页标签
-    state.visitedViews.unshift({
+    // 确保title正确设置
+    const title = homeTag.title || 
+                 (homeTag.meta && homeTag.meta.title) || 
+                 homeTag.name || 
+                 '首页'
+    
+    const finalHomeTag = {
       ...homeTag,
-      meta: { ...homeTag.meta, affix: true }
-    })
+      title: title, // 确保title在顶层
+      meta: { 
+        ...homeTag.meta, 
+        affix: true,
+        title: title // 同时确保meta.title也正确
+      }
+    }
+    
+    console.log('ENSURE_HOME_TAG_FIRST - 最终的homeTag:', finalHomeTag)
+    
+    // 在第一位插入首页标签
+    state.visitedViews.unshift(finalHomeTag)
+    
+    console.log('ENSURE_HOME_TAG_FIRST - 更新后的visitedViews:', state.visitedViews)
   },
 
   DEL_RIGHT_TAGS: (state, view) => {
@@ -227,7 +253,7 @@ const actions = {
     commit('UPDATE_VISITED_VIEW', view)
   },
 
-  // 新增：平台切换时完全清空TagsView（管理系统 ↔ 控制台）
+  // 平台切换时完全清空TagsView（管理系统 ↔ 控制台）
   clearAllForPlatformSwitch({ commit, state, rootGetters }) {
     return new Promise(resolve => {
       console.log('=== TagsView Store: 平台切换完全清空开始 ===')
@@ -248,7 +274,7 @@ const actions = {
     })
   },
 
-  // 新增：企业切换时只清空缓存，保留TagsView标签页（控制台内企业切换）
+  // 企业切换时只清空缓存，保留TagsView标签页（控制台内企业切换）
   clearCacheForManagerSwitch({ commit, state }) {
     return new Promise(resolve => {
       console.log('=== TagsView Store: 企业切换清空缓存开始 ===')
@@ -269,7 +295,7 @@ const actions = {
     })
   },
 
-  // 新增：确保首页标签始终在第一位
+  // 修复：确保首页标签始终在第一位且title正确显示
   ensureHomeTagFirst({ commit, state, rootGetters }) {
     return new Promise(resolve => {
       console.log('=== TagsView Store: 确保首页标签在第一位 ===')
@@ -286,7 +312,12 @@ const actions = {
             fullPath: '/console/dashboard',
             path: '/console/dashboard',
             name: 'ConsoleDashboard',
-            meta: { title: '首页', affix: true, icon: 'el-icon-data-analysis' },
+            title: '首页', // 直接在顶层设置title
+            meta: { 
+              title: '首页', 
+              affix: true, 
+              icon: 'el-icon-data-analysis' 
+            },
             query: {},
             params: {}
           }
@@ -296,7 +327,12 @@ const actions = {
             fullPath: '/admin/dashboard',
             path: '/admin/dashboard',
             name: 'AdminDashboard',
-            meta: { title: '管理后台大屏', affix: true, icon: 'el-icon-data-board' },
+            title: '管理后台大屏', // 修复：使用与路由配置一致的title
+            meta: { 
+              title: '管理后台大屏', // 修复：保持一致
+              affix: true, 
+              icon: 'el-icon-data-board' 
+            },
             query: {},
             params: {}
           }
@@ -308,9 +344,19 @@ const actions = {
       }
       
       if (homeTagInfo) {
-        console.log('设置首页标签:', homeTagInfo.path)
+        console.log('设置首页标签:', homeTagInfo.path, '标题:', homeTagInfo.title)
         commit('ENSURE_HOME_TAG_FIRST', homeTagInfo)
         console.log('首页标签已设置在第一位')
+        
+        // 验证设置结果
+        const firstTag = state.visitedViews[0]
+        if (firstTag) {
+          console.log('验证首页标签:', {
+            path: firstTag.path,
+            title: firstTag.title,
+            metaTitle: firstTag.meta?.title
+          })
+        }
       }
       
       console.log('=== TagsView Store: 首页标签位置确保完成 ===')
@@ -332,14 +378,10 @@ const actions = {
     })
   },
 
-  // 新增：初始化固定标签（首页等）
+  // 初始化固定标签（首页等）
   initAffixTags({ commit, state }, routes) {
     return new Promise(resolve => {
       console.log('=== TagsView Store: 初始化固定标签 ===')
-      
-      // 这里可以根据routes参数添加固定标签的逻辑
-      // 当前先确保首页标签的存在
-      
       console.log('固定标签初始化完成')
       resolve([...state.visitedViews])
     })
