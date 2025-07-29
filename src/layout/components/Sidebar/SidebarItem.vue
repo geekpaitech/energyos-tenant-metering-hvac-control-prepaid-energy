@@ -47,13 +47,16 @@
         <span class="menu-title" v-show="!isCollapsed">
           {{ item.meta.title }}
         </span>
+        <!-- 调试信息 - 生产环境可删除 -->
+        <div v-if="false" style="position: absolute; top: 0; right: 0; font-size: 10px; color: red;">
+          {{ isParentSelected(item) ? 'S' : '' }}{{ expandedItem === item.path ? 'E' : '' }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-// ... script 部分保持不变
 import path from 'path'
 import { isExternal } from '@/utils/validate'
 import Item from './Item'
@@ -97,14 +100,26 @@ export default {
       return this.visibleChildren.length > 0
     },
 
-    // 当前展开的菜单项
+    // 当前展开的菜单项 - 从父组件获取
     expandedItem() {
-      return this.$parent.expandedItem || null
+      let parent = this.$parent
+      while (parent && parent.expandedItem === undefined) {
+        parent = parent.$parent
+      }
+      const expanded = parent ? parent.expandedItem : null
+      // console.log(`SidebarItem ${this.item.path} - expandedItem:`, expanded)
+      return expanded
     },
 
-    // 当前选中的菜单项
+    // 当前选中的菜单项 - 从父组件获取
     selectedItem() {
-      return this.$parent.selectedItem || null
+      let parent = this.$parent
+      while (parent && parent.selectedItem === undefined) {
+        parent = parent.$parent
+      }
+      const selected = parent ? parent.selectedItem : null
+      // console.log(`SidebarItem ${this.item.path} - selectedItem:`, selected)
+      return selected
     }
   },
   
@@ -160,44 +175,79 @@ export default {
       })
     },
 
-    // 判断父菜单是否被选中
+    // 关键修复：判断父菜单是否被选中
     isParentSelected(item) {
-      // 如果当前选中的是父菜单本身
-      if (this.selectedItem === item.path) return true
+      const currentSelected = this.selectedItem
+      const currentExpanded = this.expandedItem
+      const itemPath = item.path
       
-      // 如果当前选中的是其子菜单，且子菜单面板未展开，则父菜单保持选中状态
-      if (!item.children) return false
-      const isChildSelected = item.children.some(child => {
-        if (child.hidden) return false
-        return this.selectedItem === this.resolvePath(child.path)
+      // 调试日志
+      console.log(`isParentSelected 检查 ${itemPath}:`, {
+        currentSelected,
+        currentExpanded,
+        itemPath,
+        directMatch: currentSelected === itemPath
       })
       
-      // 只有在子菜单面板未展开时，父菜单才显示选中状态
-      return isChildSelected && this.expandedItem !== item.path
-    },
-
-    // 处理单一菜单点击
-    handleSingleClick(path) {
-      // 设置选中状态
-      this.setSelectedItem(path)
+      // 1. 如果当前选中的就是父菜单本身，直接返回true
+      if (currentSelected === itemPath) {
+        console.log(`父菜单 ${itemPath} 直接匹配选中`)
+        return true
+      }
+      
+      // 2. 检查是否有子菜单被选中，且子菜单面板未展开
+      if (!item.children) return false
+      
+      const isChildSelected = item.children.some(child => {
+        if (child.hidden) return false
+        const childPath = this.resolvePath(child.path)
+        return currentSelected === childPath
+      })
+      
+      // 只有子菜单被选中且子菜单面板未展开时，父菜单才显示选中状态
+      const result = isChildSelected && currentExpanded !== itemPath
+      
+      console.log(`父菜单 ${itemPath} 子菜单选中检查:`, {
+        isChildSelected,
+        isExpanded: currentExpanded === itemPath,
+        result
+      })
+      
+      return result
     },
 
     // 处理父菜单点击
     handleParentClick(item) {
-      // 设置选中状态
-      this.setSelectedItem(item.path)
+      console.log("=== SidebarItem handleParentClick ===")
+      console.log("父菜单被点击:", item.path)
+      console.log("当前 isCollapsed:", this.isCollapsed)
+      console.log("当前 hasChildren:", this.hasChildren)
       
       // 如果侧边栏收缩或没有子菜单，不处理展开逻辑
-      if (this.isCollapsed || !this.hasChildren) return
+      if (this.isCollapsed || !this.hasChildren) {
+        console.log("侧边栏收缩或无子菜单，不处理")
+        return
+      }
       
       // 向上查找到 Layout 组件并调用 toggleSubmenu
       let parent = this.$parent
       while (parent && !parent.toggleSubmenu) {
         parent = parent.$parent
       }
+      
       if (parent && parent.toggleSubmenu) {
+        console.log("找到 Layout 组件，调用 toggleSubmenu")
         parent.toggleSubmenu(item)
+      } else {
+        console.error("未找到 Layout 组件的 toggleSubmenu 方法")
       }
+      console.log("=== SidebarItem handleParentClick 结束 ===")
+    },
+
+    // 处理单一菜单点击
+    handleSingleClick(path) {
+      console.log("单一菜单被点击:", path)
+      this.setSelectedItem(path)
     },
 
     // 设置选中项
@@ -375,11 +425,11 @@ export default {
     }
   }
 
-  // 选中状态（基于用户点击）
+  // 选中状态（基于用户点击）- 关键修复
   &.is-selected {
-    background: var(--menu-active-bg);
-    color: #ffffff;
-    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
+    background: var(--menu-active-bg) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2) !important;
     
     .menu-content {
       .menu-title {

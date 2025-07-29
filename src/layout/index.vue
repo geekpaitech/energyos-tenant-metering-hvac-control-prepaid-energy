@@ -28,61 +28,66 @@
     </div>
 
     <!-- 右侧子菜单面板 - 添加过渡动画 -->
-    <transition name="submenu-slide">
-      <div v-if="currentSubmenu && sidebar.opened" class="submenu-panel">
-        <div class="submenu-header">
-          <div class="submenu-title">
+<!-- 右侧子菜单面板 - 添加过渡动画 -->
+<transition name="submenu-slide">
+  <div v-if="currentSubmenu && sidebar.opened" class="submenu-panel">
+    <div class="submenu-header">
+      <div class="submenu-title">
+        <i
+          v-if="currentSubmenu.meta && currentSubmenu.meta.icon"
+          :class="currentSubmenu.meta.icon"
+          class="submenu-icon"
+        />
+        <span>{{
+          currentSubmenu.meta ? currentSubmenu.meta.title : ""
+        }}</span>
+      </div>
+      <!-- 新增收起按钮 -->
+      <div class="submenu-collapse-btn" @click="handleCollapseSubmenu" title="收起子菜单">
+        <i class="el-icon-close"></i>
+      </div>
+    </div>
+
+    <div class="submenu-content">
+      <template v-for="child in visibleSubmenuChildren">
+        <!-- 如果是分隔线 -->
+        <div
+          v-if="child.meta && child.meta.isDivider"
+          :key="child.path"
+          class="submenu-divider"
+          :class="{ 'with-label': child.meta.dividerLabel }"
+        >
+          <span v-if="child.meta.dividerLabel" class="divider-label">
+            {{ child.meta.dividerLabel }}
+          </span>
+        </div>
+        
+        <!-- 正常的子菜单项 -->
+        <router-link
+          v-else
+          :key="resolvePath(child.path)"
+          :to="resolvePath(child.path)"
+          class="submenu-item-link"
+          @click.native="handleSubmenuClick(child.path)"
+        >
+          <div
+            class="submenu-item"
+            :class="{ 'is-active': isSubmenuItemActive(child.path) }"
+          >
             <i
-              v-if="currentSubmenu.meta && currentSubmenu.meta.icon"
-              :class="currentSubmenu.meta.icon"
-              class="submenu-icon"
+              v-if="child.meta && child.meta.icon"
+              :class="child.meta.icon"
+              class="submenu-item-icon"
             />
-            <span>{{
-              currentSubmenu.meta ? currentSubmenu.meta.title : ""
+            <span class="submenu-item-title">{{
+              child.meta ? child.meta.title : ""
             }}</span>
           </div>
-        </div>
-
-        <div class="submenu-content">
-          <template v-for="child in visibleSubmenuChildren">
-            <!-- 如果是分隔线 -->
-            <div
-              v-if="child.meta && child.meta.isDivider"
-              :key="child.path"
-              class="submenu-divider"
-              :class="{ 'with-label': child.meta.dividerLabel }"
-            >
-              <span v-if="child.meta.dividerLabel" class="divider-label">
-                {{ child.meta.dividerLabel }}
-              </span>
-            </div>
-            
-            <!-- 正常的子菜单项 -->
-            <router-link
-              v-else
-              :key="resolvePath(child.path)"
-              :to="resolvePath(child.path)"
-              class="submenu-item-link"
-              @click.native="handleSubmenuClick(child.path)"
-            >
-              <div
-                class="submenu-item"
-                :class="{ 'is-active': isSubmenuItemActive(child.path) }"
-              >
-                <i
-                  v-if="child.meta && child.meta.icon"
-                  :class="child.meta.icon"
-                  class="submenu-item-icon"
-                />
-                <span class="submenu-item-title">{{
-                  child.meta ? child.meta.title : ""
-                }}</span>
-              </div>
-            </router-link>
-          </template>
-        </div>
-      </div>
-    </transition>
+        </router-link>
+      </template>
+    </div>
+  </div>
+</transition>
 
     <!-- 右侧主内容区 -->
     <div class="main-container">
@@ -275,6 +280,8 @@ export default {
   },
   data() {
     return {
+      originalSelectedItem: null, // 记录打开子菜单前的选中项
+    currentRouteItem: null, // 记录当前路由对应的菜单项
       platformSwitching: false, // 平台切换状态
       isFullscreen: false, // 全屏状态
       currentSubmenu: null, // 当前展开的子菜单
@@ -371,6 +378,7 @@ export default {
       return this.availablePlatforms.length > 1;
     },
 
+
     // 是否只有单一平台权限
     hasSinglePlatform() {
       return this.availablePlatforms.length === 1;
@@ -395,40 +403,32 @@ export default {
   },
 
   watch: {
-    // 监听路由变化
-    $route(to, from) {
-      // 检查路由变化是否来自子菜单点击
-      const isFromSubmenu = this.visibleSubmenuChildren.some(
-        (child) => this.resolvePath(child.path) === to.path
-      );
-
-      if (!isFromSubmenu) {
-        // 如果不是来自子菜单，关闭子菜单
-        this.closeSubmenu();
-      }
-
-      // 更新选中状态
-      this.updateSelectionFromRoute(to.path);
-    },
-
-    // 监听侧边栏状态变化
-    "sidebar.opened"(val) {
-      if (!val) {
-        this.closeSubmenu();
-      }
-    },
-
-    // 监听当前平台变化，决定是否需要加载管理方列表
-    currentPlatformKey: {
-      handler(newPlatform) {
-        if (newPlatform === "console") {
-          // 切换到控制台时加载管理方列表
-          this.loadManagerList();
-        }
-      },
-      immediate: true,
-    },
+  // 监听路由变化 - 修改逻辑
+  $route(to, from) {
+    console.log("路由变化:", from.path, "->", to.path);
+    
+    // 更新选中状态（新的逻辑会处理子菜单状态）
+    this.updateSelectionFromRoute(to.path);
   },
+
+  // 监听侧边栏状态变化 - 保持现有逻辑
+  "sidebar.opened"(val) {
+    if (!val) {
+      this.closeSubmenu();
+    }
+  },
+
+  // 监听当前平台变化，决定是否需要加载管理方列表 - 保持现有逻辑
+  currentPlatformKey: {
+    handler(newPlatform) {
+      if (newPlatform === "console") {
+        // 切换到控制台时加载管理方列表
+        this.loadManagerList();
+      }
+    },
+    immediate: true,
+  },
+},
 
   async mounted() {
     console.log("Layout组件已挂载");
@@ -501,6 +501,27 @@ export default {
         this.$message.error("退出登录失败");
       }
     },
+    handleCollapseSubmenu() {
+    console.log("=== 手动收起子菜单 ===");
+    console.log("收起前状态 - expandedItem:", this.expandedItem);
+    console.log("收起前状态 - originalSelectedItem:", this.originalSelectedItem);
+    
+    // 恢复到基于当前路由的选中状态
+    if (this.originalSelectedItem) {
+      this.selectedItem = this.originalSelectedItem;
+    } else if (this.currentRouteItem) {
+      this.selectedItem = this.currentRouteItem;
+    }
+    
+    // 清空子菜单相关状态
+    this.expandedItem = null;
+    this.currentSubmenu = null;
+    this.basePath = "";
+    this.originalSelectedItem = null;
+    
+    console.log("收起后状态 - selectedItem:", this.selectedItem);
+    console.log("=== 收起子菜单完成 ===");
+  },
 
     // 加载管理方列表
     async loadManagerList() {
@@ -559,94 +580,127 @@ export default {
 
     // 设置选中项
     setSelectedItem(path) {
-      this.previousSelectedItem = this.selectedItem;
-      this.selectedItem = path;
-      console.log("设置选中项:", path);
-    },
+    // 如果当前没有展开的子菜单，记录原始选中项
+    if (!this.expandedItem) {
+      this.originalSelectedItem = this.selectedItem;
+    }
+    
+    this.previousSelectedItem = this.selectedItem;
+    this.selectedItem = path;
+    console.log("设置选中项:", path);
+  },
 
     // 根据路由更新选中状态
     updateSelectionFromRoute(routePath) {
-      // 查找匹配的菜单项
-      const findMatchingMenu = (routes, targetPath) => {
-        for (const route of routes) {
-          // 检查当前路由
-          if (route.path === targetPath) {
-            return route.path;
-          }
+    // 查找匹配的菜单项
+    const findMatchingMenu = (routes, targetPath) => {
+      for (const route of routes) {
+        // 检查当前路由
+        if (route.path === targetPath) {
+          return { path: route.path, isParent: false, parentItem: null };
+        }
 
-          // 检查子路由
-          if (route.children) {
-            for (const child of route.children) {
-              if (!child.hidden) {
-                const childPath = path.resolve(route.path, child.path);
-                if (childPath === targetPath) {
-                  return childPath;
-                }
+        // 检查子路由
+        if (route.children) {
+          for (const child of route.children) {
+            if (!child.hidden) {
+              const childPath = path.resolve(route.path, child.path);
+              if (childPath === targetPath) {
+                return { path: childPath, isParent: false, parentItem: route };
               }
             }
           }
         }
-        return null;
-      };
-
-      const matchingPath = findMatchingMenu(this.permission_routes, routePath);
-      if (matchingPath) {
-        this.setSelectedItem(matchingPath);
       }
-    },
+      return null;
+    };
+
+    const matchingResult = findMatchingMenu(this.permission_routes, routePath);
+    if (matchingResult) {
+      // 记录当前路由对应的菜单项
+      this.currentRouteItem = matchingResult.path;
+      
+      // 如果没有展开的子菜单，正常设置选中项
+      if (!this.expandedItem) {
+        this.setSelectedItem(matchingResult.path);
+      }
+      // 如果有展开的子菜单，需要判断当前路由是否属于该子菜单
+      else {
+        const currentSubmenuChildren = this.visibleSubmenuChildren;
+        const isCurrentRouteInSubmenu = currentSubmenuChildren.some(child => {
+          return this.resolvePath(child.path) === routePath;
+        });
+        
+        if (isCurrentRouteInSubmenu) {
+          // 如果当前路由在展开的子菜单中，更新选中项但不影响子菜单状态
+          this.selectedItem = matchingResult.path;
+        } else {
+          // 如果当前路由不在展开的子菜单中，需要关闭子菜单并设置新的选中项
+          this.handleCollapseSubmenu();
+          this.setSelectedItem(matchingResult.path);
+        }
+      }
+    }
+  },
 
     // 切换子菜单显示
     toggleSubmenu(item) {
-      console.log("=== toggleSubmenu 被调用 ===");
-      console.log("点击的菜单项:", item);
-      console.log("当前展开项:", this.expandedItem);
-      console.log("菜单项路径:", item.path);
-      console.log("菜单项子路由:", item.children);
-      console.log("侧边栏状态:", this.sidebar);
+    console.log("=== toggleSubmenu 被调用 ===");
+    console.log("点击的菜单项:", item);
+    console.log("当前展开项:", this.expandedItem);
 
-      if (this.expandedItem === item.path) {
-        // 如果点击的是当前展开的菜单，关闭它，并恢复父菜单选中状态
-        console.log("关闭当前展开的子菜单");
-        this.closeSubmenu();
-      } else {
-        // 展开新的子菜单
-        console.log("展开新的子菜单");
-        this.expandedItem = item.path;
-        this.currentSubmenu = item;
-        this.basePath = item.path; // 设置基础路径
-
-        console.log("设置后的状态:");
-        console.log("expandedItem:", this.expandedItem);
-        console.log("currentSubmenu:", this.currentSubmenu);
-        console.log("basePath:", this.basePath);
-        console.log("visibleSubmenuChildren:", this.visibleSubmenuChildren);
+    if (this.expandedItem === item.path) {
+      // 如果点击的是当前展开的菜单，不做任何操作（需要手动收起）
+      console.log("点击已展开的菜单，不执行收起操作");
+      return;
+    } else {
+      // 展开新的子菜单
+      console.log("展开新的子菜单");
+      
+      // 记录展开前的原始选中项（基于当前路由）
+      if (!this.expandedItem) {
+        this.originalSelectedItem = this.currentRouteItem || this.selectedItem;
       }
-      console.log("=== toggleSubmenu 结束 ===");
-    },
+      
+      this.expandedItem = item.path;
+      this.currentSubmenu = item;
+      this.basePath = item.path;
+      
+      // 立即高亮父菜单
+      this.selectedItem = item.path;
+
+      console.log("设置后的状态:");
+      console.log("expandedItem:", this.expandedItem);
+      console.log("selectedItem:", this.selectedItem);
+      console.log("originalSelectedItem:", this.originalSelectedItem);
+    }
+    console.log("=== toggleSubmenu 结束 ===");
+  },
 
     // 关闭子菜单
     closeSubmenu() {
+    // 只在侧边栏收起时自动关闭，其他情况需要手动收起
+    if (!this.sidebar.opened) {
       this.expandedItem = null;
       this.currentSubmenu = null;
-      this.basePath = ""; // 清空基础路径
-
-      // 恢复之前选中的父菜单状态
-      if (this.previousSelectedItem) {
-        this.selectedItem = this.previousSelectedItem;
+      this.basePath = "";
+      
+      // 恢复原始选中状态
+      if (this.originalSelectedItem) {
+        this.selectedItem = this.originalSelectedItem;
+        this.originalSelectedItem = null;
       }
-    },
+    }
+  },
 
     // 处理子菜单点击
     handleSubmenuClick(childPath) {
-      const fullPath = this.resolvePath(childPath);
-      this.setSelectedItem(fullPath);
-      // 延迟关闭子菜单，确保路由跳转完成
-      this.$nextTick(() => {
-        setTimeout(() => {
-          this.closeSubmenu();
-        }, 100);
-      });
-    },
+    const fullPath = this.resolvePath(childPath);
+    this.setSelectedItem(fullPath);
+    // 更新当前路由项
+    this.currentRouteItem = fullPath;
+    console.log("子菜单项被点击:", fullPath);
+  },
 
     // 判断子菜单项是否激活 - 使用正确的路径解析
     isSubmenuItemActive(childPath) {
@@ -996,7 +1050,7 @@ export default {
 
 /* 右侧子菜单面板 - 使用主题色变量 */
 .submenu-panel {
-  width: 220px;
+  width: 160px;
   background: var(--submenu-bg);
   border-right: 1px solid var(--border-color);
   height: 100vh;
@@ -1004,12 +1058,48 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
+  submenu-collapse-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+      color: var(--text-muted);
+      flex-shrink: 0;
+
+      &:hover {
+        background: var(--hover-bg);
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        transform: scale(1.05);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+
+      i {
+        font-size: 12px;
+        transition: transform 0.3s ease;
+      }
+
+      &:hover i {
+        transform: rotate(90deg);
+      }
+    }
+  
 
   .submenu-header {
     height: 50px;
     padding: 0 16px;
     display: flex;
     align-items: center;
+    justify-content: space-between; /* 改为 space-between 以放置收起按钮 */
     background: var(--search-bg);
     border-bottom: 1px solid var(--border-color);
 
@@ -1019,6 +1109,7 @@ export default {
       color: var(--text-primary);
       font-weight: 600;
       font-size: 14px;
+      flex: 1;
 
       .submenu-icon {
         font-size: 16px;
