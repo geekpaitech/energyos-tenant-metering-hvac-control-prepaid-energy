@@ -34,6 +34,24 @@ export const constantRoutes = [
     component: () => import('@/views/switching/index'), // 需要创建这个组件
     hidden: true
   },
+  {
+    path: '/redirect',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '/redirect/:path(.*)',
+        component: () => import('@/views/redirect/index'),
+        name: 'Redirect',
+        meta: {
+          title: '页面跳转中',
+          noCache: true,
+          noTagsView: true, // 👈 添加这个标记
+          hidden: true
+        }
+      }
+    ]
+  }
 ]
 
 /**

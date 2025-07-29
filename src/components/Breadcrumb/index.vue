@@ -89,7 +89,7 @@ export default {
         case 'console':
           return {
             path: '/console/dashboard',
-            meta: { title: '控制台首页' }
+            meta: { title: '控制台' }
           };
         case 'admin':
           return {
@@ -104,7 +104,7 @@ export default {
           if (currentPath.startsWith('/console')) {
             return {
               path: '/console/dashboard',
-              meta: { title: '控制台首页' }
+              meta: { title: '控制台' }
             };
           } else if (currentPath.startsWith('/admin')) {
             return {
@@ -124,7 +124,7 @@ export default {
               if (availablePlatforms.includes('console')) {
                 return {
                   path: '/console/dashboard',
-                  meta: { title: '控制台首页' }
+                  meta: { title: '控制台' }
                 };
               } else if (availablePlatforms.includes('admin')) {
                 return {

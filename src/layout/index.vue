@@ -449,7 +449,10 @@ export default {
     if (this.isConsolePlatform) {
       await this.loadManagerList();
     }
-
+    if (this.$store.hasModule('tagsView')) {
+    const routes = this.permission_routes || [];
+    await this.$store.dispatch('tagsView/initAffixTags', routes);
+  }
     // 输出调试信息
     this.$nextTick(() => {
       console.log("=== 平台权限调试信息 ===");
@@ -546,69 +549,127 @@ export default {
       }
     },
 
-    // 处理管理方切换 - 修改此方法
-    async handleManagerSwitch(managerId) {
-      if (managerId === this.currentManagerId) {
-        return;
-      }
+  // Layout.vue 中的 handleManagerSwitch 方法修复版本
 
-      const targetManager = this.managerList.find(
-        (m) => m.managerId === managerId
-      );
-      if (!targetManager) {
-        return;
-      }
+  async handleManagerSwitch(managerId) {
+  if (managerId === this.currentManagerId) {
+    return;
+  }
 
-      try {
-        // 显示切换中的提示
-        const loading = this.$loading({
-          lock: true,
-          text: `正在切换到${targetManager.managerName}...`,
-          spinner: "el-icon-loading",
-          background: "rgba(0, 0, 0, 0.7)",
-        });
+  const targetManager = this.managerList.find(
+    (m) => m.managerId === managerId
+  );
+  if (!targetManager) {
+    return;
+  }
 
-        // 清空 TagsView - 新增
-        console.log('管理方切换：清空 TagsView');
-        await this.$store.dispatch('tagsView/delAllViews');
+  try {
+    // 显示切换中的提示
+    const loading = this.$loading({
+      lock: true,
+      text: `正在切换到${targetManager.managerName}...`,
+      spinner: "el-icon-loading",
+      background: "rgba(0, 0, 0, 0.7)",
+    });
+
+    // 保存当前路由的完整信息
+    const currentRoute = {
+      path: this.$route.path,
+      query: { ...this.$route.query },
+      params: { ...this.$route.params },
+      name: this.$route.name,
+      fullPath: this.$route.fullPath
+    };
+    
+    console.log('=== 管理方(企业)切换开始 ===');
+    console.log('当前管理方ID:', this.currentManagerId);
+    console.log('目标管理方ID:', managerId);
+    console.log('当前路由信息:', currentRoute);
+
+    // 重要：企业切换时使用新的方法，只清空缓存，保留TagsView
+    if (this.$store.hasModule('tagsView')) {
+      console.log('企业切换 - 只清空缓存，保留TagsView');
+      await this.$store.dispatch('tagsView/clearCacheForManagerSwitch');
+    }
+
+    // 调用store中的切换方法
+    await this.switchManager(managerId);
+    console.log('管理方切换完成');
+
+    // 触发管理方切换事件，通知TagsView组件（TagsView会保留但刷新缓存）
+    this.$bus && this.$bus.$emit('manager-switched', {
+      managerId: managerId,
+      managerInfo: targetManager,
+      previousManagerId: this.currentManagerId,
+      currentRoute: currentRoute
+    });
+
+    loading.close();
+
+    // 显示成功消息
+    this.$message({
+      type: "success",
+      message: `已切换到${targetManager.managerName}`,
+      duration: 2000,
+    });
+
+    // 企业切换使用温和的页面更新方式
+    this.$nextTick(() => {
+      console.log('企业切换完成，温和刷新当前页面内容');
+      
+      // 方式1: 通过查询参数触发页面更新，但保持在当前页面
+      if (this.$route.meta && this.$route.meta.refreshOnManagerSwitch !== false) {
+        const newQuery = { 
+          ...currentRoute.query, 
+          _t: Date.now(),  // 添加时间戳强制更新
+          _m: managerId    // 添加管理方ID
+        };
         
-        // 触发 TagsView 组件的平台切换事件 - 新增
-        this.$bus && this.$bus.$emit('platform-switched', this.currentPlatformKey);
-
-        // 调用store中的切换方法
-        await this.switchManager(managerId);
-
-        loading.close();
-
-        // 显示成功消息
-        this.$message({
-          type: "success",
-          message: `已切换到${targetManager.managerName}`,
-          duration: 2000,
+        this.$router.replace({
+          path: currentRoute.path,
+          query: newQuery
+        }).then(() => {
+          console.log('企业切换 - 路由查询参数已更新');
+        }).catch(err => {
+          console.log('企业切换 - 路由更新完成或无需更新');
         });
-
-        // 刷新当前页面或跳转到首页 - 新增
-        this.$nextTick(() => {
-          // 如果当前不在首页，跳转到首页
-          const homePath = this.currentPlatformKey === 'console' 
-            ? '/console/dashboard' 
-            : '/admin/dashboard';
-          
-          if (this.$route.path !== homePath) {
-            this.$router.push(homePath);
-          } else {
-            // 如果已经在首页，强制刷新
-            this.$router.replace('/redirect' + homePath);
-          }
-        });
-
-        // 可选：刷新页面数据
-        this.$emit("manager-changed", managerId);
-      } catch (error) {
-        console.error("管理方切换失败:", error);
-        this.$message.error("管理方切换失败，请稍后重试");
       }
-    },
+      // 方式2: 如果当前页面有特定的刷新方法，调用它
+      else if (this.$refs.currentPage && this.$refs.currentPage.refreshData) {
+        this.$refs.currentPage.refreshData();
+        console.log('企业切换 - 调用页面刷新方法');
+      }
+      // 方式3: 触发全局事件，让当前页面组件自己处理
+      else {
+        this.$bus && this.$bus.$emit('manager-data-refresh', {
+          managerId: managerId,
+          managerInfo: targetManager
+        });
+        console.log('企业切换 - 触发全局数据刷新事件');
+      }
+    });
+
+    // 触发管理方变更事件（给父组件使用）
+    this.$emit("manager-changed", {
+      managerId: managerId,
+      managerInfo: targetManager,
+      currentRoute: currentRoute
+    });
+
+    console.log('=== 管理方(企业)切换流程完成 ===');
+    
+  } catch (error) {
+    console.error("管理方切换失败:", error);
+    this.$message.error(`管理方切换失败：${error.message || '请稍后重试'}`);
+    
+    // 切换失败时关闭loading
+    const loadingInstance = this.$loading.service();
+    if (loadingInstance) {
+      loadingInstance.close();
+    }
+  }
+},
+// 新增：平台切换方法（与管理方切换区分开）
 
     // 设置选中项 - 错误修复：这个方法在原代码中缺失
     setSelectedItem(path) {
@@ -1008,86 +1069,92 @@ export default {
     },
 
     // 处理平台切换
-    async handlePlatformSwitch(platformKey) {
-      if (platformKey === this.currentPlatformKey || this.platformSwitching) {
-        return;
-      }
+    // 平台切换方法（与管理方切换区分开）
+async handlePlatformSwitch(platformKey) {
+  if (platformKey === this.currentPlatformKey || this.platformSwitching) {
+    return;
+  }
 
-      this.platformSwitching = true;
+  this.platformSwitching = true;
 
-      try {
-        // 先跳转到切换页面，避免在当前页面显示404
-        if (this.$route.path !== '/switching') {
-          await this.$router.push('/switching').catch(() => {});
-        }
+  try {
+    // 先跳转到切换页面，避免在当前页面显示404
+    if (this.$route.path !== '/switching') {
+      await this.$router.push('/switching').catch(() => {});
+    }
 
-        const loading = this.$loading({
-          lock: true,
-          text: `正在切换到${this.platformConfig[platformKey].name}...`,
-          spinner: "el-icon-loading",
-          background: "rgba(0, 0, 0, 0.7)",
-        });
+    const loading = this.$loading({
+      lock: true,
+      text: `正在切换到${this.platformConfig[platformKey].name}...`,
+      spinner: "el-icon-loading",
+      background: "rgba(0, 0, 0, 0.7)",
+    });
 
-        console.log('开始切换平台到:', platformKey);
+    console.log('=== 平台切换开始 ===');
+    console.log('从平台:', this.currentPlatformKey, '切换到:', platformKey);
 
-        // 1. 强制清空TagsView（使用新的 action）
-        console.log('清空TagsView...');
-        await this.$store.dispatch('tagsView/clearAllForPlatformSwitch');
-        
-        // 2. 触发 TagsView 组件的平台切换事件
-        this.$bus && this.$bus.$emit('platform-switched', platformKey);
+    // 重要：只有平台切换才完全清空TagsView
+    console.log('清空TagsView（平台切换）...');
+    await this.$store.dispatch('tagsView/clearAllForPlatformSwitch');
+    
+    // 触发 TagsView 组件的平台切换事件
+    this.$bus && this.$bus.$emit('platform-switched', platformKey);
 
-        // 3. 切换平台路由
-        await this.$store.dispatch('permission/switchPlatform', platformKey);
+    // 切换平台路由
+    await this.$store.dispatch('permission/switchPlatform', platformKey);
 
-        // 4. 处理管理方状态
-        if (platformKey === 'admin') {
-          await this.$store.dispatch('manager/resetManager');
-        } else if (platformKey === 'console') {
-          await this.loadManagerList();
-        }
+    // 处理管理方状态
+    if (platformKey === 'admin') {
+      // 切换到管理后台时重置管理方状态
+      await this.$store.dispatch('manager/resetManager');
+    } else if (platformKey === 'console') {
+      // 切换到控制台时加载管理方列表
+      await this.loadManagerList();
+    }
 
-        // 5. 更新当前平台状态
-        this.currentPlatformKey = platformKey;
+    // 更新当前平台状态
+    this.currentPlatformKey = platformKey;
 
-        // 6. 等待一段时间确保状态更新完成
-        await new Promise(resolve => setTimeout(resolve, 100));
+    // 等待一段时间确保状态更新完成
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-        loading.close();
+    loading.close();
 
-        // 显示成功消息
-        this.$message({
-          type: "success",
-          message: `已切换到${this.currentPlatform.name}`,
-          duration: 2000,
-        });
+    // 显示成功消息
+    this.$message({
+      type: "success",
+      message: `已切换到${this.platformConfig[platformKey].name}`,
+      duration: 2000,
+    });
 
-        // 跳转到新平台的首页
-        let redirectPath = '/';
-        if (platformKey === 'console') {
-          redirectPath = '/console/dashboard';
-        } else if (platformKey === 'admin') {
-          redirectPath = '/admin/dashboard';
-        }
-        
-        console.log('跳转到新平台首页:', redirectPath);
-        
-        // 使用 replace 跳转
-        this.$router.replace(redirectPath).catch(err => {
-          console.error('路由跳转失败:', err);
-          // 如果失败，强制刷新到目标页面
-          window.location.href = redirectPath;
-        });
+    // 跳转到新平台的首页
+    let redirectPath = '/';
+    if (platformKey === 'console') {
+      redirectPath = '/console/dashboard';
+    } else if (platformKey === 'admin') {
+      redirectPath = '/admin/dashboard';
+    }
+    
+    console.log('跳转到新平台首页:', redirectPath);
+    
+    // 使用 replace 跳转
+    this.$router.replace(redirectPath).catch(err => {
+      console.error('路由跳转失败:', err);
+      // 如果失败，强制刷新到目标页面
+      window.location.href = redirectPath;
+    });
 
-      } catch (error) {
-        console.error("平台切换失败:", error);
-        this.$message.error(`平台切换失败: ${error.message || '请稍后重试'}`);
-        // 切换失败时回到原来的路由
-        this.$router.go(-1);
-      } finally {
-        this.platformSwitching = false;
-      }
-    },
+    console.log('=== 平台切换完成 ===');
+
+  } catch (error) {
+    console.error("平台切换失败:", error);
+    this.$message.error(`平台切换失败: ${error.message || '请稍后重试'}`);
+    // 切换失败时回到原来的路由
+    this.$router.go(-1);
+  } finally {
+    this.platformSwitching = false;
+  }
+},
   },
 };
 </script>
