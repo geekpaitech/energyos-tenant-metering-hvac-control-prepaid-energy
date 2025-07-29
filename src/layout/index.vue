@@ -479,8 +479,19 @@ export default {
     ...mapActions("manager", ["getManagerList", "switchManager"]),
 
     toggleSideBar() {
-      this.$store.dispatch("app/toggleSideBar");
-    },
+    console.log("=== toggleSideBar 被调用 ===");
+    console.log("调用前 - expandedItem:", this.expandedItem);
+    
+    // 只关闭子菜单，不改变侧边栏展开/收缩状态
+    if (this.expandedItem) {
+      this.handleCollapseSubmenu();
+      console.log("子菜单已关闭");
+    } else {
+      console.log("没有展开的子菜单需要关闭");
+    }
+    
+    console.log("=== toggleSideBar 结束 ===");
+  },
 
     handleAvatarError(e) {
       e.target.src =
@@ -613,108 +624,141 @@ export default {
 
     // 根据路由更新选中状态
     updateSelectionFromRoute(routePath) {
-      console.log("=== updateSelectionFromRoute 开始 ===");
-      console.log("目标路由:", routePath);
-      console.log("当前展开的子菜单:", this.currentSubmenu);
+    console.log("=== updateSelectionFromRoute 开始 ===");
+    console.log("目标路由:", routePath);
+    console.log("当前展开的子菜单:", this.currentSubmenu);
+    
+    // 检查是否为首页路由（不显示子菜单的路由）
+    const isHomePage = this.isHomePageRoute(routePath);
+    console.log("是否为首页路由:", isHomePage);
+    
+    if (isHomePage) {
+      // 如果是首页路由，直接关闭所有子菜单
+      console.log("检测到首页路由，关闭所有子菜单");
+      this.handleCollapseSubmenu();
       
-      // 查找匹配的菜单项
-      const findMatchingMenu = (routes, targetPath) => {
-        for (const route of routes) {
-          // 检查当前路由
-          if (route.path === targetPath) {
-            return { 
-              path: route.path, 
-              isParent: false, 
-              parentItem: null,
-              matchedRoute: route
-            };
-          }
-
-          // 检查子路由
-          if (route.children) {
-            for (const child of route.children) {
-              if (!child.hidden) {
-                const childPath = path.resolve(route.path, child.path);
-                if (childPath === targetPath) {
-                  return { 
-                    path: childPath, 
-                    isParent: false, 
-                    parentItem: route,
-                    matchedRoute: child,
-                    isChildRoute: true
-                  };
-                }
-              }
-            }
-          }
-        }
-        return null;
-      };
-
-      const matchingResult = findMatchingMenu(this.permission_routes, routePath);
-      console.log("匹配结果:", matchingResult);
-      
+      // 查找匹配的菜单项并设置选中状态
+      const matchingResult = this.findMatchingMenu(this.permission_routes, routePath);
       if (matchingResult) {
-        // 记录当前路由对应的菜单项
+        this.currentRouteItem = matchingResult.path;
+        this.setSelectedItem(matchingResult.path);
+      }
+      
+      console.log("=== updateSelectionFromRoute 结束（首页路由） ===");
+      return;
+    }
+
+    // 查找匹配的菜单项
+    const matchingResult = this.findMatchingMenu(this.permission_routes, routePath);
+    console.log("匹配结果:", matchingResult);
+    
+    if (matchingResult) {
+      // 记录当前路由对应的菜单项
+      this.currentRouteItem = matchingResult.path;
+      
+      // 如果是子路由，需要展开对应的父菜单
+      if (matchingResult.isChildRoute && matchingResult.parentItem) {
+        console.log("检测到子路由，父菜单:", matchingResult.parentItem);
+        
+        // 如果当前没有展开任何子菜单，或者展开的不是正确的父菜单
+        if (!this.expandedItem || this.expandedItem !== matchingResult.parentItem.path) {
+          console.log("需要展开父菜单:", matchingResult.parentItem.path);
+          
+          // 记录原始选中项（如果还没有记录的话）
+          if (!this.expandedItem) {
+            this.originalSelectedItem = this.selectedItem;
+          }
+          
+          // 展开正确的父菜单
+          this.expandedItem = matchingResult.parentItem.path;
+          this.currentSubmenu = matchingResult.parentItem;
+          this.basePath = matchingResult.parentItem.path;
+          
+          // 设置父菜单为选中状态
+          this.selectedItem = matchingResult.parentItem.path;
+          
+          console.log("父菜单已展开，设置状态:");
+          console.log("expandedItem:", this.expandedItem);
+          console.log("selectedItem:", this.selectedItem);
+        }
+        
+        // 无论如何都要更新当前路由项
         this.currentRouteItem = matchingResult.path;
         
-        // 如果是子路由，需要展开对应的父菜单
-        if (matchingResult.isChildRoute && matchingResult.parentItem) {
-          console.log("检测到子路由，父菜单:", matchingResult.parentItem);
+      } else {
+        // 如果不是子路由，检查是否需要关闭当前展开的子菜单
+        if (this.expandedItem) {
+          console.log("当前路由不是子路由，检查是否需要关闭子菜单");
           
-          // 如果当前没有展开任何子菜单，或者展开的不是正确的父菜单
-          if (!this.expandedItem || this.expandedItem !== matchingResult.parentItem.path) {
-            console.log("需要展开父菜单:", matchingResult.parentItem.path);
-            
-            // 记录原始选中项（如果还没有记录的话）
-            if (!this.expandedItem) {
-              this.originalSelectedItem = this.selectedItem;
-            }
-            
-            // 展开正确的父菜单
-            this.expandedItem = matchingResult.parentItem.path;
-            this.currentSubmenu = matchingResult.parentItem;
-            this.basePath = matchingResult.parentItem.path;
-            
-            // 设置父菜单为选中状态
-            this.selectedItem = matchingResult.parentItem.path;
-            
-            console.log("父菜单已展开，设置状态:");
-            console.log("expandedItem:", this.expandedItem);
-            console.log("selectedItem:", this.selectedItem);
-          }
-          
-          // 无论如何都要更新当前路由项
-          this.currentRouteItem = matchingResult.path;
-          
-        } else {
-          // 如果不是子路由，检查是否需要关闭当前展开的子菜单
-          if (this.expandedItem) {
-            console.log("当前路由不是子路由，检查是否需要关闭子菜单");
-            
-            // 检查当前路由是否就是展开的父菜单本身
-            if (matchingResult.path === this.expandedItem) {
-              console.log("当前路由就是展开的父菜单，保持子菜单展开");
-              this.selectedItem = matchingResult.path;
-            } else {
-              console.log("当前路由不属于展开的子菜单，关闭子菜单");
-              this.handleCollapseSubmenu();
-              this.setSelectedItem(matchingResult.path);
-            }
+          // 检查当前路由是否就是展开的父菜单本身
+          if (matchingResult.path === this.expandedItem) {
+            console.log("当前路由就是展开的父菜单，保持子菜单展开");
+            this.selectedItem = matchingResult.path;
           } else {
-            // 没有展开的子菜单，正常设置选中项
-            console.log("没有展开的子菜单，正常设置选中项");
+            console.log("当前路由不属于展开的子菜单，关闭子菜单");
+            this.handleCollapseSubmenu();
             this.setSelectedItem(matchingResult.path);
+          }
+        } else {
+          // 没有展开的子菜单，正常设置选中项
+          console.log("没有展开的子菜单，正常设置选中项");
+          this.setSelectedItem(matchingResult.path);
+        }
+      }
+    }
+    
+    console.log("=== updateSelectionFromRoute 结束 ===");
+    console.log("最终状态 - selectedItem:", this.selectedItem);
+    console.log("最终状态 - expandedItem:", this.expandedItem);
+    console.log("最终状态 - currentRouteItem:", this.currentRouteItem);
+  },
+  // 新增：判断是否为首页路由的方法
+  isHomePageRoute(routePath) {
+    // 定义不需要显示子菜单的首页路由
+    const homePageRoutes = [
+      '/dashboard',
+      '/console/dashboard', 
+      '/admin/dashboard',
+      '/',
+      '/home'
+    ];
+    
+    return homePageRoutes.includes(routePath);
+  },
+
+  // 新增：提取查找匹配菜单的逻辑
+  findMatchingMenu(routes, targetPath) {
+    for (const route of routes) {
+      // 检查当前路由
+      if (route.path === targetPath) {
+        return { 
+          path: route.path, 
+          isParent: false, 
+          parentItem: null,
+          matchedRoute: route
+        };
+      }
+
+      // 检查子路由
+      if (route.children) {
+        for (const child of route.children) {
+          if (!child.hidden) {
+            const childPath = path.resolve(route.path, child.path);
+            if (childPath === targetPath) {
+              return { 
+                path: childPath, 
+                isParent: false, 
+                parentItem: route,
+                matchedRoute: child,
+                isChildRoute: true
+              };
+            }
           }
         }
       }
-      
-      console.log("=== updateSelectionFromRoute 结束 ===");
-      console.log("最终状态 - selectedItem:", this.selectedItem);
-      console.log("最终状态 - expandedItem:", this.expandedItem);
-      console.log("最终状态 - currentRouteItem:", this.currentRouteItem);
-    },
-
+    }
+    return null;
+  },
     // 切换子菜单显示
     toggleSubmenu(item) {
       console.log("=== toggleSubmenu 被调用 ===");
