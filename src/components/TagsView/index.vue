@@ -13,7 +13,8 @@
           @click.middle.native="!isAffix(tag) ? closeSelectedTag(tag) : ''"
           @contextmenu.prevent.native="openMenu(tag, $event)"
         >
-          <span class="tag-title">{{ tag.title }}</span>
+          <!-- 修复：增强title显示逻辑 -->
+          <span class="tag-title">{{ getTagTitle(tag) }}</span>
           <span
             v-if="!isAffix(tag)"
             class="tag-close-icon"
@@ -58,9 +59,6 @@
     </ul>
   </div>
 </template>
-
-
-// TagsView.vue 完整修正版本
 
 <script>
 import path from "path";
@@ -181,6 +179,21 @@ export default {
     this.$nextTick(() => {
       this.isInitialized = true;
       console.log('TagsView: 初始化完成');
+      
+      // 添加调试信息
+      setTimeout(() => {
+        console.log('=== TagsView 调试信息 ===');
+        console.log('visitedViews:', this.visitedViews);
+        this.visitedViews.forEach((tag, index) => {
+          console.log(`标签${index}:`, {
+            path: tag.path,
+            title: tag.title,
+            metaTitle: tag.meta?.title,
+            computedTitle: this.getTagTitle(tag)
+          });
+        });
+        console.log('=== TagsView 调试信息结束 ===');
+      }, 1000);
     });
   },
   beforeDestroy() {
@@ -189,6 +202,28 @@ export default {
     this.$bus && this.$bus.$off('manager-switched', this.handleManagerSwitchEvent);
   },
   methods: {
+    // 修复：增强的title获取方法
+    getTagTitle(tag) {
+      // 优先级：tag.title > tag.meta.title > tag.name > 路径名 > 兜底文本
+      const title = tag.title || 
+                   (tag.meta && tag.meta.title) || 
+                   tag.name || 
+                   (tag.path && tag.path.split('/').pop()) || 
+                   '未命名页面'
+      
+      // 调试日志
+      if (tag.path && tag.path.includes('dashboard')) {
+        console.log('首页标签title计算:', {
+          tagTitle: tag.title,
+          metaTitle: tag.meta?.title,
+          tagName: tag.name,
+          finalTitle: title
+        });
+      }
+      
+      return title;
+    },
+
     shouldAddToTagsView(route) {
       // 过滤redirect路径
       if (route.path.startsWith('/redirect/')) {
@@ -243,11 +278,14 @@ export default {
       routes.forEach((route) => {
         if (route.meta && route.meta.affix) {
           const tagPath = path.resolve(basePath, route.path);
+          // 修复：确保title正确传递
+          const title = route.meta.title || route.name || '首页'
           tags.push({
             fullPath: tagPath,
             path: tagPath,
             name: route.name,
-            meta: { ...route.meta },
+            title: title, // 添加title字段
+            meta: { ...route.meta, title: title },
           });
         }
         if (route.children) {
@@ -276,7 +314,12 @@ export default {
     addTags() {
       const { name } = this.$route;
       if (name) {
-        this.$store.dispatch("tagsView/addView", this.$route);
+        // 修复：确保路由信息完整传递，包括title
+        const routeInfo = {
+          ...this.$route,
+          title: this.$route.meta?.title || this.$route.name
+        }
+        this.$store.dispatch("tagsView/addView", routeInfo);
         // 确保首页标签始终在第一位
         this.ensureHomeTagFirst();
       }
@@ -691,12 +734,12 @@ export default {
         case "console":
           return {
             path: "/console/dashboard",
-            meta: { title: "控制台", affix: true },
+            meta: { title: "首页", affix: true },
           };
         case "admin":
           return {
             path: "/admin/dashboard",
-            meta: { title: "管理后台首页", affix: true },
+            meta: { title: "管理后台大屏", affix: true },
           };
         default:
           // 兜底逻辑：根据当前路径判断
@@ -704,12 +747,12 @@ export default {
           if (currentPath.startsWith("/console")) {
             return {
               path: "/console/dashboard",
-              meta: { title: "控制台", affix: true },
+              meta: { title: "首页", affix: true },
             };
           } else if (currentPath.startsWith("/admin")) {
             return {
               path: "/admin/dashboard",
-              meta: { title: "管理后台首页", affix: true },
+              meta: { title: "管理后台大屏", affix: true },
             };
           }
           return null;
@@ -805,16 +848,6 @@ export default {
   max-width: 160px;
   min-width: 60px;
 
-  /* 第一个标签的特殊样式 */
-  &:first-of-type {
-    margin-left: 0;
-  }
-
-  /* 最后一个标签的特殊样式 */
-  &:last-of-type {
-    margin-right: 12px;
-  }
-
   /* 激活状态 */
   &.active {
     background: linear-gradient(135deg, #e6f4ff 0%, #f0f9ff 100%);
@@ -862,7 +895,7 @@ export default {
     }
   }
 
-  /* 标签标题 */
+  /* 标签标题 - 修复：确保文字显示 */
   .tag-title {
     flex: 1;
     overflow: hidden;
@@ -870,6 +903,10 @@ export default {
     white-space: nowrap;
     font-weight: 500;
     min-width: 0;
+    /* 修复：确保文字可见 */
+    display: block;
+    line-height: inherit;
+    color: inherit;
   }
 
   /* 关闭按钮优化 */
@@ -990,253 +1027,6 @@ export default {
       height: 1px;
       background: var(--border-light, #f0f0f0);
     }
-  }
-}
-
-/* 响应式优化 */
-@media (max-width: 768px) {
-  .tags-view-container {
-    height: 36px;
-
-    .tags-view-scroll {
-      padding: 0 8px;
-    }
-  }
-
-  .tags-view-item {
-    height: 24px;
-    line-height: 24px;
-    font-size: 11px;
-    padding: 0 8px 0 6px;
-    margin-right: 4px;
-    max-width: 120px;
-
-    .tag-title {
-      font-size: 11px;
-    }
-
-    .tag-close-icon {
-      width: 16px;
-      height: 16px;
-      margin-left: 4px;
-
-      i {
-        font-size: 9px;
-      }
-    }
-
-    &::before {
-      width: 4px;
-      height: 4px;
-      margin-right: 4px;
-    }
-  }
-}
-
-/* 深色主题适配 */
-@media (prefers-color-scheme: dark) {
-  .tags-view-container {
-    background: var(--dark-bg-2, #1f2937);
-    border-bottom-color: var(--dark-border, #374151);
-  }
-
-  .tags-view-item {
-    background: var(--dark-bg-3, #374151);
-    border-color: var(--dark-border, #4b5563);
-    color: var(--dark-text, #e5e7eb);
-
-    &:hover:not(.active) {
-      background: var(--dark-bg-hover, #4b5563);
-      border-color: var(--dark-border-hover, #6b7280);
-    }
-  }
-
-  .contextmenu {
-    background: var(--dark-bg-2, #1f2937);
-    border-color: var(--dark-border, #374151);
-    color: var(--dark-text, #e5e7eb);
-
-    li:hover {
-      background: var(--dark-bg-hover, #374151);
-    }
-  }
-}
-
-/* 动画增强 */
-@keyframes tagSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-.tags-view-item {
-  animation: tagSlideIn 0.3s ease-out;
-}
-
-/* 滚动动画 */
-.tags-view-scroll {
-  scroll-behavior: smooth;
-}
-
-/* 额外的视觉增强 */
-.tags-view-item {
-  /* 添加微妙的渐变背景 */
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.1),
-    rgba(0, 0, 0, 0.02)
-  );
-
-  /* 边框渐变效果 */
-  background-clip: padding-box;
-
-  &.active {
-    /* 激活状态的动态效果 */
-    position: relative;
-
-    &::after {
-      content: "";
-      position: absolute;
-      top: -1px;
-      left: -1px;
-      right: -1px;
-      bottom: -1px;
-      background: linear-gradient(45deg, #e6f4ff, #f0f9ff, #e6f4ff);
-      border-radius: 6px;
-      z-index: -1;
-      opacity: 0.3;
-      filter: blur(1px);
-    }
-  }
-}
-
-/* 首页标签特殊标识 */
-.tags-view-item:first-child {
-  /* 给第一个标签（首页）添加特殊标识 */
-  position: relative;
-  
-  &::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: linear-gradient(to bottom, #1890ff, #40a9ff);
-    border-radius: 0 3px 3px 0;
-    opacity: 0.8;
-  }
-  
-  /* 确保首页标签有特殊的视觉效果 */
-  &.active::after {
-    opacity: 1;
-    box-shadow: 0 0 8px rgba(24, 144, 255, 0.3);
-  }
-}
-
-/* 标签拖拽效果（预留，如果后续需要拖拽排序功能） */
-.tags-view-item.dragging {
-  opacity: 0.8;
-  transform: scale(1.05);
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* 空状态样式（当没有标签时） */
-.tags-view-container:empty::after {
-  content: "暂无标签页";
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--text-muted, #909399);
-  font-size: 14px;
-}
-
-/* 滚动指示器（当内容超出容器时显示） */
-.tags-view-wrapper {
-  position: relative;
-  
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 20px;
-    pointer-events: none;
-    z-index: 10;
-    transition: opacity 0.3s ease;
-    opacity: 0;
-  }
-  
-  &::before {
-    left: 0;
-    background: linear-gradient(to right, var(--card-bg), transparent);
-  }
-  
-  &::after {
-    right: 0;
-    background: linear-gradient(to left, var(--card-bg), transparent);
-  }
-  
-  &.has-scroll-left::before {
-    opacity: 1;
-  }
-  
-  &.has-scroll-right::after {
-    opacity: 1;
-  }
-}
-
-/* 提升无障碍访问性 */
-.tags-view-item[aria-selected="true"] {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 1px;
-}
-
-.contextmenu {
-  /* 改善右键菜单的无障碍访问 */
-  li {
-    &:focus {
-      background: var(--hover-bg, #f5f7fa);
-      color: var(--primary-color, #409eff);
-      outline: none;
-    }
-    
-    &[aria-disabled="true"] {
-      opacity: 0.5;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-  }
-}
-
-/* 高对比度模式支持 */
-@media (prefers-contrast: high) {
-  .tags-view-item {
-    border-width: 2px;
-    
-    &.active {
-      border-color: #000;
-      background: #fff;
-      color: #000;
-    }
-  }
-}
-
-/* 减少动画模式支持 */
-@media (prefers-reduced-motion: reduce) {
-  .tags-view-item,
-  .contextmenu li,
-  .tags-view-scroll {
-    transition: none;
-    animation: none;
   }
 }
 </style>
