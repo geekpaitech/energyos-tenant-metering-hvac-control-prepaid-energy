@@ -1,0 +1,441 @@
+// 原有的菜单变量（保留）
+$menuText: #bfcbd9;
+$menuActiveText: #409EFF;
+$subMenuActiveText: #f4f4f5;
+
+$menuBg: #304156;
+$menuHover: #263445;
+
+$subMenuBg: #1f2d3d;
+$subMenuHover: #001528;
+
+$sideBarWidth: 210px;
+
+// 原有的 :export（保留）
+:export {
+  menuText: $menuText;
+  menuActiveText: $menuActiveText;
+  subMenuActiveText: $subMenuActiveText;
+  menuBg: $menuBg;
+  menuHover: $menuHover;
+  subMenuBg: $subMenuBg;
+  subMenuHover: $subMenuHover;
+  sideBarWidth: $sideBarWidth;
+}
+
+// 平衡的字体大小设置
+:root {
+  // 默认字体大小（中字号）
+  --base-font-size: 14px;
+  --table-font-size: 14px;
+  --button-font-size: 13px;
+  --label-font-size: 13px;
+  --title-font-size: 16px;
+  --table-cell-padding: 12px 0;
+  --button-padding: 8px 14px;
+  --input-height: 34px;
+  --search-input-width: 190px;
+  --action-column-width: 190px;
+
+  // 小字号
+  &.font-size-small {
+    --base-font-size: 13px;
+    --table-font-size: 13px;
+    --button-font-size: 12px;
+    --label-font-size: 12px;
+    --title-font-size: 15px;
+    --table-cell-padding: 10px 0;
+    --button-padding: 6px 12px;
+    --input-height: 32px;
+    --search-input-width: 170px;
+    --action-column-width: 170px;
+  }
+  
+  // 大字号
+  &.font-size-large {
+    --base-font-size: 15px;
+    --table-font-size: 15px;
+    --button-font-size: 14px;
+    --label-font-size: 14px;
+    --title-font-size: 18px;
+    --table-cell-padding: 14px 0;
+    --button-padding: 10px 16px;
+    --input-height: 36px;
+    --search-input-width: 210px;
+    --action-column-width: 210px;
+  }
+
+  // 默认主题：清新青绿 - 自然清爽的绿色调
+  --primary-color: #26a69a;
+  --primary-hover: #00897b;
+  --primary-gradient: linear-gradient(135deg, #26a69a 0%, #42b8ac 100%);
+  --sidebar-bg: linear-gradient(145deg, #ffffff 0%, #f5faf9 100%);
+  --sidebar-logo-bg: linear-gradient(135deg, #26a69a 0%, #42b8ac 100%);
+  --navbar-bg: rgba(255, 255, 255, 0.95);
+  --main-bg: linear-gradient(135deg, #f8faf9 0%, #f0f5f4 100%);
+  --card-bg: #ffffff;
+  --search-bg: #e8f5f3;
+  --text-primary: #2c3e50;
+  --text-secondary: #34495e;
+  --text-muted: #7f8c8d;
+  --border-color: #b2dfdb;
+  --border-secondary: #c8e6e2;
+  --hover-bg: #e8f5f3;
+  --active-bg: linear-gradient(135deg, #00897b 0%, #26a69a 100%);
+  --button-shadow: rgba(38, 166, 154, 0.3);
+  --secondary-color: #4db6ac;
+  
+  // 统一的菜单配色 - 深灰蓝，适配所有亮色主题
+  --menu-bg: linear-gradient(145deg, #2c3e50 0%, #34495e 100%);
+  --menu-text: rgba(255, 255, 255, 0.85);
+  --menu-text-hover: rgba(255, 255, 255, 0.95);
+  --menu-active-bg: rgba(255, 255, 255, 0.15);
+  --menu-hover-bg: rgba(255, 255, 255, 0.08);
+  --menu-border: rgba(255, 255, 255, 0.12);
+  --submenu-bg: #fafbfc;
+  --submenu-hover-bg: #e8f0fe;
+  --submenu-text: #2c3e50;
+  --submenu-active-text: #ffffff;
+  --submenu-active-bg: #26a69a;
+
+  // 清新青绿主题
+  &.theme-teal {
+    --primary-color: #26a69a;
+    --primary-hover: #00897b;
+    --primary-gradient: linear-gradient(135deg, #26a69a 0%, #42b8ac 100%);
+    --sidebar-bg: linear-gradient(145deg, #ffffff 0%, #f5faf9 100%);
+    --sidebar-logo-bg: linear-gradient(135deg, #26a69a 0%, #42b8ac 100%);
+    --navbar-bg: rgba(255, 255, 255, 0.95);
+    --main-bg: linear-gradient(135deg, #f8faf9 0%, #f0f5f4 100%);
+    --card-bg: #ffffff;
+    --search-bg: #e8f5f3;
+    --text-primary: #2c3e50;
+    --text-secondary: #34495e;
+    --text-muted: #7f8c8d;
+    --border-color: #b2dfdb;
+    --border-secondary: #c8e6e2;
+    --hover-bg: #e8f5f3;
+    --active-bg: linear-gradient(135deg, #00897b 0%, #26a69a 100%);
+    --button-shadow: rgba(38, 166, 154, 0.3);
+    --secondary-color: #4db6ac;
+    --submenu-active-bg: #26a69a;
+  }
+
+  // 简洁蓝白主题 - 专业商务风格
+  &.theme-white {
+    --primary-color: #3b82f6;
+    --primary-hover: #2563eb;
+    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    --sidebar-bg: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    --sidebar-logo-bg: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    --navbar-bg: rgba(255, 255, 255, 0.95);
+    --main-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    --card-bg: #ffffff;
+    --search-bg: #f8fafc;
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --border-secondary: #f3f4f6;
+    --hover-bg: #f9fafb;
+    --active-bg: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    --button-shadow: rgba(59, 130, 246, 0.25);
+    --secondary-color: #60a5fa;
+    --submenu-active-bg: #3b82f6;
+    
+    // 简洁白主题使用质感灰色菜单 - B端专业风格
+    --menu-bg: linear-gradient(145deg, #64748b 0%, #475569 100%);
+    --menu-text: rgba(255, 255, 255, 0.9);
+    --menu-text-hover: rgba(255, 255, 255, 1);
+    --menu-active-bg: rgba(255, 255, 255, 0.15);
+    --menu-hover-bg: rgba(255, 255, 255, 0.1);
+    --menu-border: rgba(255, 255, 255, 0.15);
+    --submenu-bg: #f8fafc;
+    --submenu-hover-bg: #eff6ff;
+    --submenu-text: #475569;
+    --submenu-active-text: #ffffff;
+  }
+
+  // 深邃暗夜主题 - 护眼深色风格
+  &.theme-dark {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cfc 100%);
+    --sidebar-bg: linear-gradient(145deg, #0f0f23 0%, #1a1a2e 100%);
+    --sidebar-logo-bg: linear-gradient(135deg, #6366f1 0%, #8b5cfc 100%);
+    --navbar-bg: rgba(15, 15, 35, 0.95);
+    --main-bg: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    --card-bg: #1c2128;
+    --search-bg: #21262d;
+    --hover-bg: #262c36;
+    --border-color: #30363d;
+    --border-secondary: #373e47;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --active-bg: linear-gradient(135deg, #5048e5 0%, #7c3aed 100%);
+    --button-shadow: rgba(99, 102, 241, 0.4);
+    --secondary-color: #7c3aed;
+    --submenu-active-bg: #6366f1;
+    
+    // 深色主题的菜单配色 - 更深的色调，保持一致性
+    --menu-bg: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+    --menu-text: rgba(255, 255, 255, 0.85);
+    --menu-text-hover: rgba(255, 255, 255, 0.95);
+    --menu-active-bg: rgba(139, 92, 252, 0.2);
+    --menu-hover-bg: rgba(139, 92, 252, 0.1);
+    --menu-border: rgba(139, 92, 252, 0.15);
+    --submenu-bg: #21262d;
+    --submenu-hover-bg: #30363d;
+    --submenu-text: #c9d1d9;
+    --submenu-active-text: #ffffff;
+  }
+}
+
+// 应用字体大小和主题到全局
+body {
+  font-size: var(--base-font-size);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+// Element UI组件样式应用
+.el-input__inner {
+  font-size: var(--base-font-size) !important;
+  height: var(--input-height) !important;
+  line-height: var(--input-height) !important;
+  border-color: var(--border-color) !important;
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  
+  &::placeholder {
+    color: var(--text-muted) !important;
+  }
+  
+  &:focus {
+    border-color: var(--primary-color) !important;
+  }
+}
+
+.el-button {
+  font-size: var(--button-font-size) !important;
+  padding: var(--button-padding) !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  
+  &--primary {
+    background: var(--primary-gradient) !important;
+    border: none !important;
+    box-shadow: 0 2px 8px var(--button-shadow) !important;
+    
+    &:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px var(--button-shadow) !important;
+    }
+  }
+}
+
+// 表格样式
+.el-table {
+  font-size: var(--table-font-size) !important;
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  
+  &::before,
+  &::after {
+    display: none !important;
+  }
+  
+  td, th {
+    padding: var(--table-cell-padding) !important;
+    border-color: var(--border-color) !important;
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    border-right: 1px solid var(--border-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  
+  th {
+    background-color: var(--search-bg) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  tr:hover td {
+    background-color: var(--hover-bg) !important;
+  }
+  
+  .el-table__body-wrapper {
+    background-color: var(--card-bg) !important;
+  }
+  
+  .el-table__header-wrapper {
+    background-color: var(--card-bg) !important;
+  }
+  
+  .el-table__border-left-patch,
+  .el-table__border-right-patch {
+    display: none !important;
+  }
+  
+  .el-table__fixed,
+  .el-table__fixed-right {
+    background-color: var(--card-bg) !important;
+    
+    &::before {
+      background-color: var(--border-color) !important;
+    }
+  }
+}
+
+.el-form-item__label {
+  font-size: var(--label-font-size) !important;
+  color: var(--text-primary) !important;
+}
+
+.el-select .el-input__inner {
+  cursor: pointer !important;
+}
+
+.el-dialog {
+  background-color: var(--card-bg) !important;
+  border-radius: 12px !important;
+  
+  .el-dialog__header {
+    background-color: var(--search-bg) !important;
+    border-radius: 12px 12px 0 0 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  
+  .el-dialog__title {
+    color: var(--text-primary) !important;
+    font-size: var(--title-font-size) !important;
+  }
+}
+
+// 左侧菜单样式修复
+.sidebar-container {
+  .el-menu {
+    border-right: solid 1px var(--border-color) !important;
+  }
+  
+  .el-submenu__title {
+    color: var(--text-secondary) !important;
+    
+    &:hover {
+      background-color: var(--hover-bg) !important;
+    }
+  }
+  
+  .el-menu-item {
+    color: var(--text-secondary) !important;
+    
+    &:hover {
+      background-color: var(--hover-bg) !important;
+    }
+    
+    &.is-active {
+      color: var(--primary-color) !important;
+      background-color: var(--hover-bg) !important;
+    }
+  }
+}
+
+// 修复顶部导航栏标题颜色
+.navbar {
+  background: var(--navbar-bg) !important;
+  
+  .breadcrumb-container {
+    .el-breadcrumb {
+      .el-breadcrumb__item {
+        .el-breadcrumb__inner {
+          color: var(--text-secondary) !important;
+          
+          &:hover {
+            color: var(--text-primary) !important;
+          }
+        }
+      }
+    }
+  }
+  
+  .app-breadcrumb {
+    color: var(--text-secondary) !important;
+  }
+  
+  .right-menu {
+    color: var(--text-secondary) !important;
+  }
+}
+
+// 修复表格分页区域颜色
+.el-pagination {
+  color: var(--text-secondary) !important;
+  
+  .el-pagination__total {
+    color: var(--text-secondary) !important;
+  }
+  
+  .el-pagination__jump {
+    color: var(--text-secondary) !important;
+  }
+  
+  .el-pagination__sizes {
+    .el-select {
+      .el-input__inner {
+        color: var(--text-primary) !important;
+        background-color: var(--card-bg) !important;
+        border-color: var(--border-color) !important;
+      }
+    }
+  }
+  
+  .btn-prev,
+  .btn-next {
+    color: var(--text-secondary) !important;
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+    
+    &:hover {
+      color: var(--primary-color) !important;
+      background-color: var(--hover-bg) !important;
+    }
+    
+    &:disabled {
+      color: var(--text-muted) !important;
+      background-color: var(--search-bg) !important;
+    }
+  }
+  
+  .el-pager {
+    li {
+      color: var(--text-secondary) !important;
+      background-color: var(--card-bg) !important;
+      border: 1px solid var(--border-color) !important;
+      margin: 0 2px !important;
+      border-radius: 6px !important;
+      
+      &:hover {
+        color: var(--text-primary) !important;
+        background-color: var(--hover-bg) !important;
+        border-color: var(--primary-color) !important;
+      }
+      
+      &.active {
+        color: #ffffff !important;
+        background: var(--primary-gradient) !important;
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 2px 8px var(--button-shadow) !important;
+      }
+      
+      &.btn-quicknext,
+      &.btn-quickprev {
+        color: var(--text-muted) !important;
+        
+        &:hover {
+          color: var(--primary-color) !important;
+        }
+      }
+    }
+  }
+}

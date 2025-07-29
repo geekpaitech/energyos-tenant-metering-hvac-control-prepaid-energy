@@ -1,0 +1,39 @@
+// 引入变量文件
+@import './variables.scss';
+
+// 全局基础样式
+* {
+  box-sizing: border-box;
+}
+
+html {
+  // 确保CSS变量在根元素生效
+  font-size: 14px;
+  
+  // 默认主题class（页面初始化时应用）
+  &:not([class*="theme-"]) {
+    @extend :root;
+  }
+  
+  // 默认字体大小class（页面初始化时应用）  
+  &:not([class*="font-size-"]) {
+    @extend :root;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: var(--base-font-size);
+  color: var(--text-primary);
+  background-color: var(--main-bg);
+  transition: all 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// 确保变量在任何情况下都有效
+#app {
+  min-height: 100vh;
+}
