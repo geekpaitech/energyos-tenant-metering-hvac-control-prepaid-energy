@@ -796,8 +796,8 @@ export default {
   height: 40px;
   width: 100%;
   background: var(--card-bg, #fff);
-  border-bottom: 1px solid var(--border-color, #e4e7ed);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  // border-bottom: 1px solid var(--border-color, #e4e7ed);
+  // box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
   .tags-view-wrapper {
     height: 100%;
