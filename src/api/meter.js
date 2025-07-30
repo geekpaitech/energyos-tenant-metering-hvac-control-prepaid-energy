@@ -91,3 +91,41 @@ export function meterUpdateLogicPayType(data) {
     data
   })
 }
+// 分页查询电表信息（普通用户）
+export function meterPageMeterInfo(data) {
+  return request({
+    url: '/api/ebc-content/meter/pageMeterInfo',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 电表余额归零
+export function meterZeroBalance(params) {
+  return request({
+    url: '/api/ebc-device/meter/zeroBalance',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    params
+  })
+}
+
+// 修改电表基本信息 - 老项目使用的是 meterUpdataeMeterBase（注意拼写）
+export function meterUpdataeMeterBase(data) {
+  return request({
+    url: '/api/ebc-device/meter/updateMeterBase',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}

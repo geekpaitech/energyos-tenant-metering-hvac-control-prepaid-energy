@@ -27,30 +27,57 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12" :md="8" :lg="6">
-              <el-form-item label="项目名称/编号" prop="managerId">
+              <el-form-item label="电表编号" prop="managerId">
                 <el-input 
-                  v-model="queryData.managerId" 
-                  placeholder="项目名称或编号"
+                  v-model="queryData.id" 
+                  placeholder="电表编号"
                   clearable
                   prefix-icon="el-icon-office-building"
                 />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12" :md="8" :lg="6">
-              <el-form-item label="已绑租户" prop="bindId">
-                <el-input 
-                  v-model="queryData.bindId" 
-                  placeholder="租户名称或编码"
-                  clearable
-                  prefix-icon="el-icon-user"
-                />
-              </el-form-item>
-            </el-col>
+                <el-form-item label="电表类型" prop="bindType">
+                  <el-select 
+                    v-model="queryData.bindType" 
+                    placeholder="请选择"
+                    clearable
+                    style="width: 100%"
+                  >
+                    <el-option label="全部" value="" />
+                    <el-option label="专用表" value="1" />
+                    <el-option label="公摊表" value="2" />
+                    <el-option label="公式表" value="3" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+           
           </el-row>
           
           <!-- 高级筛选 -->
           <el-collapse-transition>
             <el-row :gutter="20" v-show="showAdvanced">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="绑定信息" >
+                  <el-select 
+                    v-model="queryData.bindId" 
+                    placeholder="请选择绑定租户"
+                    clearable
+                    filterable
+                    style="width: 100%"
+                  >
+                    <el-option label="全部" value="" />
+                    <el-option 
+                      v-for="tenant in tenantList" 
+                      :key="tenant.tenantId" 
+                      :label="`${tenant.tenantId}(${tenant.tenantName})`" 
+                      :value="tenant.tenantId"
+                    >
+                      <span>{{ tenant.tenantId }}({{ tenant.tenantName }})</span>
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
                 <el-form-item label="在线状态" prop="onlineStatus">
                   <el-select 
@@ -75,21 +102,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="电表类型" prop="bindType">
-                  <el-select 
-                    v-model="queryData.bindType" 
-                    placeholder="请选择"
-                    clearable
-                    style="width: 100%"
-                  >
-                    <el-option label="全部" value="" />
-                    <el-option label="专用表" value="1" />
-                    <el-option label="公摊表" value="2" />
-                    <el-option label="公式表" value="3" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
+             
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
                 <el-form-item label="分合闸状态" prop="switchStatus">
                   <el-select 
@@ -104,16 +117,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="设备编号" prop="id">
-                  <el-input 
-                    v-model="queryData.id" 
-                    placeholder="请输入设备编号"
-                    clearable
-                    prefix-icon="el-icon-search"
-                  />
-                </el-form-item>
-              </el-col>
+              
             </el-row>
           </el-collapse-transition>
           
@@ -507,6 +511,7 @@ import {
   meterUpdateLogicPayType
 } from '@/api/meter'
 
+import {tenantPageTenant} from '@/api/tenant'
 // 导入枚举
 import { 
   MeterBindType, 
@@ -536,6 +541,8 @@ export default {
         serial: '',
         switchStatus: ''
       },
+      // 租户列表数据
+      tenantList: [],
       // 表格数据
       tableData: [],
       // 加载状态
@@ -607,13 +614,13 @@ export default {
           disabled: true
         },
         {
-          label: '设备编号',
+          label: '电表编号',
           key: 'id',
           checked: true,
           width: '120'
         },
         {
-          label: '设备名称',
+          label: '电表名称',
           key: 'meterName',
           width: '200',
           checked: true,
@@ -635,11 +642,6 @@ export default {
           checked: true,
           disabled: true,
           id: 610011
-        },
-        {
-          label: '项目编号',
-          key: 'managerId',
-          width: '120'
         },
         {
           label: '已绑租户',
@@ -736,15 +738,38 @@ export default {
         if (newVal) {
           this.queryData.managerId = newVal
           this.fetchTableData()
+          this.getTenantPageTenant()
         }
       },
       immediate: true,
     },
   },
-  mounted() {
-    // 页面加载时会通过 watch 自动获取数据
-  },
+
   methods: {
+    // 获取租户信息
+    async getTenantPageTenant(){
+      try {
+        const params = {
+          tenantStatus: 0,
+          managerId: this.queryData.managerId,
+        }
+        const response = await tenantPageTenant(params)
+        console.log(JSON.stringify(response.data), 'response')
+        
+        if (response.code === 200 && response.data) {
+          // 假设返回的数据格式为数组
+          this.tenantList = response.data || []
+        } else {
+          this.$message.error(response.msg || '获取租户列表失败')
+          this.tenantList = []
+        }
+      } catch (error) {
+        console.error('获取租户列表失败:', error)
+        this.$message.error('获取租户列表失败')
+        this.tenantList = []
+      }
+    },
+
     // 获取电表列表数据
     async fetchTableData() {
       this.loading = true
