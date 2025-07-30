@@ -347,6 +347,46 @@ export const consoleRoutes = [
             meta: { title: '发票额度流水', icon: 'el-icon-notebook-1' }
           }
         ]
+      },
+      
+      // ==================== 新增：停车收费分组 ====================
+      // 停车管理
+      {
+        path: 'parking-management',
+        name: 'ApplicationParkingManagement',
+        redirect: '/application/parking-management/parking-list',
+        meta: { 
+          title: '管理', 
+          icon: 'el-icon-guide',
+          parentGroup: '停车收费'  // 新的分组信息
+        },
+        children: [
+          {
+            path: 'parking-list',
+            name: 'ParkingList',
+            component: () => import('@/views/console/parking/billing/index'),
+            meta: { title: '停车管理', icon: 'el-icon-office-building' }
+          }
+        ]
+      },
+      // 停车计费
+      {
+        path: 'parking-billing',
+        name: 'ApplicationParkingBilling',
+        redirect: '/application/parking-billing/parking-fee',
+        meta: { 
+          title: '计费', 
+          icon: 'el-icon-price-tag',
+          parentGroup: '停车收费'  // 新的分组信息
+        },
+        children: [
+          {
+            path: 'parking-fee',
+            name: 'ParkingFee',
+            component: () => import('@/views/console/parking/rule/index'),
+            meta: { title: '停车计费', icon: 'el-icon-price-tag' }
+          }
+        ]
       }
     ]
   }
