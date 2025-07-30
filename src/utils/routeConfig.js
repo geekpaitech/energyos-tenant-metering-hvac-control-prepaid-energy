@@ -111,22 +111,16 @@ export const consoleRoutes = [
     redirect: '/application/energy',
     meta: { title: '应用', icon: 'el-icon-s-grid' },
     children: [
-      // 分户计量 - 分隔线标签
-      {
-        path: 'divider-metering',
-        name: 'ApplicationDividerMetering',
-        meta: { 
-          isDivider: true,
-          dividerLabel: '分户计量',  // 分组标签
-          hidden: false
-        }
-      },
       // 用能管理
       {
         path: 'energy',
         name: 'ApplicationEnergy',
         redirect: '/application/energy/electricity-report',
-        meta: { title: '用能', icon: 'el-icon-data-line' },
+        meta: { 
+          title: '用能', 
+          icon: 'el-icon-data-line',
+          parentGroup: '分户计量'  // 添加分组信息
+        },
         children: [
           // 用电分析部分
           {
@@ -170,7 +164,11 @@ export const consoleRoutes = [
         path: 'tenant',
         name: 'ApplicationTenant',
         redirect: '/application/tenant/list',
-        meta: { title: '租户', icon: 'el-icon-user' },
+        meta: { 
+          title: '租户', 
+          icon: 'el-icon-user',
+          parentGroup: '分户计量'  // 添加分组信息
+        },
         children: [
           {
             path: 'list',
@@ -209,7 +207,11 @@ export const consoleRoutes = [
         path: 'fee',
         name: 'ApplicationFee',
         redirect: '/application/fee/electricity-plan',
-        meta: { title: '计费', icon: 'el-icon-price-tag' },
+        meta: { 
+          title: '计费', 
+          icon: 'el-icon-price-tag',
+          parentGroup: '分户计量'  // 添加分组信息
+        },
         children: [
           {
             path: 'electricity-plan',
@@ -252,7 +254,11 @@ export const consoleRoutes = [
         path: 'bill',
         name: 'ApplicationBill',
         redirect: '/application/bill/energy-bill',
-        meta: { title: '账单', icon: 'el-icon-document' },
+        meta: { 
+          title: '账单', 
+          icon: 'el-icon-document',
+          parentGroup: '分户计量'  // 添加分组信息
+        },
         children: [
           {
             path: 'energy-bill',
@@ -279,7 +285,11 @@ export const consoleRoutes = [
         path: 'finance',
         name: 'ApplicationFinance',
         redirect: '/application/finance/tenant-refund',
-        meta: { title: '财务', icon: 'el-icon-coin' },
+        meta: { 
+          title: '财务', 
+          icon: 'el-icon-coin',
+          parentGroup: '分户计量'  // 添加分组信息
+        },
         children: [
           {
             path: 'tenant-refund',
@@ -312,7 +322,11 @@ export const consoleRoutes = [
         path: 'invoice',
         name: 'ApplicationInvoice',
         redirect: '/application/invoice/tenant-invoice',
-        meta: { title: '开票', icon: 'el-icon-postcard' },
+        meta: { 
+          title: '开票', 
+          icon: 'el-icon-postcard',
+          parentGroup: '分户计量'  // 添加分组信息
+        },
         children: [
           {
             path: 'tenant-invoice',
