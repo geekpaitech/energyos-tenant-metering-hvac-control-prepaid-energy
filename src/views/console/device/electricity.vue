@@ -1,71 +1,49 @@
 <template>
-  <div class="meter-management-container">
+  <div class="table-page-container">
     <!-- 搜索区域 -->
     <div class="search-container">
       <el-card class="search-card" shadow="never">
-        <el-form :model="queryData" ref="searchForm" class="search-form">
-          <!-- 基础筛选 -->
-          <el-row :gutter="20">
-            <el-col :xs="24" :sm="12" :md="8" :lg="6">
-              <el-form-item label="电表序列号" prop="serial">
+        <el-form 
+          :model="queryData" 
+          ref="searchForm" 
+          class="search-form compact-form"
+          label-position="left"
+          label-width="80px"
+        >
+          <!-- 基础筛选 - 动态渲染 -->
+          <el-row :gutter="16" class="search-row">
+            <el-col 
+              v-for="field in displayBasicFields" 
+              :key="field.prop"
+              :xs="24" :sm="12" :md="8" :lg="6"
+            >
+              <el-form-item :label="field.label" :prop="field.prop" class="compact-form-item">
+                <!-- 输入框 -->
                 <el-input 
-                  v-model="queryData.serial" 
-                  placeholder="请输入电表序列号"
+                  v-if="field.type === 'input'"
+                  v-model="queryData[field.prop]" 
+                  placeholder="请输入"
                   clearable
-                  prefix-icon="el-icon-search"
+                  size="small"
                 />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :sm="12" :md="8" :lg="6">
-              <el-form-item label="电表名称" prop="meterName">
-                <el-input 
-                  v-model="queryData.meterName" 
-                  placeholder="请输入电表名称"
+                <!-- 选择框 -->
+                <el-select 
+                  v-else-if="field.type === 'select'"
+                  v-model="queryData[field.prop]" 
+                  placeholder="请选择"
                   clearable
-                  prefix-icon="el-icon-search"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :sm="12" :md="8" :lg="6">
-              <el-form-item label="电表编号" prop="managerId">
-                <el-input 
-                  v-model="queryData.id" 
-                  placeholder="电表编号"
-                  clearable
-                  prefix-icon="el-icon-office-building"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="电表类型" prop="bindType">
-                  <el-select 
-                    v-model="queryData.bindType" 
-                    placeholder="请选择"
-                    clearable
-                    style="width: 100%"
-                  >
+                  size="small"
+                  style="width: 100%"
+                >
+                  <!-- 电表类型选项 -->
+                  <template v-if="field.prop === 'bindType'">
                     <el-option label="全部" value="" />
                     <el-option label="专用表" value="1" />
                     <el-option label="公摊表" value="2" />
                     <el-option label="公式表" value="3" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-           
-          </el-row>
-          
-          <!-- 高级筛选 -->
-          <el-collapse-transition>
-            <el-row :gutter="20" v-show="showAdvanced">
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="绑定信息" >
-                  <el-select 
-                    v-model="queryData.bindId" 
-                    placeholder="请选择绑定租户"
-                    clearable
-                    filterable
-                    style="width: 100%"
-                  >
+                  </template>
+                  <!-- 绑定租户选项 -->
+                  <template v-else-if="field.prop === 'bindId'">
                     <el-option label="全部" value="" />
                     <el-option 
                       v-for="tenant in tenantList" 
@@ -73,19 +51,11 @@
                       :label="`${tenant.tenantId}(${tenant.tenantName})`" 
                       :value="tenant.tenantId"
                     >
-                      <span>{{ tenant.tenantId }}({{ tenant.tenantName }})</span>
+                      <span style="font-size: 12px;">{{ tenant.tenantId }}({{ tenant.tenantName }})</span>
                     </el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="在线状态" prop="onlineStatus">
-                  <el-select 
-                    v-model="queryData.onlineStatus" 
-                    placeholder="请选择"
-                    clearable
-                    style="width: 100%"
-                  >
+                  </template>
+                  <!-- 在线状态选项 -->
+                  <template v-else-if="field.prop === 'onlineStatus'">
                     <el-option label="全部" value="" />
                     <el-option label="在线" value="1">
                       <span class="option-with-dot">
@@ -99,62 +69,120 @@
                         离线
                       </span>
                     </el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-             
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="分合闸状态" prop="switchStatus">
-                  <el-select 
-                    v-model="queryData.switchStatus" 
-                    placeholder="请选择"
-                    clearable
-                    style="width: 100%"
-                  >
+                  </template>
+                  <!-- 分合闸状态选项 -->
+                  <template v-else-if="field.prop === 'switchStatus'">
                     <el-option label="全部" value="" />
                     <el-option label="分闸" value="0" />
                     <el-option label="合闸" value="1" />
+                  </template>
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <!-- 高级筛选 - 只在需要时显示 -->
+          <el-collapse-transition v-if="needAdvancedSearch">
+            <el-row :gutter="16" v-show="showAdvanced" class="search-row">
+              <el-col 
+                v-for="field in displayAdvancedFields" 
+                :key="field.prop"
+                :xs="24" :sm="12" :md="8" :lg="6"
+              >
+                <el-form-item :label="field.label" :prop="field.prop" class="compact-form-item">
+                  <!-- 选择框 -->
+                  <el-select 
+                    v-model="queryData[field.prop]" 
+                    placeholder="请选择"
+                    clearable
+                    size="small"
+                    style="width: 100%"
+                    :filterable="field.prop === 'bindId'"
+                  >
+                    <!-- 绑定租户选项 -->
+                    <template v-if="field.prop === 'bindId'">
+                      <el-option label="全部" value="" />
+                      <el-option 
+                        v-for="tenant in tenantList" 
+                        :key="tenant.tenantId" 
+                        :label="`${tenant.tenantId}(${tenant.tenantName})`" 
+                        :value="tenant.tenantId"
+                      >
+                        <span style="font-size: 12px;">{{ tenant.tenantId }}({{ tenant.tenantName }})</span>
+                      </el-option>
+                    </template>
+                    <!-- 在线状态选项 -->
+                    <template v-else-if="field.prop === 'onlineStatus'">
+                      <el-option label="全部" value="" />
+                      <el-option label="在线" value="1">
+                        <span class="option-with-dot">
+                          <span class="status-dot online"></span>
+                          在线
+                        </span>
+                      </el-option>
+                      <el-option label="离线" value="0">
+                        <span class="option-with-dot">
+                          <span class="status-dot offline"></span>
+                          离线
+                        </span>
+                      </el-option>
+                    </template>
+                    <!-- 分合闸状态选项 -->
+                    <template v-else-if="field.prop === 'switchStatus'">
+                      <el-option label="全部" value="" />
+                      <el-option label="分闸" value="0" />
+                      <el-option label="合闸" value="1" />
+                    </template>
                   </el-select>
                 </el-form-item>
               </el-col>
-              
             </el-row>
           </el-collapse-transition>
           
-          <!-- 操作按钮行 -->
-          <el-row>
-            <el-col :span="24">
-              <div class="form-actions">
-                <div class="action-left">
-                  <el-button type="primary" icon="el-icon-search" @click="handleSearch">
-                    查询
-                  </el-button>
-                  <el-button icon="el-icon-refresh" @click="handleReset">
-                    重置
-                  </el-button>
-                </div>
-                <div class="action-right">
-                  <el-button type="primary" icon="el-icon-plus" @click="handleAdd">
-                    新增电表
-                  </el-button>
-                  <el-dropdown trigger="click" @command="handleCommand">
-                    <el-button icon="el-icon-more">
-                      更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
-                    </el-button>
-                    <el-dropdown-menu slot="dropdown">
-                      <el-dropdown-item command="export" icon="el-icon-download">
-                        导出数据
-                      </el-dropdown-item>
-                      <el-dropdown-item command="switch" icon="el-icon-sort">
-                        高级筛选
-                      </el-dropdown-item>
-                
-                    </el-dropdown-menu>
-                  </el-dropdown>
-                </div>
-              </div>
-            </el-col>
-          </el-row>
+          <!-- 操作按钮行 - 更合理的布局 -->
+          <div class="form-actions compact-actions">
+            <div class="action-left">
+              <el-button type="primary" icon="el-icon-plus" size="small" @click="handleAdd">
+                新增电表
+              </el-button>
+            </div>
+            <div class="action-right">
+              <el-button type="primary" icon="el-icon-search" size="small" @click="handleSearch">
+                查询
+              </el-button>
+              <el-button icon="el-icon-refresh" size="small" @click="handleReset">
+                重置
+              </el-button>
+              <el-button 
+                v-if="needAdvancedSearch"
+                type="text" 
+                size="small"
+                @click="showAdvanced = !showAdvanced"
+                style="padding: 7px 8px;"
+              >
+                <i class="el-icon-s-operation" style="margin-right: 4px;"></i>
+                高级筛选
+                <i :class="showAdvanced ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" style="margin-left: 2px;"></i>
+              </el-button>
+              <el-divider v-if="needAdvancedSearch" direction="vertical" style="margin: 0 8px;"></el-divider>
+              <el-dropdown trigger="click" @command="handleCommand">
+                <el-button size="small" type="text" style="padding: 7px 12px;">
+                  更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
+                </el-button>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="export" icon="el-icon-download">
+                    导出数据
+                  </el-dropdown-item>
+                  <el-dropdown-item command="import" icon="el-icon-upload2">
+                    导入数据
+                  </el-dropdown-item>
+                  <el-dropdown-item command="batch" icon="el-icon-s-operation" divided>
+                    批量操作
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+            </div>
+          </div>
         </el-form>
       </el-card>
     </div>
@@ -541,6 +569,20 @@ export default {
         serial: '',
         switchStatus: ''
       },
+      // 搜索字段配置
+      searchFields: {
+        basic: [
+          { prop: 'serial', label: '序列号', type: 'input' },
+          { prop: 'meterName', label: '电表名称', type: 'input' },
+          { prop: 'id', label: '电表编号', type: 'input' },
+          { prop: 'bindType', label: '电表类型', type: 'select' }
+        ],
+        advanced: [
+          { prop: 'bindId', label: '绑定租户', type: 'select' },
+          { prop: 'onlineStatus', label: '在线状态', type: 'select' },
+          { prop: 'switchStatus', label: '分合闸', type: 'select' }
+        ]
+      },
       // 租户列表数据
       tenantList: [],
       // 表格数据
@@ -730,6 +772,25 @@ export default {
     // 计算需要显示的列
     displayColumns() {
       return this.tableKey.filter(col => col.checked !== false)
+    },
+    // 判断是否需要显示高级筛选按钮
+    needAdvancedSearch() {
+      // 当总搜索字段数量大于5个时显示高级筛选
+      const totalFields = this.searchFields.basic.length + this.searchFields.advanced.length
+      return totalFields > 5
+    },
+    // 获取实际显示的基础搜索字段
+    displayBasicFields() {
+      // 如果不需要高级筛选，显示所有字段
+      if (!this.needAdvancedSearch) {
+        return [...this.searchFields.basic, ...this.searchFields.advanced]
+      }
+      // 否则只显示基础字段
+      return this.searchFields.basic
+    },
+    // 获取高级搜索字段
+    displayAdvancedFields() {
+      return this.searchFields.advanced
     }
   },
   watch: {
@@ -881,14 +942,11 @@ export default {
         case 'export':
           this.handleExport()
           break
-        case 'switch':
-          this.handleBatchSwitch()
+        case 'import':
+          this.$message.info('导入功能开发中...')
           break
-        case 'manual1':
-          this.handleManualBill(1)
-          break
-        case 'manual2':
-          this.handleManualBill(2)
+        case 'batch':
+          this.$message.info('批量操作功能开发中...')
           break
       }
     },
@@ -1069,19 +1127,6 @@ export default {
       })
     },
     
-    // 手动账单
-    handleManualBill(type) {
-      this.$router.push({ 
-        path: '/mt-orderTool', 
-        query: { type }
-      })
-    },
-    
-    
-    handleBatchSwitch() {
-      this.showAdvanced = !this.showAdvanced
-    },
-    
     // 导出数据
     handleExport() {
       if (this.selectedData.length === 0) {
@@ -1118,322 +1163,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.meter-management-container {
-  min-height: 100vh;
-  background-color: #f5f7fa;
-  padding: 16px;
-  
-  // 搜索区域
-  .search-container {
-    margin-bottom: 16px;
-    
-    .search-card {
-      ::v-deep .el-card__body {
-        padding: 20px;
-      }
-      
-      .search-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        
-        .search-title {
-          font-size: 16px;
-          font-weight: 500;
-          color: #303133;
-          
-          i {
-            margin-right: 6px;
-            color: #409EFF;
-          }
-        }
-        
-        .search-actions {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-      }
-      
-      .search-form {
-        ::v-deep .el-form-item {
-          margin-bottom: 16px;
-          
-          &:last-child {
-            margin-bottom: 0;
-          }
-          
-          .el-form-item__label {
-            font-weight: 400;
-            color: #606266;
-          }
-        }
-        
-        // 操作按钮行样式
-        .form-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 20px;
-          padding-top: 20px;
-          border-top: 1px solid #ebeef5;
-          
-          .action-left {
-            display: flex;
-            gap: 12px;
-          }
-          
-          .action-right {
-            display: flex;
-            gap: 12px;
-          }
-        }
-      }
-    }
-  }
-  
-  // 表格区域
-  .table-container {
-    .table-card {
-      ::v-deep .el-card__body {
-        padding: 0;
-      }
-      
-      .table-toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 20px;
-        border-bottom: 1px solid #ebeef5;
-        
-        .toolbar-left {
-          .selection-info {
-            font-size: 14px;
-            color: #606266;
-            
-            .count {
-              color: #409EFF;
-              font-weight: 600;
-              margin: 0 4px;
-            }
-          }
-        }
-        
-        .toolbar-right {
-          display: flex;
-          gap: 8px;
-        }
-      }
-      
-      .custom-table {
-        ::v-deep {
-          .el-table__header-wrapper {
-            .el-table__header {
-              th {
-                background-color: #f5f7fa;
-                color: #606266;
-                font-weight: 600;
-                font-size: 14px;
-              }
-            }
-          }
-          
-          .el-table__body-wrapper {
-            .el-table__row {
-              &:hover {
-                background-color: #f5f7fa;
-              }
-              
-              td {
-                padding: 12px 0;
-                font-size: 14px;
-              }
-            }
-          }
-        }
-        
-        // 状态样式
-        .status-wrapper {
-          display: inline-flex;
-          align-items: center;
-          
-          .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 6px;
-            flex-shrink: 0;
-            
-            &.online {
-              background-color: #67C23A;
-              box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
-            }
-            
-            &.offline {
-              background-color: #F56C6C;
-              box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
-            }
-          }
-        }
-        
-        .switch-status {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          
-          i {
-            font-size: 16px;
-          }
-        }
-        
-        .balance-text {
-          color: #F56C6C;
-          font-weight: 500;
-        }
-        
-        .text-muted {
-          color: #909399;
-        }
-        
-        .table-actions-group {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          
-          .el-divider--vertical {
-            height: 12px;
-            margin: 0 8px;
-          }
-        }
-      }
-      
-      .pagination-container {
-        padding: 20px;
-        display: flex;
-        justify-content: flex-end;
-        border-top: 1px solid #ebeef5;
-      }
-    }
-  }
-  
-  // 选项样式
-  .option-with-dot {
-    display: inline-flex;
-    align-items: center;
-    
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 6px;
-      
-      &.online {
-        background-color: #67C23A;
-      }
-      
-      &.offline {
-        background-color: #F56C6C;
-      }
-    }
-  }
-  
-  // 自定义对话框
-  .custom-dialog {
-    ::v-deep {
-      .el-dialog__header {
-        padding: 20px;
-        border-bottom: 1px solid #ebeef5;
-        
-        .el-dialog__title {
-          font-size: 18px;
-          font-weight: 500;
-          color: #303133;
-        }
-      }
-      
-      .el-dialog__body {
-        padding: 20px;
-      }
-      
-      .el-dialog__footer {
-        padding: 20px;
-        border-top: 1px solid #ebeef5;
-      }
-    }
-  }
-  
-  // 确认对话框
-  .confirm-dialog {
-    ::v-deep .el-dialog__body {
-      padding: 30px 20px;
-    }
-    
-    .confirm-content {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      
-      .warning-icon {
-        font-size: 24px;
-        color: #E6A23C;
-        flex-shrink: 0;
-        margin-top: 2px;
-      }
-      
-      .confirm-text {
-        flex: 1;
-        
-        p {
-          margin: 0 0 12px 0;
-          font-size: 14px;
-          line-height: 1.6;
-          color: #606266;
-          
-          &:last-child {
-            margin-bottom: 0;
-          }
-        }
-      }
-    }
-  }
-}
-
-// 响应式适配
-@media (max-width: 768px) {
-  .meter-management-container {
-    padding: 8px;
-    
-    .search-container {
-      .search-form {
-        .form-actions {
-          flex-direction: column;
-          gap: 12px;
-          
-          .action-left,
-          .action-right {
-            width: 100%;
-            
-            .el-button {
-              width: 48%;
-            }
-          }
-        }
-      }
-    }
-    
-    .table-container {
-      .table-toolbar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        
-        .toolbar-right {
-          align-self: flex-end;
-        }
-      }
-    }
-  }
-}
+// 引入表格页面公共样式
+@import '@/assets/styles/table-page.scss';
 </style>

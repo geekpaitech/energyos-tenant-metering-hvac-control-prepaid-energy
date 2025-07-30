@@ -1,0 +1,744 @@
+// assets/styles/table-page.scss
+// 表格页面公共样式 - 适用于所有带搜索和表格的管理页面
+// 优化版本：提高空间利用率，保持视觉整洁
+
+// 页面容器
+.table-page-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 16px;
+  
+  // 优化的搜索区域样式
+  .search-container {
+    margin-bottom: 16px;
+    
+    .search-card {
+      border-radius: 6px;
+      
+      .el-card__body {
+        padding: 16px 20px;
+      }
+      
+      // 搜索表单样式
+      .search-form {
+        // 紧凑型表单 - 标签和输入框在同一行
+        &.compact-form {
+          // 表单项样式
+          .el-form-item {
+            margin-bottom: 12px;
+            
+            &:last-child {
+              margin-bottom: 0;
+            }
+            
+            // 紧凑型表单项
+            &.compact-form-item {
+              .el-form-item__label {
+                font-weight: 400;
+                color: #606266;
+                font-size: 13px;
+                line-height: 32px;
+                padding-right: 8px;
+              }
+              
+              .el-form-item__content {
+                line-height: 32px;
+              }
+            }
+          }
+          
+          // 搜索行
+          .search-row {
+            margin-bottom: 8px;
+            
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+          
+          // 小尺寸输入组件
+          .el-input--small {
+            .el-input__inner {
+              height: 32px;
+              line-height: 32px;
+              font-size: 13px;
+            }
+            
+            .el-input__icon {
+              line-height: 32px;
+            }
+          }
+          
+          .el-select--small {
+            .el-input--small .el-input__inner {
+              height: 32px;
+            }
+          }
+          
+          // 小尺寸按钮
+          .el-button--small {
+            padding: 7px 15px;
+            font-size: 13px;
+            
+            &.el-button--text {
+              padding: 7px 8px;
+            }
+          }
+          
+          // 紧凑型操作按钮区域
+          .form-actions.compact-actions {
+            margin-top: 12px;
+            padding-top: 12px;
+            
+            .action-right {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              
+              // 文本按钮样式
+              .el-button--text {
+                color: #606266;
+                
+                &:hover {
+                  color: #409EFF;
+                }
+              }
+              
+              // 分隔线样式
+              .el-divider--vertical {
+                height: 20px;
+                margin: 0 8px;
+              }
+            }
+          }
+        }
+        
+        // 传统表单样式（向下兼容）
+        &:not(.compact-form) {
+          .el-form-item {
+            margin-bottom: 16px;
+            
+            &:last-child {
+              margin-bottom: 0;
+            }
+            
+            .el-form-item__label {
+              font-weight: 400;
+              color: #606266;
+            }
+          }
+        }
+        
+        // 操作按钮行（通用）
+        .form-actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid #ebeef5;
+          
+          .action-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+          
+          .action-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+        }
+      }
+    }
+  }
+  
+  // 表格区域样式
+  .table-container {
+    .table-card {
+      border-radius: 6px;
+      
+      .el-card__body {
+        padding: 0;
+      }
+      
+      // 表格工具栏
+      .table-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #ebeef5;
+        background-color: #fafbfc;
+        
+        .toolbar-left {
+          .selection-info {
+            font-size: 14px;
+            color: #606266;
+            
+            .count {
+              color: #409EFF;
+              font-weight: 600;
+              margin: 0 4px;
+            }
+          }
+        }
+        
+        .toolbar-right {
+          display: flex;
+          gap: 8px;
+          
+          // 圆形按钮
+          .el-button.is-circle {
+            padding: 8px;
+          }
+        }
+      }
+      
+      // 自定义表格样式
+      .custom-table {
+        .el-table__header-wrapper {
+          .el-table__header {
+            th {
+              background-color: #f5f7fa;
+              color: #606266;
+              font-weight: 600;
+              font-size: 14px;
+              height: 48px;
+              
+              .cell {
+                line-height: 48px;
+              }
+            }
+          }
+        }
+        
+        .el-table__body-wrapper {
+          .el-table__row {
+            &:hover {
+              background-color: #f5f7fa;
+            }
+            
+            td {
+              padding: 12px 0;
+              font-size: 14px;
+              
+              .cell {
+                line-height: 23px;
+              }
+            }
+          }
+        }
+        
+        // 表格内操作按钮组
+        .table-actions-group {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          .el-button--text {
+            padding: 5px;
+          }
+          
+          .el-divider--vertical {
+            height: 12px;
+            margin: 0 8px;
+          }
+        }
+      }
+      
+      // 分页容器
+      .pagination-container {
+        padding: 16px 20px;
+        display: flex;
+        justify-content: flex-end;
+        border-top: 1px solid #ebeef5;
+        background-color: #fafbfc;
+        
+        .el-pagination {
+          font-weight: 400;
+          
+          .el-pagination__total {
+            font-size: 13px;
+          }
+          
+          .el-pagination__sizes {
+            .el-input--mini .el-input__inner {
+              font-size: 13px;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // 响应式适配
+  @media (max-width: 768px) {
+    padding: 8px;
+    
+    .search-container {
+      .search-form {
+        .form-actions {
+          flex-direction: column;
+          gap: 12px;
+          
+          .action-left,
+          .action-right {
+            width: 100%;
+            justify-content: center;
+            
+            .el-button {
+              flex: 1;
+              max-width: 150px;
+            }
+          }
+        }
+        
+        // 移动端紧凑型表单标签上置
+        &.compact-form {
+          .el-form-item {
+            &.compact-form-item {
+              .el-form-item__label {
+                float: none;
+                display: block;
+                text-align: left;
+                padding: 0;
+                line-height: 20px;
+                margin-bottom: 4px;
+                width: auto !important;
+              }
+              
+              .el-form-item__content {
+                margin-left: 0 !important;
+              }
+            }
+          }
+          
+          .compact-actions {
+            .action-left,
+            .action-right {
+              width: 100%;
+              justify-content: center;
+            }
+            
+            .action-left {
+              margin-bottom: 12px;
+            }
+            
+            .el-divider--vertical {
+              display: none;
+            }
+          }
+        }
+      }
+    }
+    
+    .table-container {
+      .table-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        
+        .toolbar-right {
+          align-self: flex-end;
+        }
+      }
+      
+      // 移动端表格横向滚动
+      .custom-table {
+        .el-table__header-wrapper,
+        .el-table__body-wrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+      }
+    }
+  }
+  
+  // 中等屏幕适配（平板）
+  @media (min-width: 769px) and (max-width: 1200px) {
+    .search-form.compact-form {
+      .compact-form-item {
+        .el-form-item__label {
+          width: 70px !important;
+          font-size: 12px;
+        }
+      }
+    }
+  }
+  
+  // 大屏幕优化
+  @media (min-width: 1441px) and (max-width: 1920px) {
+    .search-form.compact-form {
+      .el-col-lg-6 {
+        .compact-form-item {
+          .el-form-item__label {
+            width: 75px !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 通用状态样式
+.status-wrapper {
+  display: inline-flex;
+  align-items: center;
+  
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    flex-shrink: 0;
+    
+    &.online {
+      background-color: #67C23A;
+      box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
+    }
+    
+    &.offline {
+      background-color: #F56C6C;
+      box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
+    }
+    
+    &.warning {
+      background-color: #E6A23C;
+      box-shadow: 0 0 0 2px rgba(230, 162, 60, 0.2);
+    }
+    
+    &.info {
+      background-color: #909399;
+      box-shadow: 0 0 0 2px rgba(144, 147, 153, 0.2);
+    }
+  }
+}
+
+// 开关状态样式
+.switch-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  
+  i {
+    font-size: 16px;
+  }
+}
+
+// 余额文本样式
+.balance-text {
+  color: #F56C6C;
+  font-weight: 500;
+  
+  &.positive {
+    color: #67C23A;
+  }
+}
+
+// 文本静音样式
+.text-muted {
+  color: #909399;
+  font-size: 13px;
+}
+
+// 选项带点样式（用于下拉框）
+.option-with-dot {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    
+    &.online {
+      background-color: #67C23A;
+    }
+    
+    &.offline {
+      background-color: #F56C6C;
+    }
+  }
+}
+
+// 通用对话框样式
+.custom-dialog {
+  .el-dialog {
+    border-radius: 8px;
+    
+    &__header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #ebeef5;
+      background-color: #fafbfc;
+      border-radius: 8px 8px 0 0;
+      
+      .el-dialog__title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #303133;
+      }
+      
+      .el-dialog__headerbtn {
+        top: 16px;
+        right: 20px;
+      }
+    }
+    
+    &__body {
+      padding: 20px;
+      
+      // 对话框内的表单
+      .el-form {
+        .el-form-item {
+          margin-bottom: 18px;
+          
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+      }
+    }
+    
+    &__footer {
+      padding: 16px 20px;
+      border-top: 1px solid #ebeef5;
+      background-color: #fafbfc;
+      border-radius: 0 0 8px 8px;
+      
+      .dialog-footer {
+        text-align: right;
+        
+        .el-button {
+          min-width: 80px;
+        }
+      }
+    }
+  }
+}
+
+// 确认对话框样式
+.confirm-dialog {
+  .el-dialog {
+    &__body {
+      padding: 24px 20px;
+    }
+  }
+  
+  .confirm-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    
+    .warning-icon,
+    .success-icon,
+    .error-icon,
+    .info-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    .warning-icon {
+      color: #E6A23C;
+    }
+    
+    .success-icon {
+      color: #67C23A;
+    }
+    
+    .error-icon {
+      color: #F56C6C;
+    }
+    
+    .info-icon {
+      color: #909399;
+    }
+    
+    .confirm-text {
+      flex: 1;
+      
+      p {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #606266;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+// 标签样式扩展
+.el-tag {
+  font-size: 12px;
+  height: 24px;
+  line-height: 22px;
+  padding: 0 8px;
+  
+  &--small {
+    height: 20px;
+    line-height: 18px;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+  
+  &.el-tag--plain {
+    border-radius: 4px;
+    
+    &.el-tag--primary {
+      background-color: rgba(64, 158, 255, 0.1);
+      border-color: rgba(64, 158, 255, 0.2);
+      color: #409EFF;
+    }
+    
+    &.el-tag--success {
+      background-color: rgba(103, 194, 58, 0.1);
+      border-color: rgba(103, 194, 58, 0.2);
+      color: #67C23A;
+    }
+    
+    &.el-tag--warning {
+      background-color: rgba(230, 162, 60, 0.1);
+      border-color: rgba(230, 162, 60, 0.2);
+      color: #E6A23C;
+    }
+    
+    &.el-tag--danger {
+      background-color: rgba(245, 108, 108, 0.1);
+      border-color: rgba(245, 108, 108, 0.2);
+      color: #F56C6C;
+    }
+    
+    &.el-tag--info {
+      background-color: rgba(144, 147, 153, 0.1);
+      border-color: rgba(144, 147, 153, 0.2);
+      color: #909399;
+    }
+  }
+}
+
+// 链接样式
+.el-link {
+  font-size: 14px;
+  
+  &.el-link--primary {
+    i {
+      margin-right: 4px;
+      font-size: 14px;
+    }
+    
+    &:hover {
+      color: #66b1ff;
+    }
+  }
+}
+
+// 空数据样式
+.empty-data {
+  text-align: center;
+  padding: 60px 0;
+  
+  .empty-icon {
+    font-size: 48px;
+    color: #C0C4CC;
+    margin-bottom: 16px;
+  }
+  
+  .empty-text {
+    font-size: 14px;
+    color: #909399;
+    line-height: 1.5;
+  }
+  
+  .empty-action {
+    margin-top: 20px;
+  }
+}
+
+// 加载中样式优化
+.el-loading-mask {
+  background-color: rgba(255, 255, 255, 0.9);
+  
+  .el-loading-spinner {
+    top: 50%;
+    margin-top: -21px;
+    
+    .circular {
+      width: 42px;
+      height: 42px;
+    }
+    
+    .el-loading-text {
+      color: #409EFF;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+  }
+}
+
+// 下拉菜单样式优化
+.el-dropdown-menu {
+  padding: 6px 0;
+  
+  &__item {
+    font-size: 13px;
+    line-height: 32px;
+    padding: 0 16px;
+    
+    i {
+      margin-right: 8px;
+      font-size: 14px;
+    }
+    
+    &.is-disabled {
+      cursor: not-allowed;
+      color: #c0c4cc;
+    }
+    
+    &--divided {
+      &:before {
+        margin: 6px 0;
+      }
+    }
+  }
+}
+
+// 消息提示样式优化
+.el-message {
+  min-width: 300px;
+  padding: 12px 16px;
+  
+  &__icon {
+    font-size: 18px;
+  }
+  
+  &__content {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+
+// 通知样式优化
+.el-notification {
+  padding: 16px;
+  border-radius: 6px;
+  
+  &__title {
+    font-size: 16px;
+    font-weight: 500;
+  }
+  
+  &__content {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+}
