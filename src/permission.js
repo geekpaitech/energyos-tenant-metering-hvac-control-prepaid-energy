@@ -19,7 +19,7 @@ router.beforeEach(async (to, from, next) => {
   NProgress.start()
 
   // 设置页面标题
-  document.title = to.meta && to.meta.title ? `${to.meta.title} - 物宇云管理系统` : '物宇云管理系统'
+  document.title = to.meta && to.meta.title ? `${to.meta.title} - 园区智慧物联` : '园区智慧物联'
 
   const hasToken = getToken()
   console.log('=== 路由守卫 ===')

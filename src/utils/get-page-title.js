@@ -1,4 +1,4 @@
-const title = '物宇云管理系统'
+const title = '园区智慧物联'
 
 export default function getPageTitle (pageTitle) {
   if (pageTitle) {

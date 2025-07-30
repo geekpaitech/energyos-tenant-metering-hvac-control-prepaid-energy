@@ -1,5 +1,5 @@
 const state = {
-  title: '物宇云管理系统',
+  title: '园区智慧物联',
   fixedHeader: true,
   sidebarLogo: true,
   showSettings: true,

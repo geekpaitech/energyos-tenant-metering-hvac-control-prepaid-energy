@@ -19,7 +19,7 @@
               <path d="M24 24 L30 18" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <h1 class="brand-name">物宇云平台</h1>
+          <h1 class="brand-name">园区智慧物联</h1>
         </div>
         
         <div class="brand-desc">
@@ -43,7 +43,7 @@
         </div>
 
         <div class="copyright">
-          <p>&copy; 2024 物宇云 版权所有</p>
+          <p>&copy; 2024 园区智慧物联 版权所有</p>
         </div>
       </div>
     </div>

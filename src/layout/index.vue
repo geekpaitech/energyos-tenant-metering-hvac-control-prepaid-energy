@@ -8,7 +8,7 @@
         :class="{ collapse: !sidebar.opened }"
       >
         <router-link class="sidebar-logo-link" to="/dashboard">
-          <div class="logo-placeholder">物</div>
+          <div class="logo-placeholder">园</div>
         </router-link>
       </div>
 
