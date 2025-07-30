@@ -160,11 +160,13 @@
       border-bottom: 1px solid var(--border-color);
 
       .group-title {
-        font-size: 11px;
+        font-size: 12px;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 1px;
         font-weight: 600;
+        margin-left: 3px;
+        margin-right: 3px;
       }
     }
 
@@ -1290,7 +1292,8 @@
     }
   }
 }
-</style><template>
+</style>
+<template>
   <div class="app-wrapper" :class="classObj">
     <!-- 左侧菜单栏 -->
     <div class="sidebar-container">
@@ -1340,115 +1343,132 @@
         </div>
 
         <div class="submenu-content">
-          <!-- 分组标题显示 -->
-          <div v-if="currentParentGroup" class="submenu-group-header">
-            <span class="group-title">{{ currentParentGroup }}</span>
-          </div>
-
           <!-- 渲染子菜单项 -->
           <template v-for="(child, index) in visibleSubmenuChildren">
-            <!-- 如果是分隔线 -->
-            <div
-              v-if="child.meta && child.meta.isDivider"
-              :key="child.path"
-              class="submenu-divider"
-              :class="{ 'with-label': child.meta.dividerLabel }"
-            >
-              <span v-if="child.meta.dividerLabel" class="divider-label">
-                {{ child.meta.dividerLabel }}
-              </span>
-            </div>
-            
-            <!-- 有子菜单的项目（可展开） -->
-            <div
-              v-else-if="child.children && child.children.length > 0"
-              :key="child.path"
-              class="submenu-expandable"
-            >
+            <!-- 检查是否是第一个有 parentGroup 的项，如果是则渲染可折叠的分组标题 -->
+            <template v-if="child.meta && child.meta.parentGroup && isFirstOfGroup(child, index)">
+              <!-- 可折叠的分组标题 -->
               <div
-                class="submenu-item expandable-header"
-                :class="{ 
-                  'is-expanded': expandedSubmenuItems[child.path],
-                  'has-active-child': hasActiveChild(child)
-                }"
-                @click="toggleSubmenuItem(child.path)"
+                :key="`group-${child.meta.parentGroup}`"
+                class="submenu-group-header clickable"
+                @click="toggleGroup(child.meta.parentGroup)"
               >
-                <i
-                  v-if="child.meta && child.meta.icon"
-                  :class="child.meta.icon"
-                  class="submenu-item-icon"
-                />
-                <span class="submenu-item-title">{{
-                  child.meta ? child.meta.title : ""
-                }}</span>
-                <i class="expand-icon el-icon-arrow-right"></i>
+                <div class="group-header-content">
+                  <i class="group-icon el-icon-s-data"></i>
+                  <span class="group-title">{{ child.meta.parentGroup }}</span>
+                  <i
+                    class="group-toggle-icon el-icon-arrow-down"
+                    :class="{ 'is-collapsed': collapsedGroups[child.meta.parentGroup] }"
+                  ></i>
+                </div>
+              </div>
+            </template>
+
+            <!-- 根据分组折叠状态决定是否显示菜单项 -->
+            <template v-if="!isGroupCollapsed(child)">
+              <!-- 如果是分隔线 -->
+              <div
+                v-if="child.meta && child.meta.isDivider"
+                :key="child.path"
+                class="submenu-divider"
+                :class="{ 'with-label': child.meta.dividerLabel }"
+              >
+                <span v-if="child.meta.dividerLabel" class="divider-label">
+                  {{ child.meta.dividerLabel }}
+                </span>
               </div>
               
-              <!-- 展开的子项 -->
-              <transition name="submenu-expand">
-                <div v-if="expandedSubmenuItems[child.path]" class="submenu-children">
-                  <template v-for="subChild in getVisibleChildren(child)">
-                    <!-- 子项分隔线 -->
-                    <div
-                      v-if="subChild.meta && subChild.meta.isDivider"
-                      :key="subChild.path"
-                      class="submenu-child-divider"
-                      :class="{ 'with-label': subChild.meta.dividerLabel }"
-                    >
-                      <span v-if="subChild.meta.dividerLabel" class="divider-label">
-                        {{ subChild.meta.dividerLabel }}
-                      </span>
-                    </div>
-                    
-                    <!-- 子项链接 -->
-                    <router-link
-                      v-else
-                      :key="resolvePath(child.path, subChild.path)"
-                      :to="resolvePath(child.path, subChild.path)"
-                      class="submenu-child-link"
-                      @click.native="handleSubmenuClick(resolvePath(child.path, subChild.path))"
-                    >
-                      <div
-                        class="submenu-child-item"
-                        :class="{ 'is-active': isSubmenuItemActive(child.path, subChild.path) }"
-                      >
-                        <i
-                          v-if="subChild.meta && subChild.meta.icon"
-                          :class="subChild.meta.icon"
-                          class="submenu-child-icon"
-                        />
-                        <span class="submenu-child-title">{{
-                          subChild.meta ? subChild.meta.title : ""
-                        }}</span>
-                      </div>
-                    </router-link>
-                  </template>
-                </div>
-              </transition>
-            </div>
-            
-            <!-- 普通的子菜单项（无子级） -->
-            <router-link
-              v-else
-              :key="resolvePath(child.path)"
-              :to="resolvePath(child.path)"
-              class="submenu-item-link"
-              @click.native="handleSubmenuClick(child.path)"
-            >
+              <!-- 有子菜单的项目（可展开） -->
               <div
-                class="submenu-item"
-                :class="{ 'is-active': isSubmenuItemActive(child.path) }"
+                v-else-if="child.children && child.children.length > 0"
+                :key="child.path"
+                class="submenu-expandable"
               >
-                <i
-                  v-if="child.meta && child.meta.icon"
-                  :class="child.meta.icon"
-                  class="submenu-item-icon"
-                />
-                <span class="submenu-item-title">{{
-                  child.meta ? child.meta.title : ""
-                }}</span>
+                <div
+                  class="submenu-item expandable-header"
+                  :class="{ 
+                    'is-expanded': expandedSubmenuItems[child.path],
+                    'has-active-child': hasActiveChild(child)
+                  }"
+                  @click="toggleSubmenuItem(child.path)"
+                >
+                  <i
+                    v-if="child.meta && child.meta.icon"
+                    :class="child.meta.icon"
+                    class="submenu-item-icon"
+                  />
+                  <span class="submenu-item-title">{{
+                    child.meta ? child.meta.title : ""
+                  }}</span>
+                  <i class="expand-icon el-icon-arrow-right"></i>
+                </div>
+                
+                <!-- 展开的子项 -->
+                <transition name="submenu-expand">
+                  <div v-if="expandedSubmenuItems[child.path]" class="submenu-children">
+                    <template v-for="subChild in getVisibleChildren(child)">
+                      <!-- 子项分隔线 -->
+                      <div
+                        v-if="subChild.meta && subChild.meta.isDivider"
+                        :key="subChild.path"
+                        class="submenu-child-divider"
+                        :class="{ 'with-label': subChild.meta.dividerLabel }"
+                      >
+                        <span v-if="subChild.meta.dividerLabel" class="divider-label">
+                          {{ subChild.meta.dividerLabel }}
+                        </span>
+                      </div>
+                      
+                      <!-- 子项链接 -->
+                      <router-link
+                        v-else
+                        :key="resolvePath(child.path, subChild.path)"
+                        :to="resolvePath(child.path, subChild.path)"
+                        class="submenu-child-link"
+                        @click.native="handleSubmenuClick(resolvePath(child.path, subChild.path))"
+                      >
+                        <div
+                          class="submenu-child-item"
+                          :class="{ 'is-active': isSubmenuItemActive(child.path, subChild.path) }"
+                        >
+                          <i
+                            v-if="subChild.meta && subChild.meta.icon"
+                            :class="subChild.meta.icon"
+                            class="submenu-child-icon"
+                          />
+                          <span class="submenu-child-title">{{
+                            subChild.meta ? subChild.meta.title : ""
+                          }}</span>
+                        </div>
+                      </router-link>
+                    </template>
+                  </div>
+                </transition>
               </div>
-            </router-link>
+              
+              <!-- 普通的子菜单项（无子级） -->
+              <router-link
+                v-else
+                :key="resolvePath(child.path)"
+                :to="resolvePath(child.path)"
+                class="submenu-item-link"
+                @click.native="handleSubmenuClick(child.path)"
+              >
+                <div
+                  class="submenu-item"
+                  :class="{ 'is-active': isSubmenuItemActive(child.path) }"
+                >
+                  <i
+                    v-if="child.meta && child.meta.icon"
+                    :class="child.meta.icon"
+                    class="submenu-item-icon"
+                  />
+                  <span class="submenu-item-title">{{
+                    child.meta ? child.meta.title : ""
+                  }}</span>
+                </div>
+              </router-link>
+            </template>
           </template>
         </div>
       </div>
@@ -1628,7 +1648,6 @@
     <SettingsPanel />
   </div>
 </template>
-
 <script>
 import { mapGetters, mapActions } from "vuex";
 import TagsView from "@/components/TagsView";
@@ -1655,6 +1674,7 @@ export default {
       basePath: "", // 当前菜单的基础路径
       previousSelectedItem: null, // 之前选中的菜单项
       expandedSubmenuItems: {}, // 记录展开的子菜单项
+      collapsedGroups: {}, // 新增：记录分组的折叠状态
       // 当前管理平台
       currentPlatformKey: "console", // 默认控制台
       // 平台配置
@@ -1718,19 +1738,6 @@ export default {
     visibleSubmenuChildren() {
       if (!this.currentSubmenu || !this.currentSubmenu.children) return [];
       return this.currentSubmenu.children.filter((child) => !child.hidden);
-    },
-
-    // 获取当前分组标题
-    currentParentGroup() {
-      if (!this.currentSubmenu) return null;
-      
-      // 获取第一个可见子项的 parentGroup
-      const firstChild = this.visibleSubmenuChildren[0];
-      if (firstChild && firstChild.meta && firstChild.meta.parentGroup) {
-        return firstChild.meta.parentGroup;
-      }
-      
-      return null;
     },
 
     // 当前平台信息
@@ -1832,6 +1839,10 @@ export default {
       const routes = this.permission_routes || [];
       await this.$store.dispatch('tagsView/initAffixTags', routes);
     }
+
+    // 恢复分组折叠状态
+    this.restoreCollapsedState();
+
     // 输出调试信息
     this.$nextTick(() => {
       console.log("=== 平台权限调试信息 ===");
@@ -1859,6 +1870,57 @@ export default {
 
   methods: {
     ...mapActions("manager", ["getManagerList", "switchManager"]),
+
+    // 判断是否是分组中的第一个项
+    isFirstOfGroup(child, index) {
+      if (!child.meta || !child.meta.parentGroup) {
+        return false;
+      }
+      
+      // 如果是第一个项，直接返回 true
+      if (index === 0) {
+        return true;
+      }
+      
+      // 检查前一个项是否属于同一个分组
+      const prevChild = this.visibleSubmenuChildren[index - 1];
+      return !prevChild.meta || 
+             !prevChild.meta.parentGroup || 
+             prevChild.meta.parentGroup !== child.meta.parentGroup;
+    },
+    
+    // 切换分组的折叠状态
+    toggleGroup(groupName) {
+      this.$set(this.collapsedGroups, groupName, !this.collapsedGroups[groupName]);
+      
+      // 保存到 localStorage
+      this.saveCollapsedState();
+    },
+    
+    // 判断菜单项是否属于已折叠的分组
+    isGroupCollapsed(menuItem) {
+      if (!menuItem.meta || !menuItem.meta.parentGroup) {
+        return false;
+      }
+      return this.collapsedGroups[menuItem.meta.parentGroup] || false;
+    },
+    
+    // 保存折叠状态到 localStorage
+    saveCollapsedState() {
+      localStorage.setItem('submenu-collapsed-groups', JSON.stringify(this.collapsedGroups));
+    },
+    
+    // 从 localStorage 恢复折叠状态
+    restoreCollapsedState() {
+      const saved = localStorage.getItem('submenu-collapsed-groups');
+      if (saved) {
+        try {
+          this.collapsedGroups = JSON.parse(saved);
+        } catch (e) {
+          console.error('恢复折叠状态失败:', e);
+        }
+      }
+    },
 
     toggleSideBar() {
       console.log("=== toggleSideBar 被调用 ===");
@@ -1915,6 +1977,9 @@ export default {
       
       // 清空展开的子菜单项
       this.expandedSubmenuItems = {};
+      
+      // 清空分组折叠状态
+      this.collapsedGroups = {};
       
       console.log("收起后状态 - selectedItem:", this.selectedItem);
       console.log("=== 收起子菜单完成 ===");
