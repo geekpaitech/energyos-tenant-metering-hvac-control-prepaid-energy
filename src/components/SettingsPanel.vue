@@ -127,13 +127,13 @@ export default {
     return {
       visible: false,
       
-      // 当前设置
+      // 当前设置 - 默认改为商务灰白主题
       currentFontSize: localStorage.getItem('app_font_size') || 'medium',
-      currentTheme: localStorage.getItem('app_theme') || 'teal',
+      currentTheme: localStorage.getItem('app_theme') || 'white',
       
-      // 预览设置
+      // 预览设置 - 默认改为商务灰白主题
       previewFontSize: localStorage.getItem('app_font_size') || 'medium',
-      previewTheme: localStorage.getItem('app_theme') || 'teal',
+      previewTheme: localStorage.getItem('app_theme') || 'white',
       
       // 字体选项
       fontSizes: [
@@ -142,15 +142,8 @@ export default {
         { label: '舒适', value: 'large', demo: '16px' }
       ],
       
-      // 主题选项
+      // 主题选项 - 去除暗黑主题，将商务灰白置于首位
       themes: [
-        { 
-          name: '清新青绿', 
-          value: 'teal', 
-          desc: '护眼自然', 
-          color: '#26a69a',
-          gradient: 'linear-gradient(135deg, #26a69a 0%, #4db6ac 100%)'
-        },
         { 
           name: '商务灰白', 
           value: 'white', 
@@ -159,11 +152,11 @@ export default {
           gradient: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)'
         },
         { 
-          name: '深邃暗夜', 
-          value: 'dark', 
-          desc: '护眼暗黑', 
-          color: '#6366f1',
-          gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
+          name: '清新青绿', 
+          value: 'teal', 
+          desc: '护眼自然', 
+          color: '#26a69a',
+          gradient: 'linear-gradient(135deg, #26a69a 0%, #4db6ac 100%)'
         }
       ]
     }
@@ -223,16 +216,16 @@ export default {
       this.applySettings(this.currentFontSize, this.currentTheme)
     },
     
-    // 重置设置
+    // 重置设置 - 重置为商务灰白主题
     resetSettings() {
       this.previewFontSize = 'medium'
-      this.previewTheme = 'teal'
+      this.previewTheme = 'white'
       this.previewChanges()
       this.currentFontSize = 'medium'
-      this.currentTheme = 'teal'
+      this.currentTheme = 'white'
       localStorage.setItem('app_font_size', 'medium')
-      localStorage.setItem('app_theme', 'teal')
-      this.$message.success('已重置为默认设置')
+      localStorage.setItem('app_theme', 'white')
+      this.$message.success('已重置为默认设置（商务灰白主题）')
     },
     
     handleClose(done) {
@@ -393,7 +386,7 @@ export default {
 
 /* 设置卡片 */
 .setting-card {
-  background: var(--bg-color);
+  background: var(--card-bg);
   border-radius: 8px;
   border: 1px solid var(--border-color);
   margin-bottom: 16px;
@@ -402,8 +395,8 @@ export default {
 }
 
 .setting-card:hover {
-  border-color: rgba(38, 166, 154, 0.3);
-  box-shadow: 0 2px 8px rgba(38, 166, 154, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
 .card-header {
@@ -536,8 +529,7 @@ export default {
 
 .theme-card.active {
   border-color: var(--primary-color);
-  background: var(--primary-color);
-  background: linear-gradient(135deg, rgba(38, 166, 154, 0.1) 0%, rgba(38, 166, 154, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
 }
 
 .theme-preview {

@@ -65,38 +65,73 @@ $sideBarWidth: 210px;
     --action-column-width: 210px;
   }
 
-  // 默认主题：清新青绿 - 自然清爽的绿色调
-  --primary-color: #26a69a;
-  --primary-hover: #00897b;
-  --primary-gradient: linear-gradient(135deg, #26a69a 0%, #42b8ac 100%);
-  --sidebar-bg: linear-gradient(145deg, #ffffff 0%, #f5faf9 100%);
-  --sidebar-logo-bg: linear-gradient(135deg, #26a69a 0%, #42b8ac 100%);
+  // 默认主题：商务灰白 - 专业质感，更加商务化
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  --sidebar-bg: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  --sidebar-logo-bg: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   --navbar-bg: rgba(255, 255, 255, 0.95);
-  --main-bg: linear-gradient(135deg, #f8faf9 0%, #f0f5f4 100%);
+  --main-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   --card-bg: #ffffff;
-  --search-bg: #e8f5f3;
-  --text-primary: #2c3e50;
-  --text-secondary: #34495e;
-  --text-muted: #7f8c8d;
-  --border-color: #b2dfdb;
-  --border-secondary: #c8e6e2;
-  --hover-bg: #e8f5f3;
-  --active-bg: linear-gradient(135deg, #00897b 0%, #26a69a 100%);
-  --button-shadow: rgba(38, 166, 154, 0.3);
-  --secondary-color: #4db6ac;
+  --search-bg: #f8fafc;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --border-secondary: #f3f4f6;
+  --hover-bg: #f9fafb;
+  --active-bg: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  --button-shadow: rgba(59, 130, 246, 0.25);
+  --secondary-color: #60a5fa;
   
-  // 统一的菜单配色 - 深灰蓝，适配所有亮色主题
-  --menu-bg: linear-gradient(145deg, #2c3e50 0%, #34495e 100%);
-  --menu-text: rgba(255, 255, 255, 0.85);
-  --menu-text-hover: rgba(255, 255, 255, 0.95);
+  // 统一的菜单配色 - 商务灰，适配默认主题
+  --menu-bg: linear-gradient(145deg, #64748b 0%, #475569 100%);
+  --menu-text: rgba(255, 255, 255, 0.9);
+  --menu-text-hover: rgba(255, 255, 255, 1);
   --menu-active-bg: rgba(255, 255, 255, 0.15);
-  --menu-hover-bg: rgba(255, 255, 255, 0.08);
-  --menu-border: rgba(255, 255, 255, 0.12);
-  --submenu-bg: #fafbfc;
-  --submenu-hover-bg: #e8f0fe;
-  --submenu-text: #2c3e50;
+  --menu-hover-bg: rgba(255, 255, 255, 0.1);
+  --menu-border: rgba(255, 255, 255, 0.15);
+  --submenu-bg: #f8fafc;
+  --submenu-hover-bg: #eff6ff;
+  --submenu-text: #475569;
   --submenu-active-text: #ffffff;
-  --submenu-active-bg: #26a69a;
+  --submenu-active-bg: #3b82f6;
+
+  // 商务灰白主题（与默认主题相同）
+  &.theme-white {
+    --primary-color: #3b82f6;
+    --primary-hover: #2563eb;
+    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    --sidebar-bg: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    --sidebar-logo-bg: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    --navbar-bg: rgba(255, 255, 255, 0.95);
+    --main-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    --card-bg: #ffffff;
+    --search-bg: #f8fafc;
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --border-secondary: #f3f4f6;
+    --hover-bg: #f9fafb;
+    --active-bg: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    --button-shadow: rgba(59, 130, 246, 0.25);
+    --secondary-color: #60a5fa;
+    --submenu-active-bg: #3b82f6;
+    
+    // 商务灰白主题使用质感灰色菜单 - B端专业风格
+    --menu-bg: linear-gradient(145deg, #64748b 0%, #475569 100%);
+    --menu-text: rgba(255, 255, 255, 0.9);
+    --menu-text-hover: rgba(255, 255, 255, 1);
+    --menu-active-bg: rgba(255, 255, 255, 0.15);
+    --menu-hover-bg: rgba(255, 255, 255, 0.1);
+    --menu-border: rgba(255, 255, 255, 0.15);
+    --submenu-bg: #f8fafc;
+    --submenu-hover-bg: #eff6ff;
+    --submenu-text: #475569;
+    --submenu-active-text: #ffffff;
+  }
 
   // 清新青绿主题
   &.theme-teal {
@@ -119,75 +154,17 @@ $sideBarWidth: 210px;
     --button-shadow: rgba(38, 166, 154, 0.3);
     --secondary-color: #4db6ac;
     --submenu-active-bg: #26a69a;
-  }
 
-  // 简洁蓝白主题 - 专业商务风格
-  &.theme-white {
-    --primary-color: #3b82f6;
-    --primary-hover: #2563eb;
-    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-    --sidebar-bg: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-    --sidebar-logo-bg: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-    --navbar-bg: rgba(255, 255, 255, 0.95);
-    --main-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    --card-bg: #ffffff;
-    --search-bg: #f8fafc;
-    --text-primary: #111827;
-    --text-secondary: #374151;
-    --text-muted: #6b7280;
-    --border-color: #e5e7eb;
-    --border-secondary: #f3f4f6;
-    --hover-bg: #f9fafb;
-    --active-bg: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-    --button-shadow: rgba(59, 130, 246, 0.25);
-    --secondary-color: #60a5fa;
-    --submenu-active-bg: #3b82f6;
-    
-    // 简洁白主题使用质感灰色菜单 - B端专业风格
-    --menu-bg: linear-gradient(145deg, #64748b 0%, #475569 100%);
-    --menu-text: rgba(255, 255, 255, 0.9);
-    --menu-text-hover: rgba(255, 255, 255, 1);
-    --menu-active-bg: rgba(255, 255, 255, 0.15);
-    --menu-hover-bg: rgba(255, 255, 255, 0.1);
-    --menu-border: rgba(255, 255, 255, 0.15);
-    --submenu-bg: #f8fafc;
-    --submenu-hover-bg: #eff6ff;
-    --submenu-text: #475569;
-    --submenu-active-text: #ffffff;
-  }
-
-  // 深邃暗夜主题 - 护眼深色风格
-  &.theme-dark {
-    --primary-color: #6366f1;
-    --primary-hover: #4f46e5;
-    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cfc 100%);
-    --sidebar-bg: linear-gradient(145deg, #0f0f23 0%, #1a1a2e 100%);
-    --sidebar-logo-bg: linear-gradient(135deg, #6366f1 0%, #8b5cfc 100%);
-    --navbar-bg: rgba(15, 15, 35, 0.95);
-    --main-bg: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-    --card-bg: #1c2128;
-    --search-bg: #21262d;
-    --hover-bg: #262c36;
-    --border-color: #30363d;
-    --border-secondary: #373e47;
-    --text-primary: #f0f6fc;
-    --text-secondary: #8b949e;
-    --text-muted: #6e7681;
-    --active-bg: linear-gradient(135deg, #5048e5 0%, #7c3aed 100%);
-    --button-shadow: rgba(99, 102, 241, 0.4);
-    --secondary-color: #7c3aed;
-    --submenu-active-bg: #6366f1;
-    
-    // 深色主题的菜单配色 - 更深的色调，保持一致性
-    --menu-bg: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+    // 青绿主题使用统一的深灰蓝菜单
+    --menu-bg: linear-gradient(145deg, #2c3e50 0%, #34495e 100%);
     --menu-text: rgba(255, 255, 255, 0.85);
     --menu-text-hover: rgba(255, 255, 255, 0.95);
-    --menu-active-bg: rgba(139, 92, 252, 0.2);
-    --menu-hover-bg: rgba(139, 92, 252, 0.1);
-    --menu-border: rgba(139, 92, 252, 0.15);
-    --submenu-bg: #21262d;
-    --submenu-hover-bg: #30363d;
-    --submenu-text: #c9d1d9;
+    --menu-active-bg: rgba(255, 255, 255, 0.15);
+    --menu-hover-bg: rgba(255, 255, 255, 0.08);
+    --menu-border: rgba(255, 255, 255, 0.12);
+    --submenu-bg: #fafbfc;
+    --submenu-hover-bg: #e8f0fe;
+    --submenu-text: #2c3e50;
     --submenu-active-text: #ffffff;
   }
 }
