@@ -1,11 +1,9 @@
 // assets/styles/table-page.scss
-// 表格页面公共样式 - 适用于所有带搜索和表格的管理页面
-// 优化版本：提高空间利用率，保持视觉整洁
 
 // 页面容器
 .table-page-container {
-  min-height: 100vh;
-  background-color: #f5f7fa;
+  // min-height: 100vh;
+  // background-color: #f5f7fa;
   padding: 16px;
   
   // 优化的搜索区域样式
@@ -156,6 +154,7 @@
   
   // 表格区域样式
   .table-container {
+    height: 550px;
     .table-card {
       border-radius: 6px;
       
@@ -170,7 +169,7 @@
         align-items: center;
         padding: 16px 20px;
         border-bottom: 1px solid #ebeef5;
-        background-color: #fafbfc;
+        // background-color: #fafbfc;
         
         .toolbar-left {
           .selection-info {
@@ -244,29 +243,6 @@
           .el-divider--vertical {
             height: 12px;
             margin: 0 8px;
-          }
-        }
-      }
-      
-      // 分页容器
-      .pagination-container {
-        padding: 16px 20px;
-        display: flex;
-        justify-content: flex-end;
-        border-top: 1px solid #ebeef5;
-        background-color: #fafbfc;
-        
-        .el-pagination {
-          font-weight: 400;
-          
-          .el-pagination__total {
-            font-size: 13px;
-          }
-          
-          .el-pagination__sizes {
-            .el-input--mini .el-input__inner {
-              font-size: 13px;
-            }
           }
         }
       }
@@ -740,5 +716,38 @@
     font-size: 14px;
     line-height: 1.5;
     margin-top: 8px;
+  }
+}
+
+.pagination-container {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: flex-end;
+  
+  // 直接重置分页组件的样式
+  ::v-deep .el-pagination {
+    display: flex !important;
+    align-items: center !important;
+    
+    // 重置所有子元素的基线对齐
+    & > * {
+      display: inline-flex !important;
+      align-items: center !important;
+      vertical-align: baseline !important;
+    }
+    
+    // 特别处理文本元素
+    .el-pagination__total,
+    .el-pagination__jump {
+      display: inline-flex !important;
+      align-items: center !important;
+    }
+    
+    // 处理按钮
+    .btn-prev, .btn-next, .el-pager li {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
   }
 }
