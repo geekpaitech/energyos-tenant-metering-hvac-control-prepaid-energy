@@ -1190,23 +1190,15 @@
 }
 
 /* 用户下拉菜单样式 */
+// 在 variables.scss 或全局样式文件中
 .el-dropdown-menu {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
-  padding: 4px 0 !important;
-
-  .el-dropdown-menu__item {
-    color: var(--text-secondary) !important;
-    font-weight: 500;
-    padding: 8px 16px !important;
-    font-size: 13px !important;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: var(--hover-bg) !important;
-      color: var(--text-primary) !important;
+  .el-dropdown-menu__item--divided {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-color);
+    
+    &:before {
+      display: none !important;  // 直接隐藏原有的伪元素
     }
   }
 }
