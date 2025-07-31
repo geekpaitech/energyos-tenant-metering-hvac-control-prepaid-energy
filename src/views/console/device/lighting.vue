@@ -3,10 +3,10 @@
     <!-- 页面头部 -->
     <div class="page-header">
       <h1 class="page-title">
-        <i class="el-icon-sunny"></i>
         智能照明
       </h1>
-      <div>
+      <div class="header-actions">
+        <el-button icon="el-icon-download" @click="exportData">导出数据</el-button>
         <el-button type="primary" icon="el-icon-plus" @click="handleAddDevice">
           添加设备
         </el-button>
@@ -16,80 +16,103 @@
       </div>
     </div>
 
-    <!-- 统计卡片 -->
-    <div class="stats-container">
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon blue">
-            <i class="el-icon-light"></i>
+    <!-- 重新设计的统计区域 -->
+    <div class="stats-wrapper">
+      <!-- 主要统计卡片 -->
+      <div class="primary-stats">
+        <div class="main-stat-card">
+          <div class="stat-content">
+            <div class="stat-header">
+              <span class="stat-title">设备总览</span>
+              <el-tag size="small" :type="systemStatus === 'normal' ? 'success' : 'warning'">
+                {{ systemStatus === 'normal' ? '系统正常' : '部分异常' }}
+              </el-tag>
+            </div>
+            <div class="stat-main">
+              <div class="device-stat">
+                <span class="stat-number">{{ stats.totalDevices }}</span>
+                <span class="stat-unit">台设备</span>
+              </div>
+              <div class="device-detail">
+                <div class="detail-item online">
+                  <i class="el-icon-success"></i>
+                  <span>在线 {{ stats.activeLights }}</span>
+                </div>
+                <div class="detail-item offline">
+                  <i class="el-icon-error"></i>
+                  <span>离线 {{ stats.totalDevices - stats.activeLights }}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <el-tag size="small" type="success">正常</el-tag>
         </div>
-        <div class="stat-value">{{ stats.totalDevices }}</div>
-        <div class="stat-label">设备总数</div>
-        <div class="stat-trend up">
-          <i class="el-icon-top"></i>
-          <span>较上月增加 12%</span>
+
+        <div class="main-stat-card">
+          <div class="stat-content">
+            <div class="stat-header">
+              <span class="stat-title">能耗监控</span>
+              <span class="trend-indicator" :class="powerTrend > 0 ? 'trend-up' : 'trend-down'">
+                <i :class="powerTrend > 0 ? 'el-icon-top' : 'el-icon-bottom'"></i>
+                {{ Math.abs(powerTrend) }}%
+              </span>
+            </div>
+            <div class="stat-main">
+              <div class="power-stat">
+                <span class="stat-number">{{ stats.currentPower }}</span>
+                <span class="stat-unit">kW</span>
+              </div>
+              <div class="power-chart">
+                <div class="mini-bars">
+                  <div v-for="i in 8" :key="i" 
+                       class="bar" 
+                       :style="{height: Math.random() * 60 + 20 + '%'}">
+                  </div>
+                </div>
+                <span class="chart-label">24小时功率曲线</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon green">
-            <i class="el-icon-circle-check"></i>
+      <!-- 次要统计信息 -->
+      <div class="secondary-stats">
+        <div class="sub-stat-card">
+          <div class="sub-stat-icon">
+            <i class="el-icon-light"></i>
+          </div>
+          <div class="sub-stat-info">
+            <span class="sub-stat-value">{{ lightingRate }}%</span>
+            <span class="sub-stat-label">照明开启率</span>
           </div>
           <el-switch
             v-model="stats.allLightsOn"
             @change="handleAllLightsToggle"
-          ></el-switch>
+            active-text=""
+            inactive-text="">
+          </el-switch>
         </div>
-        <div class="stat-value">{{ stats.activeLights }}</div>
-        <div class="stat-label">开启照明</div>
-        <div class="stat-trend">
-          <el-progress
-            :percentage="lightingRate"
-            :show-text="false"
-            :stroke-width="6"
-          ></el-progress>
-          <span style="margin-left: 8px; font-size: 12px"
-            >{{ lightingRate }}%</span
-          >
-        </div>
-      </div>
 
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon orange">
-            <i class="el-icon-data-line"></i>
-          </div>
-          <el-tag size="small" :type="powerTrend > 0 ? 'danger' : 'success'">
-            {{ powerTrend > 0 ? "上升" : "下降" }} {{ Math.abs(powerTrend) }}%
-          </el-tag>
-        </div>
-        <div class="stat-value">{{ stats.currentPower }}</div>
-        <div class="stat-label">当前功率 (kW)</div>
-        <div class="stat-trend" :class="powerTrend > 0 ? 'up' : 'down'">
-          <i :class="powerTrend > 0 ? 'el-icon-top' : 'el-icon-bottom'"></i>
-          <span
-            >较昨日{{ powerTrend > 0 ? "增加" : "减少" }}
-            {{ Math.abs(powerTrend) }}%</span
-          >
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon purple">
+        <div class="sub-stat-card">
+          <div class="sub-stat-icon">
             <i class="el-icon-time"></i>
           </div>
-          <el-button size="mini" type="text" @click="viewSchedules"
-            >查看全部</el-button
-          >
+          <div class="sub-stat-info">
+            <span class="sub-stat-value">{{ stats.schedules }}</span>
+            <span class="sub-stat-label">定时任务</span>
+          </div>
+          <el-button size="mini" type="text" @click="viewSchedules">查看</el-button>
         </div>
-        <div class="stat-value">{{ stats.schedules }}</div>
-        <div class="stat-label">定时任务</div>
-        <div class="stat-trend">
-          <span style="font-size: 12px; color: #909399">下次执行: 18:30</span>
+
+        <div class="sub-stat-card">
+          <div class="sub-stat-icon">
+            <i class="el-icon-data-analysis"></i>
+          </div>
+          <div class="sub-stat-info">
+            <span class="sub-stat-value">{{ todayEnergy }}</span>
+            <span class="sub-stat-label">今日用电(kWh)</span>
+          </div>
+          <span class="energy-status">预算内</span>
         </div>
       </div>
     </div>
@@ -98,7 +121,6 @@
     <div class="control-section">
       <div class="section-header">
         <h2 class="section-title">
-          <i class="el-icon-magic-stick"></i>
           场景模式
         </h2>
         <el-button
@@ -114,12 +136,16 @@
         <div
           v-for="scene in scenes"
           :key="scene.id"
-          :class="['scene-card', scene.className]"
+          :class="['scene-card', { active: activeScene === scene.id }]"
           @click="activateScene(scene)"
         >
-          <i :class="['scene-icon', scene.icon]"></i>
-          <div class="scene-name">{{ scene.name }}</div>
-          <div class="scene-desc">{{ scene.description }}</div>
+          <div class="scene-icon-wrapper">
+            <i :class="scene.icon"></i>
+          </div>
+          <div class="scene-info">
+            <div class="scene-name">{{ scene.name }}</div>
+            <div class="scene-desc">{{ scene.description }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -157,24 +183,16 @@
                 </el-switch>
               </div>
               <div class="brightness-control">
-                <span class="brightness-label">亮度调节</span>
+                <span class="brightness-label">亮度</span>
                 <el-slider
                   v-model="area.brightness"
-                  :show-tooltip="false"
-                  @change="adjustAreaBrightness(area)"
+                  :show-tooltip="true"
+                  :disabled="!area.enabled"
+                  @input="adjustAreaBrightness(area)"
                   @click.native.stop
                 >
                 </el-slider>
-                <span
-                  style="
-                    min-width: 40px;
-                    text-align: right;
-                    font-size: 13px;
-                    color: #606266;
-                  "
-                >
-                  {{ area.brightness }}%
-                </span>
+                <span class="brightness-value">{{ area.brightness }}%</span>
               </div>
             </div>
           </div>
@@ -199,19 +217,18 @@
           </div>
 
           <el-table :data="filteredDevices" style="width: 100%">
-            <el-table-column type="index" width="50"> </el-table-column>
-            <el-table-column prop="id" label="设备编号"></el-table-column>
-            <el-table-column prop="id" label="设备编号"></el-table-column>
-            <el-table-column prop="name" label="设备名称"></el-table-column>
-            <el-table-column prop="area" label="所属区域"></el-table-column>
-            <el-table-column prop="type" label="设备类型">
+            <el-table-column type="index" width="50" label="序号"> </el-table-column>
+            <el-table-column prop="id" label="设备编号" width="100"></el-table-column>
+            <el-table-column prop="name" label="设备名称" min-width="150"></el-table-column>
+            <el-table-column prop="area" label="所属区域" width="120"></el-table-column>
+            <el-table-column prop="type" label="设备类型" width="100">
               <template slot-scope="scope">
                 <el-tag size="small" :type="getDeviceTypeTag(scope.row.type)">
                   {{ scope.row.type }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="power" label="功率(W)"></el-table-column>
+            <el-table-column prop="power" label="功率(W)" width="80"></el-table-column>
             <el-table-column label="状态" width="80" align="center">
               <template slot-scope="scope">
                 <el-switch
@@ -221,17 +238,21 @@
                 </el-switch>
               </template>
             </el-table-column>
-            <el-table-column label="亮度">
+            <el-table-column label="亮度" width="180">
               <template slot-scope="scope">
-                <el-slider
-                  v-model="scope.row.brightness"
-                  :disabled="!scope.row.status"
-                  @change="adjustDeviceBrightness(scope.row)"
-                >
-                </el-slider>
+                <div style="display: flex; align-items: center;">
+                  <el-slider
+                    v-model="scope.row.brightness"
+                    :disabled="!scope.row.status"
+                    @change="adjustDeviceBrightness(scope.row)"
+                    style="flex: 1; margin-right: 10px;"
+                  >
+                  </el-slider>
+                  <span style="width: 40px; text-align: right;">{{ scope.row.brightness }}%</span>
+                </div>
               </template>
             </el-table-column>
-            <el-table-column label="操作" fixed="right" width="250">
+            <el-table-column label="操作" fixed="right" width="230">
               <template slot-scope="scope">
                 <el-button
                   size="small"
@@ -321,76 +342,29 @@
             </el-date-picker>
           </div>
           <div class="chart-container">
-            <!-- 这里可以集成 ECharts 图表 -->
-            <div
-              style="
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #909399;
-              "
-            >
-              <div style="text-align: center">
-                <i
-                  class="el-icon-picture"
-                  style="font-size: 48px; margin-bottom: 16px; display: block"
-                ></i>
-                <p>能耗图表区域</p>
-              </div>
+            <div class="chart-placeholder">
+              <i class="el-icon-data-line" style="font-size: 48px; color: #C0C4CC;"></i>
+              <p style="margin-top: 16px; color: #909399;">能耗图表区域</p>
             </div>
           </div>
 
           <el-row :gutter="20" style="margin-top: 24px">
             <el-col :span="8">
-              <div
-                style="
-                  text-align: center;
-                  padding: 20px;
-                  background: #f5f7fa;
-                  border-radius: 8px;
-                "
-              >
-                <div style="font-size: 24px; font-weight: bold; color: #303133">
-                  2,458
-                </div>
-                <div style="font-size: 14px; color: #909399; margin-top: 8px">
-                  本月用电量 (kWh)
-                </div>
+              <div class="energy-stat-card">
+                <div class="energy-value">2,458</div>
+                <div class="energy-label">本月用电量 (kWh)</div>
               </div>
             </el-col>
             <el-col :span="8">
-              <div
-                style="
-                  text-align: center;
-                  padding: 20px;
-                  background: #f5f7fa;
-                  border-radius: 8px;
-                "
-              >
-                <div style="font-size: 24px; font-weight: bold; color: #303133">
-                  ¥1,836
-                </div>
-                <div style="font-size: 14px; color: #909399; margin-top: 8px">
-                  本月电费
-                </div>
+              <div class="energy-stat-card">
+                <div class="energy-value">¥1,836</div>
+                <div class="energy-label">本月电费</div>
               </div>
             </el-col>
             <el-col :span="8">
-              <div
-                style="
-                  text-align: center;
-                  padding: 20px;
-                  background: #f5f7fa;
-                  border-radius: 8px;
-                "
-              >
-                <div style="font-size: 24px; font-weight: bold; color: #67c23a">
-                  -15.2%
-                </div>
-                <div style="font-size: 14px; color: #909399; margin-top: 8px">
-                  环比变化
-                </div>
+              <div class="energy-stat-card">
+                <div class="energy-value" style="color: #67c23a">-15.2%</div>
+                <div class="energy-label">环比变化</div>
               </div>
             </el-col>
           </el-row>
@@ -415,6 +389,9 @@ export default {
       currentFilter: "all",
       energyDateRange: [],
       powerTrend: -8.5,
+      systemStatus: 'normal',
+      activeScene: null,
+      todayEnergy: 862.5,
 
       // 统计数据
       stats: {
@@ -431,8 +408,7 @@ export default {
           id: 1,
           name: "工作模式",
           description: "明亮舒适的办公照明",
-          icon: "el-icon-edit",
-          className: "work",
+          icon: "el-icon-office-building",
           brightness: 100,
           colorTemp: 5000,
         },
@@ -440,8 +416,7 @@ export default {
           id: 2,
           name: "休息模式",
           description: "柔和温暖的休息照明",
-          icon: "el-icon-coffee",
-          className: "rest",
+          icon: "el-icon-coffee-cup",
           brightness: 40,
           colorTemp: 3000,
         },
@@ -449,8 +424,7 @@ export default {
           id: 3,
           name: "会议模式",
           description: "专注清晰的会议照明",
-          icon: "el-icon-video-camera",
-          className: "meeting",
+          icon: "el-icon-data-board",
           brightness: 80,
           colorTemp: 4500,
         },
@@ -458,8 +432,7 @@ export default {
           id: 4,
           name: "夜间模式",
           description: "节能安全的夜间照明",
-          icon: "el-icon-moon",
-          className: "night",
+          icon: "el-icon-moon-night",
           brightness: 20,
           colorTemp: 2700,
         },
@@ -776,6 +749,7 @@ export default {
       })
         .then(() => {
           this.loading = true;
+          this.activeScene = scene.id;
           setTimeout(() => {
             // 根据场景调整所有区域的亮度
             this.areas.forEach((area) => {
@@ -804,7 +778,7 @@ export default {
     toggleAreaLights(area) {
       if (area.enabled) {
         area.lightsOn = area.online;
-        area.brightness = 80;
+        area.brightness = area.brightness || 80;
         this.$message.success(`已开启${area.name}照明`);
       } else {
         area.lightsOn = 0;
@@ -814,9 +788,21 @@ export default {
       this.updateStats();
     },
 
-    // 调整区域亮度
+    // 调整区域亮度 - 修复bug
     adjustAreaBrightness(area) {
-      this.$message.success(`${area.name}亮度调整为${area.brightness}%`);
+      if (area.enabled && area.brightness > 0) {
+        // 实时更新亮度
+        const areaIndex = this.areas.findIndex(a => a.id === area.id);
+        if (areaIndex !== -1) {
+          this.$set(this.areas[areaIndex], 'brightness', area.brightness);
+        }
+        // 更新该区域所有设备的亮度
+        this.devices.forEach(device => {
+          if (device.area === area.name && device.status) {
+            device.brightness = area.brightness;
+          }
+        });
+      }
     },
 
     // 切换设备
@@ -844,6 +830,11 @@ export default {
       });
       this.stats.activeLights = activeLights;
       this.stats.allLightsOn = activeLights > 0;
+    },
+
+    // 导出数据
+    exportData() {
+      this.$message.success("正在导出数据...");
     },
 
     // 添加设备
@@ -897,12 +888,12 @@ export default {
     // 获取设备类型标签样式
     getDeviceTypeTag(type) {
       const typeMap = {
-        LED灯: "primary",
+        LED灯: "",
         筒灯: "success",
         灯带: "warning",
         射灯: "info",
       };
-      return typeMap[type] || "info";
+      return typeMap[type] || "";
     },
   },
 
@@ -945,6 +936,10 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: white;
+  padding: 20px 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .page-title {
@@ -954,111 +949,202 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin: 0;
 }
 
-.page-title i {
-  font-size: 28px;
+.title-icon {
+  width: 28px;
+  height: 28px;
   color: #409eff;
 }
 
-/* 统计卡片 */
-.stats-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* 统计区域重新设计 */
+.stats-wrapper {
   margin-bottom: 24px;
 }
 
-.stat-card {
+.primary-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.main-stat-card {
   background: white;
   border-radius: 8px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-.stat-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1), transparent);
-  border-radius: 0 0 0 100%;
+.stat-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .stat-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+.stat-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.stat-main {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 24px;
+  justify-content: space-between;
 }
 
-.stat-icon.blue {
-  background: #e3f2fd;
-  color: #2196f3;
+.device-stat, .power-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.stat-icon.green {
-  background: #e8f5e9;
-  color: #4caf50;
-}
-
-.stat-icon.orange {
-  background: #fff3e0;
-  color: #ff9800;
-}
-
-.stat-icon.purple {
-  background: #f3e5f5;
-  color: #9c27b0;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 700;
+.stat-number {
+  font-size: 36px;
+  font-weight: 600;
   color: #303133;
   line-height: 1;
-  margin-bottom: 8px;
 }
 
-.stat-label {
+.stat-unit {
   font-size: 14px;
   color: #909399;
 }
 
-.stat-trend {
+.device-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-item {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
-  margin-top: 12px;
+  font-size: 14px;
 }
 
-.stat-trend.up {
+.detail-item.online {
   color: #67c23a;
 }
 
-.stat-trend.down {
+.detail-item.offline {
+  color: #909399;
+}
+
+.trend-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #f4f6f8;
+}
+
+.trend-indicator.trend-up {
   color: #f56c6c;
+  background: #fef0f0;
+}
+
+.trend-indicator.trend-down {
+  color: #67c23a;
+  background: #f0f9ff;
+}
+
+.power-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 40px;
+}
+
+.bar {
+  width: 6px;
+  background: #409eff;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.3s ease;
+}
+
+.chart-label {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 次要统计卡片 */
+.secondary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.sub-stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sub-stat-icon {
+  width: 48px;
+  height: 48px;
+  background: #f0f7ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #409eff;
+}
+
+.sub-stat-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sub-stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.sub-stat-label {
+  font-size: 13px;
+  color: #909399;
+}
+
+.energy-status {
+  font-size: 12px;
+  color: #67c23a;
+  padding: 2px 8px;
+  background: #f0f9ff;
+  border-radius: 4px;
 }
 
 /* 控制面板 */
@@ -1067,7 +1153,7 @@ export default {
   border-radius: 8px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .section-header {
@@ -1075,55 +1161,121 @@ export default {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-  padding-bottom: 16px;
 }
 
 .section-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   color: #303133;
+  margin: 0;
+}
+
+/* 场景卡片重新设计 */
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.scene-card {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
+  padding: 20px;
+  background: #fafbfc;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.scene-card:hover {
+  border-color: #409eff;
+  background: #f5f7fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.scene-card.active {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.scene-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: #f0f2f5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #606266;
+}
+
+.scene-card:hover .scene-icon-wrapper {
+  background: #e6f7ff;
+  color: #409eff;
+}
+
+.scene-card.active .scene-icon-wrapper {
+  background: #409eff;
+  color: white;
+}
+
+.scene-info {
+  flex: 1;
+}
+
+.scene-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.scene-desc {
+  font-size: 13px;
+  color: #909399;
 }
 
 /* 区域控制网格 */
 .area-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 16px;
+  padding: 20px 0;
 }
 
 .area-card {
   border: 1px solid #e4e7ed;
   border-radius: 8px;
-  padding: 16px;
+  padding: 20px;
   transition: all 0.3s ease;
   cursor: pointer;
-  position: relative;
-  background: #fafbfc;
+  background: white;
 }
 
 .area-card:hover {
   border-color: #409eff;
-  background: #f5f7fa;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .area-card.active {
   border-color: #409eff;
-  background: #ecf5ff;
+  background: #f0f7ff;
 }
 
 .area-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .area-name {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   color: #303133;
 }
 
@@ -1131,7 +1283,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
   color: #606266;
 }
 
@@ -1150,7 +1302,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .light-count {
@@ -1161,126 +1313,37 @@ export default {
   color: #606266;
 }
 
+/* 亮度控制优化 */
 .brightness-control {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 16px;
 }
 
 .brightness-label {
   font-size: 13px;
   color: #909399;
-  min-width: 60px;
+  min-width: 32px;
 }
 
-/* 场景卡片 - 更淡雅的B端风格 */
-.scene-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+.brightness-control .el-slider {
+  flex: 1;
 }
 
-.scene-card {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-  color: #303133;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid #e8e8e8;
-}
-
-.scene-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: #d0d0d0;
-}
-
-.scene-card.work {
-  background: #fef8fa;
-  border-color: #fde4e8;
-}
-
-.scene-card.work:hover {
-  background: #fef0f4;
-  border-color: #fcccd6;
-}
-
-.scene-card.rest {
-  background: #f0fafa;
-  border-color: #d8f0f0;
-}
-
-.scene-card.rest:hover {
-  background: #e6f7f7;
-  border-color: #c0e8e8;
-}
-
-.scene-card.meeting {
-  background: #fdf8fe;
-  border-color: #f4e4f6;
-}
-
-.scene-card.meeting:hover {
-  background: #fbf0fc;
-  border-color: #eeccf2;
-}
-
-.scene-card.night {
-  background: #f8fcfe;
-  border-color: #e4f0f8;
-}
-
-.scene-card.night:hover {
-  background: #f0f9ff;
-  border-color: #cce4f5;
-}
-
-.scene-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
-  color: #606266;
-}
-
-.scene-card.work .scene-icon {
-  color: #f56c6c;
-}
-
-.scene-card.rest .scene-icon {
-  color: #409eff;
-}
-
-.scene-card.meeting .scene-icon {
-  color: #e6a23c;
-}
-
-.scene-card.night .scene-icon {
-  color: #909399;
-}
-
-.scene-name {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #303133;
-}
-
-.scene-desc {
+.brightness-value {
+  min-width: 40px;
+  text-align: right;
   font-size: 13px;
-  color: #909399;
+  color: #606266;
+  font-weight: 500;
 }
 
-/* 设备列表样式 - 增加顶部间距 */
+/* 设备过滤器 */
 .device-filters {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 20px;
-  padding-left: 10px;
-  padding-top: 20px; /* 新增：增加内边距 */
+  padding: 20px 20px 0;
   flex-wrap: wrap;
 }
 
@@ -1309,25 +1372,52 @@ export default {
 /* 能耗图表 */
 .chart-container {
   height: 300px;
-  margin-top: 20px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 定时任务样式 - 优化间距 */
+.chart-placeholder {
+  text-align: center;
+}
+
+.energy-stat-card {
+  text-align: center;
+  padding: 20px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.energy-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.energy-label {
+  font-size: 14px;
+  color: #909399;
+  margin-top: 8px;
+}
+
+/* 定时任务样式 */
 .schedule-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px; /* 增加内边距 */
+  padding: 20px;
   border: 1px solid #e4e7ed;
   border-radius: 8px;
-  margin-bottom: 16px; /* 增加底部间距 */
+  margin-bottom: 16px;
   transition: all 0.3s ease;
-  background: #fafbfc; /* 添加背景色 */
+  background: white;
 }
 
 .schedule-item:hover {
   border-color: #409eff;
-  background: #f5f7fa;
+  background: #fafbfc;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -1337,29 +1427,28 @@ export default {
 
 .schedule-time {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   color: #303133;
-  margin-bottom: 8px; /* 增加间距 */
+  margin-bottom: 8px;
 }
 
 .schedule-desc {
   font-size: 14px;
-  color: #606266; /* 调整颜色 */
-  margin-bottom: 8px; /* 增加间距 */
+  color: #606266;
+  margin-bottom: 12px;
 }
 
 .schedule-days {
   display: flex;
-  gap: 6px; /* 增加间距 */
-  margin-top: 10px; /* 增加顶部间距 */
+  gap: 8px;
 }
 
 .day-tag {
-  padding: 4px 10px; /* 增加内边距 */
+  padding: 4px 10px;
   background: #f4f6f8;
   border-radius: 4px;
   font-size: 12px;
-  color: #606266;
+  color: #909399;
 }
 
 .day-tag.active {
@@ -1368,16 +1457,16 @@ export default {
   font-weight: 500;
 }
 
-/* Tab切换优化 - 增加内容区间距 */
+/* Tab样式优化 */
 ::v-deep .el-tabs__content {
-  padding-top: 20px; /* 新增：tab内容区顶部间距 */
+  padding-top: 20px;
 }
 
 ::v-deep .el-tabs__item {
   height: 44px;
   line-height: 44px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 ::v-deep .el-tabs--card > .el-tabs__header {
@@ -1385,38 +1474,81 @@ export default {
   margin-bottom: 0;
 }
 
-/* 表格样式优化 */
+/* 表格样式 */
 ::v-deep .el-table {
-  margin-top: 20px; /* 新增：表格顶部间距 */
+  margin-top: 0;
 }
 
 ::v-deep .el-table th {
   background-color: #fafbfc;
   color: #303133;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 ::v-deep .el-table td {
   padding: 12px 0;
 }
 
-/* 响应式 */
-@media (max-width: 768px) {
-  .lighting-container {
-    padding: 12px;
-  }
+/* 滑块样式优化 */
+::v-deep .el-slider__runway {
+  background-color: #e4e7ed;
+}
 
-  .stats-container {
-    grid-template-columns: repeat(2, 1fr);
+::v-deep .el-slider__bar {
+  background: #409eff;
+}
+
+::v-deep .el-slider__button-wrapper {
+  top: -13px;
+}
+
+::v-deep .el-slider__button {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #409eff;
+  background-color: #fff;
+}
+
+/* 开关样式 */
+::v-deep .el-switch.is-checked .el-switch__core {
+  background: #409eff;
+  border-color: #409eff;
+}
+
+/* 响应式 */
+@media (max-width: 1440px) {
+  .primary-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .secondary-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .secondary-stats {
+    grid-template-columns: 1fr;
     gap: 12px;
   }
-
+  
   .area-grid {
     grid-template-columns: 1fr;
   }
-
+  
   .scene-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1447,20 +1579,5 @@ export default {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* 自定义滑块样式 */
-::v-deep .el-slider__runway {
-  background-color: #e4e7ed !important;
-}
-
-::v-deep .el-slider__bar {
-  background: #409eff !important;
-}
-
-/* 开关样式 */
-::v-deep .el-switch.is-checked .el-switch__core {
-  background: #409eff !important;
-  border-color: #409eff !important;
 }
 </style>
