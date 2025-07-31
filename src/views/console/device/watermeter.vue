@@ -848,7 +848,6 @@ export default {
         if (newVal) {
           this.queryData.managerId = newVal;
           this.fetchTableData();
-          this.getTenantPageTenant();
           if (this.routerAuth) {
             this.getPriceList();
           }

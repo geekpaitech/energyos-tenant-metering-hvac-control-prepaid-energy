@@ -1,1168 +1,1557 @@
 <template>
-  <div class="table-page-container">
-    <!-- 搜索区域 -->
-    <div class="search-container">
-      <el-card class="search-card" shadow="never">
-        <el-form 
-          :model="queryData" 
-          ref="searchForm" 
-          class="search-form compact-form"
-          label-position="left"
-          label-width="80px"
-        >
-          <!-- 基础筛选 - 动态渲染 -->
-          <el-row :gutter="16" class="search-row">
-            <el-col 
-              v-for="field in displayBasicFields" 
-              :key="field.prop"
-              :xs="24" :sm="12" :md="8" :lg="6"
-            >
-              <el-form-item :label="field.label" :prop="field.prop" class="compact-form-item">
-                <!-- 输入框 -->
-                <el-input 
-                  v-if="field.type === 'input'"
-                  v-model="queryData[field.prop]" 
-                  placeholder="请输入"
-                  clearable
-                  size="small"
-                />
-                <!-- 选择框 -->
-                <el-select 
-                  v-else-if="field.type === 'select'"
-                  v-model="queryData[field.prop]" 
-                  placeholder="请选择"
-                  clearable
-                  size="small"
-                  style="width: 100%"
-                >
-                  <!-- 电表类型选项 -->
-                  <template v-if="field.prop === 'bindType'">
-                    <el-option label="全部" value="" />
-                    <el-option label="专用表" value="1" />
-                    <el-option label="公摊表" value="2" />
-                    <el-option label="公式表" value="3" />
-                  </template>
-                  <!-- 绑定租户选项 -->
-                  <template v-else-if="field.prop === 'bindId'">
-                    <el-option label="全部" value="" />
-                    <el-option 
-                      v-for="tenant in tenantList" 
-                      :key="tenant.tenantId" 
-                      :label="`${tenant.tenantId}(${tenant.tenantName})`" 
-                      :value="tenant.tenantId"
-                    >
-                      <span style="font-size: 12px;">{{ tenant.tenantId }}({{ tenant.tenantName }})</span>
-                    </el-option>
-                  </template>
-                  <!-- 在线状态选项 -->
-                  <template v-else-if="field.prop === 'onlineStatus'">
-                    <el-option label="全部" value="" />
-                    <el-option label="在线" value="1">
-                      <span class="option-with-dot">
-                        <span class="status-dot online"></span>
-                        在线
-                      </span>
-                    </el-option>
-                    <el-option label="离线" value="0">
-                      <span class="option-with-dot">
-                        <span class="status-dot offline"></span>
-                        离线
-                      </span>
-                    </el-option>
-                  </template>
-                  <!-- 分合闸状态选项 -->
-                  <template v-else-if="field.prop === 'switchStatus'">
-                    <el-option label="全部" value="" />
-                    <el-option label="分闸" value="0" />
-                    <el-option label="合闸" value="1" />
-                  </template>
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          
-          <!-- 高级筛选 - 只在需要时显示 -->
-          <el-collapse-transition v-if="needAdvancedSearch">
-            <el-row :gutter="16" v-show="showAdvanced" class="search-row">
-              <el-col 
-                v-for="field in displayAdvancedFields" 
-                :key="field.prop"
-                :xs="24" :sm="12" :md="8" :lg="6"
-              >
-                <el-form-item :label="field.label" :prop="field.prop" class="compact-form-item">
-                  <!-- 选择框 -->
-                  <el-select 
-                    v-model="queryData[field.prop]" 
-                    placeholder="请选择"
-                    clearable
-                    size="small"
-                    style="width: 100%"
-                    :filterable="field.prop === 'bindId'"
-                  >
-                    <!-- 绑定租户选项 -->
-                    <template v-if="field.prop === 'bindId'">
-                      <el-option label="全部" value="" />
-                      <el-option 
-                        v-for="tenant in tenantList" 
-                        :key="tenant.tenantId" 
-                        :label="`${tenant.tenantId}(${tenant.tenantName})`" 
-                        :value="tenant.tenantId"
-                      >
-                        <span style="font-size: 12px;">{{ tenant.tenantId }}({{ tenant.tenantName }})</span>
-                      </el-option>
-                    </template>
-                    <!-- 在线状态选项 -->
-                    <template v-else-if="field.prop === 'onlineStatus'">
-                      <el-option label="全部" value="" />
-                      <el-option label="在线" value="1">
-                        <span class="option-with-dot">
-                          <span class="status-dot online"></span>
-                          在线
-                        </span>
-                      </el-option>
-                      <el-option label="离线" value="0">
-                        <span class="option-with-dot">
-                          <span class="status-dot offline"></span>
-                          离线
-                        </span>
-                      </el-option>
-                    </template>
-                    <!-- 分合闸状态选项 -->
-                    <template v-else-if="field.prop === 'switchStatus'">
-                      <el-option label="全部" value="" />
-                      <el-option label="分闸" value="0" />
-                      <el-option label="合闸" value="1" />
-                    </template>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-collapse-transition>
-          
-          <!-- 操作按钮行 - 更合理的布局 -->
-          <div class="form-actions compact-actions">
-            <div class="action-left">
-              <el-button type="primary" icon="el-icon-plus" size="small" @click="handleAdd">
-                新增电表
-              </el-button>
-            </div>
-            <div class="action-right">
-              <el-button type="primary" icon="el-icon-search" size="small" @click="handleSearch">
-                查询
-              </el-button>
-              <el-button icon="el-icon-refresh" size="small" @click="handleReset">
-                重置
-              </el-button>
-              <el-button 
-                v-if="needAdvancedSearch"
-                type="text" 
-                size="small"
-                @click="showAdvanced = !showAdvanced"
-                style="padding: 7px 8px;"
-              >
-                <i class="el-icon-s-operation" style="margin-right: 4px;"></i>
-                高级筛选
-                <i :class="showAdvanced ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" style="margin-left: 2px;"></i>
-              </el-button>
-              <el-divider v-if="needAdvancedSearch" direction="vertical" style="margin: 0 8px;"></el-divider>
-              <el-dropdown trigger="click" @command="handleCommand">
-                <el-button size="small" type="text" style="padding: 7px 12px;">
-                  更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
-                </el-button>
-                <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item command="export" icon="el-icon-download">
-                    导出数据
-                  </el-dropdown-item>
-                  <el-dropdown-item command="import" icon="el-icon-upload2">
-                    导入数据
-                  </el-dropdown-item>
-                  <el-dropdown-item command="batch" icon="el-icon-s-operation" divided>
-                    批量操作
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </el-dropdown>
-            </div>
-          </div>
-        </el-form>
-      </el-card>
+  <div class="hvac-management">
+    <!-- 页面头部 -->
+    <div class="page-header">
+      <h2 class="page-title">空调管理</h2>
+      <div class="header-actions">
+        <span class="update-time">更新时间：{{ lastUpdateTime }}</span>
+        <button class="btn-text" @click="refreshData">
+          <i class="iconfont icon-refresh"></i>
+          刷新
+        </button>
+      </div>
     </div>
 
-    <!-- 数据表格区域 -->
-    <div class="table-container">
-      <el-card class="table-card" shadow="never">
-        <!-- 表格工具栏 -->
-        <div class="table-toolbar">
-          <div class="toolbar-left">
-            <span class="selection-info" v-if="selectedData.length > 0">
-              已选择 <span class="count">{{ selectedData.length }}</span> 条数据
-            </span>
-          </div>
-          <div class="toolbar-right">
-            <el-tooltip content="刷新数据" placement="top">
-              <el-button 
-                icon="el-icon-refresh" 
-                circle 
-                size="small"
-                @click="fetchTableData"
-              />
-            </el-tooltip>
-            <el-tooltip content="表格设置" placement="top">
-              <el-button 
-                icon="el-icon-setting" 
-                circle 
-                size="small"
-                @click="handleTableSetting"
-              />
-            </el-tooltip>
-          </div>
-        </div>
+    <!-- 统计信息 -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <span class="stat-label">设备总数</span>
+        <span class="stat-value">{{ stats.total }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">在线设备</span>
+        <span class="stat-value success">{{ stats.online }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">运行中</span>
+        <span class="stat-value primary">{{ stats.running }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">平均温度</span>
+        <span class="stat-value">{{ stats.avgTemp }}°C</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">总功率</span>
+        <span class="stat-value">{{ stats.totalPower }}kW</span>
+      </div>
+    </div>
 
-        <!-- 数据表格 -->
-        <el-table
-          v-loading="loading"
-          :data="tableData"
-          border
-          stripe
-          style="width: 100%"
-          class="custom-table"
-          @selection-change="handleSelectionChange"
-          :header-cell-style="{
-            background: '#f5f7fa',
-            color: '#606266',
-            fontWeight: '600'
-          }"
-        >
-          <el-table-column type="selection" width="55" align="center" />
-          
-          <!-- 按照tableKey配置显示列 -->
-          <el-table-column 
-            v-for="col in displayColumns" 
-            :key="col.key"
-            :prop="col.key" 
-            :label="col.label" 
-            :width="col.width"
-            :min-width="col.minWidth"
-            :align="col.align || 'center'"
-            :show-overflow-tooltip="true"
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+      <div class="filter-left">
+        <div class="filter-tabs">
+          <span 
+            v-for="area in areas" 
+            :key="area.id"
+            :class="['filter-tab', { active: currentArea === area.id }]"
+            @click="currentArea = area.id"
           >
-            <template slot-scope="scope">
-              <!-- 设备名称 -->
-              <template v-if="col.key === 'meterName'">
-                <el-link type="primary" @click="handleMonitor(scope.row)">
-                  <i class="el-icon-monitor"></i>
-                  {{ scope.row.meterName || '-' }}
-                </el-link>
-              </template>
-              
-              <!-- 电表类型 -->
-              <template v-else-if="col.key === 'bindTypeLabel'">
-                <el-tag 
-                  v-if="scope.row.bindType == 1" 
-                  type="primary" 
-                  size="small"
-                  effect="plain"
-                >
-                  专用表
-                </el-tag>
-                <el-tag 
-                  v-else-if="scope.row.bindType == 2" 
-                  type="warning" 
-                  size="small"
-                  effect="plain"
-                >
-                  公摊表
-                </el-tag>
-                <el-tag 
-                  v-else-if="scope.row.bindType == 3" 
-                  type="info" 
-                  size="small"
-                  effect="plain"
-                >
-                  公式表
-                </el-tag>
-                <span v-else>-</span>
-              </template>
-              
-              <!-- 归属项目 -->
-              <template v-else-if="col.key === 'managerName'">
-                <el-link type="primary" @click="handleProjectClick(scope.row)">
-                  <i class="el-icon-office-building"></i>
-                  {{ scope.row.managerName || '-' }}
-                </el-link>
-              </template>
-              
-              <!-- 已绑租户 -->
-              <template v-else-if="col.key === 'bindName'">
-                <el-link v-if="scope.row.bindId" type="primary" @click="handleTenantClick(scope.row)">
-                  <i class="el-icon-user"></i>
-                  {{ scope.row.bindName }}
-                </el-link>
-                <span v-else class="text-muted">未绑定</span>
-              </template>
-              
-              <!-- 付费模式 -->
-              <template v-else-if="col.key === 'logicPayTypeLabel'">
-                <el-tag 
-                  v-if="scope.row.logicPayType == 0" 
-                  type="success" 
-                  size="small"
-                >
-                  预付费
-                </el-tag>
-                <el-tag 
-                  v-else-if="scope.row.logicPayType == 1" 
-                  type="primary" 
-                  size="small"
-                >
-                  强控
-                </el-tag>
-                <span v-else>-</span>
-              </template>
-              
-              <!-- 分合闸状态 -->
-              <template v-else-if="col.key === 'switchStatusLabel'">
-                <div class="switch-status">
-                  <i 
-                    :class="scope.row.switchStatus == 1 ? 'el-icon-switch-button' : 'el-icon-turn-off'"
-                    :style="{color: scope.row.switchStatus == 1 ? '#67C23A' : '#909399'}"
-                  ></i>
-                  {{ scope.row.switchStatus == 1 ? '合闸' : '分闸' }}
-                </div>
-              </template>
-              
-              <!-- 在线状态 -->
-              <template v-else-if="col.key === 'onlineStatusStatus'">
-                <div class="status-wrapper">
-                  <span :class="['status-dot', scope.row.onlineStatus == 1 ? 'online' : 'offline']"></span>
-                  <span>{{ scope.row.onlineStatus == 1 ? '在线' : '离线' }}</span>
-                </div>
-              </template>
-              
-              <!-- 余额 -->
-              <template v-else-if="col.key === 'balance'">
-                <span class="balance-text">
-                  {{ scope.row.balance !== null && scope.row.balance !== undefined ? '¥' + parseFloat(scope.row.balance).toFixed(2) : '-' }}
-                </span>
-              </template>
-              
-              <!-- 默认显示 -->
-              <template v-else>
-                {{ scope.row[col.key] || '-' }}
-              </template>
-            </template>
-          </el-table-column>
-          
-          <!-- 操作列 -->
-          <el-table-column label="操作" width="200" fixed="right" align="center">
-            <template slot-scope="scope">
-              <div class="table-actions-group">
-                <el-button 
-                  type="text" 
-                  size="small" 
-                  icon="el-icon-setting"
-                  @click="handleEdit(scope.row)"
-                >
-                  设置
-                </el-button>
-                <el-divider direction="vertical"></el-divider>
-                <el-dropdown trigger="click" @command="handleTableCommand($event, scope.row)">
-                  <el-button type="text" size="small">
-                    更多
-                    <i class="el-icon-arrow-down el-icon--right"></i>
-                  </el-button>
-                  <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item 
-                      :command="scope.row.switchStatus == 1 ? 'switch-off' : 'switch-on'"
-                      :icon="scope.row.switchStatus == 1 ? 'el-icon-turn-off' : 'el-icon-switch-button'"
-                    >
-                      {{ scope.row.switchStatus == 1 ? '分闸' : '合闸' }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="monitor" icon="el-icon-monitor">
-                      电表监控
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </el-dropdown>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <!-- 分页 -->
-        <div class="pagination-container">
-          <el-pagination
-            :current-page="pageData.current"
-            :page-sizes="[20, 30, 50, 100]"
-            :page-size="pageData.size"
-            :total="pageData.total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-          />
-        </div>
-      </el-card>
-    </div>
-
-    <!-- 编辑弹窗 -->
-    <el-dialog
-      :title="editForm.id ? '编辑电表' : '新增电表'"
-      :visible.sync="dialogVisible"
-      width="680px"
-      :close-on-click-modal="false"
-      class="custom-dialog"
-    >
-      <el-form ref="editForm" :model="editForm" :rules="rules" label-width="100px">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="序列号" prop="serial">
-              <el-input 
-                v-model="editForm.serial" 
-                placeholder="请输入序列号" 
-                :disabled="!!editForm.id"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="IMEI" prop="imei">
-              <el-input v-model="editForm.imei" placeholder="请输入IMEI" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="电表名称" prop="meterName">
-              <el-input v-model="editForm.meterName" placeholder="请输入电表名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="电表类型" prop="bindType">
-              <el-select v-model="editForm.bindType" placeholder="请选择电表类型" style="width: 100%">
-                <el-option 
-                  v-for="(item, key) in MeterBindType" 
-                  :key="key" 
-                  :label="item.label" 
-                  :value="item.value" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="付费模式" prop="logicPayType">
-              <el-select v-model="editForm.logicPayType" placeholder="请选择付费模式" style="width: 100%">
-                <el-option 
-                  v-for="(item, key) in MeterPayType" 
-                  :key="key" 
-                  :label="item.label" 
-                  :value="item.value" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="电表相位" prop="phase">
-              <el-select v-model="editForm.phase" placeholder="请选择电表相位" style="width: 100%">
-                <el-option 
-                  v-for="(item, key) in MeterPhase" 
-                  :key="key" 
-                  :label="item.label" 
-                  :value="item.value" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="CT" prop="ct">
-              <el-input-number 
-                v-model="editForm.ct" 
-                :min="1" 
-                placeholder="请输入CT值" 
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="PT" prop="pt">
-              <el-input-number 
-                v-model="editForm.pt" 
-                :min="1" 
-                placeholder="请输入PT值" 
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取 消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSave">
-          {{ submitting ? '保存中...' : '确 定' }}
-        </el-button>
-      </span>
-    </el-dialog>
-
-    <!-- 修改预付费模式弹窗 -->
-    <el-dialog
-      title="操作确认"
-      :visible.sync="payTypeDialog.visible"
-      width="420px"
-      :close-on-click-modal="false"
-      class="confirm-dialog"
-    >
-      <div class="confirm-content">
-        <i class="el-icon-warning warning-icon"></i>
-        <div class="confirm-text">
-          <p>该电表为预付费模式，需要先修改为强控模式才能进行分合闸操作。</p>
-          <p>是否立即修改？</p>
+            {{ area.name }}
+          </span>
         </div>
       </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="payTypeDialog.visible = false">取 消</el-button>
-        <el-button type="primary" @click="handleUpdatePayType">确 定</el-button>
-      </span>
-    </el-dialog>
+      <div class="filter-right">
+        <button class="btn-primary" @click="showBatchControl = true">批量控制</button>
+      </div>
+    </div>
+
+    <!-- 设备列表容器 -->
+    <div class="devices-wrapper">
+      <div class="devices-scroll">
+        <div class="devices-grid">
+          <div 
+            v-for="device in currentDevices" 
+            :key="device.id"
+            :class="['device-item', { offline: !device.online }]"
+          >
+            <!-- 设备头部 -->
+            <div class="device-header">
+              <span class="device-name">{{ device.name }}</span>
+              <span :class="['status-dot', device.online ? 'online' : 'offline']"></span>
+            </div>
+            
+            <!-- 温度显示区 -->
+            <div class="temp-display">
+              <div class="temp-current">
+                <span class="temp-num">{{ device.currentTemp }}</span>
+                <span class="temp-unit">°C</span>
+              </div>
+              <div class="temp-set">
+                <span class="temp-label">当前室温</span>
+                <span class="temp-divider">|</span>
+                <span class="temp-label">设定 {{ device.setTemp }}°C</span>
+              </div>
+            </div>
+            
+            <!-- 模式和状态 -->
+            <div class="device-status">
+              <span class="mode-label">{{ modeMap[device.mode] }}</span>
+              <span class="wind-label">{{ windMap[device.fanSpeed] }}</span>
+            </div>
+            
+            <!-- 控制区 -->
+            <div class="device-controls">
+              <!-- 电源开关 -->
+              <div class="power-switch">
+                <label class="switch-control">
+                  <input 
+                    type="checkbox" 
+                    :checked="device.power"
+                    @change="togglePower(device)"
+                    :disabled="!device.online"
+                  >
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+              
+              <!-- 快捷操作 -->
+              <div class="quick-actions">
+                <button 
+                  class="icon-btn" 
+                  @click="adjustTemp(device, -1)"
+                  :disabled="!device.online || !device.power || device.setTemp <= 16"
+                  title="降低温度"
+                >
+                  <i class="iconfont icon-minus"></i>
+                </button>
+                <button 
+                  class="icon-btn" 
+                  @click="adjustTemp(device, 1)"
+                  :disabled="!device.online || !device.power || device.setTemp >= 30"
+                  title="升高温度"
+                >
+                  <i class="iconfont icon-plus"></i>
+                </button>
+                <button 
+                  class="icon-btn"
+                  @click="openDeviceDetail(device)"
+                  :disabled="!device.online"
+                  title="更多设置"
+                >
+                  <i class="iconfont icon-setting"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- 底部信息 -->
+            <div class="device-info">
+              <span class="info-text">{{ device.location }}</span>
+              <span class="info-text" v-if="device.power">{{ device.powerUsage }}kW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量控制弹窗 -->
+    <div v-if="showBatchControl" class="modal-mask" @click.self="showBatchControl = false">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>批量控制</h3>
+          <button class="close-btn" @click="showBatchControl = false">
+            <i class="iconfont icon-close"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="batch-section">
+            <h4>快速操作</h4>
+            <div class="batch-actions">
+              <button class="action-btn" @click="batchAction('powerOn')">
+                <i class="iconfont icon-power"></i>
+                全部开启
+              </button>
+              <button class="action-btn" @click="batchAction('powerOff')">
+                <i class="iconfont icon-poweroff"></i>
+                全部关闭
+              </button>
+              <button class="action-btn" @click="batchAction('setTemp', 26)">
+                <i class="iconfont icon-temp"></i>
+                设为26°C
+              </button>
+              <button class="action-btn" @click="batchAction('setMode', 'cool')">
+                <i class="iconfont icon-snow"></i>
+                制冷模式
+              </button>
+            </div>
+          </div>
+          
+          <div class="batch-section">
+            <h4>定时设置</h4>
+            <div class="schedule-form">
+              <div class="form-row">
+                <label>开启时间</label>
+                <input type="time" v-model="schedule.startTime" class="time-input">
+              </div>
+              <div class="form-row">
+                <label>关闭时间</label>
+                <input type="time" v-model="schedule.endTime" class="time-input">
+              </div>
+              <div class="form-row">
+                <label>重复</label>
+                <div class="weekdays">
+                  <span 
+                    v-for="day in weekdays" 
+                    :key="day.value"
+                    :class="['weekday', { selected: schedule.days.includes(day.value) }]"
+                    @click="toggleWeekday(day.value)"
+                  >
+                    {{ day.label }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="batch-section">
+            <h4>场景模式</h4>
+            <div class="scene-grid">
+              <div 
+                v-for="scene in scenes" 
+                :key="scene.id"
+                :class="['scene-card', { active: selectedScene === scene.id }]"
+                @click="applyScene(scene)"
+              >
+                <span>{{ scene.name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-default" @click="showBatchControl = false">取消</button>
+          <button class="btn-primary" @click="saveBatchSettings">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设备详情弹窗 -->
+    <div v-if="showDeviceDetail" class="modal-mask" @click.self="showDeviceDetail = false">
+      <div class="modal-container detail-modal">
+        <div class="modal-header">
+          <h3>{{ currentDevice.name }} - 详细设置</h3>
+          <button class="close-btn" @click="showDeviceDetail = false">
+            <i class="iconfont icon-close"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-section">
+            <div class="detail-info">
+              <div class="info-row">
+                <span class="info-label">当前室温：</span>
+                <span class="info-value">{{ currentDevice.currentTemp }}°C</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">设定温度：</span>
+                <span class="info-value primary">{{ tempDeviceSettings.setTemp }}°C</span>
+              </div>
+            </div>
+            
+            <div class="detail-row">
+              <label>温度设定</label>
+              <div class="temp-adjuster">
+                <button @click="detailAdjustTemp(-1)" :disabled="tempDeviceSettings.setTemp <= 16">-</button>
+                <input type="number" v-model="tempDeviceSettings.setTemp" min="16" max="30">
+                <button @click="detailAdjustTemp(1)" :disabled="tempDeviceSettings.setTemp >= 30">+</button>
+              </div>
+            </div>
+            
+            <div class="detail-row">
+              <label>运行模式</label>
+              <div class="mode-selector">
+                <span 
+                  v-for="mode in modes" 
+                  :key="mode.value"
+                  :class="['mode-option', { active: tempDeviceSettings.mode === mode.value }]"
+                  @click="tempDeviceSettings.mode = mode.value"
+                >
+                  {{ mode.label }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="detail-row">
+              <label>风速设置</label>
+              <div class="wind-selector">
+                <span 
+                  v-for="speed in fanSpeeds" 
+                  :key="speed.value"
+                  :class="['wind-option', { active: tempDeviceSettings.fanSpeed === speed.value }]"
+                  @click="tempDeviceSettings.fanSpeed = speed.value"
+                >
+                  {{ speed.label }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="detail-row">
+              <label>扫风设置</label>
+              <div class="swing-options">
+                <label class="checkbox-label">
+                  <input type="checkbox" v-model="tempDeviceSettings.swingH">
+                  <span>水平扫风</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" v-model="tempDeviceSettings.swingV">
+                  <span>垂直扫风</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-default" @click="showDeviceDetail = false">取消</button>
+          <button class="btn-primary" @click="saveDeviceSettings">确定</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-// 导入API
-import {
-  meterPageMeterInfoByAdmin,
-  meterAddMeter,
-  meterUpdateMeterBase,
-  tenantDoMeterSwitchOffOn,
-  meterUpdateLogicPayType
-} from '@/api/meter'
-
-import {tenantPageTenant} from '@/api/tenant'
-// 导入枚举
-import { 
-  MeterBindType, 
-  MeterPayType, 
-  MeterSwitchStatus, 
-  MeterOnlineStatus,
-  MeterPhase,
-  MeterMonitorType,
-  getEnumLabel,
-  getEnumItem
-} from '@/utils/enums/meter'
-
-import { mapGetters } from 'vuex'
-
 export default {
-  name: 'MeterManagement',
+  name: 'HvacManagement',
   data() {
     return {
-      // 查询参数
-      queryData: {
-        bindId: '',
-        bindType: '',
-        id: '',
-        managerId: '',
-        meterName: '',
-        onlineStatus: '',
-        serial: '',
-        switchStatus: ''
+      lastUpdateTime: '',
+      currentArea: 'all',
+      showBatchControl: false,
+      showDeviceDetail: false,
+      currentDevice: {},
+      tempDeviceSettings: {}, // 临时存储设备设置
+      selectedScene: null, // 当前选中的场景
+      
+      stats: {
+        total: 48,
+        online: 45,
+        running: 32,
+        avgTemp: 24.5,
+        totalPower: 89.6
       },
-      // 搜索字段配置
-      searchFields: {
-        basic: [
-          { prop: 'serial', label: '序列号', type: 'input' },
-          { prop: 'meterName', label: '电表名称', type: 'input' },
-          { prop: 'id', label: '电表编号', type: 'input' },
-          { prop: 'bindType', label: '电表类型', type: 'select' }
-        ],
-        advanced: [
-          { prop: 'bindId', label: '绑定租户', type: 'select' },
-          { prop: 'onlineStatus', label: '在线状态', type: 'select' },
-          { prop: 'switchStatus', label: '分合闸', type: 'select' }
-        ]
+      
+      areas: [
+        { id: 'all', name: '全部' },
+        { id: 'A', name: 'A栋' },
+        { id: 'B', name: 'B栋' },
+        { id: 'C', name: 'C栋' },
+        { id: 'D', name: 'D栋' }
+      ],
+      
+      devices: [
+        {
+          id: 'AC001',
+          name: '13-24-1318-2',
+          area: 'A',
+          location: 'A栋-13层-1318室',
+          online: true,
+          power: true,
+          currentTemp: 26,
+          setTemp: 24,
+          mode: 'cool',
+          fanSpeed: 'mid',
+          swingH: false,
+          swingV: false,
+          powerUsage: 2.8
+        },
+        {
+          id: 'AC002',
+          name: '13-24-1319-1',
+          area: 'A',
+          location: 'A栋-13层-1319室',
+          online: true,
+          power: true,
+          currentTemp: 25,
+          setTemp: 23,
+          mode: 'cool',
+          fanSpeed: 'high',
+          swingH: true,
+          swingV: false,
+          powerUsage: 3.2
+        },
+        {
+          id: 'AC003',
+          name: '14-01-1401-1',
+          area: 'A',
+          location: 'A栋-14层-1401室',
+          online: true,
+          power: false,
+          currentTemp: 28,
+          setTemp: 26,
+          mode: 'cool',
+          fanSpeed: 'low',
+          swingH: false,
+          swingV: false,
+          powerUsage: 0
+        },
+        {
+          id: 'AC004',
+          name: '14-01-1402-2',
+          area: 'A',
+          location: 'A栋-14层-1402室',
+          online: false,
+          power: false,
+          currentTemp: 27,
+          setTemp: 25,
+          mode: 'cool',
+          fanSpeed: 'mid',
+          swingH: false,
+          swingV: false,
+          powerUsage: 0
+        },
+        {
+          id: 'AC005',
+          name: '15-12-1512-1',
+          area: 'B',
+          location: 'B栋-15层-1512室',
+          online: true,
+          power: true,
+          currentTemp: 23,
+          setTemp: 23,
+          mode: 'cool',
+          fanSpeed: 'auto',
+          swingH: true,
+          swingV: true,
+          powerUsage: 2.5
+        },
+        {
+          id: 'AC006',
+          name: '15-12-1513-2',
+          area: 'B',
+          location: 'B栋-15层-1513室',
+          online: true,
+          power: true,
+          currentTemp: 24,
+          setTemp: 25,
+          mode: 'dry',
+          fanSpeed: 'low',
+          swingH: false,
+          swingV: false,
+          powerUsage: 1.8
+        },
+        {
+          id: 'AC007',
+          name: '16-08-1608-1',
+          area: 'B',
+          location: 'B栋-16层-1608室',
+          online: true,
+          power: true,
+          currentTemp: 22,
+          setTemp: 22,
+          mode: 'cool',
+          fanSpeed: 'high',
+          swingH: true,
+          swingV: false,
+          powerUsage: 3.5
+        },
+        {
+          id: 'AC008',
+          name: '17-05-1705-1',
+          area: 'C',
+          location: 'C栋-17层-1705室',
+          online: true,
+          power: false,
+          currentTemp: 28,
+          setTemp: 26,
+          mode: 'fan',
+          fanSpeed: 'mid',
+          swingH: false,
+          swingV: false,
+          powerUsage: 0
+        },
+        {
+          id: 'AC009',
+          name: '18-03-1803-2',
+          area: 'C',
+          location: 'C栋-18层-1803室',
+          online: true,
+          power: true,
+          currentTemp: 25,
+          setTemp: 24,
+          mode: 'cool',
+          fanSpeed: 'mid',
+          swingH: false,
+          swingV: true,
+          powerUsage: 2.9
+        },
+        {
+          id: 'AC010',
+          name: '19-11-1911-1',
+          area: 'D',
+          location: 'D栋-19层-1911室',
+          online: true,
+          power: true,
+          currentTemp: 23,
+          setTemp: 23,
+          mode: 'cool',
+          fanSpeed: 'auto',
+          swingH: true,
+          swingV: true,
+          powerUsage: 2.6
+        }
+      ],
+      
+      modeMap: {
+        cool: '制冷',
+        heat: '制热',
+        dry: '除湿',
+        fan: '送风'
       },
-      // 租户列表数据
-      tenantList: [],
-      // 表格数据
-      tableData: [],
-      // 加载状态
-      loading: false,
-      submitting: false,
-      // 是否显示高级筛选
-      showAdvanced: false,
-      // 分页数据
-      pageData: {
-        current: 1,
-        size: 20,
-        total: 0
+      
+      windMap: {
+        low: '低风',
+        mid: '中风',
+        high: '高风',
+        auto: '自动'
       },
-      // 选中的数据
-      selectedData: [],
-      // 编辑弹窗
-      dialogVisible: false,
-      // 编辑表单
-      editForm: {
-        id: '',
-        serial: '',
-        imei: '',
-        meterName: '',
-        bindType: '',
-        logicPayType: '',
-        ct: 1,
-        pt: 1,
-        phase: '',
-        managerId: ''
+      
+      modes: [
+        { value: 'cool', label: '制冷' },
+        { value: 'heat', label: '制热' },
+        { value: 'dry', label: '除湿' },
+        { value: 'fan', label: '送风' }
+      ],
+      
+      fanSpeeds: [
+        { value: 'low', label: '低速' },
+        { value: 'mid', label: '中速' },
+        { value: 'high', label: '高速' },
+        { value: 'auto', label: '自动' }
+      ],
+      
+      weekdays: [
+        { value: 1, label: '一' },
+        { value: 2, label: '二' },
+        { value: 3, label: '三' },
+        { value: 4, label: '四' },
+        { value: 5, label: '五' },
+        { value: 6, label: '六' },
+        { value: 0, label: '日' }
+      ],
+      
+      schedule: {
+        startTime: '08:00',
+        endTime: '18:00',
+        days: [1, 2, 3, 4, 5]
       },
-      // 表单验证规则
-      rules: {
-        serial: [
-          { required: true, message: '请输入序列号', trigger: 'blur' }
-        ],
-        meterName: [
-          { required: true, message: '请输入电表名称', trigger: 'blur' }
-        ],
-        bindType: [
-          { required: true, message: '请选择电表类型', trigger: 'change' }
-        ],
-        logicPayType: [
-          { required: true, message: '请选择付费模式', trigger: 'change' }
-        ],
-        phase: [
-          { required: true, message: '请选择电表相位', trigger: 'change' }
-        ]
-      },
-      // 预付费修改弹窗
-      payTypeDialog: {
-        visible: false,
-        row: null,
-        switchType: null
-      },
-      // 枚举数据
-      MeterBindType,
-      MeterPayType,
-      MeterSwitchStatus,
-      MeterOnlineStatus,
-      MeterPhase,
-      MeterMonitorType,
-      // 表格列配置
-      tableKey: [
-        {
-          label: '序列号',
-          key: 'serial',
-          width: '150',
-          checked: true,
-          disabled: true
+      
+      scenes: [
+        { 
+          id: 'work', 
+          name: '办公模式',
+          settings: { temp: 24, mode: 'cool', fanSpeed: 'mid' }
         },
-        {
-          label: '电表编号',
-          key: 'id',
-          checked: true,
-          width: '120'
+        { 
+          id: 'meeting', 
+          name: '会议模式',
+          settings: { temp: 22, mode: 'cool', fanSpeed: 'high' }
         },
-        {
-          label: '电表名称',
-          key: 'meterName',
-          width: '200',
-          checked: true,
-          click: true,
-          disabled: true,
-          id: 630040
+        { 
+          id: 'save', 
+          name: '节能模式',
+          settings: { temp: 26, mode: 'cool', fanSpeed: 'auto' }
         },
-        {
-          label: '电表类型',
-          key: 'bindTypeLabel',
-          checked: true,
-          width: '150'
-        },
-        {
-          label: '归属项目',
-          key: 'managerName',
-          minWidth: '260',
-          click: true,
-          checked: true,
-          disabled: true,
-          id: 610011
-        },
-        {
-          label: '已绑租户',
-          key: 'bindName',
-          click: true,
-          checked: true,
-          width: '280',
-          id: 610022
-        },
-        {
-          label: '付费模式',
-          checked: true,
-          key: 'logicPayTypeLabel',
-          width: '120'
-        },
-        {
-          label: '分合闸状态',
-          checked: true,
-          key: 'switchStatusLabel',
-          width: '140'
-        },
-        {
-          label: '电表相位',
-          checked: true,
-          key: 'monitorType',
-          width: '120'
-        },
-        {
-          label: '创建时间',
-          checked: true,
-          key: 'createTime',
-          width: '180'
-        },
-        {
-          label: 'CT',
-          key: 'ct',
-          width: '120'
-        },
-        {
-          label: 'PT',
-          key: 'pt',
-          width: '120'
-        },
-        {
-          label: '余额',
-          key: 'balance',
-          width: '140'
-        },
-        {
-          label: 'P',
-          key: 'p',
-          width: '120'
-        },
-        {
-          label: 'Pa',
-          key: 'pa',
-          width: '120'
-        },
-        {
-          label: 'Pb',
-          key: 'pb',
-          width: '120'
-        },
-        {
-          label: 'Pc',
-          key: 'pc',
-          width: '120'
-        },
-        {
-          label: '在线状态',
-          checked: true,
-          key: 'onlineStatusStatus',
-          width: '120',
-          type: 'status'
-        },
-        {
-          label: '最新数据时间',
-          key: 'syncTime',
-          width: '160'
+        { 
+          id: 'comfort', 
+          name: '舒适模式',
+          settings: { temp: 23, mode: 'cool', fanSpeed: 'low' }
         }
       ]
     }
   },
+  
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
-    // 计算需要显示的列
-    displayColumns() {
-      return this.tableKey.filter(col => col.checked !== false)
-    },
-    // 判断是否需要显示高级筛选按钮
-    needAdvancedSearch() {
-      // 当总搜索字段数量大于5个时显示高级筛选
-      const totalFields = this.searchFields.basic.length + this.searchFields.advanced.length
-      return totalFields > 5
-    },
-    // 获取实际显示的基础搜索字段
-    displayBasicFields() {
-      // 如果不需要高级筛选，显示所有字段
-      if (!this.needAdvancedSearch) {
-        return [...this.searchFields.basic, ...this.searchFields.advanced]
+    currentDevices() {
+      if (this.currentArea === 'all') {
+        return this.devices
       }
-      // 否则只显示基础字段
-      return this.searchFields.basic
-    },
-    // 获取高级搜索字段
-    displayAdvancedFields() {
-      return this.searchFields.advanced
+      return this.devices.filter(d => d.area === this.currentArea)
     }
   },
-  watch: {
-    currentManagerId: {
-      handler(newVal) {
-        if (newVal) {
-          this.queryData.managerId = newVal
-          this.fetchTableData()
-          this.getTenantPageTenant()
-        }
-      },
-      immediate: true,
-    },
-  },
-
-  methods: {
-    // 获取租户信息
-    async getTenantPageTenant(){
-      try {
-        const params = {
-          tenantStatus: 0,
-          managerId: this.queryData.managerId,
-        }
-        const response = await tenantPageTenant(params)
-        console.log(JSON.stringify(response.data), 'response')
-        
-        if (response.code === 200 && response.data) {
-          // 假设返回的数据格式为数组
-          this.tenantList = response.data || []
-        } else {
-          this.$message.error(response.msg || '获取租户列表失败')
-          this.tenantList = []
-        }
-      } catch (error) {
-        console.error('获取租户列表失败:', error)
-        this.$message.error('获取租户列表失败')
-        this.tenantList = []
-      }
-    },
-
-    // 获取电表列表数据
-    async fetchTableData() {
-      this.loading = true
-      try {
-        const params = {
-          bindId: this.queryData.bindId,
-          bindType: this.queryData.bindType,
-          id: this.queryData.id,
-          managerId: this.queryData.managerId,
-          meterName: this.queryData.meterName,
-          onlineStatus: this.queryData.onlineStatus,
-          page: {
-            current: this.pageData.current,
-            size: this.pageData.size,
-            orders: [{ asc: false, column: 'createTime' }]
-          },
-          serial: this.queryData.serial,
-          switchStatus: this.queryData.switchStatus
-        }
-        
-        const response = await meterPageMeterInfoByAdmin(params)
-        
-        if (response.code === 200 && response.data) {
-          this.tableData = this.formatTableData(response.data.dataList || [])
-          this.pageData.total = response.data.total || 0
-        } else {
-          this.$message.error(response.msg || '获取数据失败')
-        }
-      } catch (error) {
-        this.$message.error('获取电表数据失败')
-        console.error('获取电表数据失败:', error)
-      } finally {
-        this.loading = false
-      }
-    },
+  
+  mounted() {
+    this.updateTime()
+    setInterval(this.updateTime, 60000)
     
-    // 格式化表格数据
-    formatTableData(data) {
-      return data.map(item => {
-        // 已绑租户处理
-        const bindName = item.bindName 
-          ? `${item.bindId}(${item.bindName})` 
-          : '-'
-        
-        // 电表类型标签
-        const bindTypeLabel = getEnumLabel(MeterBindType, item.bindType)
-        
-        // 付费模式标签
-        const logicPayTypeLabel = getEnumLabel(MeterPayType, item.logicPayType)
-        
-        // 分合闸状态标签
-        const switchStatusLabel = getEnumLabel(MeterSwitchStatus, item.switchStatus)
-        
-        // 在线状态 - 返回完整对象
-        const onlineStatusStatus = getEnumItem(MeterOnlineStatus, item.onlineStatus) || {
-          label: '-',
-          class: ''
-        }
-        
-        // 电表相位 - 组合相位和监测类型
-        let monitorType = '-'
-        if (item.monitorType) {
-          const monitorTypeLabel = getEnumLabel(MeterMonitorType, item.monitorType)
-          const phaseLabel = getEnumLabel(MeterPhase, item.phase)
-          if (phaseLabel && phaseLabel !== '-') {
-            monitorType = phaseLabel + monitorTypeLabel
-          } else {
-            monitorType = monitorTypeLabel
-          }
-        }
-        
-        return {
-          ...item,
-          bindName,
-          bindTypeLabel,
-          logicPayTypeLabel,
-          switchStatusLabel,
-          onlineStatusStatus,
-          monitorType
-        }
-      })
-    },
-    
-    // 查询
-    handleSearch() {
-      this.pageData.current = 1
-      this.fetchTableData()
-    },
-    
-    // 重置
-    handleReset() {
-      this.queryData = {
-        bindId: '',
-        bindType: '',
-        id: '',
-        managerId: this.currentManagerId || '',
-        meterName: '',
-        onlineStatus: '',
-        serial: '',
-        switchStatus: ''
-      }
-      this.showAdvanced = false
-      this.handleSearch()
-    },
-    
-    // 处理顶部下拉命令
-    handleCommand(command) {
-      switch(command) {
-        case 'export':
-          this.handleExport()
-          break
-        case 'import':
-          this.$message.info('导入功能开发中...')
-          break
-        case 'batch':
-          this.$message.info('批量操作功能开发中...')
-          break
-      }
-    },
-    
-    // 处理表格下拉命令
-    handleTableCommand(command, row) {
-      switch(command) {
-        case 'switch-on':
-          this.handleSwitch(row, 1)
-          break
-        case 'switch-off':
-          this.handleSwitch(row, 0)
-          break
-        case 'monitor':
-          this.handleMonitor(row)
-          break
-      }
-    },
-    
-    // 新增电表
-    handleAdd() {
-      this.editForm = {
-        id: '',
-        serial: '',
-        imei: '',
-        meterName: '',
-        bindType: '',
-        logicPayType: '',
-        ct: 1,
-        pt: 1,
-        phase: '',
-        managerId: this.currentManagerId || ''
-      }
-      this.dialogVisible = true
-      this.$nextTick(() => {
-        this.$refs.editForm && this.$refs.editForm.clearValidate()
-      })
-    },
-    
-    // 编辑电表
-    handleEdit(row) {
-      this.editForm = {
-        id: row.id,
-        serial: row.serial,
-        imei: row.imei || '',
-        meterName: row.meterName,
-        bindType: row.bindType,
-        logicPayType: row.logicPayType,
-        ct: row.ct || 1,
-        pt: row.pt || 1,
-        phase: row.phase,
-        managerId: row.managerId
-      }
-      this.dialogVisible = true
-      this.$nextTick(() => {
-        this.$refs.editForm && this.$refs.editForm.clearValidate()
-      })
-    },
-    
-    // 保存
-    async handleSave() {
-      this.$refs.editForm.validate(async (valid) => {
-        if (valid) {
-          this.submitting = true
-          try {
-            let response
-            if (this.editForm.id) {
-              // 编辑
-              response = await meterUpdateMeterBase(this.editForm)
-            } else {
-              // 新增
-              response = await meterAddMeter(this.editForm)
+    // 模拟温度变化
+    setInterval(() => {
+      this.devices.forEach(device => {
+        if (device.online && device.power) {
+          const diff = device.setTemp - device.currentTemp
+          if (Math.abs(diff) > 0.5) {
+            // 制冷/制热速度不同
+            const changeRate = device.mode === 'cool' ? -0.3 : 
+                             device.mode === 'heat' ? 0.3 : 
+                             diff > 0 ? 0.2 : -0.2
+            
+            // 根据风速调整变化速度
+            const speedMultiplier = {
+              low: 0.7,
+              mid: 1,
+              high: 1.3,
+              auto: 1
             }
             
-            if (response.code === 200) {
-              this.$message.success(this.editForm.id ? '修改成功' : '新增成功')
-              this.dialogVisible = false
-              this.fetchTableData()
-            } else {
-              this.$message.error(response.msg || '操作失败')
+            const actualChange = changeRate * speedMultiplier[device.fanSpeed]
+            device.currentTemp = Math.round((device.currentTemp + actualChange) * 10) / 10
+            
+            // 确保不会超过设定温度
+            if ((device.mode === 'cool' && device.currentTemp < device.setTemp) ||
+                (device.mode === 'heat' && device.currentTemp > device.setTemp)) {
+              device.currentTemp = device.setTemp
             }
-          } catch (error) {
-            this.$message.error('操作失败')
-            console.error('保存失败:', error)
-          } finally {
-            this.submitting = false
           }
         }
       })
+      this.updateStats()
+    }, 5000)
+  },
+  
+  methods: {
+    updateTime() {
+      const now = new Date()
+      this.lastUpdateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
     },
     
-    // 分合闸操作
-    async handleSwitch(row, type) {
-      // 如果是预付费模式，需要先修改为强控
-      if (row.logicPayType === 0 || row.logicPayType === '0') {
-        this.payTypeDialog = {
-          visible: true,
-          row: row,
-          switchType: type
+    refreshData() {
+      this.updateTime()
+      // 实际项目中这里调用API
+      console.log('刷新数据')
+    },
+    
+    togglePower(device) {
+      device.power = !device.power
+      if (!device.power) {
+        device.powerUsage = 0
+      } else {
+        device.powerUsage = this.calculatePower(device)
+        // 开机时当前温度逐渐变化到设定温度
+        if (device.currentTemp !== device.setTemp) {
+          // 温度会逐渐变化，这里不立即改变
         }
-        return
       }
+      this.updateStats()
+    },
+    
+    adjustTemp(device, delta) {
+      const newTemp = device.setTemp + delta
+      if (newTemp >= 16 && newTemp <= 30) {
+        device.setTemp = newTemp
+        if (device.power) {
+          device.powerUsage = this.calculatePower(device)
+        }
+      }
+    },
+    
+    openDeviceDetail(device) {
+      this.currentDevice = device
+      // 创建临时设置对象
+      this.tempDeviceSettings = {
+        setTemp: device.setTemp,
+        mode: device.mode,
+        fanSpeed: device.fanSpeed,
+        swingH: device.swingH,
+        swingV: device.swingV
+      }
+      this.showDeviceDetail = true
+    },
+    
+    detailAdjustTemp(delta) {
+      const newTemp = this.tempDeviceSettings.setTemp + delta
+      if (newTemp >= 16 && newTemp <= 30) {
+        this.tempDeviceSettings.setTemp = newTemp
+      }
+    },
+    
+    saveDeviceSettings() {
+      // 保存设置到实际设备
+      Object.assign(this.currentDevice, this.tempDeviceSettings)
+      if (this.currentDevice.power) {
+        this.currentDevice.powerUsage = this.calculatePower(this.currentDevice)
+      }
+      this.showDeviceDetail = false
+      this.updateStats()
+    },
+    
+    calculatePower(device) {
+      const baseMap = { cool: 3, heat: 3.5, dry: 2, fan: 0.5 }
+      const speedMap = { low: 0.8, mid: 1, high: 1.2, auto: 1 }
+      return (baseMap[device.mode] * speedMap[device.fanSpeed]).toFixed(1)
+    },
+    
+    updateStats() {
+      const online = this.devices.filter(d => d.online)
+      const running = online.filter(d => d.power)
       
-      const typeText = type === 1 ? '合闸' : '分闸'
+      this.stats.online = online.length
+      this.stats.running = running.length
+      this.stats.totalPower = running.reduce((sum, d) => sum + parseFloat(d.powerUsage), 0).toFixed(1)
       
-      try {
-        await this.$confirm(`确定要对电表"${row.meterName}"执行${typeText}操作吗？`, '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-        
-        const response = await tenantDoMeterSwitchOffOn({
-          meterId: row.id,
-          type: type
-        })
-        
-        if (response.code === 200) {
-          this.$message.success(`${typeText}操作成功`)
-          this.fetchTableData()
-        } else {
-          this.$message.error(response.msg || `${typeText}操作失败`)
-        }
-      } catch (error) {
-        if (error !== 'cancel') {
-          this.$message.error(`${typeText}操作失败`)
-          console.error('操作失败:', error)
-        }
+      if (running.length > 0) {
+        this.stats.avgTemp = (running.reduce((sum, d) => sum + d.currentTemp, 0) / running.length).toFixed(1)
       }
     },
     
-    // 修改付费类型
-    async handleUpdatePayType() {
-      try {
-        const response = await meterUpdateLogicPayType({
-          meterId: this.payTypeDialog.row.id,
-          logicPayType: 1 // 改为强控
-        })
-        
-        if (response.code === 200) {
-          this.$message.success('付费模式修改成功')
-          this.payTypeDialog.visible = false
-          
-          // 修改成功后执行分合闸操作
-          setTimeout(() => {
-            this.handleSwitch(this.payTypeDialog.row, this.payTypeDialog.switchType)
-          }, 500)
-        } else {
-          this.$message.error(response.msg || '修改失败')
+    toggleWeekday(day) {
+      const index = this.schedule.days.indexOf(day)
+      if (index > -1) {
+        this.schedule.days.splice(index, 1)
+      } else {
+        this.schedule.days.push(day)
+      }
+    },
+    
+    batchAction(action, value) {
+      this.currentDevices.forEach(device => {
+        if (device.online) {
+          switch(action) {
+            case 'powerOn':
+              device.power = true
+              device.powerUsage = this.calculatePower(device)
+              break
+            case 'powerOff':
+              device.power = false
+              device.powerUsage = 0
+              break
+            case 'setTemp':
+              device.setTemp = value
+              break
+            case 'setMode':
+              device.mode = value
+              if (device.power) {
+                device.powerUsage = this.calculatePower(device)
+              }
+              break
+          }
         }
-      } catch (error) {
-        this.$message.error('修改付费模式失败')
-        console.error('修改失败:', error)
-      }
-    },
-    
-    // 电表监控
-    handleMonitor(row) {
-      this.$router.push({
-        path: '/mt-ammeterIncident',
-        query: { id: row.serial, type: 1 }
       })
+      this.updateStats()
     },
     
-    // 项目点击
-    handleProjectClick(row) {
-      this.$router.push({
-        path: '/project-maintain-detail',
-        query: { id: row.managerId }
+    applyScene(scene) {
+      this.selectedScene = scene.id
+      
+      // 应用场景设置到当前区域的所有在线设备
+      this.currentDevices.forEach(device => {
+        if (device.online) {
+          device.power = true
+          device.setTemp = scene.settings.temp
+          device.mode = scene.settings.mode
+          device.fanSpeed = scene.settings.fanSpeed
+          device.powerUsage = this.calculatePower(device)
+        }
       })
+      
+      this.updateStats()
+      console.log('应用场景:', scene.name)
     },
     
-    // 租户点击
-    handleTenantClick(row) {
-      this.$router.push({ 
-        path: '/project-tenement-detail', 
-        query: { id: row.bindId, managerId: row.managerId }
-      })
-    },
-    
-    // 导出数据
-    handleExport() {
-      if (this.selectedData.length === 0) {
-        this.$message.warning('请先选择要导出的数据')
-        return
-      }
-      this.$message.info('导出功能开发中...')
-    },
-    
-    // 表格设置
-    handleTableSetting() {
-      this.$message.info('表格设置功能开发中...')
-    },
-    
-    // 选择变化
-    handleSelectionChange(selection) {
-      this.selectedData = selection
-    },
-    
-    // 分页大小变化
-    handleSizeChange(val) {
-      this.pageData.size = val
-      this.pageData.current = 1
-      this.fetchTableData()
-    },
-    
-    // 当前页变化
-    handleCurrentChange(val) {
-      this.pageData.current = val
-      this.fetchTableData()
+    saveBatchSettings() {
+      console.log('保存批量设置')
+      this.showBatchControl = false
+      this.selectedScene = null // 重置选中的场景
     }
   }
 }
 </script>
 
-<style lang="scss" scoped>
-// 引入表格页面公共样式
-@import '@/assets/styles/table-page.scss';
+<style scoped>
+* {
+  box-sizing: border-box;
+}
+
+/* 基础样式 */
+.hvac-management {
+  min-height: 100vh;
+  background: #f0f2f5;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+
+/* 页面头部 */
+.page-header {
+  background: #fff;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #000;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.update-time {
+  font-size: 14px;
+  color: #999;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: #1890ff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.btn-text:hover {
+  background-color: #e6f7ff;
+}
+
+/* 统计信息行 */
+.stats-row {
+  background: #fff;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #999;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 500;
+  color: #000;
+}
+
+.stat-value.success {
+  color: #52c41a;
+}
+
+.stat-value.primary {
+  color: #1890ff;
+}
+
+/* 筛选栏 */
+.filter-bar {
+  background: #fff;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 24px;
+}
+
+.filter-tab {
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.filter-tab:hover {
+  color: #1890ff;
+}
+
+.filter-tab.active {
+  color: #1890ff;
+  border-bottom-color: #1890ff;
+}
+
+.btn-primary {
+  background: #1890ff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background: #40a9ff;
+}
+
+/* 设备列表 */
+.devices-wrapper {
+  padding: 16px 24px;
+  height: calc(100vh - 250px);
+}
+
+.devices-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.devices-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.devices-scroll::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.devices-scroll::-webkit-scrollbar-thumb {
+  background: #bfbfbf;
+  border-radius: 3px;
+}
+
+.devices-scroll::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+.devices-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+/* 设备卡片 */
+.device-item {
+  background: #fff;
+  border-radius: 4px;
+  padding: 16px;
+  border: 1px solid #e8e8e8;
+  transition: all 0.2s;
+}
+
+.device-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.device-item.offline {
+  opacity: 0.6;
+}
+
+.device-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.device-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.online {
+  background: #52c41a;
+}
+
+.status-dot.offline {
+  background: #d9d9d9;
+}
+
+/* 温度显示 */
+.temp-display {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.temp-current {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.temp-num {
+  font-size: 32px;
+  font-weight: 300;
+  color: #000;
+}
+
+.temp-unit {
+  font-size: 16px;
+  color: #666;
+  margin-left: 2px;
+}
+
+.temp-set {
+  font-size: 12px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.temp-label {
+  color: #666;
+}
+
+.temp-divider {
+  color: #d9d9d9;
+}
+
+/* 设备状态 */
+.device-status {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mode-label,
+.wind-label {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border-radius: 2px;
+  color: #666;
+}
+
+/* 控制区域 */
+.device-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 开关样式 */
+.switch-control {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.switch-control input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #bfbfbf;
+  transition: .3s;
+  border-radius: 20px;
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked + .switch-slider {
+  background-color: #1890ff;
+}
+
+input:checked + .switch-slider:before {
+  transform: translateX(20px);
+}
+
+input:disabled + .switch-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 快捷操作按钮 */
+.quick-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #666;
+}
+
+.icon-btn:hover:not(:disabled) {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 设备信息 */
+.device-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.info-text {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 弹窗样式 */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background: #fff;
+  border-radius: 4px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-modal {
+  max-width: 480px;
+}
+
+.modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #000;
+  margin: 0;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* 批量控制内容 */
+.batch-section {
+  margin-bottom: 24px;
+}
+
+.batch-section:last-child {
+  margin-bottom: 0;
+}
+
+.batch-section h4 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  margin: 0 0 12px 0;
+}
+
+.batch-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.action-btn {
+  padding: 12px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+  background: #e6f7ff;
+}
+
+/* 定时设置 */
+.schedule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.form-row label {
+  width: 80px;
+  font-size: 14px;
+  color: #666;
+}
+
+.time-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.weekdays {
+  display: flex;
+  gap: 8px;
+}
+
+.weekday {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.weekday:hover {
+  border-color: #1890ff;
+}
+
+.weekday.selected {
+  background: #1890ff;
+  color: #fff;
+  border-color: #1890ff;
+}
+
+/* 场景模式 */
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.scene-card {
+  padding: 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.scene-card:hover {
+  border-color: #1890ff;
+  background: #e6f7ff;
+}
+
+.scene-card.active {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.scene-card.active span {
+  color: #fff;
+}
+
+.scene-card span {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 设备详情 */
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-info {
+  background: #f5f6f8;
+  padding: 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.info-row:first-child {
+  padding-top: 0;
+}
+
+.info-row:last-child {
+  padding-bottom: 0;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.info-value {
+  font-size: 18px;
+  font-weight: 500;
+  color: #000;
+}
+
+.info-value.primary {
+  color: #1890ff;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.detail-row label {
+  width: 80px;
+  font-size: 14px;
+  color: #666;
+}
+
+.temp-adjuster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.temp-adjuster button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.temp-adjuster button:hover:not(:disabled) {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.temp-adjuster button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.temp-adjuster input {
+  width: 80px;
+  text-align: center;
+  padding: 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.mode-selector,
+.wind-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-option,
+.wind-option {
+  padding: 6px 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-option:hover,
+.wind-option:hover {
+  border-color: #1890ff;
+}
+
+.mode-option.active,
+.wind-option.active {
+  background: #1890ff;
+  color: #fff;
+  border-color: #1890ff;
+}
+
+.swing-options {
+  display: flex;
+  gap: 24px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* 按钮样式 */
+.btn-default {
+  padding: 8px 16px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-default:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+/* 图标字体（模拟） */
+.iconfont {
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+.icon-refresh:before { content: "⟲"; }
+.icon-minus:before { content: "−"; }
+.icon-plus:before { content: "+"; }
+.icon-setting:before { content: "⚙"; }
+.icon-close:before { content: "×"; font-size: 20px; }
+.icon-power:before { content: "◉"; }
+.icon-poweroff:before { content: "◯"; }
+.icon-temp:before { content: "°"; }
+.icon-snow:before { content: "❄"; }
+
+/* 响应式适配 */
+@media (max-width: 1400px) {
+  .devices-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .devices-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .stat-value {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .devices-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-row {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  
+  .batch-actions {
+    grid-template-columns: 1fr;
+  }
+  
+  .scene-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 </style>
