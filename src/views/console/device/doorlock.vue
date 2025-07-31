@@ -1,1557 +1,1336 @@
-<template>
-    <div class="hvac-management">
-      <!-- 页面头部 -->
-      <div class="page-header">
-        <h2 class="page-title">空调管理</h2>
-        <div class="header-actions">
-          <span class="update-time">更新时间：{{ lastUpdateTime }}</span>
-          <button class="btn-text" @click="refreshData">
-            <i class="iconfont icon-refresh"></i>
-            刷新
-          </button>
-        </div>
+.status-light.lowBattery {
+  background: #faad14;
+}.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.table-actions .el-button {
+  margin: 0;
+  padding: 0 8px;
+}
+
+.table-actions .el-divider--vertical {
+  margin: 0 8px;
+  height: 12px;
+}    handleMoreCommand(command, lock) {
+      switch(command) {
+        case 'alarm':
+          this.triggerAlarm(lock)
+          break
+        case 'auth':
+          this.$message.info('权限管理功能开发中...')
+          break
+        case 'edit':
+          this.$message.info('编辑功能开发中...')
+          break
+      }
+    },<template>
+  <div class="lock-management">
+    <!-- 顶部操作栏 -->
+    <div class="top-bar">
+      <div class="left-section">
+        <h2 class="page-title">智能门锁管理</h2>
       </div>
-  
-      <!-- 统计信息 -->
-      <div class="stats-row">
-        <div class="stat-item">
-          <span class="stat-label">设备总数</span>
-          <span class="stat-value">{{ stats.total }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">在线设备</span>
-          <span class="stat-value success">{{ stats.online }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">运行中</span>
-          <span class="stat-value primary">{{ stats.running }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">平均温度</span>
-          <span class="stat-value">{{ stats.avgTemp }}°C</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">总功率</span>
-          <span class="stat-value">{{ stats.totalPower }}kW</span>
-        </div>
-      </div>
-  
-      <!-- 筛选栏 -->
-      <div class="filter-bar">
-        <div class="filter-left">
-          <div class="filter-tabs">
-            <span 
-              v-for="area in areas" 
-              :key="area.id"
-              :class="['filter-tab', { active: currentArea === area.id }]"
-              @click="currentArea = area.id"
-            >
-              {{ area.name }}
-            </span>
-          </div>
-        </div>
-        <div class="filter-right">
-          <button class="btn-primary" @click="showBatchControl = true">批量控制</button>
-        </div>
-      </div>
-  
-      <!-- 设备列表容器 -->
-      <div class="devices-wrapper">
-        <div class="devices-scroll">
-          <div class="devices-grid">
-            <div 
-              v-for="device in currentDevices" 
-              :key="device.id"
-              :class="['device-item', { offline: !device.online }]"
-            >
-              <!-- 设备头部 -->
-              <div class="device-header">
-                <span class="device-name">{{ device.name }}</span>
-                <span :class="['status-dot', device.online ? 'online' : 'offline']"></span>
-              </div>
-              
-              <!-- 温度显示区 -->
-              <div class="temp-display">
-                <div class="temp-current">
-                  <span class="temp-num">{{ device.currentTemp }}</span>
-                  <span class="temp-unit">°C</span>
-                </div>
-                <div class="temp-set">
-                  <span class="temp-label">当前室温</span>
-                  <span class="temp-divider">|</span>
-                  <span class="temp-label">设定 {{ device.setTemp }}°C</span>
-                </div>
-              </div>
-              
-              <!-- 模式和状态 -->
-              <div class="device-status">
-                <span class="mode-label">{{ modeMap[device.mode] }}</span>
-                <span class="wind-label">{{ windMap[device.fanSpeed] }}</span>
-              </div>
-              
-              <!-- 控制区 -->
-              <div class="device-controls">
-                <!-- 电源开关 -->
-                <div class="power-switch">
-                  <label class="switch-control">
-                    <input 
-                      type="checkbox" 
-                      :checked="device.power"
-                      @change="togglePower(device)"
-                      :disabled="!device.online"
-                    >
-                    <span class="switch-slider"></span>
-                  </label>
-                </div>
-                
-                <!-- 快捷操作 -->
-                <div class="quick-actions">
-                  <button 
-                    class="icon-btn" 
-                    @click="adjustTemp(device, -1)"
-                    :disabled="!device.online || !device.power || device.setTemp <= 16"
-                    title="降低温度"
-                  >
-                    <i class="iconfont icon-minus"></i>
-                  </button>
-                  <button 
-                    class="icon-btn" 
-                    @click="adjustTemp(device, 1)"
-                    :disabled="!device.online || !device.power || device.setTemp >= 30"
-                    title="升高温度"
-                  >
-                    <i class="iconfont icon-plus"></i>
-                  </button>
-                  <button 
-                    class="icon-btn"
-                    @click="openDeviceDetail(device)"
-                    :disabled="!device.online"
-                    title="更多设置"
-                  >
-                    <i class="iconfont icon-setting"></i>
-                  </button>
-                </div>
-              </div>
-              
-              <!-- 底部信息 -->
-              <div class="device-info">
-                <span class="info-text">{{ device.location }}</span>
-                <span class="info-text" v-if="device.power">{{ device.powerUsage }}kW</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-  
-      <!-- 批量控制弹窗 -->
-      <div v-if="showBatchControl" class="modal-mask" @click.self="showBatchControl = false">
-        <div class="modal-container">
-          <div class="modal-header">
-            <h3>批量控制</h3>
-            <button class="close-btn" @click="showBatchControl = false">
-              <i class="iconfont icon-close"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div class="batch-section">
-              <h4>快速操作</h4>
-              <div class="batch-actions">
-                <button class="action-btn" @click="batchAction('powerOn')">
-                  <i class="iconfont icon-power"></i>
-                  全部开启
-                </button>
-                <button class="action-btn" @click="batchAction('powerOff')">
-                  <i class="iconfont icon-poweroff"></i>
-                  全部关闭
-                </button>
-                <button class="action-btn" @click="batchAction('setTemp', 26)">
-                  <i class="iconfont icon-temp"></i>
-                  设为26°C
-                </button>
-                <button class="action-btn" @click="batchAction('setMode', 'cool')">
-                  <i class="iconfont icon-snow"></i>
-                  制冷模式
-                </button>
-              </div>
-            </div>
-            
-            <div class="batch-section">
-              <h4>定时设置</h4>
-              <div class="schedule-form">
-                <div class="form-row">
-                  <label>开启时间</label>
-                  <input type="time" v-model="schedule.startTime" class="time-input">
-                </div>
-                <div class="form-row">
-                  <label>关闭时间</label>
-                  <input type="time" v-model="schedule.endTime" class="time-input">
-                </div>
-                <div class="form-row">
-                  <label>重复</label>
-                  <div class="weekdays">
-                    <span 
-                      v-for="day in weekdays" 
-                      :key="day.value"
-                      :class="['weekday', { selected: schedule.days.includes(day.value) }]"
-                      @click="toggleWeekday(day.value)"
-                    >
-                      {{ day.label }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="batch-section">
-              <h4>场景模式</h4>
-              <div class="scene-grid">
-                <div 
-                  v-for="scene in scenes" 
-                  :key="scene.id"
-                  :class="['scene-card', { active: selectedScene === scene.id }]"
-                  @click="applyScene(scene)"
-                >
-                  <span>{{ scene.name }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-default" @click="showBatchControl = false">取消</button>
-            <button class="btn-primary" @click="saveBatchSettings">确定</button>
-          </div>
-        </div>
-      </div>
-  
-      <!-- 设备详情弹窗 -->
-      <div v-if="showDeviceDetail" class="modal-mask" @click.self="showDeviceDetail = false">
-        <div class="modal-container detail-modal">
-          <div class="modal-header">
-            <h3>{{ currentDevice.name }} - 详细设置</h3>
-            <button class="close-btn" @click="showDeviceDetail = false">
-              <i class="iconfont icon-close"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div class="detail-section">
-              <div class="detail-info">
-                <div class="info-row">
-                  <span class="info-label">当前室温：</span>
-                  <span class="info-value">{{ currentDevice.currentTemp }}°C</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">设定温度：</span>
-                  <span class="info-value primary">{{ tempDeviceSettings.setTemp }}°C</span>
-                </div>
-              </div>
-              
-              <div class="detail-row">
-                <label>温度设定</label>
-                <div class="temp-adjuster">
-                  <button @click="detailAdjustTemp(-1)" :disabled="tempDeviceSettings.setTemp <= 16">-</button>
-                  <input type="number" v-model="tempDeviceSettings.setTemp" min="16" max="30">
-                  <button @click="detailAdjustTemp(1)" :disabled="tempDeviceSettings.setTemp >= 30">+</button>
-                </div>
-              </div>
-              
-              <div class="detail-row">
-                <label>运行模式</label>
-                <div class="mode-selector">
-                  <span 
-                    v-for="mode in modes" 
-                    :key="mode.value"
-                    :class="['mode-option', { active: tempDeviceSettings.mode === mode.value }]"
-                    @click="tempDeviceSettings.mode = mode.value"
-                  >
-                    {{ mode.label }}
-                  </span>
-                </div>
-              </div>
-              
-              <div class="detail-row">
-                <label>风速设置</label>
-                <div class="wind-selector">
-                  <span 
-                    v-for="speed in fanSpeeds" 
-                    :key="speed.value"
-                    :class="['wind-option', { active: tempDeviceSettings.fanSpeed === speed.value }]"
-                    @click="tempDeviceSettings.fanSpeed = speed.value"
-                  >
-                    {{ speed.label }}
-                  </span>
-                </div>
-              </div>
-              
-              <div class="detail-row">
-                <label>扫风设置</label>
-                <div class="swing-options">
-                  <label class="checkbox-label">
-                    <input type="checkbox" v-model="tempDeviceSettings.swingH">
-                    <span>水平扫风</span>
-                  </label>
-                  <label class="checkbox-label">
-                    <input type="checkbox" v-model="tempDeviceSettings.swingV">
-                    <span>垂直扫风</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-default" @click="showDeviceDetail = false">取消</button>
-            <button class="btn-primary" @click="saveDeviceSettings">确定</button>
-          </div>
-        </div>
+      <div class="right-section">
+        <el-button size="small" @click="showBatchControl = true">批量控制</el-button>
+        <el-button size="small" @click="showTempPassword = true">临时密码</el-button>
+        <el-button type="primary" size="small" @click="showAddDialog = true">
+          <i class="el-icon-plus"></i> 添加设备
+        </el-button>
       </div>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'HvacManagement',
-    data() {
-      return {
-        lastUpdateTime: '',
-        currentArea: 'all',
-        showBatchControl: false,
-        showDeviceDetail: false,
-        currentDevice: {},
-        tempDeviceSettings: {}, // 临时存储设备设置
-        selectedScene: null, // 当前选中的场景
-        
-        stats: {
-          total: 48,
-          online: 45,
-          running: 32,
-          avgTemp: 24.5,
-          totalPower: 89.6
-        },
-        
-        areas: [
-          { id: 'all', name: '全部' },
-          { id: 'A', name: 'A栋' },
-          { id: 'B', name: 'B栋' },
-          { id: 'C', name: 'C栋' },
-          { id: 'D', name: 'D栋' }
-        ],
-        
-        devices: [
-          {
-            id: 'AC001',
-            name: '13-24-1318-2',
-            area: 'A',
-            location: 'A栋-13层-1318室',
-            online: true,
-            power: true,
-            currentTemp: 26,
-            setTemp: 24,
-            mode: 'cool',
-            fanSpeed: 'mid',
-            swingH: false,
-            swingV: false,
-            powerUsage: 2.8
-          },
-          {
-            id: 'AC002',
-            name: '13-24-1319-1',
-            area: 'A',
-            location: 'A栋-13层-1319室',
-            online: true,
-            power: true,
-            currentTemp: 25,
-            setTemp: 23,
-            mode: 'cool',
-            fanSpeed: 'high',
-            swingH: true,
-            swingV: false,
-            powerUsage: 3.2
-          },
-          {
-            id: 'AC003',
-            name: '14-01-1401-1',
-            area: 'A',
-            location: 'A栋-14层-1401室',
-            online: true,
-            power: false,
-            currentTemp: 28,
-            setTemp: 26,
-            mode: 'cool',
-            fanSpeed: 'low',
-            swingH: false,
-            swingV: false,
-            powerUsage: 0
-          },
-          {
-            id: 'AC004',
-            name: '14-01-1402-2',
-            area: 'A',
-            location: 'A栋-14层-1402室',
-            online: false,
-            power: false,
-            currentTemp: 27,
-            setTemp: 25,
-            mode: 'cool',
-            fanSpeed: 'mid',
-            swingH: false,
-            swingV: false,
-            powerUsage: 0
-          },
-          {
-            id: 'AC005',
-            name: '15-12-1512-1',
-            area: 'B',
-            location: 'B栋-15层-1512室',
-            online: true,
-            power: true,
-            currentTemp: 23,
-            setTemp: 23,
-            mode: 'cool',
-            fanSpeed: 'auto',
-            swingH: true,
-            swingV: true,
-            powerUsage: 2.5
-          },
-          {
-            id: 'AC006',
-            name: '15-12-1513-2',
-            area: 'B',
-            location: 'B栋-15层-1513室',
-            online: true,
-            power: true,
-            currentTemp: 24,
-            setTemp: 25,
-            mode: 'dry',
-            fanSpeed: 'low',
-            swingH: false,
-            swingV: false,
-            powerUsage: 1.8
-          },
-          {
-            id: 'AC007',
-            name: '16-08-1608-1',
-            area: 'B',
-            location: 'B栋-16层-1608室',
-            online: true,
-            power: true,
-            currentTemp: 22,
-            setTemp: 22,
-            mode: 'cool',
-            fanSpeed: 'high',
-            swingH: true,
-            swingV: false,
-            powerUsage: 3.5
-          },
-          {
-            id: 'AC008',
-            name: '17-05-1705-1',
-            area: 'C',
-            location: 'C栋-17层-1705室',
-            online: true,
-            power: false,
-            currentTemp: 28,
-            setTemp: 26,
-            mode: 'fan',
-            fanSpeed: 'mid',
-            swingH: false,
-            swingV: false,
-            powerUsage: 0
-          },
-          {
-            id: 'AC009',
-            name: '18-03-1803-2',
-            area: 'C',
-            location: 'C栋-18层-1803室',
-            online: true,
-            power: true,
-            currentTemp: 25,
-            setTemp: 24,
-            mode: 'cool',
-            fanSpeed: 'mid',
-            swingH: false,
-            swingV: true,
-            powerUsage: 2.9
-          },
-          {
-            id: 'AC010',
-            name: '19-11-1911-1',
-            area: 'D',
-            location: 'D栋-19层-1911室',
-            online: true,
-            power: true,
-            currentTemp: 23,
-            setTemp: 23,
-            mode: 'cool',
-            fanSpeed: 'auto',
-            swingH: true,
-            swingV: true,
-            powerUsage: 2.6
-          }
-        ],
-        
-        modeMap: {
-          cool: '制冷',
-          heat: '制热',
-          dry: '除湿',
-          fan: '送风'
-        },
-        
-        windMap: {
-          low: '低风',
-          mid: '中风',
-          high: '高风',
-          auto: '自动'
-        },
-        
-        modes: [
-          { value: 'cool', label: '制冷' },
-          { value: 'heat', label: '制热' },
-          { value: 'dry', label: '除湿' },
-          { value: 'fan', label: '送风' }
-        ],
-        
-        fanSpeeds: [
-          { value: 'low', label: '低速' },
-          { value: 'mid', label: '中速' },
-          { value: 'high', label: '高速' },
-          { value: 'auto', label: '自动' }
-        ],
-        
-        weekdays: [
-          { value: 1, label: '一' },
-          { value: 2, label: '二' },
-          { value: 3, label: '三' },
-          { value: 4, label: '四' },
-          { value: 5, label: '五' },
-          { value: 6, label: '六' },
-          { value: 0, label: '日' }
-        ],
-        
-        schedule: {
-          startTime: '08:00',
-          endTime: '18:00',
-          days: [1, 2, 3, 4, 5]
-        },
-        
-        scenes: [
-          { 
-            id: 'work', 
-            name: '办公模式',
-            settings: { temp: 24, mode: 'cool', fanSpeed: 'mid' }
-          },
-          { 
-            id: 'meeting', 
-            name: '会议模式',
-            settings: { temp: 22, mode: 'cool', fanSpeed: 'high' }
-          },
-          { 
-            id: 'save', 
-            name: '节能模式',
-            settings: { temp: 26, mode: 'cool', fanSpeed: 'auto' }
-          },
-          { 
-            id: 'comfort', 
-            name: '舒适模式',
-            settings: { temp: 23, mode: 'cool', fanSpeed: 'low' }
-          }
-        ]
-      }
-    },
-    
-    computed: {
-      currentDevices() {
-        if (this.currentArea === 'all') {
-          return this.devices
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+      <!-- 左侧楼层导航 -->
+      <div class="building-nav">
+        <div class="nav-header">
+          <span>楼栋导航</span>
+          <el-input
+            v-model="searchText"
+            size="mini"
+            placeholder="搜索房间"
+            prefix-icon="el-icon-search"
+          />
+        </div>
+        <div class="building-list">
+          <div
+            v-for="building in buildingStats"
+            :key="building.name"
+            :class="['building-item', { active: selectedBuilding === building.name }]"
+            @click="selectBuilding(building.name)"
+          >
+            <div class="building-name">{{ building.name }}</div>
+            <div class="building-stats">
+              <span class="stat-item">
+                <i class="el-icon-circle-check"></i> {{ building.online }}
+              </span>
+              <span class="stat-item warning" v-if="building.alarm > 0">
+                <i class="el-icon-warning-outline"></i> {{ building.alarm }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧内容区 -->
+      <div class="content-area">
+        <!-- 切换视图 -->
+        <div class="view-switch">
+          <el-radio-group v-model="viewMode" size="small">
+            <el-radio-button label="panel">面板视图</el-radio-button>
+            <el-radio-button label="table">列表视图</el-radio-button>
+            <el-radio-button label="floor">楼层平面</el-radio-button>
+          </el-radio-group>
+          <div class="filter-group">
+            <el-select v-model="filterType" size="small" placeholder="设备类型" clearable>
+              <el-option label="密码锁" value="password" />
+              <el-option label="指纹锁" value="fingerprint" />
+              <el-option label="人脸识别" value="face" />
+              <el-option label="门禁卡" value="card" />
+            </el-select>
+            <el-select v-model="filterStatus" size="small" placeholder="设备状态" clearable>
+              <el-option label="正常" value="online" />
+              <el-option label="离线" value="offline" />
+              <el-option label="告警" value="alarm" />
+              <el-option label="低电量" value="lowBattery" />
+            </el-select>
+          </div>
+        </div>
+
+        <!-- 面板视图 -->
+        <div v-if="viewMode === 'panel'" class="panel-view">
+          <div
+            v-for="lock in displayLocks"
+            :key="lock.lockId"
+            :class="['lock-card', lock.status, { selected: selectedLock && selectedLock.lockId === lock.lockId }]"
+            @click="selectLock(lock)"
+          >
+            <div class="card-header">
+              <span class="room-number">{{ lock.roomNumber }}</span>
+              <el-dropdown trigger="click" @command="handleQuickAction($event, lock)">
+                <i class="el-icon-more action-icon"></i>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="unlock">
+                    <i class="el-icon-unlock"></i> 远程开锁
+                  </el-dropdown-item>
+                  <el-dropdown-item command="tempPass">
+                    <i class="el-icon-key"></i> 生成临时密码
+                  </el-dropdown-item>
+                  <el-dropdown-item command="alarm">
+                    <i class="el-icon-bell"></i> 点亮报警
+                  </el-dropdown-item>
+                  <el-dropdown-item command="logs" divided>
+                    <i class="el-icon-document"></i> 开锁记录
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+            </div>
+            <div class="card-body">
+              <div class="lock-type">
+                <i :class="getLockIcon(lock.type)"></i>
+                <span>{{ getLockTypeName(lock.type) }}</span>
+              </div>
+              <div class="status-info">
+                <span :class="['status-indicator', lock.status]"></span>
+                <span class="status-text">{{ getStatusName(lock.status) }}</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="info-item">
+                <i class="el-icon-battery-line"></i>
+                <span :style="{ color: getBatteryColor(lock.battery) }">{{ lock.battery }}%</span>
+              </div>
+              <div class="info-item">
+                <i class="el-icon-time"></i>
+                <span>{{ formatTime(lock.lastAccess) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 列表视图 -->
+        <div v-else-if="viewMode === 'table'" class="table-view">
+          <el-table :data="displayLocks" @row-click="selectLock" height="calc(100vh - 200px)">
+            <el-table-column type="selection" width="55" />
+            <el-table-column prop="roomNumber" label="房间号" />
+            <el-table-column prop="location" label="详细位置" min-width="180" />
+            <el-table-column prop="type" label="类型">
+              <template slot-scope="scope">
+                <span class="type-badge">{{ getLockTypeName(scope.row.type) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态">
+              <template slot-scope="scope">
+                <div class="status-cell">
+                  <span :class="['status-dot', scope.row.status]"></span>
+                  {{ getStatusName(scope.row.status) }}
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="battery" label="电量">
+              <template slot-scope="scope">
+                <el-progress
+                  :percentage="scope.row.battery"
+                  :color="getBatteryColor(scope.row.battery)"
+                  :stroke-width="4"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column prop="todayAccess" label="今日访问" align="center" />
+            <el-table-column label="快捷操作" fixed="right" width="240">
+              <template slot-scope="scope">
+                <div class="table-actions">
+                  <el-button size="mini" type="text" @click.stop="remoteUnlock(scope.row)">开锁</el-button>
+                  <el-divider direction="vertical"></el-divider>
+                  <el-button size="mini" type="text" @click.stop="generateTempPass(scope.row)">临时密码</el-button>
+                  <el-divider direction="vertical"></el-divider>
+                  <el-button size="mini" type="text" @click.stop="viewLogs(scope.row)">记录</el-button>
+                  <el-divider direction="vertical"></el-divider>
+                  <el-button size="mini" type="text" @click.stop="triggerAlarm(scope.row)">点亮报警</el-button>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- 楼层平面视图 -->
+        <div v-else-if="viewMode === 'floor'" class="floor-view">
+          <div class="floor-selector">
+            <el-radio-group v-model="selectedFloor" size="small">
+              <el-radio-button v-for="floor in floors" :key="floor" :label="floor">
+                {{ floor }}
+              </el-radio-button>
+            </el-radio-group>
+          </div>
+          <div class="floor-map">
+            <div class="floor-grid">
+              <div
+                v-for="room in floorRooms"
+                :key="room.lockId"
+                :class="['room-block', room.status, { selected: selectedLock && selectedLock.lockId === room.lockId }]"
+                @click="selectLock(room)"
+              >
+                <div class="room-num">{{ room.roomNumber }}</div>
+                <i :class="getLockIcon(room.type)"></i>
+                <div class="room-status">
+                  <span :class="['status-light', room.status]"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧详情面板 -->
+      <transition name="slide-right">
+        <div v-if="selectedLock" class="detail-panel">
+          <div class="panel-header">
+            <h3>{{ selectedLock.location }}</h3>
+            <i class="el-icon-close" @click="selectedLock = null"></i>
+          </div>
+          <div class="panel-content">
+            <div class="info-section">
+              <h4>设备信息</h4>
+              <div class="info-row">
+                <span class="label">设备编号</span>
+                <span class="value">{{ selectedLock.lockId }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">设备类型</span>
+                <span class="value">{{ getLockTypeName(selectedLock.type) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">当前状态</span>
+                <span class="value">
+                  <span :class="['status-dot', selectedLock.status]"></span>
+                  {{ getStatusName(selectedLock.status) }}
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="label">电池电量</span>
+                <span class="value">
+                  <el-progress
+                    :percentage="selectedLock.battery"
+                    :color="getBatteryColor(selectedLock.battery)"
+                  />
+                </span>
+              </div>
+            </div>
+
+            <div class="action-section">
+              <h4>设备控制</h4>
+              <el-row :gutter="10">
+                <el-col :span="12">
+                  <el-button class="control-btn" @click="remoteUnlock(selectedLock)">
+                    <i class="el-icon-unlock"></i>
+                    远程开锁
+                  </el-button>
+                </el-col>
+                <el-col :span="12">
+                  <el-button class="control-btn" @click="generateTempPass(selectedLock)">
+                    <i class="el-icon-key"></i>
+                    临时密码
+                  </el-button>
+                </el-col>
+                <el-col :span="12">
+                  <el-button class="control-btn" @click="triggerAlarm(selectedLock)">
+                    <i class="el-icon-bell"></i>
+                    点亮报警
+                  </el-button>
+                </el-col>
+                <el-col :span="12">
+                  <el-button class="control-btn" @click="viewLogs(selectedLock)">
+                    <i class="el-icon-document"></i>
+                    开锁记录
+                  </el-button>
+                </el-col>
+              </el-row>
+            </div>
+
+            <div class="stats-section">
+              <h4>使用统计</h4>
+              <div class="stats-grid">
+                <div class="stat-box">
+                  <div class="stat-num">{{ selectedLock.todayAccess }}</div>
+                  <div class="stat-label">今日开锁</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-num">{{ selectedLock.weekAccess }}</div>
+                  <div class="stat-label">本周开锁</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-num">{{ selectedLock.authUsers }}</div>
+                  <div class="stat-label">授权用户</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="recent-section">
+              <h4>最近访问</h4>
+              <div class="access-list">
+                <div v-for="(access, idx) in recentAccess" :key="idx" class="access-item">
+                  <div class="access-user">{{ access.user }}</div>
+                  <div class="access-time">{{ access.time }}</div>
+                  <div class="access-method">{{ access.method }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <!-- 临时密码弹窗 -->
+    <el-dialog
+      title="生成临时密码"
+      :visible.sync="showTempPassword"
+      width="500px"
+      class="temp-pass-dialog"
+    >
+      <el-form :model="tempPassForm" label-width="100px">
+        <el-form-item label="选择门锁">
+          <el-select v-model="tempPassForm.lockId" placeholder="请选择门锁" style="width: 100%">
+            <el-option
+              v-for="lock in locks"
+              :key="lock.lockId"
+              :label="lock.location"
+              :value="lock.lockId"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="有效期">
+          <el-date-picker
+            v-model="tempPassForm.dateRange"
+            type="datetimerange"
+            range-separator="至"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="使用次数">
+          <el-input-number v-model="tempPassForm.times" :min="1" :max="10" />
+          <span style="margin-left: 10px; color: #909399;">次</span>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="tempPassForm.remark" type="textarea" rows="2" />
+        </el-form-item>
+      </el-form>
+      <div v-if="generatedPassword" class="password-display">
+        <div class="password-label">生成的临时密码：</div>
+        <div class="password-value">{{ generatedPassword }}</div>
+        <el-button size="small" @click="copyPassword">复制密码</el-button>
+      </div>
+      <span slot="footer">
+        <el-button @click="showTempPassword = false">取消</el-button>
+        <el-button type="primary" @click="confirmGeneratePass">生成密码</el-button>
+      </span>
+    </el-dialog>
+
+    <!-- 开锁记录弹窗 -->
+    <el-dialog
+      title="开锁记录"
+      :visible.sync="showLogsDialog"
+      width="800px"
+      class="logs-dialog"
+    >
+      <div class="logs-filter">
+        <el-date-picker
+          v-model="logsDateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          size="small"
+        />
+        <el-select v-model="logsMethod" placeholder="开锁方式" size="small" clearable>
+          <el-option label="密码" value="password" />
+          <el-option label="指纹" value="fingerprint" />
+          <el-option label="人脸" value="face" />
+          <el-option label="门禁卡" value="card" />
+          <el-option label="远程" value="remote" />
+        </el-select>
+      </div>
+      <el-table :data="lockLogs" height="400">
+        <el-table-column prop="time" label="时间" width="180" />
+        <el-table-column prop="user" label="用户" />
+        <el-table-column prop="method" label="开锁方式" width="100">
+          <template slot-scope="scope">
+            <el-tag size="small" :type="getMethodTagType(scope.row.method)">
+              {{ scope.row.method }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="result" label="结果" width="80">
+          <template slot-scope="scope">
+            <span :style="{ color: scope.row.result === '成功' ? '#67C23A' : '#F56C6C' }">
+              {{ scope.row.result }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remark" label="备注" />
+      </el-table>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'LockManagement',
+  data() {
+    return {
+      searchText: '',
+      selectedBuilding: 'A栋',
+      selectedFloor: '1F',
+      viewMode: 'panel',
+      filterType: '',
+      filterStatus: '',
+      selectedLock: null,
+      showTempPassword: false,
+      showLogsDialog: false,
+      showBatchControl: false,
+      showAddDialog: false,
+      generatedPassword: '',
+      logsDateRange: [],
+      logsMethod: '',
+      tempPassForm: {
+        lockId: '',
+        dateRange: [],
+        times: 1,
+        remark: ''
+      },
+      locks: [],
+      lockLogs: [],
+      recentAccess: [],
+      buildingStats: [],
+      floors: ['B1', '1F', '2F', '3F', '4F', '5F']
+    }
+  },
+  computed: {
+    displayLocks() {
+      let result = this.locks.filter(lock => {
+        if (this.selectedBuilding && !lock.location.includes(this.selectedBuilding)) {
+          return false
         }
-        return this.devices.filter(d => d.area === this.currentArea)
-      }
+        if (this.filterType && lock.type !== this.filterType) {
+          return false
+        }
+        if (this.filterStatus && lock.status !== this.filterStatus) {
+          return false
+        }
+        if (this.searchText && !lock.location.toLowerCase().includes(this.searchText.toLowerCase())) {
+          return false
+        }
+        return true
+      })
+      return result
     },
-    
-    mounted() {
-      this.updateTime()
-      setInterval(this.updateTime, 60000)
+    floorRooms() {
+      return this.displayLocks.filter(lock => 
+        lock.location.includes(this.selectedFloor)
+      )
+    }
+  },
+  mounted() {
+    this.initData()
+  },
+  methods: {
+    initData() {
+      // 生成模拟数据
+      const buildings = ['A栋', 'B栋', 'C栋', 'D栋', 'E栋']
+      const types = ['password', 'fingerprint', 'face', 'card']
+      const statuses = ['online', 'online', 'online', 'offline', 'alarm', 'lowBattery']
       
-      // 模拟温度变化
-      setInterval(() => {
-        this.devices.forEach(device => {
-          if (device.online && device.power) {
-            const diff = device.setTemp - device.currentTemp
-            if (Math.abs(diff) > 0.5) {
-              // 制冷/制热速度不同
-              const changeRate = device.mode === 'cool' ? -0.3 : 
-                               device.mode === 'heat' ? 0.3 : 
-                               diff > 0 ? 0.2 : -0.2
-              
-              // 根据风速调整变化速度
-              const speedMultiplier = {
-                low: 0.7,
-                mid: 1,
-                high: 1.3,
-                auto: 1
-              }
-              
-              const actualChange = changeRate * speedMultiplier[device.fanSpeed]
-              device.currentTemp = Math.round((device.currentTemp + actualChange) * 10) / 10
-              
-              // 确保不会超过设定温度
-              if ((device.mode === 'cool' && device.currentTemp < device.setTemp) ||
-                  (device.mode === 'heat' && device.currentTemp > device.setTemp)) {
-                device.currentTemp = device.setTemp
-              }
+      let lockId = 1
+      buildings.forEach(building => {
+        const buildingStat = {
+          name: building,
+          online: 0,
+          offline: 0,
+          alarm: 0
+        }
+        
+        this.floors.forEach(floor => {
+          const roomCount = floor === 'B1' ? 5 : 10
+          for (let i = 1; i <= roomCount; i++) {
+            const roomNumber = floor === 'B1' ? `B${i}` : `${floor.replace('F', '')}${String(i).padStart(2, '0')}`
+            const status = statuses[Math.floor(Math.random() * statuses.length)]
+            
+            const lock = {
+              lockId: `DL${String(lockId++).padStart(6, '0')}`,
+              roomNumber: roomNumber,
+              location: `${building}-${floor}-${roomNumber}室`,
+              type: types[Math.floor(Math.random() * types.length)],
+              status: status,
+              battery: status === 'lowBattery' ? Math.floor(Math.random() * 20) + 10 : Math.floor(Math.random() * 40) + 60,
+              lastAccess: new Date(Date.now() - Math.random() * 86400000),
+              todayAccess: Math.floor(Math.random() * 30),
+              weekAccess: Math.floor(Math.random() * 150),
+              authUsers: Math.floor(Math.random() * 10) + 5
             }
+            
+            this.locks.push(lock)
+            
+            if (status === 'online') buildingStat.online++
+            else if (status === 'offline') buildingStat.offline++
+            else if (status === 'alarm') buildingStat.alarm++
           }
         })
-        this.updateStats()
-      }, 5000)
+        
+        this.buildingStats.push(buildingStat)
+      })
+      
+      // 生成最近访问记录
+      this.recentAccess = [
+        { user: '张三', time: '10:23', method: '指纹' },
+        { user: '李四', time: '09:45', method: '密码' },
+        { user: '王五', time: '08:30', method: '人脸' }
+      ]
     },
     
-    methods: {
-      updateTime() {
-        const now = new Date()
-        this.lastUpdateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-      },
-      
-      refreshData() {
-        this.updateTime()
-        // 实际项目中这里调用API
-        console.log('刷新数据')
-      },
-      
-      togglePower(device) {
-        device.power = !device.power
-        if (!device.power) {
-          device.powerUsage = 0
-        } else {
-          device.powerUsage = this.calculatePower(device)
-          // 开机时当前温度逐渐变化到设定温度
-          if (device.currentTemp !== device.setTemp) {
-            // 温度会逐渐变化，这里不立即改变
-          }
-        }
-        this.updateStats()
-      },
-      
-      adjustTemp(device, delta) {
-        const newTemp = device.setTemp + delta
-        if (newTemp >= 16 && newTemp <= 30) {
-          device.setTemp = newTemp
-          if (device.power) {
-            device.powerUsage = this.calculatePower(device)
-          }
-        }
-      },
-      
-      openDeviceDetail(device) {
-        this.currentDevice = device
-        // 创建临时设置对象
-        this.tempDeviceSettings = {
-          setTemp: device.setTemp,
-          mode: device.mode,
-          fanSpeed: device.fanSpeed,
-          swingH: device.swingH,
-          swingV: device.swingV
-        }
-        this.showDeviceDetail = true
-      },
-      
-      detailAdjustTemp(delta) {
-        const newTemp = this.tempDeviceSettings.setTemp + delta
-        if (newTemp >= 16 && newTemp <= 30) {
-          this.tempDeviceSettings.setTemp = newTemp
-        }
-      },
-      
-      saveDeviceSettings() {
-        // 保存设置到实际设备
-        Object.assign(this.currentDevice, this.tempDeviceSettings)
-        if (this.currentDevice.power) {
-          this.currentDevice.powerUsage = this.calculatePower(this.currentDevice)
-        }
-        this.showDeviceDetail = false
-        this.updateStats()
-      },
-      
-      calculatePower(device) {
-        const baseMap = { cool: 3, heat: 3.5, dry: 2, fan: 0.5 }
-        const speedMap = { low: 0.8, mid: 1, high: 1.2, auto: 1 }
-        return (baseMap[device.mode] * speedMap[device.fanSpeed]).toFixed(1)
-      },
-      
-      updateStats() {
-        const online = this.devices.filter(d => d.online)
-        const running = online.filter(d => d.power)
-        
-        this.stats.online = online.length
-        this.stats.running = running.length
-        this.stats.totalPower = running.reduce((sum, d) => sum + parseFloat(d.powerUsage), 0).toFixed(1)
-        
-        if (running.length > 0) {
-          this.stats.avgTemp = (running.reduce((sum, d) => sum + d.currentTemp, 0) / running.length).toFixed(1)
-        }
-      },
-      
-      toggleWeekday(day) {
-        const index = this.schedule.days.indexOf(day)
-        if (index > -1) {
-          this.schedule.days.splice(index, 1)
-        } else {
-          this.schedule.days.push(day)
-        }
-      },
-      
-      batchAction(action, value) {
-        this.currentDevices.forEach(device => {
-          if (device.online) {
-            switch(action) {
-              case 'powerOn':
-                device.power = true
-                device.powerUsage = this.calculatePower(device)
-                break
-              case 'powerOff':
-                device.power = false
-                device.powerUsage = 0
-                break
-              case 'setTemp':
-                device.setTemp = value
-                break
-              case 'setMode':
-                device.mode = value
-                if (device.power) {
-                  device.powerUsage = this.calculatePower(device)
-                }
-                break
-            }
-          }
-        })
-        this.updateStats()
-      },
-      
-      applyScene(scene) {
-        this.selectedScene = scene.id
-        
-        // 应用场景设置到当前区域的所有在线设备
-        this.currentDevices.forEach(device => {
-          if (device.online) {
-            device.power = true
-            device.setTemp = scene.settings.temp
-            device.mode = scene.settings.mode
-            device.fanSpeed = scene.settings.fanSpeed
-            device.powerUsage = this.calculatePower(device)
-          }
-        })
-        
-        this.updateStats()
-        console.log('应用场景:', scene.name)
-      },
-      
-      saveBatchSettings() {
-        console.log('保存批量设置')
-        this.showBatchControl = false
-        this.selectedScene = null // 重置选中的场景
+    selectBuilding(building) {
+      this.selectedBuilding = building
+    },
+    
+    selectLock(lock) {
+      this.selectedLock = lock
+    },
+    
+    handleQuickAction(command, lock) {
+      switch(command) {
+        case 'unlock':
+          this.remoteUnlock(lock)
+          break
+        case 'tempPass':
+          this.generateTempPass(lock)
+          break
+        case 'alarm':
+          this.triggerAlarm(lock)
+          break
+        case 'logs':
+          this.viewLogs(lock)
+          break
       }
-    }
-  }
-  </script>
-  
-  <style scoped>
-  * {
-    box-sizing: border-box;
-  }
-  
-  /* 基础样式 */
-  .hvac-management {
-    min-height: 100vh;
-    background: #f0f2f5;
-    padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-  }
-  
-  /* 页面头部 */
-  .page-header {
-    background: #fff;
-    padding: 16px 24px;
-    border-bottom: 1px solid #e8e8e8;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .page-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: #000;
-    margin: 0;
-  }
-  
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  
-  .update-time {
-    font-size: 14px;
-    color: #999;
-  }
-  
-  .btn-text {
-    background: none;
-    border: none;
-    color: #1890ff;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-  }
-  
-  .btn-text:hover {
-    background-color: #e6f7ff;
-  }
-  
-  /* 统计信息行 */
-  .stats-row {
-    background: #fff;
-    padding: 20px 24px;
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid #e8e8e8;
-  }
-  
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .stat-label {
-    font-size: 14px;
-    color: #999;
-  }
-  
-  .stat-value {
-    font-size: 24px;
-    font-weight: 500;
-    color: #000;
-  }
-  
-  .stat-value.success {
-    color: #52c41a;
-  }
-  
-  .stat-value.primary {
-    color: #1890ff;
-  }
-  
-  /* 筛选栏 */
-  .filter-bar {
-    background: #fff;
-    padding: 16px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .filter-tabs {
-    display: flex;
-    gap: 24px;
-  }
-  
-  .filter-tab {
-    font-size: 14px;
-    color: #666;
-    cursor: pointer;
-    padding-bottom: 2px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-  }
-  
-  .filter-tab:hover {
-    color: #1890ff;
-  }
-  
-  .filter-tab.active {
-    color: #1890ff;
-    border-bottom-color: #1890ff;
-  }
-  
-  .btn-primary {
-    background: #1890ff;
-    color: #fff;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .btn-primary:hover {
-    background: #40a9ff;
-  }
-  
-  /* 设备列表 */
-  .devices-wrapper {
-    padding: 16px 24px;
-    height: calc(100vh - 250px);
-  }
-  
-  .devices-scroll {
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-  
-  .devices-scroll::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .devices-scroll::-webkit-scrollbar-track {
-    background: #f0f0f0;
-    border-radius: 3px;
-  }
-  
-  .devices-scroll::-webkit-scrollbar-thumb {
-    background: #bfbfbf;
-    border-radius: 3px;
-  }
-  
-  .devices-scroll::-webkit-scrollbar-thumb:hover {
-    background: #999;
-  }
-  
-  .devices-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-  }
-  
-  /* 设备卡片 */
-  .device-item {
-    background: #fff;
-    border-radius: 4px;
-    padding: 16px;
-    border: 1px solid #e8e8e8;
-    transition: all 0.2s;
-  }
-  
-  .device-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
-  
-  .device-item.offline {
-    opacity: 0.6;
-  }
-  
-  .device-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-  
-  .device-name {
-    font-size: 14px;
-    font-weight: 500;
-    color: #000;
-  }
-  
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-  
-  .status-dot.online {
-    background: #52c41a;
-  }
-  
-  .status-dot.offline {
-    background: #d9d9d9;
-  }
-  
-  /* 温度显示 */
-  .temp-display {
-    text-align: center;
-    margin-bottom: 12px;
-  }
-  
-  .temp-current {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    margin-bottom: 4px;
-  }
-  
-  .temp-num {
-    font-size: 32px;
-    font-weight: 300;
-    color: #000;
-  }
-  
-  .temp-unit {
-    font-size: 16px;
-    color: #666;
-    margin-left: 2px;
-  }
-  
-  .temp-set {
-    font-size: 12px;
-    color: #999;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .temp-label {
-    color: #666;
-  }
-  
-  .temp-divider {
-    color: #d9d9d9;
-  }
-  
-  /* 设备状态 */
-  .device-status {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  
-  .mode-label,
-  .wind-label {
-    font-size: 12px;
-    padding: 2px 8px;
-    background: #f0f0f0;
-    border-radius: 2px;
-    color: #666;
-  }
-  
-  /* 控制区域 */
-  .device-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 12px;
-    border-top: 1px solid #f0f0f0;
-  }
-  
-  /* 开关样式 */
-  .switch-control {
-    position: relative;
-    display: inline-block;
-    width: 40px;
-    height: 20px;
-  }
-  
-  .switch-control input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-  
-  .switch-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #bfbfbf;
-    transition: .3s;
-    border-radius: 20px;
-  }
-  
-  .switch-slider:before {
-    position: absolute;
-    content: "";
-    height: 14px;
-    width: 14px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .3s;
-    border-radius: 50%;
-  }
-  
-  input:checked + .switch-slider {
-    background-color: #1890ff;
-  }
-  
-  input:checked + .switch-slider:before {
-    transform: translateX(20px);
-  }
-  
-  input:disabled + .switch-slider {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  /* 快捷操作按钮 */
-  .quick-actions {
-    display: flex;
-    gap: 8px;
-  }
-  
-  .icon-btn {
-    width: 28px;
-    height: 28px;
-    border: 1px solid #d9d9d9;
-    background: #fff;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: #666;
-  }
-  
-  .icon-btn:hover:not(:disabled) {
-    border-color: #1890ff;
-    color: #1890ff;
-  }
-  
-  .icon-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  /* 设备信息 */
-  .device-info {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #f0f0f0;
-  }
-  
-  .info-text {
-    font-size: 12px;
-    color: #999;
-  }
-  
-  /* 弹窗样式 */
-  .modal-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-  
-  .modal-container {
-    background: #fff;
-    border-radius: 4px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .detail-modal {
-    max-width: 480px;
-  }
-  
-  .modal-header {
-    padding: 16px 24px;
-    border-bottom: 1px solid #e8e8e8;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .modal-header h3 {
-    font-size: 16px;
-    font-weight: 500;
-    color: #000;
-    margin: 0;
-  }
-  
-  .close-btn {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    transition: all 0.2s;
-  }
-  
-  .close-btn:hover {
-    background: #f0f0f0;
-    color: #666;
-  }
-  
-  .modal-body {
-    padding: 24px;
-    overflow-y: auto;
-    flex: 1;
-  }
-  
-  .modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #e8e8e8;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-  }
-  
-  /* 批量控制内容 */
-  .batch-section {
-    margin-bottom: 24px;
-  }
-  
-  .batch-section:last-child {
-    margin-bottom: 0;
-  }
-  
-  .batch-section h4 {
-    font-size: 14px;
-    font-weight: 500;
-    color: #000;
-    margin: 0 0 12px 0;
-  }
-  
-  .batch-actions {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  
-  .action-btn {
-    padding: 12px;
-    border: 1px solid #d9d9d9;
-    background: #fff;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .action-btn:hover {
-    border-color: #1890ff;
-    color: #1890ff;
-    background: #e6f7ff;
-  }
-  
-  /* 定时设置 */
-  .schedule-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .form-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  
-  .form-row label {
-    width: 80px;
-    font-size: 14px;
-    color: #666;
-  }
-  
-  .time-input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #d9d9d9;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-  
-  .weekdays {
-    display: flex;
-    gap: 8px;
-  }
-  
-  .weekday {
-    width: 32px;
-    height: 32px;
-    border: 1px solid #d9d9d9;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .weekday:hover {
-    border-color: #1890ff;
-  }
-  
-  .weekday.selected {
-    background: #1890ff;
-    color: #fff;
-    border-color: #1890ff;
-  }
-  
-  /* 场景模式 */
-  .scene-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-  
-  .scene-card {
-    padding: 16px;
-    border: 1px solid #d9d9d9;
-    border-radius: 4px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .scene-card:hover {
-    border-color: #1890ff;
-    background: #e6f7ff;
-  }
-  
-  .scene-card.active {
-    background: #1890ff;
-    border-color: #1890ff;
-  }
-  
-  .scene-card.active span {
-    color: #fff;
-  }
-  
-  .scene-card span {
-    font-size: 14px;
-    color: #666;
-  }
-  
-  /* 设备详情 */
-  .detail-section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .detail-info {
-    background: #f5f6f8;
-    padding: 16px;
-    border-radius: 4px;
-    margin-bottom: 16px;
-  }
-  
-  .info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-  }
-  
-  .info-row:first-child {
-    padding-top: 0;
-  }
-  
-  .info-row:last-child {
-    padding-bottom: 0;
-  }
-  
-  .info-label {
-    font-size: 14px;
-    color: #666;
-  }
-  
-  .info-value {
-    font-size: 18px;
-    font-weight: 500;
-    color: #000;
-  }
-  
-  .info-value.primary {
-    color: #1890ff;
-  }
-  
-  .detail-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  
-  .detail-row label {
-    width: 80px;
-    font-size: 14px;
-    color: #666;
-  }
-  
-  .temp-adjuster {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .temp-adjuster button {
-    width: 32px;
-    height: 32px;
-    border: 1px solid #d9d9d9;
-    background: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 18px;
-    color: #666;
-    transition: all 0.2s;
-  }
-  
-  .temp-adjuster button:hover:not(:disabled) {
-    border-color: #1890ff;
-    color: #1890ff;
-  }
-  
-  .temp-adjuster button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .temp-adjuster input {
-    width: 80px;
-    text-align: center;
-    padding: 8px;
-    border: 1px solid #d9d9d9;
-    border-radius: 4px;
-    font-size: 16px;
-  }
-  
-  .mode-selector,
-  .wind-selector {
-    display: flex;
-    gap: 8px;
-  }
-  
-  .mode-option,
-  .wind-option {
-    padding: 6px 16px;
-    border: 1px solid #d9d9d9;
-    border-radius: 4px;
-    font-size: 14px;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .mode-option:hover,
-  .wind-option:hover {
-    border-color: #1890ff;
-  }
-  
-  .mode-option.active,
-  .wind-option.active {
-    background: #1890ff;
-    color: #fff;
-    border-color: #1890ff;
-  }
-  
-  .swing-options {
-    display: flex;
-    gap: 24px;
-  }
-  
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #666;
-    cursor: pointer;
-  }
-  
-  .checkbox-label input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-  
-  /* 按钮样式 */
-  .btn-default {
-    padding: 8px 16px;
-    border: 1px solid #d9d9d9;
-    background: #fff;
-    border-radius: 4px;
-    font-size: 14px;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .btn-default:hover {
-    border-color: #1890ff;
-    color: #1890ff;
-  }
-  
-  /* 图标字体（模拟） */
-  .iconfont {
-    font-style: normal;
-    -webkit-font-smoothing: antialiased;
-  }
-  
-  .icon-refresh:before { content: "⟲"; }
-  .icon-minus:before { content: "−"; }
-  .icon-plus:before { content: "+"; }
-  .icon-setting:before { content: "⚙"; }
-  .icon-close:before { content: "×"; font-size: 20px; }
-  .icon-power:before { content: "◉"; }
-  .icon-poweroff:before { content: "◯"; }
-  .icon-temp:before { content: "°"; }
-  .icon-snow:before { content: "❄"; }
-  
-  /* 响应式适配 */
-  @media (max-width: 1400px) {
-    .devices-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-  
-  @media (max-width: 1024px) {
-    .devices-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
+    },
     
-    .stat-value {
-      font-size: 20px;
+    remoteUnlock(lock) {
+      this.$confirm(`确定要远程开启 ${lock.location} 的门锁吗？`, '远程开锁确认', {
+        confirmButtonText: '确定开锁',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$message.success('开锁指令已发送')
+      })
+    },
+    
+    generateTempPass(lock) {
+      this.tempPassForm.lockId = lock.lockId
+      this.showTempPassword = true
+    },
+    
+    confirmGeneratePass() {
+      this.generatedPassword = Math.random().toString().slice(2, 8)
+      this.$message.success('临时密码已生成')
+    },
+    
+    copyPassword() {
+      navigator.clipboard.writeText(this.generatedPassword)
+      this.$message.success('密码已复制到剪贴板')
+    },
+    
+    triggerAlarm(lock) {
+      this.$confirm(`确定要点亮 ${lock.location} 的报警灯吗？`, '点亮报警', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      }).then(() => {
+        // 更新设备状态为告警
+        const index = this.locks.findIndex(l => l.lockId === lock.lockId)
+        if (index !== -1) {
+          this.$set(this.locks[index], 'status', 'alarm')
+        }
+        this.$message.success('报警灯已点亮')
+        this.updateStats()
+      })
+    },
+    
+    viewLogs(lock) {
+      this.showLogsDialog = true
+      // 生成模拟日志
+      this.lockLogs = Array.from({ length: 20 }, (_, i) => ({
+        time: new Date(Date.now() - i * 3600000).toLocaleString('zh-CN'),
+        user: ['张三', '李四', '王五', '赵六'][Math.floor(Math.random() * 4)],
+        method: ['密码', '指纹', '人脸', '门禁卡', '远程'][Math.floor(Math.random() * 5)],
+        result: Math.random() > 0.9 ? '失败' : '成功',
+        remark: Math.random() > 0.8 ? '多次尝试' : ''
+      }))
+    },
+    
+    getLockIcon(type) {
+      const iconMap = {
+        password: 'el-icon-lock',
+        fingerprint: 'el-icon-thumb',
+        face: 'el-icon-user',
+        card: 'el-icon-bank-card'
+      }
+      return iconMap[type] || 'el-icon-lock'
+    },
+    
+    getLockTypeName(type) {
+      const typeMap = {
+        password: '密码锁',
+        fingerprint: '指纹锁',
+        face: '人脸锁',
+        card: '门禁卡'
+      }
+      return typeMap[type] || type
+    },
+    
+    getStatusName(status) {
+      const statusMap = {
+        online: '正常',
+        offline: '离线',
+        alarm: '告警',
+        lowBattery: '低电量'
+      }
+      return statusMap[status] || status
+    },
+    
+    getBatteryColor(battery) {
+      if (battery > 60) return '#67C23A'
+      if (battery > 30) return '#E6A23C'
+      return '#F56C6C'
+    },
+    
+    formatTime(time) {
+      const now = new Date()
+      const diff = now - time
+      if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
+      if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
+      return time.toLocaleDateString('zh-CN')
+    },
+    
+    getMethodTagType(method) {
+      const typeMap = {
+        '密码': '',
+        '指纹': 'success',
+        '人脸': 'warning',
+        '门禁卡': 'info',
+        '远程': 'danger'
+      }
+      return typeMap[method] || ''
     }
+  }
+}
+</script>
+
+<style scoped>
+.lock-management {
+  height: 100vh;
+  background: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶部栏 */
+.top-bar {
+  height: 56px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+}
+
+.left-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #1f2329;
+  margin: 0;
+}
+
+.alert-badge {
+  margin-left: 8px;
+}
+
+.right-section {
+  display: flex;
+  gap: 12px;
+}
+
+/* 主内容区 */
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* 左侧楼层导航 */
+.building-nav {
+  width: 240px;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-header {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.nav-header span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2329;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.building-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.building-item {
+  padding: 12px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+}
+
+.building-item:hover {
+  background: #f5f5f5;
+}
+
+.building-item.active {
+  background: #e6f7ff;
+  border-left: 3px solid #1890ff;
+}
+
+.building-name {
+  font-size: 14px;
+  color: #1f2329;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.building-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #8f959e;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-item i {
+  font-size: 12px;
+}
+
+.stat-item.warning {
+  color: #faad14;
+}
+
+/* 内容区域 */
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.view-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 12px;
+}
+
+/* 面板视图 */
+.panel-view {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  overflow-y: auto;
+  padding: 4px;
+  align-content: start;
+}
+
+.lock-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid #e8e8e8;
+  position: relative;
+  height: fit-content;
+}
+
+.lock-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.lock-card.alarm {
+  border-color: #ff7875;
+  background: #fff2f0;
+}
+
+.lock-card.lowBattery {
+  border-color: #faad14;
+  background: #fffbe6;
+}
+
+.lock-card.offline {
+  opacity: 0.7;
+  background: #fafafa;
+}
+
+.lock-card.selected {
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+}
+
+.lock-card.selected.alarm {
+  border-color: #ff7875;
+  box-shadow: 0 4px 12px rgba(255, 120, 117, 0.15);
+}
+
+.lock-card.selected.lowBattery {
+  border-color: #faad14;
+  box-shadow: 0 4px 12px rgba(250, 173, 20, 0.15);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.room-number {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.action-icon {
+  color: #8f959e;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.action-icon:hover {
+  color: #1890ff;
+}
+
+.card-body {
+  margin-bottom: 16px;
+}
+
+.lock-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #646a73;
+  font-size: 13px;
+}
+
+.lock-type i {
+  font-size: 16px;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-indicator.online {
+  background: #52c41a;
+}
+
+.status-indicator.offline {
+  background: #d9d9d9;
+}
+
+.status-indicator.alarm {
+  background: #ff4d4f;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.lowBattery {
+  background: #faad14;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.status-text {
+  color: #8f959e;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #8f959e;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.info-item i {
+  font-size: 14px;
+}
+
+/* 表格视图 */
+.table-view {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-view .el-table {
+  flex: 1;
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-dot.online {
+  background: #52c41a;
+}
+
+.status-dot.offline {
+  background: #d9d9d9;
+}
+
+.status-dot.alarm {
+  background: #ff4d4f;
+}
+
+.type-badge {
+  font-size: 12px;
+  color: #646a73;
+}
+
+/* 楼层平面视图 */
+.floor-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.floor-selector {
+  margin-bottom: 16px;
+}
+
+.floor-map {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  overflow: auto;
+}
+
+.floor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 120px));
+  gap: 12px;
+  justify-content: start;
+}
+
+.room-block {
+  width: 100px;
+  height: 100px;
+  background: #f5f7fa;
+  border: 2px solid #e1e4e8;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.room-block:hover {
+  background: #e6f7ff;
+  border-color: #1890ff;
+}
+
+.room-block.alarm {
+  background: #fff2f0;
+  border-color: #ff7875;
+}
+
+.room-block.alarm {
+  background: #fff2f0;
+  border-color: #ff7875;
+}
+
+.room-block.lowBattery {
+  background: #fffbe6;
+  border-color: #faad14;
+}
+
+.room-block.offline {
+  opacity: 0.6;
+}
+
+.room-block.selected {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.room-block.selected.alarm {
+  border-color: #ff7875;
+  box-shadow: 0 2px 8px rgba(255, 120, 117, 0.2);
+}
+
+.room-block.selected.lowBattery {
+  border-color: #faad14;
+  box-shadow: 0 2px 8px rgba(250, 173, 20, 0.2);
+}
+
+.room-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2329;
+  margin-bottom: 4px;
+}
+
+.room-block i {
+  font-size: 20px;
+  color: #8f959e;
+  margin-bottom: 4px;
+}
+
+.room-status {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.status-light {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: block;
+}
+
+.status-light.online {
+  background: #52c41a;
+}
+
+.status-light.offline {
+  background: #d9d9d9;
+}
+
+.status-light.alarm {
+  background: #ff4d4f;
+  animation: pulse 2s infinite;
+}
+
+/* 右侧详情面板 */
+.detail-panel {
+  width: 320px;
+  background: #fff;
+  border-left: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.panel-header h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2329;
+  margin: 0;
+}
+
+.panel-header i {
+  cursor: pointer;
+  color: #8f959e;
+  padding: 4px;
+}
+
+.panel-header i:hover {
+  color: #646a73;
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.info-section,
+.action-section,
+.stats-section,
+.recent-section {
+  margin-bottom: 24px;
+}
+
+.info-section h4,
+.action-section h4,
+.stats-section h4,
+.recent-section h4 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2329;
+  margin-bottom: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.info-row .label {
+  color: #8f959e;
+}
+
+.info-row .value {
+  color: #1f2329;
+  font-weight: 500;
+}
+
+.control-btn {
+  width: 100%;
+  height: 60px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.control-btn i {
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.action-btn i {
+  font-size: 20px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-box {
+  text-align: center;
+  padding: 12px 8px;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+
+.stat-num {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2329;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #8f959e;
+}
+
+.access-list {
+  font-size: 13px;
+}
+
+.access-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.access-item:last-child {
+  border-bottom: none;
+}
+
+.access-user {
+  color: #1f2329;
+  font-weight: 500;
+}
+
+.access-time {
+  color: #8f959e;
+}
+
+.access-method {
+  color: #646a73;
+}
+
+/* 弹窗样式 */
+.temp-pass-dialog .password-display {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.password-label {
+  font-size: 14px;
+  color: #8f959e;
+  margin-bottom: 8px;
+}
+
+.password-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1890ff;
+  margin-bottom: 12px;
+  letter-spacing: 4px;
+}
+
+.logs-dialog .logs-filter {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* 过渡动画 */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-right-enter,
+.slide-right-leave-to {
+  transform: translateX(100%);
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+  .panel-view {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .building-nav {
+    width: 200px;
   }
   
-  @media (max-width: 768px) {
-    .devices-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .stats-row {
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    
-    .batch-actions {
-      grid-template-columns: 1fr;
-    }
-    
-    .scene-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
+  .detail-panel {
+    width: 280px;
   }
-  </style>
+  
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
