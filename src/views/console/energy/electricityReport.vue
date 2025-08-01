@@ -411,6 +411,10 @@ export default {
     avgDailyAmount() {
       if (this.tableData.length === 0) return 0
       return (this.totalStats.amount / this.tableData.length).toFixed(2)
+    },
+    isAllSelected() {
+      return this.tenantList.length > 0 && 
+             this.queryParams.tenantIds.length === this.tenantList.length
     }
   },
   watch: {
@@ -436,10 +440,9 @@ export default {
     async initializeData() {
       this.setDefaultDateRange()
       await this.getTenantList()
+      // 默认全选所有租户
       if (this.tenantList.length > 0) {
-        this.queryParams.tenantIds = this.tenantList
-          .slice(0, Math.min(5, this.tenantList.length))
-          .map(item => item.tenantId)
+        this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId)
       }
       this.handleSearch()
     },
@@ -471,6 +474,14 @@ export default {
         console.error('获取租户列表失败:', error)
       } finally {
         this.tenantLoading = false
+      }
+    },
+    
+    toggleSelectAll() {
+      if (this.isAllSelected) {
+        this.queryParams.tenantIds = []
+      } else {
+        this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId)
       }
     },
     
@@ -596,10 +607,9 @@ export default {
     
     handleReset() {
       this.setDefaultDateRange()
+      // 重置为全选
       if (this.tenantList.length > 0) {
-        this.queryParams.tenantIds = this.tenantList
-          .slice(0, Math.min(5, this.tenantList.length))
-          .map(item => item.tenantId)
+        this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId)
       }
       this.switchDeviceDetail = false
       this.handleSearch()
@@ -628,26 +638,35 @@ export default {
       
       const xAxisData = this.chartData.map(item => item.occurDate)
       const option = {
+        color: ['#2251F5', '#3CC4FF', '#0170FE', '#F64C4C', '#47B881', '#FFA722'],
         tooltip: {
           trigger: 'axis',
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          borderColor: '#e0e0e0',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderColor: '#E5E7EB',
           borderWidth: 1,
           textStyle: {
-            color: '#333'
+            color: '#374151'
           },
           axisPointer: {
             type: 'cross',
             crossStyle: {
-              color: '#999'
+              color: '#9CA3AF'
             }
           }
         },
+        legend: {
+          data: ['电费', '尖电量', '峰电量', '平电量', '谷电量'],
+          bottom: 10,
+          itemGap: 20,
+          textStyle: {
+            color: '#6B7280'
+          }
+        },
         grid: {
-          top: 60,
-          left: 80,
-          right: 80,
-          bottom: 60,
+          top: 50,
+          left: 60,
+          right: 60,
+          bottom: 50,
           containLabel: true
         },
         xAxis: {
@@ -658,11 +677,11 @@ export default {
           },
           axisLine: {
             lineStyle: {
-              color: '#e0e0e0'
+              color: '#E5E7EB'
             }
           },
           axisLabel: {
-            color: '#666',
+            color: '#6B7280',
             rotate: this.dateType === 'day' && xAxisData.length > 20 ? 45 : 0
           }
         },
@@ -671,13 +690,11 @@ export default {
             type: 'value',
             name: '电费 (元)',
             nameTextStyle: {
-              color: '#666',
-              fontSize: 12
+              color: '#6B7280'
             },
             splitLine: {
               lineStyle: {
-                color: '#f0f0f0',
-                type: 'dashed'
+                color: '#F3F4F6'
               }
             },
             axisLine: {
@@ -687,15 +704,14 @@ export default {
               show: false
             },
             axisLabel: {
-              color: '#666'
+              color: '#6B7280'
             }
           },
           {
             type: 'value',
             name: '电量 (度)',
             nameTextStyle: {
-              color: '#666',
-              fontSize: 12
+              color: '#6B7280'
             },
             splitLine: {
               show: false
@@ -707,7 +723,7 @@ export default {
               show: false
             },
             axisLabel: {
-              color: '#666'
+              color: '#6B7280'
             }
           }
         ],
@@ -716,22 +732,10 @@ export default {
             name: '电费',
             type: 'bar',
             data: this.chartData.map(item => item.useAmount),
+            barWidth: '30%',
             itemStyle: {
-              color: new this.$echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#5470c6' },
-                { offset: 1, color: '#91a7ff' }
-              ]),
-              borderRadius: [4, 4, 0, 0]
+              borderRadius: [2, 2, 0, 0]
             }
-          },
-          {
-            name: '总电量',
-            type: 'line',
-            yAxisIndex: 1,
-            smooth: true,
-            data: this.chartData.map(item => item.useElec),
-            lineStyle: { color: '#91cc75', width: 2 },
-            itemStyle: { color: '#91cc75' }
           },
           {
             name: '尖电量',
@@ -739,8 +743,10 @@ export default {
             yAxisIndex: 1,
             smooth: true,
             data: this.chartData.map(item => item.useElecPeak),
-            lineStyle: { color: '#fac858', width: 2 },
-            itemStyle: { color: '#fac858' }
+            symbolSize: 6,
+            lineStyle: {
+              width: 2
+            }
           },
           {
             name: '峰电量',
@@ -748,8 +754,10 @@ export default {
             yAxisIndex: 1,
             smooth: true,
             data: this.chartData.map(item => item.useElecTop),
-            lineStyle: { color: '#ee6666', width: 2 },
-            itemStyle: { color: '#ee6666' }
+            symbolSize: 6,
+            lineStyle: {
+              width: 2
+            }
           },
           {
             name: '平电量',
@@ -757,8 +765,10 @@ export default {
             yAxisIndex: 1,
             smooth: true,
             data: this.chartData.map(item => item.useElecFlat),
-            lineStyle: { color: '#73c0de', width: 2 },
-            itemStyle: { color: '#73c0de' }
+            symbolSize: 6,
+            lineStyle: {
+              width: 2
+            }
           },
           {
             name: '谷电量',
@@ -766,8 +776,10 @@ export default {
             yAxisIndex: 1,
             smooth: true,
             data: this.chartData.map(item => item.useElecValley),
-            lineStyle: { color: '#9a60b4', width: 2 },
-            itemStyle: { color: '#9a60b4' }
+            symbolSize: 6,
+            lineStyle: {
+              width: 2
+            }
           }
         ]
       }
