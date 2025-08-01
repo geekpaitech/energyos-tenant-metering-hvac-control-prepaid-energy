@@ -1,33 +1,4 @@
-.status-light.lowBattery {
-  background: #faad14;
-}.table-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  white-space: nowrap;
-}
-
-.table-actions .el-button {
-  margin: 0;
-  padding: 0 8px;
-}
-
-.table-actions .el-divider--vertical {
-  margin: 0 8px;
-  height: 12px;
-}    handleMoreCommand(command, lock) {
-      switch(command) {
-        case 'alarm':
-          this.triggerAlarm(lock)
-          break
-        case 'auth':
-          this.$message.info('权限管理功能开发中...')
-          break
-        case 'edit':
-          this.$message.info('编辑功能开发中...')
-          break
-      }
-    },<template>
+<template>
   <div class="lock-management">
     <!-- 顶部操作栏 -->
     <div class="top-bar">

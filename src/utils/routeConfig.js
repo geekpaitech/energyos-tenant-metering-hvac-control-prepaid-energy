@@ -79,7 +79,7 @@ export const consoleRoutes = [
         name: 'DeviceDividerSharing',
         meta: { 
           isDivider: true,
-          dividerLabel: '公摊管理',  // 分组标签
+          dividerLabel: '公摊管理',
           hidden: false
         }
       },
@@ -115,11 +115,12 @@ export const consoleRoutes = [
       {
         path: 'energy',
         name: 'ApplicationEnergy',
+        component: { render: h => h('router-view') }, // 使用内联渲染
         redirect: '/application/energy/electricity-report',
         meta: { 
           title: '用能', 
           icon: 'el-icon-data-line',
-          parentGroup: '分户计量'  // 添加分组信息
+          parentGroup: '分户计量'
         },
         children: [
           // 用电分析部分
@@ -163,11 +164,12 @@ export const consoleRoutes = [
       {
         path: 'tenant',
         name: 'ApplicationTenant',
+        component: { render: h => h('router-view') }, // 使用内联渲染
         redirect: '/application/tenant/list',
         meta: { 
           title: '租户', 
           icon: 'el-icon-user',
-          parentGroup: '分户计量'  // 添加分组信息
+          parentGroup: '分户计量'
         },
         children: [
           {
@@ -206,11 +208,12 @@ export const consoleRoutes = [
       {
         path: 'fee',
         name: 'ApplicationFee',
+        component: { render: h => h('router-view') }, // 使用内联渲染
         redirect: '/application/fee/electricity-plan',
         meta: { 
           title: '计费', 
           icon: 'el-icon-price-tag',
-          parentGroup: '分户计量'  // 添加分组信息
+          parentGroup: '分户计量'
         },
         children: [
           {
@@ -253,11 +256,12 @@ export const consoleRoutes = [
       {
         path: 'bill',
         name: 'ApplicationBill',
+        component: { render: h => h('router-view') }, // 使用内联渲染
         redirect: '/application/bill/energy-bill',
         meta: { 
           title: '账单', 
           icon: 'el-icon-document',
-          parentGroup: '分户计量'  // 添加分组信息
+          parentGroup: '分户计量'
         },
         children: [
           {
@@ -284,11 +288,12 @@ export const consoleRoutes = [
       {
         path: 'finance',
         name: 'ApplicationFinance',
+        component: { render: h => h('router-view') }, // 使用内联渲染
         redirect: '/application/finance/tenant-refund',
         meta: { 
           title: '财务', 
           icon: 'el-icon-coin',
-          parentGroup: '分户计量'  // 添加分组信息
+          parentGroup: '分户计量'
         },
         children: [
           {
@@ -321,11 +326,12 @@ export const consoleRoutes = [
       {
         path: 'invoice',
         name: 'ApplicationInvoice',
+        component: { render: h => h('router-view') }, // 使用内联渲染
         redirect: '/application/invoice/tenant-invoice',
         meta: { 
           title: '开票', 
           icon: 'el-icon-postcard',
-          parentGroup: '分户计量'  // 添加分组信息
+          parentGroup: '分户计量'
         },
         children: [
           {
@@ -349,16 +355,17 @@ export const consoleRoutes = [
         ]
       },
       
-      // ==================== 新增：停车收费分组 ====================
+      // ==================== 停车收费分组 ====================
       // 停车管理
       {
         path: 'parking-management',
         name: 'ApplicationParkingManagement',
+        component: { render: h => h('router-view') }, // 使用内联渲染
         redirect: '/application/parking-management/parking-list',
         meta: { 
           title: '管理', 
           icon: 'el-icon-guide',
-          parentGroup: '停车收费'  // 新的分组信息
+          parentGroup: '停车收费'
         },
         children: [
           {
@@ -373,11 +380,12 @@ export const consoleRoutes = [
       {
         path: 'parking-billing',
         name: 'ApplicationParkingBilling',
+        component: { render: h => h('router-view') }, // 使用内联渲染
         redirect: '/application/parking-billing/parking-fee',
         meta: { 
           title: '计费', 
           icon: 'el-icon-price-tag',
-          parentGroup: '停车收费'  // 新的分组信息
+          parentGroup: '停车收费'
         },
         children: [
           {

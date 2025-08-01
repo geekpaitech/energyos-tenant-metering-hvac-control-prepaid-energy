@@ -2,10 +2,17 @@ import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+// main.js
+import * as echarts from 'echarts'
 
 // 引入Element UI
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
+import moment from 'moment'
+
+// 设置 moment 中文语言
+import 'moment/locale/zh-cn'
+moment.locale('zh-cn')
 // 引入样式重置
 import 'normalize.css/normalize.css'
 
@@ -29,7 +36,8 @@ import '@/permission'
 // }
 // 创建事件总线
 Vue.prototype.$bus = new Vue()
-
+// 将 echarts 挂载到 Vue 原型上，方便全局使用
+Vue.prototype.$echarts = echarts
 // 捕获路由错误，避免控制台报错
 router.onError(error => {
   console.warn('路由错误已被捕获:', error.message)
