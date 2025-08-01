@@ -183,7 +183,7 @@
 
         <!-- 数据表格 -->
         <el-table
-          :height="dynamicTableHeight"
+          :height="dataLength > 9 ? dynamicTableHeight : null"
           v-loading="loading"
           :data="tableData"
           stripe
@@ -404,18 +404,18 @@
         </el-table>
       </div>
     </div>
-        <!-- 分页 -->
-        <div class="pagination-container">
-          <el-pagination
-            :current-page="pageData.current"
-            :page-sizes="[15, 30, 60, 100]"
-            :page-size="pageData.size"
-            :total="pageData.total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-          />
-        </div>
+    <!-- 分页 -->
+    <div class="pagination-container">
+      <el-pagination
+        :current-page="pageData.current"
+        :page-sizes="[15, 30, 60, 100]"
+        :page-size="pageData.size"
+        :total="pageData.total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
 
     <!-- 编辑弹窗 -->
     <el-dialog
@@ -799,6 +799,9 @@ export default {
     // 计算需要显示的列
     displayColumns() {
       return this.tableKey.filter((col) => col.checked !== false);
+    },
+    dataLength() {
+      return this.tableData.length;
     },
     // 判断是否需要显示高级筛选按钮
     needAdvancedSearch() {

@@ -1,127 +1,111 @@
 <template>
   <div class="login-container">
-    <!-- 左侧品牌展示区 -->
-    <div class="brand-side">
-      <div class="brand-content">
-        <div class="logo-section">
-          <div class="logo">
-            <svg viewBox="0 0 48 48" width="48" height="48">
-              <defs>
-                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style="stop-color:#4A90E2"/>
-                  <stop offset="100%" style="stop-color:#357ABD"/>
-                </linearGradient>
-              </defs>
-              <!-- 简化的仪表图标 -->
-              <circle cx="24" cy="24" r="20" fill="none" stroke="url(#logoGrad)" stroke-width="2"/>
-              <path d="M24 8 L24 16 M24 32 L24 40 M8 24 L16 24 M32 24 L40 24" stroke="url(#logoGrad)" stroke-width="1.5" opacity="0.6"/>
-              <circle cx="24" cy="24" r="3" fill="url(#logoGrad)"/>
-              <path d="M24 24 L30 18" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <h1 class="brand-name">园区智慧物联</h1>
-        </div>
-        
-        <div class="brand-desc">
-          <h2>智能计量管理系统</h2>
-          <p>专业的水电能源管理与计费解决方案</p>
-        </div>
-
-        <div class="features">
-          <div class="feature-item">
-            <i class="el-icon-data-line"></i>
-            <span>实时数据监控</span>
-          </div>
-          <div class="feature-item">
-            <i class="el-icon-coin"></i>
-            <span>智能计费管理</span>
-          </div>
-          <div class="feature-item">
-            <i class="el-icon-data-analysis"></i>
-            <span>数据分析报表</span>
-          </div>
-        </div>
-
-        <div class="copyright">
-          <p>&copy; 2024 园区智慧物联 版权所有</p>
-        </div>
+    <div class="login-background">
+      <div class="grid-overlay"></div>
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
       </div>
     </div>
-
-    <!-- 右侧登录表单区 -->
-    <div class="login-side">
-      <div class="login-form-wrapper">
-        <div class="form-header">
-          <h3>欢迎登录</h3>
-          <p>请输入您的账号密码登录系统</p>
+    
+    <div class="login-content">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="logo-container">
+            <div class="logo-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 2L35 10V30L20 38L5 30V10L20 2Z" stroke="#1890ff" stroke-width="2" fill="none"/>
+                <circle cx="20" cy="20" r="8" fill="#1890ff" opacity="0.1"/>
+                <circle cx="20" cy="20" r="4" fill="#1890ff"/>
+                <path d="M20 8V16M32 20H24M20 24V32M16 20H8" stroke="#1890ff" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="system-info">
+              <h1 class="system-title">园区智慧物联</h1>
+              <p class="system-subtitle">Park Intelligent IoT System</p>
+            </div>
+          </div>
         </div>
 
-        <el-form
-          ref="loginForm"
-          :model="loginForm"
-          :rules="loginRules"
-          class="login-form"
-          label-position="top"
-        >
-          <el-form-item prop="username">
-            <label class="form-label">账号</label>
-            <el-input
-              ref="username"
-              v-model="loginForm.username"
-              placeholder="请输入手机号"
-              prefix-icon="el-icon-user"
-              size="large"
-              tabindex="1"
-            />
-          </el-form-item>
-
-          <el-form-item prop="password">
-            <label class="form-label">密码</label>
-            <el-input
-              ref="password"
-              v-model="loginForm.password"
-              :type="passwordType"
-              placeholder="请输入密码"
-              prefix-icon="el-icon-lock"
-              size="large"
-              tabindex="2"
-              @keyup.enter.native="handleLogin"
-            >
-              <template #suffix>
-                <i 
-                  :class="passwordType === 'password' ? 'el-icon-view' : 'el-icon-hide'"
-                  @click="showPwd"
-                  style="cursor: pointer; color: #999;"
+        <div class="login-form-container">
+          <h2 class="form-title">欢迎登录</h2>
+          
+          <el-form
+            ref="loginForm"
+            :model="loginForm"
+            :rules="loginRules"
+            class="login-form"
+            auto-complete="on"
+            label-position="left"
+          >
+            <el-form-item prop="username">
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="#8c8c8c"/>
+                    <path d="M10 12.5C5 12.5 0.625 15.625 0.625 19.375C0.625 19.6875 0.875 20 1.25 20H18.75C19.125 20 19.375 19.6875 19.375 19.375C19.375 15.625 15 12.5 10 12.5Z" fill="#8c8c8c"/>
+                  </svg>
+                </span>
+                <el-input
+                  ref="username"
+                  v-model="loginForm.username"
+                  placeholder="请输入用户名"
+                  name="username"
+                  type="text"
+                  tabindex="1"
+                  auto-complete="on"
                 />
-              </template>
-            </el-input>
-          </el-form-item>
+              </div>
+            </el-form-item>
 
-          <el-form-item>
+            <el-form-item prop="password">
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.25 7.5H15V5C15 2.24 12.76 0 10 0C7.24 0 5 2.24 5 5V7.5H3.75C2.785 7.5 2 8.285 2 9.25V18.25C2 19.215 2.785 20 3.75 20H16.25C17.215 20 18 19.215 18 18.25V9.25C18 8.285 17.215 7.5 16.25 7.5ZM7 5C7 3.345 8.345 2 10 2C11.655 2 13 3.345 13 5V7.5H7V5ZM10 15C8.895 15 8 14.105 8 13C8 11.895 8.895 11 10 11C11.105 11 12 11.895 12 13C12 14.105 11.105 15 10 15Z" fill="#8c8c8c"/>
+                  </svg>
+                </span>
+                <el-input
+                  :key="passwordType"
+                  ref="password"
+                  v-model="loginForm.password"
+                  :type="passwordType"
+                  placeholder="请输入密码"
+                  name="password"
+                  tabindex="2"
+                  auto-complete="on"
+                  @keyup.enter.native="handleLogin"
+                />
+                <span class="show-pwd" @click="showPwd">
+                  <svg v-if="passwordType === 'password'" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 4C13.06 4 15.78 5.44 17.29 7.67C17.62 8.12 17.62 8.73 17.29 9.18C15.78 11.41 13.06 12.85 10 12.85C6.94 12.85 4.22 11.41 2.71 9.18C2.38 8.73 2.38 8.12 2.71 7.67C4.22 5.44 6.94 4 10 4ZM10 5.5C8.07 5.5 6.5 7.07 6.5 9C6.5 10.93 8.07 12.5 10 12.5C11.93 12.5 13.5 10.93 13.5 9C13.5 7.07 11.93 5.5 10 5.5ZM10 7C11.1 7 12 7.9 12 9C12 10.1 11.1 11 10 11C8.9 11 8 10.1 8 9C8 7.9 8.9 7 10 7Z" fill="#8c8c8c"/>
+                  </svg>
+                  <svg v-else width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2.22 2.22C1.83 2.61 1.83 3.24 2.22 3.63L4.2 5.61C2.87 6.68 1.79 8.02 1.13 9.5C1.01 9.72 1.01 9.99 1.13 10.21C2.71 13.35 5.67 15.5 9 15.5C10.26 15.5 11.45 15.24 12.54 14.78L15.37 17.61C15.76 18 16.39 18 16.78 17.61C17.17 17.22 17.17 16.59 16.78 16.2L3.63 3.05C3.44 2.86 3.19 2.75 2.93 2.75C2.67 2.75 2.41 2.86 2.22 3.05V2.22ZM9 5.5C9.69 5.5 10.34 5.69 10.89 6.02L12.75 7.88C12.84 7.44 12.89 6.98 12.89 6.5C12.89 4.02 10.98 2 8.5 2C8.02 2 7.56 2.05 7.12 2.14L8.98 4C9.32 3.91 9.66 3.86 10 3.86C11.93 3.86 13.5 5.43 13.5 7.36C13.5 7.7 13.45 8.04 13.36 8.36L15.46 10.46C16.33 9.61 17.05 8.6 17.57 7.5C17.69 7.28 17.69 7.01 17.57 6.79C16 3.65 13.03 1.5 9.7 1.5C8.52 1.5 7.4 1.73 6.36 2.13L8.46 4.23C8.63 4.18 8.81 4.14 9 4.14V5.5Z" fill="#8c8c8c"/>
+                  </svg>
+                </span>
+              </div>
+            </el-form-item>
+
             <div class="form-options">
-              <el-checkbox v-model="rememberMe">记住密码</el-checkbox>
-              <a href="#" class="forgot-link">忘记密码？</a>
+              <el-checkbox v-model="rememberMe" class="remember-me">记住我</el-checkbox>
+              <a href="#" class="forgot-password">忘记密码？</a>
             </div>
-          </el-form-item>
 
-          <el-form-item>
             <el-button
               :loading="loading"
               type="primary"
-              size="large"
-              class="login-btn"
-              @click="handleLogin"
+              class="login-button"
+              @click.native.prevent="handleLogin"
             >
-              {{ loading ? '登录中...' : '登录' }}
+              {{ loading ? '登录中...' : '登 录' }}
             </el-button>
-          </el-form-item>
-        </el-form>
+          </el-form>
+        </div>
 
         <div class="login-footer">
-          <p class="tips">
-            <i class="el-icon-info"></i>
-            建议使用Chrome、Firefox、Edge等现代浏览器
-          </p>
+          <p class="copyright">园区智慧物联系统 v2.0</p>
         </div>
       </div>
     </div>
@@ -211,282 +195,311 @@ export default {
 
 <style lang="scss" scoped>
 .login-container {
-  display: flex;
-  height: 100vh;
-  background: #f5f7fa;
-  overflow: hidden;
-}
-
-// 左侧品牌展示区
-.brand-side {
-  flex: 1;
-  background: linear-gradient(135deg, #2b5ce6 0%, #1e3c72 100%);
+  min-height: 100vh;
+  width: 100%;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  // 添加网格背景
-  &::before {
-    content: '';
+  background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+  overflow: hidden;
+}
+
+.login-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+
+  .grid-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
     background-image: 
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 50px 50px;
-    opacity: 0.5;
+      linear-gradient(0deg, transparent 24%, rgba(24, 144, 255, 0.03) 25%, rgba(24, 144, 255, 0.03) 26%, transparent 27%, transparent 74%, rgba(24, 144, 255, 0.03) 75%, rgba(24, 144, 255, 0.03) 76%, transparent 77%, transparent),
+      linear-gradient(90deg, transparent 24%, rgba(24, 144, 255, 0.03) 25%, rgba(24, 144, 255, 0.03) 26%, transparent 27%, transparent 74%, rgba(24, 144, 255, 0.03) 75%, rgba(24, 144, 255, 0.03) 76%, transparent 77%, transparent);
+    background-size: 60px 60px;
+    transform: rotate(45deg);
+    animation: grid-move 20s linear infinite;
   }
 
-  .brand-content {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    color: white;
-    padding: 40px;
-    max-width: 500px;
+  .floating-shapes {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(24, 144, 255, 0.1) 0%, rgba(24, 144, 255, 0.05) 100%);
+      filter: blur(40px);
+
+      &.shape-1 {
+        width: 300px;
+        height: 300px;
+        top: -100px;
+        right: -100px;
+        animation: float-1 15s ease-in-out infinite;
+      }
+
+      &.shape-2 {
+        width: 200px;
+        height: 200px;
+        bottom: -50px;
+        left: -50px;
+        animation: float-2 20s ease-in-out infinite;
+      }
+
+      &.shape-3 {
+        width: 150px;
+        height: 150px;
+        top: 50%;
+        left: 10%;
+        animation: float-3 18s ease-in-out infinite;
+      }
+    }
   }
+}
 
-  .logo-section {
-    margin-bottom: 40px;
+@keyframes grid-move {
+  0% { transform: rotate(45deg) translate(0, 0); }
+  100% { transform: rotate(45deg) translate(60px, 60px); }
+}
 
-    .logo {
-      width: 80px;
-      height: 80px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
+@keyframes float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, 50px) scale(1.1); }
+}
+
+@keyframes float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(50px, -50px) scale(0.9); }
+}
+
+@keyframes float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, -30px) scale(1.05); }
+}
+
+.login-content {
+  position: relative;
+  z-index: 1;
+}
+
+.login-card {
+  width: 420px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+}
+
+.login-header {
+  padding: 40px 40px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-bottom: 1px solid #e8e8e8;
+
+  .logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 20px;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .brand-name {
-      font-size: 32px;
-      font-weight: 600;
-      margin: 0;
-      letter-spacing: 2px;
-    }
-  }
+    .system-info {
+      text-align: left;
 
-  .brand-desc {
-    margin-bottom: 60px;
-
-    h2 {
-      font-size: 24px;
-      font-weight: 400;
-      margin: 0 0 10px 0;
-      opacity: 0.95;
-    }
-
-    p {
-      font-size: 16px;
-      opacity: 0.8;
-      margin: 0;
-    }
-  }
-
-  .features {
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    margin-bottom: 80px;
-
-    .feature-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-
-      i {
-        font-size: 28px;
-        opacity: 0.9;
+      .system-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #262626;
+        margin: 0;
+        letter-spacing: 0.5px;
       }
 
-      span {
-        font-size: 14px;
-        opacity: 0.8;
+      .system-subtitle {
+        font-size: 12px;
+        color: #8c8c8c;
+        margin: 4px 0 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
       }
     }
   }
-
-  .copyright {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    
-    p {
-      font-size: 12px;
-      opacity: 0.6;
-      margin: 0;
-    }
-  }
 }
 
-// 右侧登录表单区
-.login-side {
-  width: 480px;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.08);
-}
+.login-form-container {
+  padding: 30px 40px 20px;
 
-.login-form-wrapper {
-  width: 360px;
-  padding: 40px;
-}
-
-.form-header {
-  text-align: center;
-  margin-bottom: 40px;
-
-  h3 {
-    font-size: 28px;
-    font-weight: 600;
-    color: #303133;
-    margin: 0 0 10px 0;
-  }
-
-  p {
-    font-size: 14px;
-    color: #909399;
-    margin: 0;
+  .form-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: #262626;
+    margin: 0 0 30px;
+    text-align: center;
   }
 }
 
 .login-form {
-  .el-form-item {
+  ::v-deep .el-form-item {
     margin-bottom: 24px;
-  }
 
-  .form-label {
-    font-size: 14px;
-    color: #606266;
-    font-weight: 500;
-    margin-bottom: 8px;
-    display: block;
-  }
-
-  :deep(.el-input) {
-    .el-input__inner {
-      height: 48px;
-      line-height: 48px;
-      border-radius: 8px;
-      border: 1px solid #dcdfe6;
-      font-size: 14px;
-      
-      &:focus {
-        border-color: #2b5ce6;
-      }
-    }
-
-    .el-input__prefix {
-      font-size: 16px;
-      color: #909399;
+    .el-form-item__error {
+      font-size: 12px;
+      padding-top: 4px;
     }
   }
 
-  .form-options {
+  .input-wrapper {
+    position: relative;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-
-    .forgot-link {
-      font-size: 14px;
-      color: #2b5ce6;
-      text-decoration: none;
-      
-      &:hover {
-        text-decoration: underline;
-      }
-    }
-  }
-
-  :deep(.el-checkbox) {
-    .el-checkbox__label {
-      font-size: 14px;
-      color: #606266;
-    }
-
-    .el-checkbox__input.is-checked .el-checkbox__inner {
-      background-color: #2b5ce6;
-      border-color: #2b5ce6;
-    }
-  }
-
-  .login-btn {
-    width: 100%;
-    height: 48px;
-    font-size: 16px;
+    background: #f5f7fa;
     border-radius: 8px;
-    font-weight: 500;
-    
-    &:deep(.el-button--primary) {
-      background-color: #2b5ce6;
-      border-color: #2b5ce6;
-      
-      &:hover {
-        background-color: #4a7feb;
-        border-color: #4a7feb;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #ffffff;
+      border-color: #d9d9d9;
+    }
+
+    &:focus-within {
+      background: #ffffff;
+      border-color: #1890ff;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    ::v-deep .el-input {
+      .el-input__inner {
+        background: transparent;
+        border: none;
+        padding: 12px 16px 12px 48px;
+        height: 48px;
+        font-size: 14px;
+        color: #262626;
+        border-radius: 8px;
+
+        &::placeholder {
+          color: #bfbfbf;
+        }
       }
     }
+
+    .show-pwd {
+      position: absolute;
+      right: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+
+      &:hover {
+        opacity: 0.6;
+      }
+    }
+  }
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .remember-me {
+    ::v-deep .el-checkbox__label {
+      color: #595959;
+      font-size: 14px;
+    }
+  }
+
+  .forgot-password {
+    color: #1890ff;
+    font-size: 14px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+.login-button {
+  width: 100%;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+
+  &:hover {
+    background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
 .login-footer {
-  margin-top: 40px;
+  padding: 20px;
   text-align: center;
+  background: #f8f9fa;
+  border-top: 1px solid #e8e8e8;
 
-  .tips {
-    font-size: 12px;
-    color: #909399;
+  .copyright {
     margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-
-    i {
-      font-size: 14px;
-    }
-  }
-}
-
-// 响应式设计
-@media (max-width: 1024px) {
-  .brand-side {
-    display: none;
-  }
-
-  .login-side {
-    width: 100%;
-    box-shadow: none;
+    font-size: 12px;
+    color: #8c8c8c;
   }
 }
 
 @media (max-width: 480px) {
-  .login-form-wrapper {
+  .login-card {
     width: 100%;
-    padding: 20px;
+    margin: 20px;
   }
 
-  .form-header {
-    h3 {
-      font-size: 24px;
-    }
+  .login-header {
+    padding: 30px 30px 20px;
   }
 
-  .features {
-    flex-direction: column;
-    gap: 20px;
+  .login-form-container {
+    padding: 20px 30px;
   }
 }
 </style>

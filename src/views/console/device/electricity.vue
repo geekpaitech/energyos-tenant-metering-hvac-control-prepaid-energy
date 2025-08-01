@@ -248,7 +248,7 @@
         <el-table
           v-loading="loading"
           :data="tableData"
-          :height="tableData.length > 9 ? 600 : null"
+          :height="dataLength > 9 ? dynamicTableHeight : null"
           stripe
           style="width: 100%"
           class="custom-table"
@@ -640,11 +640,13 @@ export default {
   name: "MeterManagement",
   data() {
     return {
+      
       tableHeightConfig: {
         headerHeight: 48, // 表头高度
-        rowHeight: 47, // 每行高度（包含padding）
+        rowHeight: 47, // 每行高度
         minHeight: 200, // 最小高度
-        maxHeight: 600, // 最大高度
+        maxRows: 10, // 最大显示行数（超过9行显示滚动条）
+        paginationHeight: 68, // 分页高度
       },
       // 查询参数
       queryData: {
@@ -855,6 +857,9 @@ export default {
   },
   computed: {
     ...mapGetters("manager", ["currentManagerId"]),
+    dataLength() {
+  return this.tableData.length;
+},
     // 计算需要显示的列
     displayColumns() {
       return this.tableKey.filter((col) => col.checked !== false);
@@ -882,19 +887,23 @@ export default {
     // 动态计算表格高度
     dynamicTableHeight() {
       const dataLength = this.tableData.length;
+
       if (dataLength === 0) {
         return this.tableHeightConfig.minHeight;
       }
 
-      // 计算实际需要的高度：表头 + 数据行
-      const calculatedHeight =
-        this.tableHeightConfig.headerHeight +
-        dataLength * this.tableHeightConfig.rowHeight;
+      // 数据 <= 9条：显示实际行数高度
+      if (dataLength <= this.tableHeightConfig.maxRows) {
+        return (
+          this.tableHeightConfig.headerHeight +
+          dataLength * this.tableHeightConfig.rowHeight
+        );
+      }
 
-      // 限制在最小和最大高度之间
-      return Math.min(
-        Math.max(calculatedHeight, this.tableHeightConfig.minHeight),
-        this.tableHeightConfig.maxHeight
+      // 数据 > 9条：固定显示9行高度 + 内部滚动
+      return (
+        this.tableHeightConfig.headerHeight +
+        this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
       );
     },
   },
