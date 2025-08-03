@@ -250,12 +250,12 @@
           background: var(--border-color);
           margin: 8px 16px;
           position: relative;
-          
+
           &.with-label {
             height: auto;
             background: none;
             margin: 12px 16px 8px;
-            
+
             .divider-label {
               display: block;
               font-size: 10px;
@@ -310,7 +310,7 @@
               position: relative;
 
               &::before {
-                content: '';
+                content: "";
                 position: absolute;
                 left: 16px;
                 top: 50%;
@@ -387,12 +387,12 @@
       background: var(--border-color);
       margin: 12px 16px;
       position: relative;
-      
+
       &.with-label {
         height: auto;
         background: none;
         margin: 20px 16px 12px;
-        
+
         .divider-label {
           display: block;
           font-size: 11px;
@@ -499,7 +499,7 @@
       border-radius: 10px;
       transition: all 0.3s ease;
       min-width: 280px;
-
+      max-height: 70vh !important;
       &:hover {
         border-color: var(--primary-color);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -999,7 +999,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
   padding: 0 !important;
   min-width: 360px !important;
-
+  max-height: 70vh !important;
   .dropdown-header {
     padding: 14px 20px;
     background: var(--hover-bg);
@@ -1192,13 +1192,16 @@
 /* 用户下拉菜单样式 */
 // 在 variables.scss 或全局样式文件中
 .el-dropdown-menu {
+  overflow: auto;
+  min-height: 50px;
+  overflow-x: hidden;
   .el-dropdown-menu__item--divided {
     margin-top: 4px;
     padding-top: 4px;
     border-top: 1px solid var(--border-color);
-    
+
     &:before {
-      display: none !important;  // 直接隐藏原有的伪元素
+      display: none !important; // 直接隐藏原有的伪元素
     }
   }
 }
@@ -1329,7 +1332,11 @@
             }}</span>
           </div>
           <!-- 收起按钮 -->
-          <div class="submenu-collapse-btn" @click="handleCollapseSubmenu" title="收起子菜单">
+          <div
+            class="submenu-collapse-btn"
+            @click="handleCollapseSubmenu"
+            title="收起子菜单"
+          >
             <i class="el-icon-close"></i>
           </div>
         </div>
@@ -1338,7 +1345,13 @@
           <!-- 渲染子菜单项 -->
           <template v-for="(child, index) in visibleSubmenuChildren">
             <!-- 检查是否是第一个有 parentGroup 的项，如果是则渲染可折叠的分组标题 -->
-            <template v-if="child.meta && child.meta.parentGroup && isFirstOfGroup(child, index)">
+            <template
+              v-if="
+                child.meta &&
+                child.meta.parentGroup &&
+                isFirstOfGroup(child, index)
+              "
+            >
               <!-- 可折叠的分组标题 -->
               <div
                 :key="`group-${child.meta.parentGroup}`"
@@ -1350,7 +1363,9 @@
                   <span class="group-title">{{ child.meta.parentGroup }}</span>
                   <i
                     class="group-toggle-icon el-icon-arrow-down"
-                    :class="{ 'is-collapsed': collapsedGroups[child.meta.parentGroup] }"
+                    :class="{
+                      'is-collapsed': collapsedGroups[child.meta.parentGroup],
+                    }"
                   ></i>
                 </div>
               </div>
@@ -1369,7 +1384,7 @@
                   {{ child.meta.dividerLabel }}
                 </span>
               </div>
-              
+
               <!-- 有子菜单的项目（可展开） -->
               <div
                 v-else-if="child.children && child.children.length > 0"
@@ -1378,9 +1393,9 @@
               >
                 <div
                   class="submenu-item expandable-header"
-                  :class="{ 
+                  :class="{
                     'is-expanded': expandedSubmenuItems[child.path],
-                    'has-active-child': hasActiveChild(child)
+                    'has-active-child': hasActiveChild(child),
                   }"
                   @click="toggleSubmenuItem(child.path)"
                 >
@@ -1394,10 +1409,13 @@
                   }}</span>
                   <i class="expand-icon el-icon-arrow-right"></i>
                 </div>
-                
+
                 <!-- 展开的子项 -->
                 <transition name="submenu-expand">
-                  <div v-if="expandedSubmenuItems[child.path]" class="submenu-children">
+                  <div
+                    v-if="expandedSubmenuItems[child.path]"
+                    class="submenu-children"
+                  >
                     <template v-for="subChild in getVisibleChildren(child)">
                       <!-- 子项分隔线 -->
                       <div
@@ -1406,22 +1424,34 @@
                         class="submenu-child-divider"
                         :class="{ 'with-label': subChild.meta.dividerLabel }"
                       >
-                        <span v-if="subChild.meta.dividerLabel" class="divider-label">
+                        <span
+                          v-if="subChild.meta.dividerLabel"
+                          class="divider-label"
+                        >
                           {{ subChild.meta.dividerLabel }}
                         </span>
                       </div>
-                      
+
                       <!-- 子项链接 -->
                       <router-link
                         v-else
                         :key="resolvePath(child.path, subChild.path)"
                         :to="resolvePath(child.path, subChild.path)"
                         class="submenu-child-link"
-                        @click.native="handleSubmenuClick(resolvePath(child.path, subChild.path))"
+                        @click.native="
+                          handleSubmenuClick(
+                            resolvePath(child.path, subChild.path)
+                          )
+                        "
                       >
                         <div
                           class="submenu-child-item"
-                          :class="{ 'is-active': isSubmenuItemActive(child.path, subChild.path) }"
+                          :class="{
+                            'is-active': isSubmenuItemActive(
+                              child.path,
+                              subChild.path
+                            ),
+                          }"
                         >
                           <i
                             v-if="subChild.meta && subChild.meta.icon"
@@ -1437,7 +1467,7 @@
                   </div>
                 </transition>
               </div>
-              
+
               <!-- 普通的子菜单项（无子级） -->
               <router-link
                 v-else
@@ -1475,7 +1505,11 @@
           <!-- 管理方切换器 - 只在控制台且有多个管理方时显示 -->
           <div class="manager-switcher" v-if="shouldShowManagerSwitcher">
             <div class="switcher-label">管理方</div>
-            <el-dropdown @command="handleManagerSwitch" trigger="click" :disabled="platformSwitching">
+            <el-dropdown
+              @command="handleManagerSwitch"
+              trigger="click"
+              :disabled="platformSwitching"
+            >
               <div class="current-manager">
                 <div class="manager-avatar">
                   {{ currentManagerDisplayName.charAt(0) }}
@@ -1783,7 +1817,7 @@ export default {
     // 监听路由变化
     $route(to, from) {
       console.log("路由变化:", from.path, "->", to.path);
-      
+
       // 更新选中状态
       this.updateSelectionFromRoute(to.path);
     },
@@ -1827,9 +1861,9 @@ export default {
     if (this.isConsolePlatform) {
       await this.loadManagerList();
     }
-    if (this.$store.hasModule('tagsView')) {
+    if (this.$store.hasModule("tagsView")) {
       const routes = this.permission_routes || [];
-      await this.$store.dispatch('tagsView/initAffixTags', routes);
+      await this.$store.dispatch("tagsView/initAffixTags", routes);
     }
 
     // 恢复分组折叠状态
@@ -1868,27 +1902,33 @@ export default {
       if (!child.meta || !child.meta.parentGroup) {
         return false;
       }
-      
+
       // 如果是第一个项，直接返回 true
       if (index === 0) {
         return true;
       }
-      
+
       // 检查前一个项是否属于同一个分组
       const prevChild = this.visibleSubmenuChildren[index - 1];
-      return !prevChild.meta || 
-             !prevChild.meta.parentGroup || 
-             prevChild.meta.parentGroup !== child.meta.parentGroup;
+      return (
+        !prevChild.meta ||
+        !prevChild.meta.parentGroup ||
+        prevChild.meta.parentGroup !== child.meta.parentGroup
+      );
     },
-    
+
     // 切换分组的折叠状态
     toggleGroup(groupName) {
-      this.$set(this.collapsedGroups, groupName, !this.collapsedGroups[groupName]);
-      
+      this.$set(
+        this.collapsedGroups,
+        groupName,
+        !this.collapsedGroups[groupName]
+      );
+
       // 保存到 localStorage
       this.saveCollapsedState();
     },
-    
+
     // 判断菜单项是否属于已折叠的分组
     isGroupCollapsed(menuItem) {
       if (!menuItem.meta || !menuItem.meta.parentGroup) {
@@ -1896,20 +1936,23 @@ export default {
       }
       return this.collapsedGroups[menuItem.meta.parentGroup] || false;
     },
-    
+
     // 保存折叠状态到 localStorage
     saveCollapsedState() {
-      localStorage.setItem('submenu-collapsed-groups', JSON.stringify(this.collapsedGroups));
+      localStorage.setItem(
+        "submenu-collapsed-groups",
+        JSON.stringify(this.collapsedGroups)
+      );
     },
-    
+
     // 从 localStorage 恢复折叠状态
     restoreCollapsedState() {
-      const saved = localStorage.getItem('submenu-collapsed-groups');
+      const saved = localStorage.getItem("submenu-collapsed-groups");
       if (saved) {
         try {
           this.collapsedGroups = JSON.parse(saved);
         } catch (e) {
-          console.error('恢复折叠状态失败:', e);
+          console.error("恢复折叠状态失败:", e);
         }
       }
     },
@@ -1917,7 +1960,7 @@ export default {
     toggleSideBar() {
       console.log("=== toggleSideBar 被调用 ===");
       console.log("调用前 - expandedItem:", this.expandedItem);
-      
+
       // 只关闭子菜单，不改变侧边栏展开/收缩状态
       if (this.expandedItem) {
         this.handleCollapseSubmenu();
@@ -1925,7 +1968,7 @@ export default {
       } else {
         console.log("没有展开的子菜单需要关闭");
       }
-      
+
       console.log("=== toggleSideBar 结束 ===");
     },
 
@@ -1952,48 +1995,57 @@ export default {
     handleCollapseSubmenu() {
       console.log("=== 手动收起子菜单 ===");
       console.log("收起前状态 - expandedItem:", this.expandedItem);
-      console.log("收起前状态 - originalSelectedItem:", this.originalSelectedItem);
-      
+      console.log(
+        "收起前状态 - originalSelectedItem:",
+        this.originalSelectedItem
+      );
+
       // 恢复到基于当前路由的选中状态
       if (this.originalSelectedItem) {
         this.selectedItem = this.originalSelectedItem;
       } else if (this.currentRouteItem) {
         this.selectedItem = this.currentRouteItem;
       }
-      
+
       // 清空子菜单相关状态
       this.expandedItem = null;
       this.currentSubmenu = null;
       this.basePath = "";
       this.originalSelectedItem = null;
-      
+
       // 清空展开的子菜单项
       this.expandedSubmenuItems = {};
-      
+
       // 清空分组折叠状态
       this.collapsedGroups = {};
-      
+
       console.log("收起后状态 - selectedItem:", this.selectedItem);
       console.log("=== 收起子菜单完成 ===");
     },
 
     // 切换子菜单项的展开状态
     toggleSubmenuItem(path) {
-      this.$set(this.expandedSubmenuItems, path, !this.expandedSubmenuItems[path]);
+      this.$set(
+        this.expandedSubmenuItems,
+        path,
+        !this.expandedSubmenuItems[path]
+      );
     },
-    
+
     // 获取可见的子项（过滤隐藏项）
     getVisibleChildren(item) {
       if (!item.children) return [];
-      return item.children.filter(child => !child.hidden);
+      return item.children.filter((child) => !child.hidden);
     },
-    
+
     // 判断子菜单项是否激活（支持嵌套）
     isSubmenuItemActive(parentPath, childPath) {
-      const fullPath = childPath ? this.resolvePath(parentPath, childPath) : this.resolvePath(parentPath);
+      const fullPath = childPath
+        ? this.resolvePath(parentPath, childPath)
+        : this.resolvePath(parentPath);
       return this.$route.path === fullPath;
     },
-    
+
     // 解析路径（支持多级）
     resolvePath(parentPath, childPath) {
       const { isExternal } = require("@/utils/validate");
@@ -2017,12 +2069,12 @@ export default {
         return path.resolve(parentFullPath, childPath);
       }
     },
-    
+
     // 检查是否有激活的子项
     hasActiveChild(item) {
       if (!item.children) return false;
-      
-      return item.children.some(child => {
+
+      return item.children.some((child) => {
         if (child.hidden) return false;
         const childPath = this.resolvePath(item.path, child.path);
         return this.$route.path === childPath;
@@ -2067,34 +2119,35 @@ export default {
           query: { ...this.$route.query },
           params: { ...this.$route.params },
           name: this.$route.name,
-          fullPath: this.$route.fullPath
+          fullPath: this.$route.fullPath,
         };
-        
-        console.log('=== 企业切换开始（控制台内切换，保留TagsView）===');
-        console.log('当前企业ID:', this.currentManagerId);
-        console.log('目标企业ID:', managerId);
-        console.log('当前路由信息:', currentRoute);
+
+        console.log("=== 企业切换开始（控制台内切换，保留TagsView）===");
+        console.log("当前企业ID:", this.currentManagerId);
+        console.log("目标企业ID:", managerId);
+        console.log("当前路由信息:", currentRoute);
 
         // 重要：企业切换时只清空页面缓存，保留TagsView标签页
-        if (this.$store.hasModule('tagsView')) {
-          console.log('企业切换 - 只清空页面缓存，保留TagsView标签');
-          await this.$store.dispatch('tagsView/clearCacheForManagerSwitch');
+        if (this.$store.hasModule("tagsView")) {
+          console.log("企业切换 - 只清空页面缓存，保留TagsView标签");
+          await this.$store.dispatch("tagsView/clearCacheForManagerSwitch");
         }
 
         // 调用store中的切换方法
         await this.switchManager(managerId);
-        console.log('企业切换完成');
+        console.log("企业切换完成");
 
         // 触发企业切换事件，通知TagsView组件
-        this.$bus && this.$bus.$emit('manager-switched', {
-          managerId: managerId,
-          managerInfo: targetManager,
-          previousManagerId: this.currentManagerId,
-          currentRoute: currentRoute,
-          type: 'manager-switch',
-          clearTagsView: false,
-          timestamp: new Date().toISOString()
-        });
+        this.$bus &&
+          this.$bus.$emit("manager-switched", {
+            managerId: managerId,
+            managerInfo: targetManager,
+            previousManagerId: this.currentManagerId,
+            currentRoute: currentRoute,
+            type: "manager-switch",
+            clearTagsView: false,
+            timestamp: new Date().toISOString(),
+          });
 
         loading.close();
 
@@ -2106,30 +2159,32 @@ export default {
 
         // 企业切换使用温和的页面更新方式
         this.$nextTick(() => {
-          console.log('企业切换完成，温和刷新当前页面内容');
-          
-          const newQuery = { 
-            ...currentRoute.query, 
+          console.log("企业切换完成，温和刷新当前页面内容");
+
+          const newQuery = {
+            ...currentRoute.query,
             _t: Date.now(),
-            _m: managerId
+            _m: managerId,
           };
-          
-          this.$router.replace({
-            path: currentRoute.path,
-            query: newQuery
-          }).then(() => {
-            console.log('企业切换 - 路由查询参数已更新');
-          }).catch(err => {
-            console.log('企业切换 - 路由更新完成或无需更新');
-          });
+
+          this.$router
+            .replace({
+              path: currentRoute.path,
+              query: newQuery,
+            })
+            .then(() => {
+              console.log("企业切换 - 路由查询参数已更新");
+            })
+            .catch((err) => {
+              console.log("企业切换 - 路由更新完成或无需更新");
+            });
         });
 
-        console.log('=== 企业切换流程完成 ===');
-        
+        console.log("=== 企业切换流程完成 ===");
       } catch (error) {
         console.error("企业切换失败:", error);
-        this.$message.error(`企业切换失败：${error.message || '请稍后重试'}`);
-        
+        this.$message.error(`企业切换失败：${error.message || "请稍后重试"}`);
+
         const loadingInstance = this.$loading.service();
         if (loadingInstance) {
           loadingInstance.close();
@@ -2143,7 +2198,7 @@ export default {
       if (!this.expandedItem) {
         this.originalSelectedItem = this.selectedItem;
       }
-      
+
       this.previousSelectedItem = this.selectedItem;
       this.selectedItem = path;
       console.log("设置选中项:", path);
@@ -2154,74 +2209,86 @@ export default {
       console.log("=== updateSelectionFromRoute 开始 ===");
       console.log("目标路由:", routePath);
       console.log("当前展开的子菜单:", this.currentSubmenu);
-      
+
       // 检查是否为首页路由（不显示子菜单的路由）
       const isHomePage = this.isHomePageRoute(routePath);
       console.log("是否为首页路由:", isHomePage);
-      
+
       if (isHomePage) {
         // 如果是首页路由，直接关闭所有子菜单
         console.log("检测到首页路由，关闭所有子菜单");
         this.handleCollapseSubmenu();
-        
+
         // 查找匹配的菜单项并设置选中状态
-        const matchingResult = this.findMatchingMenu(this.permission_routes, routePath);
+        const matchingResult = this.findMatchingMenu(
+          this.permission_routes,
+          routePath
+        );
         if (matchingResult) {
           this.currentRouteItem = matchingResult.path;
           this.setSelectedItem(matchingResult.path);
         }
-        
+
         console.log("=== updateSelectionFromRoute 结束（首页路由） ===");
         return;
       }
 
       // 查找匹配的菜单项
-      const matchingResult = this.findMatchingMenu(this.permission_routes, routePath);
+      const matchingResult = this.findMatchingMenu(
+        this.permission_routes,
+        routePath
+      );
       console.log("匹配结果:", matchingResult);
-      
+
       if (matchingResult) {
         // 记录当前路由对应的菜单项
         this.currentRouteItem = matchingResult.path;
-        
+
         // 如果是子路由，需要展开对应的父菜单
         if (matchingResult.isChildRoute && matchingResult.parentItem) {
           console.log("检测到子路由，父菜单:", matchingResult.parentItem);
-          
+
           // 如果当前没有展开任何子菜单，或者展开的不是正确的父菜单
-          if (!this.expandedItem || this.expandedItem !== matchingResult.parentItem.path) {
+          if (
+            !this.expandedItem ||
+            this.expandedItem !== matchingResult.parentItem.path
+          ) {
             console.log("需要展开父菜单:", matchingResult.parentItem.path);
-            
+
             // 记录原始选中项（如果还没有记录的话）
             if (!this.expandedItem) {
               this.originalSelectedItem = this.selectedItem;
             }
-            
+
             // 展开正确的父菜单
             this.expandedItem = matchingResult.parentItem.path;
             this.currentSubmenu = matchingResult.parentItem;
             this.basePath = matchingResult.parentItem.path;
-            
+
             // 设置父菜单为选中状态
             this.selectedItem = matchingResult.parentItem.path;
-            
+
             console.log("父菜单已展开，设置状态:");
             console.log("expandedItem:", this.expandedItem);
             console.log("selectedItem:", this.selectedItem);
           }
-          
+
           // 无论如何都要更新当前路由项
           this.currentRouteItem = matchingResult.path;
-          
+
           // 处理深层嵌套的情况
           if (matchingResult.isDeepChild) {
             console.log("检测到深层嵌套路由");
             console.log("需要展开的中间层:", matchingResult.expandablePath);
-            
+
             // 确保中间层也展开
             this.$nextTick(() => {
-              if (matchingResult.immediateParent && matchingResult.expandablePath) {
+              if (
+                matchingResult.immediateParent &&
+                matchingResult.expandablePath
+              ) {
                 const expandPath = path.resolve(
-                  matchingResult.parentItem.path, 
+                  matchingResult.parentItem.path,
                   matchingResult.expandablePath
                 );
                 this.$set(this.expandedSubmenuItems, expandPath, true);
@@ -2232,14 +2299,17 @@ export default {
             // 自动展开包含当前路由的菜单项
             if (this.currentSubmenu && this.currentSubmenu.children) {
               this.$nextTick(() => {
-                this.currentSubmenu.children.forEach(child => {
+                this.currentSubmenu.children.forEach((child) => {
                   if (child.children && !child.hidden) {
-                    const hasActiveChild = child.children.some(subChild => {
+                    const hasActiveChild = child.children.some((subChild) => {
                       if (subChild.hidden) return false;
-                      const fullPath = this.resolvePath(child.path, subChild.path);
+                      const fullPath = this.resolvePath(
+                        child.path,
+                        subChild.path
+                      );
                       return routePath === fullPath;
                     });
-                    
+
                     if (hasActiveChild) {
                       const childPath = this.resolvePath(child.path);
                       this.$set(this.expandedSubmenuItems, childPath, true);
@@ -2250,12 +2320,11 @@ export default {
               });
             }
           }
-          
         } else {
           // 如果不是子路由，检查是否需要关闭当前展开的子菜单
           if (this.expandedItem) {
             console.log("当前路由不是子路由，检查是否需要关闭子菜单");
-            
+
             // 检查当前路由是否就是展开的父菜单本身
             if (matchingResult.path === this.expandedItem) {
               console.log("当前路由就是展开的父菜单，保持子菜单展开");
@@ -2272,43 +2341,46 @@ export default {
           }
         }
       }
-      
+
       console.log("=== updateSelectionFromRoute 结束 ===");
       console.log("最终状态 - selectedItem:", this.selectedItem);
       console.log("最终状态 - expandedItem:", this.expandedItem);
       console.log("最终状态 - currentRouteItem:", this.currentRouteItem);
-      console.log("最终状态 - expandedSubmenuItems:", this.expandedSubmenuItems);
+      console.log(
+        "最终状态 - expandedSubmenuItems:",
+        this.expandedSubmenuItems
+      );
     },
 
     // 判断是否为首页路由的方法
     isHomePageRoute(routePath) {
       // 定义不需要显示子菜单的首页路由
       const homePageRoutes = [
-        '/dashboard',
-        '/console/dashboard', 
-        '/admin/dashboard',
-        '/',
-        '/home'
+        "/dashboard",
+        "/console/dashboard",
+        "/admin/dashboard",
+        "/",
+        "/home",
       ];
-      
+
       return homePageRoutes.includes(routePath);
     },
 
     // 提取查找匹配菜单的逻辑 - 增强版，支持多级嵌套
     findMatchingMenu(routes, targetPath, parentRoute = null) {
       for (const route of routes) {
-        const currentPath = parentRoute 
+        const currentPath = parentRoute
           ? path.resolve(parentRoute.path, route.path)
           : route.path;
-          
+
         // 检查当前路由
         if (currentPath === targetPath) {
-          return { 
-            path: currentPath, 
-            isParent: false, 
+          return {
+            path: currentPath,
+            isParent: false,
             parentItem: parentRoute,
             matchedRoute: route,
-            isChildRoute: !!parentRoute
+            isChildRoute: !!parentRoute,
           };
         }
 
@@ -2319,8 +2391,8 @@ export default {
               // 递归检查更深层的嵌套
               if (child.children && child.children.length > 0) {
                 const deepResult = this.findMatchingMenuDeep(
-                  child.children, 
-                  targetPath, 
+                  child.children,
+                  targetPath,
                   route,
                   child
                 );
@@ -2328,18 +2400,18 @@ export default {
                   return deepResult;
                 }
               }
-              
+
               // 检查直接子路由
               const childPath = path.resolve(currentPath, child.path);
               if (childPath === targetPath) {
-                return { 
-                  path: childPath, 
-                  isParent: false, 
+                return {
+                  path: childPath,
+                  isParent: false,
                   parentItem: route,
                   matchedRoute: child,
                   isChildRoute: true,
                   // 如果是嵌套路由，记录需要展开的中间层
-                  expandableParent: child.children ? child : null
+                  expandableParent: child.children ? child : null,
                 };
               }
             }
@@ -2353,10 +2425,10 @@ export default {
     findMatchingMenuDeep(routes, targetPath, topParent, immediateParent) {
       for (const route of routes) {
         const routePath = path.resolve(
-          path.resolve(topParent.path, immediateParent.path), 
+          path.resolve(topParent.path, immediateParent.path),
           route.path
         );
-        
+
         if (routePath === targetPath) {
           return {
             path: routePath,
@@ -2367,7 +2439,7 @@ export default {
             isDeepChild: true,
             immediateParent: immediateParent,
             // 需要展开的中间层路径
-            expandablePath: immediateParent.path
+            expandablePath: immediateParent.path,
           };
         }
       }
@@ -2387,16 +2459,17 @@ export default {
       } else {
         // 展开新的子菜单
         console.log("展开新的子菜单");
-        
+
         // 记录展开前的原始选中项（基于当前路由）
         if (!this.expandedItem) {
-          this.originalSelectedItem = this.currentRouteItem || this.selectedItem;
+          this.originalSelectedItem =
+            this.currentRouteItem || this.selectedItem;
         }
-        
+
         this.expandedItem = item.path;
         this.currentSubmenu = item;
         this.basePath = item.path;
-        
+
         // 立即高亮父菜单
         this.selectedItem = item.path;
 
@@ -2415,7 +2488,7 @@ export default {
         this.expandedItem = null;
         this.currentSubmenu = null;
         this.basePath = "";
-        
+
         // 恢复原始选中状态
         if (this.originalSelectedItem) {
           this.selectedItem = this.originalSelectedItem;
@@ -2615,16 +2688,18 @@ export default {
           fromPlatform: this.currentPlatformKey,
           toPlatform: platformKey,
           currentRoute: this.$route.path,
-          visitedViewsCount: this.$store.state.tagsView?.visitedViews?.length || 0,
-          cachedViewsCount: this.$store.state.tagsView?.cachedViews?.length || 0
+          visitedViewsCount:
+            this.$store.state.tagsView?.visitedViews?.length || 0,
+          cachedViewsCount:
+            this.$store.state.tagsView?.cachedViews?.length || 0,
         };
-        
-        console.log('=== 平台切换开始 ===');
-        console.log('切换信息:', beforeSwitchInfo);
+
+        console.log("=== 平台切换开始 ===");
+        console.log("切换信息:", beforeSwitchInfo);
 
         // 先跳转到切换页面，避免在当前页面显示404
-        if (this.$route.path !== '/switching') {
-          await this.$router.push('/switching').catch(() => {});
+        if (this.$route.path !== "/switching") {
+          await this.$router.push("/switching").catch(() => {});
         }
 
         const loading = this.$loading({
@@ -2635,65 +2710,66 @@ export default {
         });
 
         // 步骤1: 完全清空TagsView
-        console.log('步骤1: 完全清空TagsView');
-        if (this.$store.hasModule('tagsView')) {
-          await this.$store.dispatch('tagsView/clearAllForPlatformSwitch');
-          console.log('TagsView已完全清空');
+        console.log("步骤1: 完全清空TagsView");
+        if (this.$store.hasModule("tagsView")) {
+          await this.$store.dispatch("tagsView/clearAllForPlatformSwitch");
+          console.log("TagsView已完全清空");
         } else {
-          console.warn('TagsView模块不存在');
+          console.warn("TagsView模块不存在");
         }
 
         // 步骤2: 重置权限路由
-        console.log('步骤2: 重置权限路由');
-        await this.$store.dispatch('permission/resetRoutes');
-        console.log('权限路由已重置');
+        console.log("步骤2: 重置权限路由");
+        await this.$store.dispatch("permission/resetRoutes");
+        console.log("权限路由已重置");
 
         // 步骤3: 处理企业状态
-        console.log('步骤3: 处理企业状态');
-        if (platformKey === 'admin') {
+        console.log("步骤3: 处理企业状态");
+        if (platformKey === "admin") {
           // 切换到管理系统时重置企业状态
-          await this.$store.dispatch('manager/resetManager');
-          console.log('已重置企业状态（切换到管理系统）');
-        } else if (platformKey === 'console') {
+          await this.$store.dispatch("manager/resetManager");
+          console.log("已重置企业状态（切换到管理系统）");
+        } else if (platformKey === "console") {
           // 切换到控制台时重置企业状态，后续会重新加载
-          await this.$store.dispatch('manager/resetManager');
-          console.log('已重置企业状态（准备切换到控制台）');
+          await this.$store.dispatch("manager/resetManager");
+          console.log("已重置企业状态（准备切换到控制台）");
         }
 
         // 步骤4: 等待状态稳定
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
         // 步骤5: 切换平台路由
-        console.log('步骤5: 切换平台路由');
-        await this.$store.dispatch('permission/switchPlatform', platformKey);
-        console.log('平台路由切换完成');
+        console.log("步骤5: 切换平台路由");
+        await this.$store.dispatch("permission/switchPlatform", platformKey);
+        console.log("平台路由切换完成");
 
         // 步骤6: 如果切换到控制台，重新加载企业列表
-        if (platformKey === 'console') {
-          console.log('步骤6: 重新加载企业列表');
+        if (platformKey === "console") {
+          console.log("步骤6: 重新加载企业列表");
           await this.loadManagerList();
-          console.log('企业列表已重新加载');
+          console.log("企业列表已重新加载");
         }
 
         // 步骤7: 更新当前平台状态
         this.currentPlatformKey = platformKey;
-        localStorage.setItem('selectedPlatform', platformKey);
-        console.log('平台状态已更新:', platformKey);
+        localStorage.setItem("selectedPlatform", platformKey);
+        console.log("平台状态已更新:", platformKey);
 
         // 步骤8: 等待所有状态更新完成
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         loading.close();
 
         // 步骤9: 触发平台切换事件通知TagsView组件
-        console.log('步骤9: 触发平台切换事件');
-        this.$bus && this.$bus.$emit('platform-switched', {
-          from: beforeSwitchInfo.fromPlatform,
-          to: platformKey,
-          type: 'platform-switch',
-          clearTagsView: true,
-          timestamp: new Date().toISOString()
-        });
+        console.log("步骤9: 触发平台切换事件");
+        this.$bus &&
+          this.$bus.$emit("platform-switched", {
+            from: beforeSwitchInfo.fromPlatform,
+            to: platformKey,
+            type: "platform-switch",
+            clearTagsView: true,
+            timestamp: new Date().toISOString(),
+          });
 
         this.$message({
           type: "success",
@@ -2702,52 +2778,59 @@ export default {
         });
 
         // 步骤10: 跳转到新平台的首页
-        let redirectPath = '/';
-        if (platformKey === 'console') {
-          redirectPath = '/console/dashboard';
-        } else if (platformKey === 'admin') {
-          redirectPath = '/admin/dashboard';
+        let redirectPath = "/";
+        if (platformKey === "console") {
+          redirectPath = "/console/dashboard";
+        } else if (platformKey === "admin") {
+          redirectPath = "/admin/dashboard";
         }
-        
-        console.log('步骤10: 跳转到新平台首页:', redirectPath);
-        
+
+        console.log("步骤10: 跳转到新平台首页:", redirectPath);
+
         // 使用replace跳转到新平台首页
-        await this.$router.replace(redirectPath).catch(err => {
-          console.error('路由跳转失败，使用强制跳转:', err);
+        await this.$router.replace(redirectPath).catch((err) => {
+          console.error("路由跳转失败，使用强制跳转:", err);
           window.location.href = redirectPath;
         });
 
         // 步骤11: 验证切换结果
-        console.log('步骤11: 验证切换结果');
+        console.log("步骤11: 验证切换结果");
         this.$nextTick(() => {
           const afterSwitchInfo = {
             currentPlatform: this.currentPlatformKey,
             currentRoute: this.$route.path,
-            visitedViewsCount: this.$store.state.tagsView?.visitedViews?.length || 0,
-            cachedViewsCount: this.$store.state.tagsView?.cachedViews?.length || 0
+            visitedViewsCount:
+              this.$store.state.tagsView?.visitedViews?.length || 0,
+            cachedViewsCount:
+              this.$store.state.tagsView?.cachedViews?.length || 0,
           };
-          console.log('切换后状态:', afterSwitchInfo);
-          
+          console.log("切换后状态:", afterSwitchInfo);
+
           // 验证TagsView是否确实被清空
-          if (afterSwitchInfo.visitedViewsCount === 0 && afterSwitchInfo.cachedViewsCount === 0) {
-            console.log('✅ 平台切换成功：TagsView已完全清空');
+          if (
+            afterSwitchInfo.visitedViewsCount === 0 &&
+            afterSwitchInfo.cachedViewsCount === 0
+          ) {
+            console.log("✅ 平台切换成功：TagsView已完全清空");
           } else {
-            console.warn('⚠️ 平台切换警告：TagsView未完全清空', afterSwitchInfo);
+            console.warn(
+              "⚠️ 平台切换警告：TagsView未完全清空",
+              afterSwitchInfo
+            );
           }
         });
 
-        console.log('=== 平台切换完成 ===');
-
+        console.log("=== 平台切换完成 ===");
       } catch (error) {
         console.error("平台切换失败:", error);
-        this.$message.error(`平台切换失败: ${error.message || '请稍后重试'}`);
-        
+        this.$message.error(`平台切换失败: ${error.message || "请稍后重试"}`);
+
         // 出错时的恢复逻辑
         const loadingInstance = this.$loading.service();
         if (loadingInstance) {
           loadingInstance.close();
         }
-        
+
         // 如果切换失败，尝试回到之前的页面
         this.$router.go(-1);
       } finally {
@@ -2759,22 +2842,27 @@ export default {
     isPlatformSwitch(fromPlatform, toPlatform) {
       // 判断是否为不同平台之间的切换
       const platformMap = {
-        'admin': '管理系统',
-        'console': '控制台'
+        admin: "管理系统",
+        console: "控制台",
       };
-      
-      return fromPlatform !== toPlatform && 
-             platformMap[fromPlatform] && 
-             platformMap[toPlatform];
+
+      return (
+        fromPlatform !== toPlatform &&
+        platformMap[fromPlatform] &&
+        platformMap[toPlatform]
+      );
     },
 
     // 判断当前操作是否为企业切换
     isManagerSwitch(fromManagerId, toManagerId, currentPlatform) {
       // 只有在控制台平台内，且企业ID不同时，才是企业切换
-      return currentPlatform === 'console' && 
-             fromManagerId !== toManagerId && 
-             fromManagerId && toManagerId;
-    }
+      return (
+        currentPlatform === "console" &&
+        fromManagerId !== toManagerId &&
+        fromManagerId &&
+        toManagerId
+      );
+    },
   },
 };
 </script>

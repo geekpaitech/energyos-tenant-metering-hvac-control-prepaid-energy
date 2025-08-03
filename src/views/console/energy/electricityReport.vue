@@ -4,10 +4,7 @@
     <div class="dashboard-header">
       <div class="header-left">
         <h1 class="dashboard-title">
-          <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-          电量统计分析
+          用电报表
         </h1>
         <div class="view-switcher">
           <button 
@@ -44,11 +41,12 @@
           :type="datePickerType"
           :format="dateFormat"
           :value-format="dateValueFormat"
-          range-separator="至"
+          range-separator="-"
           start-placeholder="开始时间"
           end-placeholder="结束时间"
           :picker-options="pickerOptions"
           class="custom-date-picker"
+          @change="handleDateRangeChange"
         />
       </div>
       
@@ -104,11 +102,6 @@
     <!-- 数据统计卡片 -->
     <div class="stats-cards" v-if="!switchDeviceDetail && tableData.length > 0">
       <div class="stat-card">
-        <div class="stat-icon electricity">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-        </div>
         <div class="stat-content">
           <div class="stat-label">总电费</div>
           <div class="stat-value">¥{{ formatNumber(totalStats.amount) }}</div>
@@ -116,12 +109,6 @@
       </div>
       
       <div class="stat-card">
-        <div class="stat-icon power">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 6v6l4 2"/>
-          </svg>
-        </div>
         <div class="stat-content">
           <div class="stat-label">总电量</div>
           <div class="stat-value">{{ formatNumber(totalStats.elec) }} <span class="unit">度</span></div>
@@ -129,11 +116,6 @@
       </div>
       
       <div class="stat-card">
-        <div class="stat-icon peak">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-          </svg>
-        </div>
         <div class="stat-content">
           <div class="stat-label">峰谷电量比</div>
           <div class="stat-value">{{ peakValleyRatio }}</div>
@@ -141,11 +123,6 @@
       </div>
       
       <div class="stat-card">
-        <div class="stat-icon trend">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-          </svg>
-        </div>
         <div class="stat-content">
           <div class="stat-label">日均电费</div>
           <div class="stat-value">¥{{ formatNumber(avgDailyAmount) }}</div>
@@ -155,38 +132,81 @@
 
     <!-- 主内容区 -->
     <div class="main-content" v-loading="loading" :element-loading-text="loadingText">
-      <!-- 图表区域 -->
+      <!-- 图表区域 - 新设计 -->
       <div class="chart-section" v-if="!switchDeviceDetail && chartData.length > 0">
-        <div class="section-header">
-          <h2 class="section-title">用电趋势分析</h2>
-          <div class="chart-legends">
-            <span class="legend-item">
-              <span class="legend-dot" style="background: #5470c6"></span>
-              电费
-            </span>
-            <span class="legend-item">
-              <span class="legend-line" style="background: #91cc75"></span>
-              总电量
-            </span>
-            <span class="legend-item">
-              <span class="legend-line" style="background: #fac858"></span>
-              尖电量
-            </span>
-            <span class="legend-item">
-              <span class="legend-line" style="background: #ee6666"></span>
-              峰电量
-            </span>
-            <span class="legend-item">
-              <span class="legend-line" style="background: #73c0de"></span>
-              平电量
-            </span>
-            <span class="legend-item">
-              <span class="legend-line" style="background: #9a60b4"></span>
-              谷电量
-            </span>
+        <div class="chart-container">
+          <!-- 图表头部 -->
+          <div class="chart-header">
+            <h2 class="chart-title">
+              {{ dateType === 'day' ? '用电趋势分析' : '月度用电趋势' }}
+            </h2>
+            <div class="chart-date-range">
+              {{ formatDateRange }}
+            </div>
+          </div>
+          
+          <!-- 图例和统计信息 -->
+          <div class="chart-info">
+            <div class="chart-legends">
+              <div class="legend-item active" @click="toggleSeries('电费')">
+                <span class="legend-dot" style="background: #1890ff"></span>
+                <span class="legend-text">电费</span>
+              </div>
+              <div class="legend-item active" @click="toggleSeries('总电量')">
+                <span class="legend-dot" style="background: #52c41a"></span>
+                <span class="legend-text">总电量</span>
+              </div>
+            </div>
+            
+            <div class="chart-summary">
+              <div class="summary-item">
+                <span class="summary-label">总电费</span>
+                <span class="summary-value">¥ {{ formatNumber(totalStats.amount) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">总电量</span>
+                <span class="summary-value">{{ formatNumber(totalStats.elec) }} 度</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 图表主体 -->
+          <div ref="mainChartContainer" class="main-chart"></div>
+        </div>
+        
+        <!-- 分时电量监控 -->
+        <div class="monitor-container">
+          <div class="monitor-header">
+            <h3 class="monitor-title">分时电量监控</h3>
+          </div>
+          
+          <div class="monitor-content">
+            <div ref="monitorChartContainer" class="monitor-chart"></div>
+            
+            <div class="monitor-stats">
+              <div class="monitor-stat-item">
+                <span class="stat-icon spike"></span>
+                <span class="stat-name">尖电量</span>
+                <span class="stat-value">{{ formatNumber(totalStats.elecPeak) }}</span>
+              </div>
+              <div class="monitor-stat-item">
+                <span class="stat-icon peak"></span>
+                <span class="stat-name">峰电量</span>
+                <span class="stat-value">{{ formatNumber(totalStats.elecTop) }}</span>
+              </div>
+              <div class="monitor-stat-item">
+                <span class="stat-icon flat"></span>
+                <span class="stat-name">平电量</span>
+                <span class="stat-value">{{ formatNumber(totalStats.elecFlat) }}</span>
+              </div>
+              <div class="monitor-stat-item">
+                <span class="stat-icon valley"></span>
+                <span class="stat-name">谷电量</span>
+                <span class="stat-value">{{ formatNumber(totalStats.elecValley) }}</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div ref="chartContainer" class="chart-wrapper"></div>
       </div>
 
       <!-- 统计表格 -->
@@ -332,6 +352,25 @@ export default {
         dateRange: [],
         tenantIds: []
       },
+    
+    handleDateRangeChange(val) {
+      if (val && val.length === 2 && this.dateType === 'day') {
+        const [start, end] = val
+        const startDate = new Date(start)
+        const endDate = new Date(end)
+        const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000))
+        
+        if (diffDays > 90) {
+          this.$message.warning('日统计最多只能选择3个月的数据')
+          // 自动调整结束日期为开始日期后90天
+          const newEndDate = new Date(startDate.getTime() + 90 * 24 * 3600 * 1000)
+          this.queryParams.dateRange = [
+            start,
+            moment(newEndDate).format('YYYY-MM-DD')
+          ]
+        }
+      }
+    },
       tenantList: [],
       tenantLoading: false,
       loading: false,
@@ -340,7 +379,8 @@ export default {
       tableData: [],
       deviceDetailData: [],
       switchDeviceDetail: false,
-      chartInstance: null,
+      mainChartInstance: null,
+      monitorChartInstance: null,
       pickerOptions: {
         shortcuts: [{
           text: '最近一周',
@@ -366,8 +406,29 @@ export default {
             start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
             picker.$emit('pick', [start, end])
           }
-        }]
-      }
+        }],
+        disabledDate(time) {
+          // 禁用今天之后的日期
+          if (time.getTime() > Date.now()) {
+            return true
+          }
+          return false
+        },
+        onPick: ({ maxDate, minDate }) => {
+          // 限制选择范围不超过3个月
+          if (minDate && !maxDate) {
+            // 当选择了开始日期，限制结束日期的范围
+            this.pickerMinDate = minDate.getTime()
+            this.pickerMaxDate = minDate.getTime() + 90 * 24 * 3600 * 1000 // 3个月
+          }
+          if (maxDate) {
+            this.pickerMinDate = null
+            this.pickerMaxDate = null
+          }
+        }
+      },
+      pickerMinDate: null,
+      pickerMaxDate: null
     }
   },
   computed: {
@@ -380,6 +441,17 @@ export default {
     },
     dateValueFormat() {
       return this.dateType === 'day' ? 'yyyy-MM-dd' : 'yyyy-MM'
+    },
+    formatDateRange() {
+      if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) {
+        return ''
+      }
+      const [start, end] = this.queryParams.dateRange
+      if (this.dateType === 'day') {
+        return `${start} - ${end}`
+      } else {
+        return `${start} 至 ${end}`
+      }
     },
     totalStats() {
       const stats = {
@@ -432,8 +504,11 @@ export default {
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.handleResize)
-    if (this.chartInstance) {
-      this.chartInstance.dispose()
+    if (this.mainChartInstance) {
+      this.mainChartInstance.dispose()
+    }
+    if (this.monitorChartInstance) {
+      this.monitorChartInstance.dispose()
     }
   },
   methods: {
@@ -489,6 +564,16 @@ export default {
       this.dateType = type
       this.setDefaultDateRange()
       this.handleSearch()
+    },
+    
+    toggleSeries(seriesName) {
+      // 切换图表系列显示/隐藏
+      if (this.mainChartInstance) {
+        this.mainChartInstance.dispatchAction({
+          type: 'legendToggleSelect',
+          name: seriesName
+        })
+      }
     },
     
     async handleSearch() {
@@ -549,8 +634,9 @@ export default {
       this.tableData = data || []
       this.chartData = data || []
       this.$nextTick(() => {
-        this.initializeChart()
-        this.updateChart()
+        this.initializeMainChart()
+        this.initializeMonitorChart()
+        this.updateCharts()
       })
     },
     
@@ -628,61 +714,129 @@ export default {
       this.handleSearch()
     },
     
-    initializeChart() {
-      if (!this.$refs.chartContainer) return
-      this.chartInstance = this.$echarts.init(this.$refs.chartContainer)
+    initializeMainChart() {
+      if (!this.$refs.mainChartContainer) return
+      this.mainChartInstance = this.$echarts.init(this.$refs.mainChartContainer)
     },
     
-    updateChart() {
-      if (!this.chartInstance || this.chartData.length === 0) return
+    initializeMonitorChart() {
+      if (!this.$refs.monitorChartContainer) return
+      this.monitorChartInstance = this.$echarts.init(this.$refs.monitorChartContainer)
+    },
+    
+    updateCharts() {
+      this.updateMainChart()
+      this.updateMonitorChart()
+    },
+    
+    updateMainChart() {
+      if (!this.mainChartInstance || this.chartData.length === 0) return
       
-      const xAxisData = this.chartData.map(item => item.occurDate)
+      const xAxisData = this.chartData.map(item => {
+        if (this.dateType === 'day') {
+          return moment(item.occurDate).format('MM-DD')
+        }
+        return item.occurDate
+      })
+      
       const option = {
-        color: ['#2251F5', '#3CC4FF', '#0170FE', '#F64C4C', '#47B881', '#FFA722'],
+        color: ['#1890ff', '#52c41a'],
         tooltip: {
           trigger: 'axis',
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          borderColor: '#E5E7EB',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderColor: '#e8e8e8',
           borderWidth: 1,
+          padding: [12, 16],
           textStyle: {
-            color: '#374151'
+            color: '#333',
+            fontSize: 14
           },
           axisPointer: {
             type: 'cross',
             crossStyle: {
-              color: '#9CA3AF'
+              color: '#999'
             }
+          },
+          formatter: (params) => {
+            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`
+            params.forEach(item => {
+              const unit = item.seriesName === '电费' ? '¥' : ''
+              const suffix = item.seriesName === '总电量' ? ' 度' : ''
+              html += `
+                <div style="display: flex; align-items: center; margin-bottom: 4px">
+                  <span style="display: inline-block; width: 10px; height: 10px; background: ${item.color}; border-radius: 50%; margin-right: 8px"></span>
+                  <span style="flex: 1">${item.seriesName}</span>
+                  <span style="font-weight: 500">${unit}${this.formatNumber(item.value)}${suffix}</span>
+                </div>
+              `
+            })
+            return html
           }
         },
         legend: {
-          data: ['电费', '尖电量', '峰电量', '平电量', '谷电量'],
-          bottom: 10,
+          data: ['电费', '总电量'],
+          bottom: 35,
           itemGap: 20,
           textStyle: {
-            color: '#6B7280'
+            color: '#666'
           }
         },
         grid: {
-          top: 50,
-          left: 60,
-          right: 60,
-          bottom: 50,
+          top: 30,
+          left: 50,
+          right: 50,
+          bottom: 75,
           containLabel: true
         },
+        dataZoom: [
+          {
+            type: 'inside',
+            start: this.dateType === 'day' ? 80 : 0,
+            end: 100
+          },
+          {
+            type: 'slider',
+            start: this.dateType === 'day' ? 80 : 0,
+            end: 100,
+            height: 8,
+            bottom: 5,
+            borderColor: 'transparent',
+            backgroundColor: '#f0f0f0',
+            handleSize: 14,
+            handleStyle: {
+              color: '#fff',
+              borderColor: '#d1d1d1',
+              borderWidth: 1,
+              shadowBlur: 2,
+              shadowColor: 'rgba(0, 0, 0, 0.1)',
+              shadowOffsetX: 1,
+              shadowOffsetY: 1
+            },
+            moveHandleSize: 3,
+            showDetail: false,
+            showDataShadow: false,
+            brushSelect: false,
+            fillerColor: 'rgba(24, 144, 255, 0.15)',
+            textStyle: {
+              fontSize: 0
+            }
+          }
+        ],
         xAxis: {
           type: 'category',
           data: xAxisData,
+          boundaryGap: false,
           axisTick: {
             show: false
           },
           axisLine: {
             lineStyle: {
-              color: '#E5E7EB'
+              color: '#e8e8e8'
             }
           },
           axisLabel: {
-            color: '#6B7280',
-            rotate: this.dateType === 'day' && xAxisData.length > 20 ? 45 : 0
+            color: '#666',
+            fontSize: 12
           }
         },
         yAxis: [
@@ -690,11 +844,13 @@ export default {
             type: 'value',
             name: '电费 (元)',
             nameTextStyle: {
-              color: '#6B7280'
+              color: '#666',
+              padding: [0, 0, 0, 20]
             },
             splitLine: {
               lineStyle: {
-                color: '#F3F4F6'
+                color: '#f0f0f0',
+                type: 'dashed'
               }
             },
             axisLine: {
@@ -704,14 +860,25 @@ export default {
               show: false
             },
             axisLabel: {
-              color: '#6B7280'
+              color: '#666',
+              fontSize: 12,
+              formatter: (value) => {
+                if (value >= 10000) {
+                  return (value / 10000) + 'w'
+                }
+                if (value >= 1000) {
+                  return (value / 1000) + 'k'
+                }
+                return value
+              }
             }
           },
           {
             type: 'value',
             name: '电量 (度)',
             nameTextStyle: {
-              color: '#6B7280'
+              color: '#666',
+              padding: [0, 20, 0, 0]
             },
             splitLine: {
               show: false
@@ -723,73 +890,316 @@ export default {
               show: false
             },
             axisLabel: {
-              color: '#6B7280'
+              color: '#666',
+              fontSize: 12,
+              formatter: (value) => {
+                if (value >= 10000) {
+                  return (value / 10000) + 'w'
+                }
+                if (value >= 1000) {
+                  return (value / 1000) + 'k'
+                }
+                return value
+              }
             }
           }
         ],
         series: [
           {
             name: '电费',
-            type: 'bar',
+            type: 'line',
             data: this.chartData.map(item => item.useAmount),
-            barWidth: '30%',
-            itemStyle: {
-              borderRadius: [2, 2, 0, 0]
+            smooth: true,
+            symbol: 'none',  // 去掉圆点
+            lineStyle: {
+              width: 2
+            },
+            areaStyle: {
+              opacity: 0.3,
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [{
+                  offset: 0, color: 'rgba(24, 144, 255, 0.3)'
+                }, {
+                  offset: 1, color: 'rgba(24, 144, 255, 0.05)'
+                }]
+              }
             }
           },
           {
-            name: '尖电量',
+            name: '总电量',
             type: 'line',
             yAxisIndex: 1,
+            data: this.chartData.map(item => item.useElec),
             smooth: true,
-            data: this.chartData.map(item => item.useElecPeak),
-            symbolSize: 6,
+            symbol: 'none',  // 去掉圆点
             lineStyle: {
               width: 2
-            }
-          },
-          {
-            name: '峰电量',
-            type: 'line',
-            yAxisIndex: 1,
-            smooth: true,
-            data: this.chartData.map(item => item.useElecTop),
-            symbolSize: 6,
-            lineStyle: {
-              width: 2
-            }
-          },
-          {
-            name: '平电量',
-            type: 'line',
-            yAxisIndex: 1,
-            smooth: true,
-            data: this.chartData.map(item => item.useElecFlat),
-            symbolSize: 6,
-            lineStyle: {
-              width: 2
-            }
-          },
-          {
-            name: '谷电量',
-            type: 'line',
-            yAxisIndex: 1,
-            smooth: true,
-            data: this.chartData.map(item => item.useElecValley),
-            symbolSize: 6,
-            lineStyle: {
-              width: 2
+            },
+            areaStyle: {
+              opacity: 0.3,
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [{
+                  offset: 0, color: 'rgba(82, 196, 26, 0.3)'
+                }, {
+                  offset: 1, color: 'rgba(82, 196, 26, 0.05)'
+                }]
+              }
             }
           }
         ]
       }
       
-      this.chartInstance.setOption(option)
+      this.mainChartInstance.setOption(option)
+    },
+    
+    updateMonitorChart() {
+      if (!this.monitorChartInstance || this.chartData.length === 0) return
+      
+      const xAxisData = this.chartData.map(item => {
+        if (this.dateType === 'day') {
+          return moment(item.occurDate).format('MM-DD')
+        }
+        return item.occurDate
+      })
+      
+      const option = {
+        color: ['#ff6b6b', '#ff922b', '#51cf66', '#339af0'],
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderColor: '#e8e8e8',
+          borderWidth: 1,
+          padding: [12, 16],
+          textStyle: {
+            color: '#333',
+            fontSize: 14
+          },
+          formatter: (params) => {
+            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`
+            params.forEach(item => {
+              html += `
+                <div style="display: flex; align-items: center; margin-bottom: 4px">
+                  <span style="display: inline-block; width: 10px; height: 10px; background: ${item.color}; border-radius: 50%; margin-right: 8px"></span>
+                  <span style="flex: 1">${item.seriesName}</span>
+                  <span style="font-weight: 500">${this.formatNumber(item.value)} 度</span>
+                </div>
+              `
+            })
+            return html
+          }
+        },
+        legend: {
+          show: false  // 隐藏图例，因为右侧已经有统计了
+        },
+        grid: {
+          top: 15,
+          left: 45,
+          right: 15,
+          bottom: 35,
+          containLabel: true
+        },
+        dataZoom: [
+          {
+            type: 'inside',
+            start: this.dateType === 'day' ? 70 : 0,
+            end: 100
+          },
+          {
+            type: 'slider',
+            start: this.dateType === 'day' ? 70 : 0,
+            end: 100,
+            height: 6,
+            bottom: 5,
+            borderColor: 'transparent',
+            backgroundColor: '#f0f0f0',
+            handleSize: 12,
+            handleStyle: {
+              color: '#fff',
+              borderColor: '#d1d1d1',
+              borderWidth: 1,
+              shadowBlur: 1,
+              shadowColor: 'rgba(0, 0, 0, 0.1)',
+              shadowOffsetX: 0,
+              shadowOffsetY: 1
+            },
+            moveHandleSize: 3,
+            showDetail: false,
+            showDataShadow: false,
+            brushSelect: false,
+            fillerColor: 'rgba(24, 144, 255, 0.15)',
+            textStyle: {
+              fontSize: 0
+            }
+          }
+        ],
+        xAxis: {
+          type: 'category',
+          data: xAxisData,
+          boundaryGap: false,
+          axisTick: {
+            show: false
+          },
+          axisLine: {
+            lineStyle: {
+              color: '#e8e8e8'
+            }
+          },
+          axisLabel: {
+            color: '#666',
+            fontSize: 11
+          }
+        },
+        yAxis: {
+          type: 'value',
+          splitLine: {
+            lineStyle: {
+              color: '#f0f0f0',
+              type: 'dashed'
+            }
+          },
+          axisLine: {
+            show: false
+          },
+          axisTick: {
+            show: false
+          },
+          axisLabel: {
+            color: '#666',
+            fontSize: 11,
+            formatter: (value) => {
+              if (value >= 10000) {
+                return (value / 10000) + 'w'
+              }
+              if (value >= 1000) {
+                return (value / 1000) + 'k'
+              }
+              return value
+            }
+          }
+        },
+        series: [
+          {
+            name: '尖电量',
+            type: 'line',
+            data: this.chartData.map(item => item.useElecPeak),
+            smooth: true,
+            symbol: 'none',  // 去掉圆点
+            lineStyle: {
+              width: 2
+            },
+            areaStyle: {
+              opacity: 0.6,
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [{
+                  offset: 0, color: 'rgba(255, 107, 107, 0.3)'
+                }, {
+                  offset: 1, color: 'rgba(255, 107, 107, 0.05)'
+                }]
+              }
+            }
+          },
+          {
+            name: '峰电量',
+            type: 'line',
+            data: this.chartData.map(item => item.useElecTop),
+            smooth: true,
+            symbol: 'none',  // 去掉圆点
+            lineStyle: {
+              width: 2
+            },
+            areaStyle: {
+              opacity: 0.6,
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [{
+                  offset: 0, color: 'rgba(255, 146, 43, 0.3)'
+                }, {
+                  offset: 1, color: 'rgba(255, 146, 43, 0.05)'
+                }]
+              }
+            }
+          },
+          {
+            name: '平电量',
+            type: 'line',
+            data: this.chartData.map(item => item.useElecFlat),
+            smooth: true,
+            symbol: 'none',  // 去掉圆点
+            lineStyle: {
+              width: 2
+            },
+            areaStyle: {
+              opacity: 0.6,
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [{
+                  offset: 0, color: 'rgba(81, 207, 102, 0.3)'
+                }, {
+                  offset: 1, color: 'rgba(81, 207, 102, 0.05)'
+                }]
+              }
+            }
+          },
+          {
+            name: '谷电量',
+            type: 'line',
+            data: this.chartData.map(item => item.useElecValley),
+            smooth: true,
+            symbol: 'none',  // 去掉圆点
+            lineStyle: {
+              width: 2
+            },
+            areaStyle: {
+              opacity: 0.6,
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [{
+                  offset: 0, color: 'rgba(51, 154, 240, 0.3)'
+                }, {
+                  offset: 1, color: 'rgba(51, 154, 240, 0.05)'
+                }]
+              }
+            }
+          }
+        ]
+      }
+      
+      this.monitorChartInstance.setOption(option)
     },
     
     handleResize() {
-      if (this.chartInstance) {
-        this.chartInstance.resize()
+      if (this.mainChartInstance) {
+        this.mainChartInstance.resize()
+      }
+      if (this.monitorChartInstance) {
+        this.monitorChartInstance.resize()
       }
     },
     
@@ -1075,37 +1485,6 @@ export default {
   }
 }
 
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  svg {
-    width: 28px;
-    height: 28px;
-    color: white;
-  }
-  
-  &.electricity {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  }
-  
-  &.power {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  }
-  
-  &.peak {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  }
-  
-  &.trend {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  }
-}
-
 .stat-content {
   flex: 1;
 }
@@ -1136,10 +1515,190 @@ export default {
   overflow: hidden;
 }
 
-// 图表区域
+// 图表区域 - 新设计
 .chart-section {
-  padding: 24px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 0;
   border-bottom: 1px solid #f3f4f6;
+}
+
+.chart-container {
+  padding: 24px;
+  border-right: 1px solid #f0f0f0;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.chart-date-range {
+  font-size: 13px;
+  color: #999;
+}
+
+.chart-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.chart-legends {
+  display: flex;
+  gap: 24px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  
+  &.active {
+    color: #333;
+    font-weight: 500;
+  }
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-text {
+  user-select: none;
+}
+
+.chart-summary {
+  display: flex;
+  gap: 40px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: #999;
+}
+
+.summary-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.main-chart {
+  height: 450px;
+  width: 100%;
+}
+
+// 负荷资源实时监控
+.monitor-container {
+  padding: 24px;
+  background: #fafafa;
+}
+
+.monitor-header {
+  margin-bottom: 20px;
+}
+
+.monitor-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.monitor-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.monitor-chart {
+  height: 280px;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.monitor-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.monitor-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+  transition: all 0.2s;
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.stat-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  
+  &.spike {
+    background: #ff6b6b;
+  }
+  
+  &.peak {
+    background: #ff922b;
+  }
+  
+  &.flat {
+    background: #51cf66;
+  }
+  
+  &.valley {
+    background: #339af0;
+  }
+}
+
+.stat-name {
+  flex: 1;
+  font-size: 13px;
+  color: #666;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+// 表格区域
+.table-section {
+  padding: 24px;
 }
 
 .section-header {
@@ -1154,41 +1713,6 @@ export default {
   font-weight: 600;
   color: #1a1a1a;
   margin: 0;
-}
-
-.chart-legends {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-}
-
-.legend-line {
-  width: 16px;
-  height: 2px;
-}
-
-.chart-wrapper {
-  height: 400px;
-  width: 100%;
-}
-
-// 表格区域
-.table-section {
-  padding: 24px;
 }
 
 .modern-table {
@@ -1409,6 +1933,17 @@ export default {
 }
 
 // 响应式设计
+@media (max-width: 1400px) {
+  .chart-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+  }
+}
+
 @media (max-width: 1280px) {
   .stats-cards {
     grid-template-columns: repeat(2, 1fr);
@@ -1456,6 +1991,17 @@ export default {
   .table-footer {
     grid-template-columns: repeat(7, minmax(100px, 1fr));
     overflow-x: auto;
+  }
+  
+  .chart-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .chart-summary {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 </style>
