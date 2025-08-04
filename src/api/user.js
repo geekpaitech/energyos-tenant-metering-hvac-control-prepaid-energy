@@ -38,3 +38,16 @@ export function logout() {
     data: 'success'
   })
 }
+
+// 发送验证码（用于调价验证）
+export function authSendSmsCode(params) {
+  return request({
+    url: '/api/ebc-auth/auth/sendSmsCode',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    params
+  })
+}

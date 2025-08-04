@@ -38,10 +38,10 @@
             <tr v-for="item in tableData" :key="item.id" class="table-row">
               <td class="td-id">#{{ item.id }}</td>
               <td class="td-name">{{ item.name }}</td>
-              <td class="td-price">{{ formatPrice(item.powerPeakPrice) }}</td>
-              <td class="td-price">{{ formatPrice(item.powerTopPrice) }}</td>
-              <td class="td-price">{{ formatPrice(item.powerFlatPrice) }}</td>
-              <td class="td-price">{{ formatPrice(item.powerValleyPrice) }}</td>
+              <td class="td-price price-peak">{{ formatPrice(item.powerPeakPrice) }}</td>
+              <td class="td-price price-top">{{ formatPrice(item.powerTopPrice) }}</td>
+              <td class="td-price price-flat">{{ formatPrice(item.powerFlatPrice) }}</td>
+              <td class="td-price price-valley">{{ formatPrice(item.powerValleyPrice) }}</td>
               <td class="td-time">{{ formatTime(item.updateTime) }}</td>
               <td class="td-status">
                 <div class="status-switch" @click="handleStatusChange(item)">
@@ -912,12 +912,13 @@ export default {
       
       td {
         padding: 16px;
-        font-size: 14px;
+        font-size: 15px;
         color: #374151;
         
         &.td-id {
           font-family: 'SF Mono', monospace;
           color: #9ca3af;
+          font-size: 14px;
         }
         
         &.td-name {
@@ -928,12 +929,29 @@ export default {
         &.td-price {
           text-align: right;
           font-family: 'SF Mono', monospace;
-          color: #059669;
           font-weight: 500;
+          font-size: 15px;
+          
+          &.price-peak {
+            color: #dc2626; // 红色 - 尖电价
+          }
+          
+          &.price-top {
+            color: #f59e0b; // 橙色 - 峰电价
+          }
+          
+          &.price-flat {
+            color: #3b82f6; // 蓝色 - 平电价
+          }
+          
+          &.price-valley {
+            color: #10b981; // 绿色 - 谷电价
+          }
         }
         
         &.td-time {
           color: #6b7280;
+          font-size: 14px;
         }
       }
     }
@@ -1212,10 +1230,10 @@ export default {
   border-radius: 50%;
   display: inline-block;
   
-  &.peak { background: #dc2626; }
-  &.top { background: #f59e0b; }
-  &.flat { background: #3b82f6; }
-  &.valley { background: #10b981; }
+  &.peak { background: #dc2626; }  // 红色 - 尖电价
+  &.top { background: #f59e0b; }   // 橙色 - 峰电价
+  &.flat { background: #3b82f6; }  // 蓝色 - 平电价
+  &.valley { background: #10b981; } // 绿色 - 谷电价
 }
 
 // 验证码区域
