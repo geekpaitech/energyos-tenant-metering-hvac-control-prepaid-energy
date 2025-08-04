@@ -156,7 +156,7 @@ export const consoleRoutes = [
             path: 'water-sankey',
             name: 'WaterSankey',
             component: () => import('@/views/console/energy/waterSankey'),
-            meta: { title: '用水桑基图', icon: 'el-icon-grape' }
+            meta: { title: '租户用水明细', icon: 'el-icon-grape' }
           }
         ]
       },

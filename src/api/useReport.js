@@ -38,3 +38,28 @@ export function useReportQueryTenantUseStatis(data) {
     data
   })
 }
+
+export function queryTenantWaterUseStatis(data) {
+  return request({
+    url: '/api/ebc-content/useReport/queryTenantWaterUseStatis',
+    method: 'POST',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 用水明细
+export function queryTenantWaterUse(data) {
+  return request({
+    url: '/api/ebc-content/useReport/queryTenantWaterUse',
+    method: 'POST',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
