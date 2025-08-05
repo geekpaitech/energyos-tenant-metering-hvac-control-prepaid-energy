@@ -24,34 +24,32 @@
           </span>
         </router-link>
       </div>
-      
-      <!-- 右侧功能区：当标签过多时显示 -->
+
+      <!-- 右侧功能区：当标签过多时显示溢出菜单 -->
       <div v-if="showOverflowMenu" class="tags-overflow-container">
         <!-- 隐藏标签数量 -->
-        <div class="hidden-count-badge">
-          +{{ hiddenTagsCount }}
-        </div>
-        
+        <div class="hidden-count-badge">+{{ hiddenTagsCount }}</div>
+
         <!-- 更多标签按钮 -->
         <div class="more-tags-trigger" @click="toggleMoreTags">
           <i class="el-icon-more-outline"></i>
           <span class="trigger-text">更多</span>
         </div>
-        
-        <!-- 快捷操作按钮组 -->
-        <div class="quick-actions-group">
-          <el-tooltip content="刷新当前页" placement="bottom">
-            <div class="action-button refresh-btn" @click="refreshCurrentPage">
-              <i class="el-icon-refresh"></i>
-            </div>
-          </el-tooltip>
-          
-          <el-tooltip content="关闭其他" placement="bottom">
-            <div class="action-button close-others-btn" @click="closeOthersTags">
-              <i class="el-icon-circle-close"></i>
-            </div>
-          </el-tooltip>
-        </div>
+      </div>
+
+      <!-- 右侧固定操作按钮组：永远显示 -->
+      <div class="fixed-actions-container">
+        <el-tooltip content="刷新当前页" placement="bottom">
+          <div class="action-button refresh-btn" @click="refreshCurrentPage">
+            <i class="el-icon-refresh"></i>
+          </div>
+        </el-tooltip>
+
+        <el-tooltip content="关闭其他" placement="bottom">
+          <div class="action-button close-others-btn" @click="closeOthersTags">
+            <i class="el-icon-circle-close"></i>
+          </div>
+        </el-tooltip>
       </div>
     </div>
 
@@ -69,7 +67,7 @@
             <i class="el-icon-close close-panel" @click="closeMoreTags"></i>
           </div>
         </div>
-        
+
         <!-- 搜索区域 -->
         <div class="search-section">
           <el-input
@@ -81,21 +79,24 @@
             @input="handleSearch"
           />
         </div>
-        
+
         <!-- 当前显示的标签 -->
         <div class="tags-section visible-section">
           <div class="section-header">
             <span class="section-title">当前显示</span>
-            <span class="section-count">{{ visibleTags.length }}</span>
+            <span class="section-count">{{ filteredVisibleTags.length }}</span>
           </div>
           <div class="tags-grid">
             <div
-              v-for="tag in visibleTags"
+              v-for="tag in filteredVisibleTags"
               :key="'visible-' + tag.path"
-              :class="['tag-card', { 
-                'is-active': isActive(tag), 
-                'is-affix': isAffix(tag) 
-              }]"
+              :class="[
+                'tag-card',
+                {
+                  'is-active': isActive(tag),
+                  'is-affix': isAffix(tag),
+                },
+              ]"
               @click="navigateToTag(tag)"
             >
               <div class="tag-content">
@@ -110,16 +111,23 @@
                   </div>
                   <div class="tag-path">{{ tag.path }}</div>
                 </div>
-                <div v-if="!isAffix(tag)" class="tag-close" @click.stop="closeSelectedTag(tag)">
+                <div
+                  v-if="!isAffix(tag)"
+                  class="tag-close"
+                  @click.stop="closeSelectedTag(tag)"
+                >
                   <i class="el-icon-close"></i>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
+
         <!-- 隐藏的标签 -->
-        <div v-if="filteredHiddenTags.length > 0" class="tags-section hidden-section">
+        <div
+          v-if="filteredHiddenTags.length > 0"
+          class="tags-section hidden-section"
+        >
           <div class="section-header">
             <span class="section-title">更多标签</span>
             <span class="section-count">{{ filteredHiddenTags.length }}</span>
@@ -128,10 +136,13 @@
             <div
               v-for="tag in filteredHiddenTags"
               :key="'hidden-' + tag.path"
-              :class="['tag-card', { 
-                'is-active': isActive(tag), 
-                'is-affix': isAffix(tag) 
-              }]"
+              :class="[
+                'tag-card',
+                {
+                  'is-active': isActive(tag),
+                  'is-affix': isAffix(tag),
+                },
+              ]"
               @click="navigateToTag(tag)"
             >
               <div class="tag-content">
@@ -146,48 +157,19 @@
                   </div>
                   <div class="tag-path">{{ tag.path }}</div>
                 </div>
-                <div v-if="!isAffix(tag)" class="tag-close" @click.stop="closeSelectedTag(tag)">
+                <div
+                  v-if="!isAffix(tag)"
+                  class="tag-close"
+                  @click.stop="closeSelectedTag(tag)"
+                >
                   <i class="el-icon-close"></i>
                 </div>
               </div>
             </div>
           </div>
         </div>
-   
       </div>
     </div>
-
-    <!-- 右键菜单 -->
-    <ul
-      v-show="visible"
-      :style="{ left: left + 'px', top: top + 'px' }"
-      class="contextmenu"
-    >
-      <li @click="refreshSelectedTag(selectedTag)">
-        <i class="el-icon-refresh-right"></i>
-        刷新页面
-      </li>
-      <li v-if="!isAffix(selectedTag)" @click="closeSelectedTag(selectedTag)">
-        <i class="el-icon-close"></i>
-        关闭标签
-      </li>
-      <li @click="closeOthersTags">
-        <i class="el-icon-circle-close"></i>
-        关闭其他
-      </li>
-      <li v-if="!isFirstView(selectedTag)" @click="closeLeftTags">
-        <i class="el-icon-back"></i>
-        关闭左侧
-      </li>
-      <li v-if="!isLastView(selectedTag)" @click="closeRightTags">
-        <i class="el-icon-right"></i>
-        关闭右侧
-      </li>
-      <li @click="closeAllTags(selectedTag)">
-        <i class="el-icon-folder-delete"></i>
-        关闭全部
-      </li>
-    </ul>
   </div>
 </template>
 
@@ -206,12 +188,13 @@ export default {
       // 添加平台相关状态
       currentPlatformCache: null,
       isInitialized: false,
-      
-      // 标签显示逻辑相关
-      maxVisibleTags: 12,
-      maxTotalTags: 15,
-      searchKeyword: '',
+
+      // 标签显示逻辑相关 - 修复配置
+      maxVisibleTags: 10, // 左侧最多显示10个标签
+      maxTotalTags: 10, // 超过10个标签启用右侧功能区（保持一致）
+      searchKeyword: "",
       filteredHiddenTags: [],
+      filteredVisibleTags: [], // 新增：过滤后的可见标签
       showMoreTags: false, // 控制更多标签弹窗显示
     };
   },
@@ -223,69 +206,73 @@ export default {
       return this.$store.state.permission.routes;
     },
     currentPlatform() {
-      return this.$store.getters['permission/currentPlatform'];
+      return this.$store.getters["permission/currentPlatform"];
     },
     currentManagerId() {
-      return this.$store.getters['manager/currentManagerId'];
+      return this.$store.getters["manager/currentManagerId"];
     },
-    
+
     // 是否显示右侧功能区
     showOverflowMenu() {
       return this.visitedViews.length > this.maxTotalTags;
     },
-    
+
     // 计算可见的标签
     visibleTags() {
       if (!this.showOverflowMenu) {
         return this.visitedViews;
       }
-      
-      const currentIndex = this.visitedViews.findIndex(tag => this.isActive(tag));
-      const affixTags = this.visitedViews.filter(tag => this.isAffix(tag));
-      
+
+      const currentIndex = this.visitedViews.findIndex((tag) =>
+        this.isActive(tag)
+      );
+      const affixTags = this.visitedViews.filter((tag) => this.isAffix(tag));
+
       if (currentIndex === -1) {
         return this.visitedViews.slice(0, this.maxVisibleTags);
       }
-      
+
       let visibleTags = [...affixTags];
       const currentTag = this.visitedViews[currentIndex];
-      
+
       if (!this.isAffix(currentTag)) {
         visibleTags.push(currentTag);
       }
-      
-      const otherTags = this.visitedViews.filter(tag => 
-        !this.isAffix(tag) && !this.isActive(tag)
+
+      const otherTags = this.visitedViews.filter(
+        (tag) => !this.isAffix(tag) && !this.isActive(tag)
       );
-      
+
       const remainingSlots = this.maxVisibleTags - visibleTags.length;
       visibleTags.push(...otherTags.slice(0, remainingSlots));
-      
+
       return visibleTags.sort((a, b) => {
         return this.visitedViews.indexOf(a) - this.visitedViews.indexOf(b);
       });
     },
-    
+
     // 计算隐藏的标签
     hiddenTags() {
       if (!this.showOverflowMenu) {
         return [];
       }
-      
-      const visiblePaths = this.visibleTags.map(tag => tag.path);
-      return this.visitedViews.filter(tag => !visiblePaths.includes(tag.path));
+
+      const visiblePaths = this.visibleTags.map((tag) => tag.path);
+      return this.visitedViews.filter(
+        (tag) => !visiblePaths.includes(tag.path)
+      );
     },
-    
+
     // 隐藏标签的数量
     hiddenTagsCount() {
       return this.hiddenTags.length;
-    }
+    },
   },
   watch: {
     $route(route) {
       if (this.shouldAddToTagsView(route)) {
-        this.addTags()
-        this.moveToCurrentTag()
+        this.addTags();
+        this.moveToCurrentTag();
       }
     },
     visible(value) {
@@ -297,175 +284,224 @@ export default {
     },
     currentPlatform: {
       handler(newPlatform, oldPlatform) {
-        console.log('TagsView: 平台变化检测', { 
-          oldPlatform, 
-          newPlatform, 
+        console.log("TagsView: 平台变化检测", {
+          oldPlatform,
+          newPlatform,
           cache: this.currentPlatformCache,
           isInitialized: this.isInitialized,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
-        if (this.isInitialized && 
-            this.currentPlatformCache && 
-            this.currentPlatformCache !== newPlatform &&
-            this.isPlatformSwitch(this.currentPlatformCache, newPlatform)) {
-          
-          console.log('TagsView: 检测到真正的平台切换，执行清空操作');
+
+        if (
+          this.isInitialized &&
+          this.currentPlatformCache &&
+          this.currentPlatformCache !== newPlatform &&
+          this.isPlatformSwitch(this.currentPlatformCache, newPlatform)
+        ) {
+          console.log("TagsView: 检测到真正的平台切换，执行清空操作");
           this.handlePlatformSwitch(newPlatform);
         }
-        
+
         this.currentPlatformCache = newPlatform;
       },
-      immediate: false
+      immediate: false,
     },
     currentManagerId: {
       handler(newManagerId, oldManagerId) {
-        console.log('TagsView: 管理方ID变化检测', { 
-          oldManagerId, 
+        console.log("TagsView: 管理方ID变化检测", {
+          oldManagerId,
           newManagerId,
           isInitialized: this.isInitialized,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
-        if (this.isInitialized && 
-            oldManagerId && 
-            newManagerId && 
-            oldManagerId !== newManagerId &&
-            this.isManagerSwitch(oldManagerId, newManagerId, this.currentPlatform)) {
-          
-          console.log('TagsView: 检测到企业切换，但保留TagsView内容');
+
+        if (
+          this.isInitialized &&
+          oldManagerId &&
+          newManagerId &&
+          oldManagerId !== newManagerId &&
+          this.isManagerSwitch(oldManagerId, newManagerId, this.currentPlatform)
+        ) {
+          console.log("TagsView: 检测到企业切换，但保留TagsView内容");
           this.handleManagerSwitch();
         }
       },
-      immediate: false
+      immediate: false,
     },
-    
+
     // 监听隐藏标签变化，更新过滤结果
     hiddenTags: {
       handler() {
         this.filterHiddenTags();
       },
-      immediate: true
-    }
+      immediate: true,
+    },
+
+    // 监听可见标签变化，更新过滤结果
+    visibleTags: {
+      handler() {
+        this.filterHiddenTags();
+      },
+      immediate: true,
+    },
   },
   mounted() {
-    console.log('TagsView: 组件挂载');
-    
-    this.currentPlatformCache = this.$store.getters['permission/currentPlatform'];
-    console.log('TagsView: 初始平台缓存', this.currentPlatformCache);
-    
+    console.log("TagsView: 组件挂载");
+
+    this.currentPlatformCache =
+      this.$store.getters["permission/currentPlatform"];
+    console.log("TagsView: 初始平台缓存", this.currentPlatformCache);
+
     this.initTags();
     this.addTags();
 
-    this.$bus && this.$bus.$on('platform-switched', this.handlePlatformSwitchEvent);
-    this.$bus && this.$bus.$on('manager-switched', this.handleManagerSwitchEvent);
-    
+    this.$bus &&
+      this.$bus.$on("platform-switched", this.handlePlatformSwitchEvent);
+    this.$bus &&
+      this.$bus.$on("manager-switched", this.handleManagerSwitchEvent);
+
     // ESC键关闭弹窗
-    document.addEventListener('keydown', this.handleKeydown);
-    
+    document.addEventListener("keydown", this.handleKeydown);
+
     this.$nextTick(() => {
       this.isInitialized = true;
-      console.log('TagsView: 初始化完成');
-      
+      console.log("TagsView: 初始化完成");
+
       this.filterHiddenTags();
     });
   },
   beforeDestroy() {
-    this.$bus && this.$bus.$off('platform-switched', this.handlePlatformSwitchEvent);
-    this.$bus && this.$bus.$off('manager-switched', this.handleManagerSwitchEvent);
-    document.removeEventListener('keydown', this.handleKeydown);
+    this.$bus &&
+      this.$bus.$off("platform-switched", this.handlePlatformSwitchEvent);
+    this.$bus &&
+      this.$bus.$off("manager-switched", this.handleManagerSwitchEvent);
+    document.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
     getTagTitle(tag) {
-      const title = tag.title || 
-                   (tag.meta && tag.meta.title) || 
-                   tag.name || 
-                   (tag.path && tag.path.split('/').pop()) || 
-                   '未命名页面'
-      
-      if (tag.path && tag.path.includes('dashboard')) {
-        console.log('首页标签title计算:', {
+      const title =
+        tag.title ||
+        (tag.meta && tag.meta.title) ||
+        tag.name ||
+        (tag.path && tag.path.split("/").pop()) ||
+        "未命名页面";
+
+      if (tag.path && tag.path.includes("dashboard")) {
+        console.log("首页标签title计算:", {
           tagTitle: tag.title,
           metaTitle: tag.meta?.title,
           tagName: tag.name,
-          finalTitle: title
+          finalTitle: title,
         });
       }
-      
+
       return title;
     },
-    
+
     // 处理键盘事件
     handleKeydown(e) {
-      if (e.key === 'Escape' && this.showMoreTags) {
+      if (e.key === "Escape" && this.showMoreTags) {
         this.closeMoreTags();
       }
     },
-    
+
     // 切换更多标签弹窗
     toggleMoreTags() {
       this.showMoreTags = !this.showMoreTags;
       if (this.showMoreTags) {
-        this.searchKeyword = '';
+        this.searchKeyword = "";
         this.filterHiddenTags();
       }
     },
-    
+
     // 关闭更多标签弹窗
     closeMoreTags() {
       this.showMoreTags = false;
-      this.searchKeyword = '';
+      this.searchKeyword = "";
     },
-    
+
     // 导航到指定标签
     navigateToTag(tag) {
       this.$router.push(tag);
       this.closeMoreTags();
     },
-    
+
     // 过滤隐藏标签
     filterHiddenTags() {
+      // 过滤可见标签
+      if (!this.searchKeyword.trim()) {
+        this.filteredVisibleTags = [...this.visibleTags];
+      } else {
+        const keyword = this.searchKeyword.toLowerCase();
+        this.filteredVisibleTags = this.visibleTags.filter((tag) => {
+          const title = this.getTagTitle(tag).toLowerCase();
+          const path = tag.path.toLowerCase();
+          return title.includes(keyword) || path.includes(keyword);
+        });
+      }
+
+      // 过滤隐藏标签
       if (!this.searchKeyword.trim()) {
         this.filteredHiddenTags = [...this.hiddenTags];
       } else {
         const keyword = this.searchKeyword.toLowerCase();
-        this.filteredHiddenTags = this.hiddenTags.filter(tag => {
+        this.filteredHiddenTags = this.hiddenTags.filter((tag) => {
           const title = this.getTagTitle(tag).toLowerCase();
           const path = tag.path.toLowerCase();
           return title.includes(keyword) || path.includes(keyword);
         });
       }
     },
-    
+
     // 搜索处理
     handleSearch() {
       this.filterHiddenTags();
     },
-    
+
+    // 处理批量操作
+    handleBatchAction(action) {
+      this.closeMoreTags(); // 先关闭弹窗
+
+      switch (action) {
+        case "closeOthers":
+          this.closeOthersTags();
+          break;
+        case "closeAll":
+          this.closeAllTags();
+          break;
+        case "closeLeft":
+          this.closeLeftTags();
+          break;
+        case "closeRight":
+          this.closeRightTags();
+          break;
+      }
+    },
+
     // 刷新当前页面
     refreshCurrentPage() {
-      const currentTag = this.visitedViews.find(tag => this.isActive(tag));
+      const currentTag = this.visitedViews.find((tag) => this.isActive(tag));
       if (currentTag) {
         this.refreshSelectedTag(currentTag);
       }
     },
 
     shouldAddToTagsView(route) {
-      if (route.path.startsWith('/redirect/')) {
+      if (route.path.startsWith("/redirect/")) {
         return false;
       }
-      
-      const systemPaths = ['/login', '/404', '/401', '/switching'];
+
+      const systemPaths = ["/login", "/404", "/401", "/switching"];
       if (systemPaths.includes(route.path)) {
         return false;
       }
-      
+
       if (route.meta) {
         if (route.meta.noTagsView || route.meta.hidden) {
           return false;
         }
       }
-      
+
       return true;
     },
 
@@ -501,7 +537,7 @@ export default {
       routes.forEach((route) => {
         if (route.meta && route.meta.affix) {
           const tagPath = path.resolve(basePath, route.path);
-          const title = route.meta.title || route.name || '首页'
+          const title = route.meta.title || route.name || "首页";
           tags.push({
             fullPath: tagPath,
             path: tagPath,
@@ -527,7 +563,7 @@ export default {
           this.$store.dispatch("tagsView/addVisitedView", tag);
         }
       }
-      
+
       this.ensureHomeTagFirst();
     },
 
@@ -536,8 +572,8 @@ export default {
       if (name) {
         const routeInfo = {
           ...this.$route,
-          title: this.$route.meta?.title || this.$route.name
-        }
+          title: this.$route.meta?.title || this.$route.name,
+        };
         this.$store.dispatch("tagsView/addView", routeInfo);
         this.ensureHomeTagFirst();
       }
@@ -546,219 +582,256 @@ export default {
 
     // 处理平台切换事件
     handlePlatformSwitchEvent(eventData) {
-      console.log('=== TagsView: 接收到平台切换事件 ===');
-      console.log('事件数据:', eventData);
-      
-      if (eventData.type !== 'platform-switch' || !eventData.clearTagsView) {
-        console.warn('TagsView: 接收到的不是平台切换事件或不需要清空TagsView');
+      console.log("=== TagsView: 接收到平台切换事件 ===");
+      console.log("事件数据:", eventData);
+
+      if (eventData.type !== "platform-switch" || !eventData.clearTagsView) {
+        console.warn("TagsView: 接收到的不是平台切换事件或不需要清空TagsView");
         return;
       }
-      
+
       this.handlePlatformSwitch(eventData.to, eventData);
     },
 
     // 处理企业切换事件
     handleManagerSwitchEvent(eventData) {
-      console.log('=== TagsView: 接收到企业切换事件 ===');
-      console.log('事件数据:', eventData);
-      
-      if (eventData.type !== 'manager-switch' || eventData.clearTagsView !== false) {
-        console.warn('TagsView: 接收到的不是企业切换事件或配置错误');
+      console.log("=== TagsView: 接收到企业切换事件 ===");
+      console.log("事件数据:", eventData);
+
+      if (
+        eventData.type !== "manager-switch" ||
+        eventData.clearTagsView !== false
+      ) {
+        console.warn("TagsView: 接收到的不是企业切换事件或配置错误");
         return;
       }
-      
+
       this.handleManagerSwitch(eventData);
     },
 
     // 处理平台切换的具体逻辑
     handlePlatformSwitch(newPlatform, eventData = {}) {
-      console.log('=== TagsView: 开始处理平台切换 ===');
-      console.log('目标平台:', newPlatform);
-      console.log('事件数据:', eventData);
-      
-      if (!this.$store.hasModule('tagsView')) {
-        console.error('TagsView: store模块不存在');
+      console.log("=== TagsView: 开始处理平台切换 ===");
+      console.log("目标平台:", newPlatform);
+      console.log("事件数据:", eventData);
+
+      if (!this.$store.hasModule("tagsView")) {
+        console.error("TagsView: store模块不存在");
         return;
       }
-      
+
       const beforeState = {
         visitedViews: this.visitedViews.length,
         cachedViews: this.$store.state.tagsView.cachedViews.length,
-        currentPlatformCache: this.currentPlatformCache
+        currentPlatformCache: this.currentPlatformCache,
       };
-      console.log('切换前状态:', beforeState);
-      
-      this.$store.dispatch('tagsView/clearAllForPlatformSwitch').then(() => {
-        console.log('TagsView: 平台切换 - 完全清空完成');
-        
-        this.currentPlatformCache = newPlatform;
-        
-        const afterState = {
-          visitedViews: this.visitedViews.length,
-          cachedViews: this.$store.state.tagsView.cachedViews.length,
-          currentPlatformCache: this.currentPlatformCache
-        };
-        console.log('切换后状态:', afterState);
-        
-        if (afterState.visitedViews === 0 && afterState.cachedViews === 0) {
-          console.log('✅ TagsView: 平台切换清空成功');
-        } else {
-          console.error('❌ TagsView: 平台切换清空失败', afterState);
-        }
-        
-        this.$nextTick(() => {
-          setTimeout(() => {
-            this.reinitializeForNewPlatform(newPlatform);
-          }, 300);
+      console.log("切换前状态:", beforeState);
+
+      this.$store
+        .dispatch("tagsView/clearAllForPlatformSwitch")
+        .then(() => {
+          console.log("TagsView: 平台切换 - 完全清空完成");
+
+          this.currentPlatformCache = newPlatform;
+
+          const afterState = {
+            visitedViews: this.visitedViews.length,
+            cachedViews: this.$store.state.tagsView.cachedViews.length,
+            currentPlatformCache: this.currentPlatformCache,
+          };
+          console.log("切换后状态:", afterState);
+
+          if (afterState.visitedViews === 0 && afterState.cachedViews === 0) {
+            console.log("✅ TagsView: 平台切换清空成功");
+          } else {
+            console.error("❌ TagsView: 平台切换清空失败", afterState);
+          }
+
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.reinitializeForNewPlatform(newPlatform);
+            }, 300);
+          });
+        })
+        .catch((error) => {
+          console.error("TagsView: 平台切换清空失败", error);
         });
-        
-      }).catch(error => {
-        console.error('TagsView: 平台切换清空失败', error);
-      });
     },
 
     // 为新平台重新初始化TagsView
     reinitializeForNewPlatform(platform) {
-      console.log('=== TagsView: 为新平台重新初始化 ===');
-      console.log('新平台:', platform);
-      console.log('当前路由:', this.$route);
-      
+      console.log("=== TagsView: 为新平台重新初始化 ===");
+      console.log("新平台:", platform);
+      console.log("当前路由:", this.$route);
+
       try {
-        this.$store.dispatch('tagsView/ensureHomeTagFirst').then(() => {
-          console.log('首页标签已确保在第一位');
-          
-          if (this.$route.name && this.shouldAddToTagsView(this.$route)) {
-            this.addTags();
-          }
-          
-          console.log('新平台重新初始化完成');
-          console.log('当前访问的视图:', this.visitedViews);
-        }).catch(error => {
-          console.error('确保首页标签失败:', error);
-        });
-        
+        this.$store
+          .dispatch("tagsView/ensureHomeTagFirst")
+          .then(() => {
+            console.log("首页标签已确保在第一位");
+
+            if (this.$route.name && this.shouldAddToTagsView(this.$route)) {
+              this.addTags();
+            }
+
+            console.log("新平台重新初始化完成");
+            console.log("当前访问的视图:", this.visitedViews);
+          })
+          .catch((error) => {
+            console.error("确保首页标签失败:", error);
+          });
       } catch (error) {
-        console.error('TagsView: 新平台重新初始化失败', error);
+        console.error("TagsView: 新平台重新初始化失败", error);
       }
     },
 
     // 处理企业切换的具体逻辑
     handleManagerSwitch(eventData = {}) {
-      console.log('=== TagsView: 开始处理企业切换 ===');
-      console.log('事件数据:', eventData);
-      
-      if (!this.$store.hasModule('tagsView')) {
-        console.error('TagsView: store模块不存在');
+      console.log("=== TagsView: 开始处理企业切换 ===");
+      console.log("事件数据:", eventData);
+
+      if (!this.$store.hasModule("tagsView")) {
+        console.error("TagsView: store模块不存在");
         return;
       }
-      
+
       const beforeState = {
         visitedViews: this.visitedViews.length,
-        cachedViews: this.$store.state.tagsView.cachedViews.length
+        cachedViews: this.$store.state.tagsView.cachedViews.length,
       };
-      console.log('企业切换前状态:', beforeState);
-      
-      this.$store.dispatch('tagsView/clearCacheForManagerSwitch').then(() => {
-        console.log('TagsView: 企业切换 - 缓存已清空，TagsView保留');
-        
-        const afterState = {
-          visitedViews: this.visitedViews.length,
-          cachedViews: this.$store.state.tagsView.cachedViews.length
-        };
-        console.log('企业切换后状态:', afterState);
-        
-        if (afterState.visitedViews === beforeState.visitedViews && afterState.cachedViews === 0) {
-          console.log('✅ TagsView: 企业切换处理成功 - TagsView保留，缓存已清空');
-        } else {
-          console.warn('⚠️ TagsView: 企业切换处理异常', { beforeState, afterState });
-        }
-        
-        this.ensureHomeTagFirst();
-        this.refreshCurrentPageContent();
-        
-      }).catch(error => {
-        console.error('TagsView: 企业切换处理失败', error);
-      });
+      console.log("企业切换前状态:", beforeState);
+
+      this.$store
+        .dispatch("tagsView/clearCacheForManagerSwitch")
+        .then(() => {
+          console.log("TagsView: 企业切换 - 缓存已清空，TagsView保留");
+
+          const afterState = {
+            visitedViews: this.visitedViews.length,
+            cachedViews: this.$store.state.tagsView.cachedViews.length,
+          };
+          console.log("企业切换后状态:", afterState);
+
+          if (
+            afterState.visitedViews === beforeState.visitedViews &&
+            afterState.cachedViews === 0
+          ) {
+            console.log(
+              "✅ TagsView: 企业切换处理成功 - TagsView保留，缓存已清空"
+            );
+          } else {
+            console.warn("⚠️ TagsView: 企业切换处理异常", {
+              beforeState,
+              afterState,
+            });
+          }
+
+          this.ensureHomeTagFirst();
+          this.refreshCurrentPageContent();
+        })
+        .catch((error) => {
+          console.error("TagsView: 企业切换处理失败", error);
+        });
     },
 
     // 刷新当前页面内容
     refreshCurrentPageContent() {
-      console.log('TagsView: 刷新当前页面内容');
-      
-      if (this.$route.meta && this.$route.meta.refreshOnManagerSwitch !== false) {
-        const newQuery = { 
-          ...this.$route.query, 
+      console.log("TagsView: 刷新当前页面内容");
+
+      if (
+        this.$route.meta &&
+        this.$route.meta.refreshOnManagerSwitch !== false
+      ) {
+        const newQuery = {
+          ...this.$route.query,
           _t: Date.now(),
-          _m: this.currentManagerId
+          _m: this.currentManagerId,
         };
-        
-        this.$router.replace({
-          path: this.$route.path,
-          query: newQuery
-        }).catch(err => {
-          console.log('路由更新完成或无需更新');
-        });
+
+        this.$router
+          .replace({
+            path: this.$route.path,
+            query: newQuery,
+          })
+          .catch((err) => {
+            console.log("路由更新完成或无需更新");
+          });
       }
-      
+
       this.ensureHomeTagFirst();
     },
 
     // 重新初始化
     reinitialize() {
-      console.log('TagsView: 重新初始化开始');
-      console.log('TagsView: 当前路由', this.$route);
-      console.log('TagsView: 当前平台', this.currentPlatform);
-      console.log('TagsView: 当前管理方ID', this.currentManagerId);
-      
+      console.log("TagsView: 重新初始化开始");
+      console.log("TagsView: 当前路由", this.$route);
+      console.log("TagsView: 当前平台", this.currentPlatform);
+      console.log("TagsView: 当前管理方ID", this.currentManagerId);
+
       try {
         this.initTags();
-        
+
         if (this.$route.name && this.shouldAddToTagsView(this.$route)) {
           this.addTags();
         }
-        
+
         this.ensureHomeTagFirst();
-        
-        console.log('TagsView: 重新初始化完成');
-        console.log('TagsView: 当前访问的视图', this.visitedViews);
+
+        console.log("TagsView: 重新初始化完成");
+        console.log("TagsView: 当前访问的视图", this.visitedViews);
       } catch (error) {
-        console.error('TagsView: 重新初始化失败', error);
+        console.error("TagsView: 重新初始化失败", error);
       }
     },
 
     // 确保首页标签始终在第一位
     ensureHomeTagFirst() {
-      console.log('TagsView: 确保首页标签在第一位');
-      
-      this.$store.dispatch('tagsView/ensureHomeTagFirst').then(() => {
-        console.log('TagsView: 首页标签位置已确保');
-      }).catch(error => {
-        console.error('TagsView: 确保首页标签位置失败', error);
-      });
+      console.log("TagsView: 确保首页标签在第一位");
+
+      this.$store
+        .dispatch("tagsView/ensureHomeTagFirst")
+        .then(() => {
+          console.log("TagsView: 首页标签位置已确保");
+        })
+        .catch((error) => {
+          console.error("TagsView: 确保首页标签位置失败", error);
+        });
     },
 
     // 判断是否为平台切换
     isPlatformSwitch(fromPlatform, toPlatform) {
       const platformMap = {
-        'admin': '管理系统',
-        'console': '控制台'
+        admin: "管理系统",
+        console: "控制台",
       };
-      
-      const isValid = fromPlatform !== toPlatform && 
-             platformMap[fromPlatform] && 
-             platformMap[toPlatform];
-             
-      console.log('isPlatformSwitch检查:', { fromPlatform, toPlatform, isValid });
+
+      const isValid =
+        fromPlatform !== toPlatform &&
+        platformMap[fromPlatform] &&
+        platformMap[toPlatform];
+
+      console.log("isPlatformSwitch检查:", {
+        fromPlatform,
+        toPlatform,
+        isValid,
+      });
       return isValid;
     },
 
     // 判断是否为企业切换
     isManagerSwitch(fromManagerId, toManagerId, currentPlatform) {
-      const isValid = currentPlatform === 'console' && 
-             fromManagerId !== toManagerId && 
-             fromManagerId && toManagerId;
-             
-      console.log('isManagerSwitch检查:', { fromManagerId, toManagerId, currentPlatform, isValid });
+      const isValid =
+        currentPlatform === "console" &&
+        fromManagerId !== toManagerId &&
+        fromManagerId &&
+        toManagerId;
+
+      console.log("isManagerSwitch检查:", {
+        fromManagerId,
+        toManagerId,
+        currentPlatform,
+        isValid,
+      });
       return isValid;
     },
 
@@ -830,10 +903,10 @@ export default {
 
     closeSelectedTag(view) {
       if (this.isAffix(view)) {
-        this.$message.warning('首页标签不能关闭');
+        this.$message.warning("首页标签不能关闭");
         return;
       }
-      
+
       this.$store
         .dispatch("tagsView/delView", view)
         .then(({ visitedViews }) => {
@@ -845,7 +918,8 @@ export default {
     },
 
     closeRightTags() {
-      const currentTag = this.visitedViews.find(view => this.isActive(view)) || this.$route;
+      const currentTag =
+        this.visitedViews.find((view) => this.isActive(view)) || this.$route;
       this.$store
         .dispatch("tagsView/delRightTags", currentTag)
         .then((visitedViews) => {
@@ -857,7 +931,8 @@ export default {
     },
 
     closeLeftTags() {
-      const currentTag = this.visitedViews.find(view => this.isActive(view)) || this.$route;
+      const currentTag =
+        this.visitedViews.find((view) => this.isActive(view)) || this.$route;
       this.$store
         .dispatch("tagsView/delLeftTags", currentTag)
         .then((visitedViews) => {
@@ -869,18 +944,17 @@ export default {
     },
 
     closeOthersTags() {
-      const currentTag = this.visitedViews.find(view => this.isActive(view)) || this.$route;
-      
+      const currentTag =
+        this.visitedViews.find((view) => this.isActive(view)) || this.$route;
+
       if (!this.isActive(currentTag)) {
         this.$router.push(currentTag);
       }
-      
-      this.$store
-        .dispatch("tagsView/delOthersViews", currentTag)
-        .then(() => {
-          this.moveToCurrentTag();
-          this.ensureHomeTagFirst();
-        });
+
+      this.$store.dispatch("tagsView/delOthersViews", currentTag).then(() => {
+        this.moveToCurrentTag();
+        this.ensureHomeTagFirst();
+      });
     },
 
     closeAllTags(view) {
@@ -909,11 +983,17 @@ export default {
 
     // 获取当前平台的首页信息
     getCurrentPlatformHome() {
-      const currentPlatform = this.$store.getters['permission/currentPlatform'];
-      
-      console.log('TagsView: getCurrentPlatformHome - 当前平台', currentPlatform);
-      console.log('TagsView: getCurrentPlatformHome - 当前路由', this.$route.path);
-      
+      const currentPlatform = this.$store.getters["permission/currentPlatform"];
+
+      console.log(
+        "TagsView: getCurrentPlatformHome - 当前平台",
+        currentPlatform
+      );
+      console.log(
+        "TagsView: getCurrentPlatformHome - 当前路由",
+        this.$route.path
+      );
+
       switch (currentPlatform) {
         case "console":
           return {
@@ -986,7 +1066,7 @@ export default {
     display: flex;
     align-items: center;
     position: relative;
-    
+
     .tags-view-scroll {
       flex: 1;
       height: 100%;
@@ -1016,19 +1096,19 @@ export default {
         }
       }
     }
-    
-    /* 右侧功能区 - 重新设计 */
+
+    /* 右侧溢出菜单容器 - 只在标签过多时显示 */
     .tags-overflow-container {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 0 12px;
+      padding: 0 8px;
       border-left: 1px solid #e4e7ed;
       height: 100%;
       background: #ffffff;
       flex-shrink: 0;
-      min-width: 160px;
-      
+      min-width: 120px;
+
       .hidden-count-badge {
         background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
         color: #ffffff;
@@ -1041,7 +1121,7 @@ export default {
         box-shadow: 0 2px 4px rgba(255, 149, 0, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.3);
       }
-      
+
       .more-tags-trigger {
         display: flex;
         align-items: center;
@@ -1053,52 +1133,59 @@ export default {
         color: #606266;
         font-size: 12px;
         font-weight: 500;
-        
+
         &:hover {
           background: #f5f7fa;
           color: #409eff;
           transform: translateY(-1px);
         }
-        
+
         i {
           font-size: 14px;
         }
       }
-      
-      .quick-actions-group {
+    }
+
+    /* 右侧固定操作区域 - 永远显示 */
+    .fixed-actions-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 12px;
+      border-left: 1px solid #e4e7ed;
+      height: 100%;
+      background: #ffffff;
+      flex-shrink: 0;
+      min-width: 80px;
+
+      .action-button {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
-        gap: 4px;
-        
-        .action-button {
-          width: 28px;
-          height: 28px;
-          border-radius: 6px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: #606266;
-          
-          &:hover {
-            background: #f5f7fa;
-            color: #409eff;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          }
-          
-          i {
-            font-size: 13px;
-          }
-          
-          &.refresh-btn:hover {
-            color: #67c23a;
-          }
-          
-          &.close-others-btn:hover {
-            color: #f56c6c;
-          }
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #606266;
+
+        &:hover {
+          background: #f5f7fa;
+          color: #409eff;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        i {
+          font-size: 13px;
+        }
+
+        &.refresh-btn:hover {
+          color: #67c23a;
+        }
+
+        &.close-others-btn:hover {
+          color: #f56c6c;
         }
       }
     }
@@ -1118,7 +1205,7 @@ export default {
   align-items: center;
   justify-content: center;
   animation: fadeIn 0.2s ease-out;
-  
+
   .more-tags-panel {
     background: #ffffff;
     border-radius: 12px;
@@ -1130,7 +1217,7 @@ export default {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    
+
     /* 头部 */
     .panel-header {
       display: flex;
@@ -1139,7 +1226,7 @@ export default {
       padding: 20px 24px;
       border-bottom: 1px solid #f0f0f0;
       background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-      
+
       .header-title {
         display: flex;
         align-items: center;
@@ -1147,18 +1234,18 @@ export default {
         font-size: 16px;
         font-weight: 600;
         color: #303133;
-        
+
         i {
           font-size: 18px;
           color: #409eff;
         }
       }
-      
+
       .header-actions {
         display: flex;
         align-items: center;
         gap: 16px;
-        
+
         .total-count {
           font-size: 12px;
           color: #909399;
@@ -1167,7 +1254,7 @@ export default {
           border-radius: 12px;
           border: 1px solid #e4e7ed;
         }
-        
+
         .close-panel {
           width: 28px;
           height: 28px;
@@ -1178,7 +1265,7 @@ export default {
           cursor: pointer;
           color: #909399;
           transition: all 0.2s ease;
-          
+
           &:hover {
             background: #f56c6c;
             color: #ffffff;
@@ -1186,19 +1273,19 @@ export default {
         }
       }
     }
-    
+
     /* 搜索区域 */
     .search-section {
       padding: 16px 24px;
       border-bottom: 1px solid #f0f0f0;
       background: #fafbfc;
-      
+
       ::v-deep .el-input {
         .el-input__inner {
           border-radius: 8px;
           border: 1px solid #e4e7ed;
           height: 36px;
-          
+
           &:focus {
             border-color: #409eff;
             box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
@@ -1206,12 +1293,12 @@ export default {
         }
       }
     }
-    
+
     /* 内容区域 */
     .tags-section {
       flex: 1;
       overflow-y: auto;
-      
+
       &::-webkit-scrollbar {
         width: 6px;
       }
@@ -1222,7 +1309,7 @@ export default {
         background: #c0c4cc;
         border-radius: 3px;
       }
-      
+
       .section-header {
         display: flex;
         align-items: center;
@@ -1233,13 +1320,13 @@ export default {
         position: sticky;
         top: 0;
         z-index: 10;
-        
+
         .section-title {
           font-size: 14px;
           font-weight: 600;
           color: #303133;
         }
-        
+
         .section-count {
           font-size: 12px;
           color: #909399;
@@ -1249,43 +1336,43 @@ export default {
           border: 1px solid #e4e7ed;
         }
       }
-      
+
       .tags-grid {
         padding: 16px 24px;
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 12px;
-        
+
         .tag-card {
           border: 1px solid #e4e7ed;
           border-radius: 8px;
           transition: all 0.2s ease;
           cursor: pointer;
           background: #ffffff;
-          
+
           &:hover {
             border-color: #409eff;
             box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
             transform: translateY(-2px);
           }
-          
+
           &.is-active {
             border-color: #409eff;
             background: linear-gradient(135deg, #ecf5ff 0%, #f0f9ff 100%);
             box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
           }
-          
+
           &.is-affix {
             border-color: #e6a23c;
             background: linear-gradient(135deg, #fdf6ec 0%, #fef7e6 100%);
           }
-          
+
           .tag-content {
             display: flex;
             align-items: center;
             padding: 12px 16px;
             gap: 12px;
-            
+
             .tag-icon {
               width: 32px;
               height: 32px;
@@ -1295,17 +1382,17 @@ export default {
               justify-content: center;
               background: #f5f7fa;
               flex-shrink: 0;
-              
+
               i {
                 font-size: 16px;
                 color: #909399;
               }
             }
-            
+
             .tag-info {
               flex: 1;
               min-width: 0;
-              
+
               .tag-name {
                 font-size: 14px;
                 font-weight: 500;
@@ -1315,7 +1402,7 @@ export default {
                 white-space: nowrap;
                 margin-bottom: 4px;
               }
-              
+
               .tag-path {
                 font-size: 12px;
                 color: #909399;
@@ -1324,7 +1411,7 @@ export default {
                 white-space: nowrap;
               }
             }
-            
+
             .tag-close {
               width: 24px;
               height: 24px;
@@ -1335,40 +1422,40 @@ export default {
               color: #c0c4cc;
               transition: all 0.2s ease;
               opacity: 0;
-              
+
               &:hover {
                 background: #f56c6c;
                 color: #ffffff;
               }
-              
+
               i {
                 font-size: 12px;
               }
             }
           }
-          
+
           &:hover .tag-close {
             opacity: 1;
           }
-          
+
           &.is-active {
             .tag-icon {
               background: rgba(64, 158, 255, 0.1);
-              
+
               i {
                 color: #409eff;
               }
             }
-            
+
             .tag-name {
               color: #409eff;
             }
           }
-          
+
           &.is-affix {
             .tag-icon {
               background: rgba(230, 162, 60, 0.1);
-              
+
               i {
                 color: #e6a23c;
               }
@@ -1377,7 +1464,6 @@ export default {
         }
       }
     }
-
   }
 }
 
