@@ -162,7 +162,7 @@
             />
           </div>
           
-          <div class="empty-state" v-else-if="!loading">
+          <div class="empty-state" v-if="tableData.length <= 0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
               <path d="M8 14s.5 2 4 2 4-2 4-2"/>
