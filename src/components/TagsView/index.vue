@@ -1,9 +1,10 @@
 <template>
   <div class="tags-view-container">
     <div class="tags-view-wrapper">
+      <!-- 左侧标签滚动区域 -->
       <div class="tags-view-scroll" ref="scrollContainer">
         <router-link
-          v-for="tag in visitedViews"
+          v-for="tag in visibleTags"
           ref="tag"
           :key="tag.path"
           :class="{ active: isActive(tag) }"
@@ -13,7 +14,6 @@
           @click.middle.native="!isAffix(tag) ? closeSelectedTag(tag) : ''"
           @contextmenu.prevent.native="openMenu(tag, $event)"
         >
-          <!-- 修复：增强title显示逻辑 -->
           <span class="tag-title">{{ getTagTitle(tag) }}</span>
           <span
             v-if="!isAffix(tag)"
@@ -23,6 +23,137 @@
             <i class="el-icon-close"></i>
           </span>
         </router-link>
+      </div>
+      
+      <!-- 右侧功能区：当标签过多时显示 -->
+      <div v-if="showOverflowMenu" class="tags-overflow-container">
+        <!-- 隐藏标签数量 -->
+        <div class="hidden-count-badge">
+          +{{ hiddenTagsCount }}
+        </div>
+        
+        <!-- 更多标签按钮 -->
+        <div class="more-tags-trigger" @click="toggleMoreTags">
+          <i class="el-icon-more-outline"></i>
+          <span class="trigger-text">更多</span>
+        </div>
+        
+        <!-- 快捷操作按钮组 -->
+        <div class="quick-actions-group">
+          <el-tooltip content="刷新当前页" placement="bottom">
+            <div class="action-button refresh-btn" @click="refreshCurrentPage">
+              <i class="el-icon-refresh"></i>
+            </div>
+          </el-tooltip>
+          
+          <el-tooltip content="关闭其他" placement="bottom">
+            <div class="action-button close-others-btn" @click="closeOthersTags">
+              <i class="el-icon-circle-close"></i>
+            </div>
+          </el-tooltip>
+        </div>
+      </div>
+    </div>
+
+    <!-- 更多标签弹窗 -->
+    <div v-if="showMoreTags" class="more-tags-overlay" @click="closeMoreTags">
+      <div class="more-tags-panel" @click.stop>
+        <!-- 头部 -->
+        <div class="panel-header">
+          <div class="header-title">
+            <i class="el-icon-collection-tag"></i>
+            标签管理
+          </div>
+          <div class="header-actions">
+            <span class="total-count">共 {{ visitedViews.length }} 个标签</span>
+            <i class="el-icon-close close-panel" @click="closeMoreTags"></i>
+          </div>
+        </div>
+        
+        <!-- 搜索区域 -->
+        <div class="search-section">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索标签名称..."
+            prefix-icon="el-icon-search"
+            size="small"
+            clearable
+            @input="handleSearch"
+          />
+        </div>
+        
+        <!-- 当前显示的标签 -->
+        <div class="tags-section visible-section">
+          <div class="section-header">
+            <span class="section-title">当前显示</span>
+            <span class="section-count">{{ visibleTags.length }}</span>
+          </div>
+          <div class="tags-grid">
+            <div
+              v-for="tag in visibleTags"
+              :key="'visible-' + tag.path"
+              :class="['tag-card', { 
+                'is-active': isActive(tag), 
+                'is-affix': isAffix(tag) 
+              }]"
+              @click="navigateToTag(tag)"
+            >
+              <div class="tag-content">
+                <div class="tag-icon">
+                  <i v-if="isAffix(tag)" class="el-icon-star-on"></i>
+                  <i v-else-if="isActive(tag)" class="el-icon-check"></i>
+                  <i v-else class="el-icon-document"></i>
+                </div>
+                <div class="tag-info">
+                  <div class="tag-name" :title="getTagTitle(tag)">
+                    {{ getTagTitle(tag) }}
+                  </div>
+                  <div class="tag-path">{{ tag.path }}</div>
+                </div>
+                <div v-if="!isAffix(tag)" class="tag-close" @click.stop="closeSelectedTag(tag)">
+                  <i class="el-icon-close"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 隐藏的标签 -->
+        <div v-if="filteredHiddenTags.length > 0" class="tags-section hidden-section">
+          <div class="section-header">
+            <span class="section-title">更多标签</span>
+            <span class="section-count">{{ filteredHiddenTags.length }}</span>
+          </div>
+          <div class="tags-grid">
+            <div
+              v-for="tag in filteredHiddenTags"
+              :key="'hidden-' + tag.path"
+              :class="['tag-card', { 
+                'is-active': isActive(tag), 
+                'is-affix': isAffix(tag) 
+              }]"
+              @click="navigateToTag(tag)"
+            >
+              <div class="tag-content">
+                <div class="tag-icon">
+                  <i v-if="isAffix(tag)" class="el-icon-star-on"></i>
+                  <i v-else-if="isActive(tag)" class="el-icon-check"></i>
+                  <i v-else class="el-icon-document"></i>
+                </div>
+                <div class="tag-info">
+                  <div class="tag-name" :title="getTagTitle(tag)">
+                    {{ getTagTitle(tag) }}
+                  </div>
+                  <div class="tag-path">{{ tag.path }}</div>
+                </div>
+                <div v-if="!isAffix(tag)" class="tag-close" @click.stop="closeSelectedTag(tag)">
+                  <i class="el-icon-close"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+   
       </div>
     </div>
 
@@ -74,7 +205,14 @@ export default {
       affixTags: [],
       // 添加平台相关状态
       currentPlatformCache: null,
-      isInitialized: false, // 添加初始化标志
+      isInitialized: false,
+      
+      // 标签显示逻辑相关
+      maxVisibleTags: 12,
+      maxTotalTags: 15,
+      searchKeyword: '',
+      filteredHiddenTags: [],
+      showMoreTags: false, // 控制更多标签弹窗显示
     };
   },
   computed: {
@@ -84,18 +222,67 @@ export default {
     routes() {
       return this.$store.state.permission.routes;
     },
-    // 修正：当前平台应该是computed属性，不是watch
     currentPlatform() {
       return this.$store.getters['permission/currentPlatform'];
     },
-    // 添加当前管理方ID监听
     currentManagerId() {
       return this.$store.getters['manager/currentManagerId'];
+    },
+    
+    // 是否显示右侧功能区
+    showOverflowMenu() {
+      return this.visitedViews.length > this.maxTotalTags;
+    },
+    
+    // 计算可见的标签
+    visibleTags() {
+      if (!this.showOverflowMenu) {
+        return this.visitedViews;
+      }
+      
+      const currentIndex = this.visitedViews.findIndex(tag => this.isActive(tag));
+      const affixTags = this.visitedViews.filter(tag => this.isAffix(tag));
+      
+      if (currentIndex === -1) {
+        return this.visitedViews.slice(0, this.maxVisibleTags);
+      }
+      
+      let visibleTags = [...affixTags];
+      const currentTag = this.visitedViews[currentIndex];
+      
+      if (!this.isAffix(currentTag)) {
+        visibleTags.push(currentTag);
+      }
+      
+      const otherTags = this.visitedViews.filter(tag => 
+        !this.isAffix(tag) && !this.isActive(tag)
+      );
+      
+      const remainingSlots = this.maxVisibleTags - visibleTags.length;
+      visibleTags.push(...otherTags.slice(0, remainingSlots));
+      
+      return visibleTags.sort((a, b) => {
+        return this.visitedViews.indexOf(a) - this.visitedViews.indexOf(b);
+      });
+    },
+    
+    // 计算隐藏的标签
+    hiddenTags() {
+      if (!this.showOverflowMenu) {
+        return [];
+      }
+      
+      const visiblePaths = this.visibleTags.map(tag => tag.path);
+      return this.visitedViews.filter(tag => !visiblePaths.includes(tag.path));
+    },
+    
+    // 隐藏标签的数量
+    hiddenTagsCount() {
+      return this.hiddenTags.length;
     }
   },
   watch: {
     $route(route) {
-      // 添加过滤检查
       if (this.shouldAddToTagsView(route)) {
         this.addTags()
         this.moveToCurrentTag()
@@ -108,7 +295,6 @@ export default {
         document.body.removeEventListener("click", this.closeMenu);
       }
     },
-    // 修正：平台切换监听器
     currentPlatform: {
       handler(newPlatform, oldPlatform) {
         console.log('TagsView: 平台变化检测', { 
@@ -119,7 +305,6 @@ export default {
           timestamp: new Date().toISOString()
         });
         
-        // 只有在组件已初始化且发生真正的平台切换时才处理
         if (this.isInitialized && 
             this.currentPlatformCache && 
             this.currentPlatformCache !== newPlatform &&
@@ -129,12 +314,10 @@ export default {
           this.handlePlatformSwitch(newPlatform);
         }
         
-        // 更新缓存
         this.currentPlatformCache = newPlatform;
       },
       immediate: false
     },
-    // 监听企业切换但不清空TagsView
     currentManagerId: {
       handler(newManagerId, oldManagerId) {
         console.log('TagsView: 管理方ID变化检测', { 
@@ -144,8 +327,6 @@ export default {
           timestamp: new Date().toISOString()
         });
         
-        // 注意：根据需求，企业切换时不清空TagsView
-        // 这里只做必要的内容刷新
         if (this.isInitialized && 
             oldManagerId && 
             newManagerId && 
@@ -157,61 +338,51 @@ export default {
         }
       },
       immediate: false
+    },
+    
+    // 监听隐藏标签变化，更新过滤结果
+    hiddenTags: {
+      handler() {
+        this.filterHiddenTags();
+      },
+      immediate: true
     }
   },
   mounted() {
     console.log('TagsView: 组件挂载');
     
-    // 初始化平台缓存
     this.currentPlatformCache = this.$store.getters['permission/currentPlatform'];
     console.log('TagsView: 初始平台缓存', this.currentPlatformCache);
     
     this.initTags();
     this.addTags();
 
-    // 只监听平台切换事件
     this.$bus && this.$bus.$on('platform-switched', this.handlePlatformSwitchEvent);
-    
-    // 监听企业切换事件，但不清空TagsView
     this.$bus && this.$bus.$on('manager-switched', this.handleManagerSwitchEvent);
     
-    // 设置初始化完成标志
+    // ESC键关闭弹窗
+    document.addEventListener('keydown', this.handleKeydown);
+    
     this.$nextTick(() => {
       this.isInitialized = true;
       console.log('TagsView: 初始化完成');
       
-      // 添加调试信息
-      setTimeout(() => {
-        console.log('=== TagsView 调试信息 ===');
-        console.log('visitedViews:', this.visitedViews);
-        this.visitedViews.forEach((tag, index) => {
-          console.log(`标签${index}:`, {
-            path: tag.path,
-            title: tag.title,
-            metaTitle: tag.meta?.title,
-            computedTitle: this.getTagTitle(tag)
-          });
-        });
-        console.log('=== TagsView 调试信息结束 ===');
-      }, 1000);
+      this.filterHiddenTags();
     });
   },
   beforeDestroy() {
-    // 清理事件监听
     this.$bus && this.$bus.$off('platform-switched', this.handlePlatformSwitchEvent);
     this.$bus && this.$bus.$off('manager-switched', this.handleManagerSwitchEvent);
+    document.removeEventListener('keydown', this.handleKeydown);
   },
   methods: {
-    // 修复：增强的title获取方法
     getTagTitle(tag) {
-      // 优先级：tag.title > tag.meta.title > tag.name > 路径名 > 兜底文本
       const title = tag.title || 
                    (tag.meta && tag.meta.title) || 
                    tag.name || 
                    (tag.path && tag.path.split('/').pop()) || 
                    '未命名页面'
       
-      // 调试日志
       if (tag.path && tag.path.includes('dashboard')) {
         console.log('首页标签title计算:', {
           tagTitle: tag.title,
@@ -223,20 +394,72 @@ export default {
       
       return title;
     },
+    
+    // 处理键盘事件
+    handleKeydown(e) {
+      if (e.key === 'Escape' && this.showMoreTags) {
+        this.closeMoreTags();
+      }
+    },
+    
+    // 切换更多标签弹窗
+    toggleMoreTags() {
+      this.showMoreTags = !this.showMoreTags;
+      if (this.showMoreTags) {
+        this.searchKeyword = '';
+        this.filterHiddenTags();
+      }
+    },
+    
+    // 关闭更多标签弹窗
+    closeMoreTags() {
+      this.showMoreTags = false;
+      this.searchKeyword = '';
+    },
+    
+    // 导航到指定标签
+    navigateToTag(tag) {
+      this.$router.push(tag);
+      this.closeMoreTags();
+    },
+    
+    // 过滤隐藏标签
+    filterHiddenTags() {
+      if (!this.searchKeyword.trim()) {
+        this.filteredHiddenTags = [...this.hiddenTags];
+      } else {
+        const keyword = this.searchKeyword.toLowerCase();
+        this.filteredHiddenTags = this.hiddenTags.filter(tag => {
+          const title = this.getTagTitle(tag).toLowerCase();
+          const path = tag.path.toLowerCase();
+          return title.includes(keyword) || path.includes(keyword);
+        });
+      }
+    },
+    
+    // 搜索处理
+    handleSearch() {
+      this.filterHiddenTags();
+    },
+    
+    // 刷新当前页面
+    refreshCurrentPage() {
+      const currentTag = this.visitedViews.find(tag => this.isActive(tag));
+      if (currentTag) {
+        this.refreshSelectedTag(currentTag);
+      }
+    },
 
     shouldAddToTagsView(route) {
-      // 过滤redirect路径
       if (route.path.startsWith('/redirect/')) {
         return false;
       }
       
-      // 过滤系统路径
       const systemPaths = ['/login', '/404', '/401', '/switching'];
       if (systemPaths.includes(route.path)) {
         return false;
       }
       
-      // 检查meta标记
       if (route.meta) {
         if (route.meta.noTagsView || route.meta.hidden) {
           return false;
@@ -278,13 +501,12 @@ export default {
       routes.forEach((route) => {
         if (route.meta && route.meta.affix) {
           const tagPath = path.resolve(basePath, route.path);
-          // 修复：确保title正确传递
           const title = route.meta.title || route.name || '首页'
           tags.push({
             fullPath: tagPath,
             path: tagPath,
             name: route.name,
-            title: title, // 添加title字段
+            title: title,
             meta: { ...route.meta, title: title },
           });
         }
@@ -301,37 +523,32 @@ export default {
     initTags() {
       const affixTags = (this.affixTags = this.filterAffixTags(this.routes));
       for (const tag of affixTags) {
-        // Must have tag name
         if (tag.name) {
           this.$store.dispatch("tagsView/addVisitedView", tag);
         }
       }
       
-      // 确保首页标签始终在第一位
       this.ensureHomeTagFirst();
     },
 
     addTags() {
       const { name } = this.$route;
       if (name) {
-        // 修复：确保路由信息完整传递，包括title
         const routeInfo = {
           ...this.$route,
           title: this.$route.meta?.title || this.$route.name
         }
         this.$store.dispatch("tagsView/addView", routeInfo);
-        // 确保首页标签始终在第一位
         this.ensureHomeTagFirst();
       }
       return false;
     },
 
-    // 处理平台切换事件 - 确保完全清空TagsView
+    // 处理平台切换事件
     handlePlatformSwitchEvent(eventData) {
       console.log('=== TagsView: 接收到平台切换事件 ===');
       console.log('事件数据:', eventData);
       
-      // 验证这确实是平台切换事件
       if (eventData.type !== 'platform-switch' || !eventData.clearTagsView) {
         console.warn('TagsView: 接收到的不是平台切换事件或不需要清空TagsView');
         return;
@@ -340,12 +557,11 @@ export default {
       this.handlePlatformSwitch(eventData.to, eventData);
     },
 
-    // 处理企业切换事件 - 保留TagsView，只清空缓存
+    // 处理企业切换事件
     handleManagerSwitchEvent(eventData) {
       console.log('=== TagsView: 接收到企业切换事件 ===');
       console.log('事件数据:', eventData);
       
-      // 验证这确实是企业切换事件
       if (eventData.type !== 'manager-switch' || eventData.clearTagsView !== false) {
         console.warn('TagsView: 接收到的不是企业切换事件或配置错误');
         return;
@@ -360,13 +576,11 @@ export default {
       console.log('目标平台:', newPlatform);
       console.log('事件数据:', eventData);
       
-      // 检查TagsView store模块是否存在
       if (!this.$store.hasModule('tagsView')) {
         console.error('TagsView: store模块不存在');
         return;
       }
       
-      // 记录切换前的状态
       const beforeState = {
         visitedViews: this.visitedViews.length,
         cachedViews: this.$store.state.tagsView.cachedViews.length,
@@ -374,14 +588,11 @@ export default {
       };
       console.log('切换前状态:', beforeState);
       
-      // 执行完全清空
       this.$store.dispatch('tagsView/clearAllForPlatformSwitch').then(() => {
         console.log('TagsView: 平台切换 - 完全清空完成');
         
-        // 更新平台缓存
         this.currentPlatformCache = newPlatform;
         
-        // 记录切换后的状态
         const afterState = {
           visitedViews: this.visitedViews.length,
           cachedViews: this.$store.state.tagsView.cachedViews.length,
@@ -389,18 +600,16 @@ export default {
         };
         console.log('切换后状态:', afterState);
         
-        // 验证清空结果
         if (afterState.visitedViews === 0 && afterState.cachedViews === 0) {
           console.log('✅ TagsView: 平台切换清空成功');
         } else {
           console.error('❌ TagsView: 平台切换清空失败', afterState);
         }
         
-        // 延迟重新初始化，确保新平台路由已准备就绪
         this.$nextTick(() => {
           setTimeout(() => {
             this.reinitializeForNewPlatform(newPlatform);
-          }, 300); // 增加延迟时间，确保路由完全准备好
+          }, 300);
         });
         
       }).catch(error => {
@@ -408,18 +617,16 @@ export default {
       });
     },
 
-    // 新增：为新平台重新初始化TagsView
+    // 为新平台重新初始化TagsView
     reinitializeForNewPlatform(platform) {
       console.log('=== TagsView: 为新平台重新初始化 ===');
       console.log('新平台:', platform);
       console.log('当前路由:', this.$route);
       
       try {
-        // 确保首页标签存在并在第一位
         this.$store.dispatch('tagsView/ensureHomeTagFirst').then(() => {
           console.log('首页标签已确保在第一位');
           
-          // 如果当前路由是有效路由且不是首页，添加当前路由标签
           if (this.$route.name && this.shouldAddToTagsView(this.$route)) {
             this.addTags();
           }
@@ -435,46 +642,38 @@ export default {
       }
     },
 
-    // 处理企业切换的具体逻辑 - 保留TagsView，只清空缓存
+    // 处理企业切换的具体逻辑
     handleManagerSwitch(eventData = {}) {
       console.log('=== TagsView: 开始处理企业切换 ===');
       console.log('事件数据:', eventData);
       
-      // 检查TagsView store模块是否存在
       if (!this.$store.hasModule('tagsView')) {
         console.error('TagsView: store模块不存在');
         return;
       }
       
-      // 记录切换前的状态
       const beforeState = {
         visitedViews: this.visitedViews.length,
         cachedViews: this.$store.state.tagsView.cachedViews.length
       };
       console.log('企业切换前状态:', beforeState);
       
-      // 使用企业切换专用方法：只清空缓存，保留TagsView
       this.$store.dispatch('tagsView/clearCacheForManagerSwitch').then(() => {
         console.log('TagsView: 企业切换 - 缓存已清空，TagsView保留');
         
-        // 记录切换后的状态
         const afterState = {
           visitedViews: this.visitedViews.length,
           cachedViews: this.$store.state.tagsView.cachedViews.length
         };
         console.log('企业切换后状态:', afterState);
         
-        // 验证结果：visitedViews应该保持不变，cachedViews应该为0
         if (afterState.visitedViews === beforeState.visitedViews && afterState.cachedViews === 0) {
           console.log('✅ TagsView: 企业切换处理成功 - TagsView保留，缓存已清空');
         } else {
           console.warn('⚠️ TagsView: 企业切换处理异常', { beforeState, afterState });
         }
         
-        // 确保首页标签始终在第一位
         this.ensureHomeTagFirst();
-        
-        // 刷新当前页面内容
         this.refreshCurrentPageContent();
         
       }).catch(error => {
@@ -482,17 +681,15 @@ export default {
       });
     },
 
-    // 新增：刷新当前页面内容（企业切换时调用）
+    // 刷新当前页面内容
     refreshCurrentPageContent() {
       console.log('TagsView: 刷新当前页面内容');
       
-      // 方法1: 如果当前路由配置了需要在管理方切换时刷新，则刷新
       if (this.$route.meta && this.$route.meta.refreshOnManagerSwitch !== false) {
-        // 通过查询参数触发页面更新，但保持在当前页面
         const newQuery = { 
           ...this.$route.query, 
-          _t: Date.now(),  // 添加时间戳强制更新
-          _m: this.currentManagerId    // 添加管理方ID
+          _t: Date.now(),
+          _m: this.currentManagerId
         };
         
         this.$router.replace({
@@ -503,11 +700,10 @@ export default {
         });
       }
       
-      // 确保首页标签始终在第一位
       this.ensureHomeTagFirst();
     },
 
-    // 重新初始化（平台切换时使用）
+    // 重新初始化
     reinitialize() {
       console.log('TagsView: 重新初始化开始');
       console.log('TagsView: 当前路由', this.$route);
@@ -515,15 +711,12 @@ export default {
       console.log('TagsView: 当前管理方ID', this.currentManagerId);
       
       try {
-        // 重新初始化固定标签
         this.initTags();
         
-        // 添加当前路由标签
         if (this.$route.name && this.shouldAddToTagsView(this.$route)) {
           this.addTags();
         }
         
-        // 确保首页标签存在且在第一位
         this.ensureHomeTagFirst();
         
         console.log('TagsView: 重新初始化完成');
@@ -537,7 +730,6 @@ export default {
     ensureHomeTagFirst() {
       console.log('TagsView: 确保首页标签在第一位');
       
-      // 使用store的新方法
       this.$store.dispatch('tagsView/ensureHomeTagFirst').then(() => {
         console.log('TagsView: 首页标签位置已确保');
       }).catch(error => {
@@ -545,9 +737,8 @@ export default {
       });
     },
 
-    // 新增辅助方法：判断是否为平台切换
+    // 判断是否为平台切换
     isPlatformSwitch(fromPlatform, toPlatform) {
-      // 判断是否为不同平台之间的切换
       const platformMap = {
         'admin': '管理系统',
         'console': '控制台'
@@ -561,9 +752,8 @@ export default {
       return isValid;
     },
 
-    // 新增辅助方法：判断是否为企业切换
+    // 判断是否为企业切换
     isManagerSwitch(fromManagerId, toManagerId, currentPlatform) {
-      // 只有在控制台平台内，且企业ID不同时，才是企业切换
       const isValid = currentPlatform === 'console' && 
              fromManagerId !== toManagerId && 
              fromManagerId && toManagerId;
@@ -572,14 +762,12 @@ export default {
       return isValid;
     },
 
-    // ... 其他方法保持不变
     moveToCurrentTag() {
       const tags = this.$refs.tag;
       this.$nextTick(() => {
         for (const tag of tags) {
           if (tag.to.path === this.$route.path) {
             this.moveToTarget(tag);
-            // when query is different then update
             if (tag.to.fullPath !== this.$route.fullPath) {
               this.$store.dispatch("tagsView/updateVisitedView", this.$route);
             }
@@ -598,7 +786,6 @@ export default {
       let firstTag = null;
       let lastTag = null;
 
-      // find first tag and last tag
       if (tagList.length > 0) {
         firstTag = tagList[0];
         lastTag = tagList[tagList.length - 1];
@@ -610,16 +797,13 @@ export default {
         $scrollWrapper.scrollLeft =
           $scrollWrapper.scrollWidth - $containerWidth;
       } else {
-        // find preTag and nextTag
         const currentIndex = tagList.findIndex((item) => item === currentTag);
         const prevTag = tagList[currentIndex - 1];
         const nextTag = tagList[currentIndex + 1];
 
-        // the tag's offsetLeft after of nextTag
         const afterNextTagOffsetLeft =
           nextTag.$el.offsetLeft + nextTag.$el.offsetWidth + 4;
 
-        // the tag's offsetLeft before of prevTag
         const beforePrevTagOffsetLeft = prevTag.$el.offsetLeft - 4;
 
         if (
@@ -645,7 +829,6 @@ export default {
     },
 
     closeSelectedTag(view) {
-      // 防止关闭首页标签
       if (this.isAffix(view)) {
         this.$message.warning('首页标签不能关闭');
         return;
@@ -657,53 +840,55 @@ export default {
           if (this.isActive(view)) {
             this.toLastView(visitedViews, view);
           }
-          // 确保首页标签始终在第一位
           this.ensureHomeTagFirst();
         });
     },
 
     closeRightTags() {
+      const currentTag = this.visitedViews.find(view => this.isActive(view)) || this.$route;
       this.$store
-        .dispatch("tagsView/delRightTags", this.selectedTag)
+        .dispatch("tagsView/delRightTags", currentTag)
         .then((visitedViews) => {
           if (!visitedViews.find((i) => i.fullPath === this.$route.fullPath)) {
             this.toLastView(visitedViews);
           }
-          // 确保首页标签始终在第一位
           this.ensureHomeTagFirst();
         });
     },
 
     closeLeftTags() {
+      const currentTag = this.visitedViews.find(view => this.isActive(view)) || this.$route;
       this.$store
-        .dispatch("tagsView/delLeftTags", this.selectedTag)
+        .dispatch("tagsView/delLeftTags", currentTag)
         .then((visitedViews) => {
           if (!visitedViews.find((i) => i.fullPath === this.$route.fullPath)) {
             this.toLastView(visitedViews);
           }
-          // 确保首页标签始终在第一位
           this.ensureHomeTagFirst();
         });
     },
 
     closeOthersTags() {
-      this.$router.push(this.selectedTag);
+      const currentTag = this.visitedViews.find(view => this.isActive(view)) || this.$route;
+      
+      if (!this.isActive(currentTag)) {
+        this.$router.push(currentTag);
+      }
+      
       this.$store
-        .dispatch("tagsView/delOthersViews", this.selectedTag)
+        .dispatch("tagsView/delOthersViews", currentTag)
         .then(() => {
           this.moveToCurrentTag();
-          // 确保首页标签始终在第一位
           this.ensureHomeTagFirst();
         });
     },
 
     closeAllTags(view) {
       this.$store.dispatch("tagsView/delAllViews").then(({ visitedViews }) => {
-        if (this.affixTags.some((tag) => tag.path === view.path)) {
+        if (this.affixTags.some((tag) => tag.path === (view && view.path))) {
           return;
         }
         this.toLastView(visitedViews, view);
-        // 确保首页标签始终在第一位
         this.ensureHomeTagFirst();
       });
     },
@@ -713,7 +898,6 @@ export default {
       if (latestView) {
         this.$router.push(latestView.fullPath);
       } else {
-        // 如果没有访问过的视图，跳转到当前平台首页
         const homeInfo = this.getCurrentPlatformHome();
         if (homeInfo) {
           this.$router.push(homeInfo.path);
@@ -742,7 +926,6 @@ export default {
             meta: { title: "管理后台大屏", affix: true },
           };
         default:
-          // 兜底逻辑：根据当前路径判断
           const currentPath = this.$route.path;
           if (currentPath.startsWith("/console")) {
             return {
@@ -761,10 +944,10 @@ export default {
 
     openMenu(tag, e) {
       const menuMinWidth = 105;
-      const offsetLeft = this.$el.getBoundingClientRect().left; // container margin left
-      const offsetWidth = this.$el.offsetWidth; // container width
-      const maxLeft = offsetWidth - menuMinWidth; // left boundary
-      const left = e.clientX - offsetLeft + 15; // 15: margin right
+      const offsetLeft = this.$el.getBoundingClientRect().left;
+      const offsetWidth = this.$el.offsetWidth;
+      const maxLeft = offsetWidth - menuMinWidth;
+      const left = e.clientX - offsetLeft + 15;
 
       if (left > maxLeft) {
         this.left = maxLeft;
@@ -791,17 +974,21 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/* TagsView 优化样式 */
+/* TagsView 容器样式 */
 .tags-view-container {
   height: 40px;
   width: 100%;
-  background: var(--card-bg, #fff);
-  // border-bottom: 1px solid var(--border-color, #e4e7ed);
-  // box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
+  position: relative;
 
   .tags-view-wrapper {
     height: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+    
     .tags-view-scroll {
+      flex: 1;
       height: 100%;
       overflow-x: auto;
       overflow-y: hidden;
@@ -809,23 +996,409 @@ export default {
       display: flex;
       align-items: center;
       padding: 0 12px;
+      min-width: 0;
 
       /* 隐藏滚动条但保持滚动功能 */
       &::-webkit-scrollbar {
         height: 0;
       }
 
-      /* 支持鼠标滚轮横向滚动 */
       &:hover {
         &::-webkit-scrollbar {
           height: 3px;
         }
         &::-webkit-scrollbar-thumb {
-          background: var(--border-color, #dcdfe6);
+          background: #dcdfe6;
           border-radius: 2px;
+        }
+        &::-webkit-scrollbar-track {
+          background: #f5f5f5;
         }
       }
     }
+    
+    /* 右侧功能区 - 重新设计 */
+    .tags-overflow-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border-left: 1px solid #e4e7ed;
+      height: 100%;
+      background: #ffffff;
+      flex-shrink: 0;
+      min-width: 160px;
+      
+      .hidden-count-badge {
+        background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 12px;
+        min-width: 28px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(255, 149, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      
+      .more-tags-trigger {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #606266;
+        font-size: 12px;
+        font-weight: 500;
+        
+        &:hover {
+          background: #f5f7fa;
+          color: #409eff;
+          transform: translateY(-1px);
+        }
+        
+        i {
+          font-size: 14px;
+        }
+      }
+      
+      .quick-actions-group {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        
+        .action-button {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          color: #606266;
+          
+          &:hover {
+            background: #f5f7fa;
+            color: #409eff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          
+          i {
+            font-size: 13px;
+          }
+          
+          &.refresh-btn:hover {
+            color: #67c23a;
+          }
+          
+          &.close-others-btn:hover {
+            color: #f56c6c;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* 更多标签弹窗 - 全新设计 */
+.more-tags-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  
+  .more-tags-panel {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 80%;
+    max-width: 900px;
+    max-height: 85vh;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    
+    /* 头部 */
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+      
+      .header-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+        
+        i {
+          font-size: 18px;
+          color: #409eff;
+        }
+      }
+      
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        
+        .total-count {
+          font-size: 12px;
+          color: #909399;
+          background: #f5f7fa;
+          padding: 4px 12px;
+          border-radius: 12px;
+          border: 1px solid #e4e7ed;
+        }
+        
+        .close-panel {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #909399;
+          transition: all 0.2s ease;
+          
+          &:hover {
+            background: #f56c6c;
+            color: #ffffff;
+          }
+        }
+      }
+    }
+    
+    /* 搜索区域 */
+    .search-section {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      background: #fafbfc;
+      
+      ::v-deep .el-input {
+        .el-input__inner {
+          border-radius: 8px;
+          border: 1px solid #e4e7ed;
+          height: 36px;
+          
+          &:focus {
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+          }
+        }
+      }
+    }
+    
+    /* 内容区域 */
+    .tags-section {
+      flex: 1;
+      overflow-y: auto;
+      
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: #f5f5f5;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #c0c4cc;
+        border-radius: 3px;
+      }
+      
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px 12px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #f0f0f0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        
+        .section-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #303133;
+        }
+        
+        .section-count {
+          font-size: 12px;
+          color: #909399;
+          background: #ffffff;
+          padding: 2px 8px;
+          border-radius: 10px;
+          border: 1px solid #e4e7ed;
+        }
+      }
+      
+      .tags-grid {
+        padding: 16px 24px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+        
+        .tag-card {
+          border: 1px solid #e4e7ed;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+          cursor: pointer;
+          background: #ffffff;
+          
+          &:hover {
+            border-color: #409eff;
+            box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+            transform: translateY(-2px);
+          }
+          
+          &.is-active {
+            border-color: #409eff;
+            background: linear-gradient(135deg, #ecf5ff 0%, #f0f9ff 100%);
+            box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+          }
+          
+          &.is-affix {
+            border-color: #e6a23c;
+            background: linear-gradient(135deg, #fdf6ec 0%, #fef7e6 100%);
+          }
+          
+          .tag-content {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            gap: 12px;
+            
+            .tag-icon {
+              width: 32px;
+              height: 32px;
+              border-radius: 6px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: #f5f7fa;
+              flex-shrink: 0;
+              
+              i {
+                font-size: 16px;
+                color: #909399;
+              }
+            }
+            
+            .tag-info {
+              flex: 1;
+              min-width: 0;
+              
+              .tag-name {
+                font-size: 14px;
+                font-weight: 500;
+                color: #303133;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin-bottom: 4px;
+              }
+              
+              .tag-path {
+                font-size: 12px;
+                color: #909399;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+            }
+            
+            .tag-close {
+              width: 24px;
+              height: 24px;
+              border-radius: 4px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #c0c4cc;
+              transition: all 0.2s ease;
+              opacity: 0;
+              
+              &:hover {
+                background: #f56c6c;
+                color: #ffffff;
+              }
+              
+              i {
+                font-size: 12px;
+              }
+            }
+          }
+          
+          &:hover .tag-close {
+            opacity: 1;
+          }
+          
+          &.is-active {
+            .tag-icon {
+              background: rgba(64, 158, 255, 0.1);
+              
+              i {
+                color: #409eff;
+              }
+            }
+            
+            .tag-name {
+              color: #409eff;
+            }
+          }
+          
+          &.is-affix {
+            .tag-icon {
+              background: rgba(230, 162, 60, 0.1);
+              
+              i {
+                color: #e6a23c;
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+}
+
+/* 动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -836,9 +1409,9 @@ export default {
   cursor: pointer;
   height: 28px;
   line-height: 28px;
-  border: 1px solid var(--border-color, #dcdfe6);
-  color: var(--text-secondary, #606266);
-  background: var(--card-bg, #fff);
+  border: 1px solid #dcdfe6;
+  color: #606266;
+  background: #ffffff;
   padding: 0 12px 0 10px;
   font-size: 12px;
   margin-right: 6px;
@@ -856,7 +1429,6 @@ export default {
     box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
     transform: translateY(-1px);
 
-    /* 激活状态的小圆点 */
     &::before {
       content: "";
       background: #1890ff;
@@ -883,9 +1455,9 @@ export default {
 
   /* 悬停状态 */
   &:hover:not(.active) {
-    background: var(--hover-bg, #f5f7fa);
+    background: #f5f7fa;
     border-color: #c0c4cc;
-    color: var(--text-primary, #303133);
+    color: #303133;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
@@ -895,7 +1467,6 @@ export default {
     }
   }
 
-  /* 标签标题 - 修复：确保文字显示 */
   .tag-title {
     flex: 1;
     overflow: hidden;
@@ -903,13 +1474,11 @@ export default {
     white-space: nowrap;
     font-weight: 500;
     min-width: 0;
-    /* 修复：确保文字可见 */
     display: block;
     line-height: inherit;
     color: inherit;
   }
 
-  /* 关闭按钮优化 */
   .tag-close-icon {
     width: 18px;
     height: 18px;
@@ -921,11 +1490,9 @@ export default {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0.7;
     background: transparent;
-    color: var(--text-muted, #909399);
+    color: #909399;
     flex-shrink: 0;
     cursor: pointer;
-
-    /* 默认状态下稍微隐藏 */
     transform: scale(0.8);
 
     &:hover {
@@ -946,14 +1513,13 @@ export default {
     }
   }
 
-  /* 鼠标悬停时显示关闭按钮 */
   &:hover .tag-close-icon {
     transform: scale(1);
     opacity: 1;
   }
 }
 
-/* 固定标签特殊样式（首页等） */
+/* 固定标签特殊样式 */
 .tags-view-item.is-affix {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border-color: #bae7ff;
@@ -975,10 +1541,10 @@ export default {
   }
 }
 
-/* 右键菜单优化 */
+/* 右键菜单样式 */
 .contextmenu {
   margin: 0;
-  background: var(--card-bg, #fff);
+  background: #ffffff;
   z-index: 3000;
   position: absolute;
   list-style-type: none;
@@ -986,9 +1552,9 @@ export default {
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-primary, #303133);
+  color: #303133;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border: 1px solid var(--border-color, #e4e7ed);
+  border: 1px solid #e4e7ed;
   min-width: 140px;
 
   li {
@@ -1001,12 +1567,12 @@ export default {
     position: relative;
 
     &:hover {
-      background: var(--hover-bg, #f5f7fa);
-      color: var(--primary-color, #409eff);
+      background: #f5f7fa;
+      color: #409eff;
     }
 
     &:active {
-      background: var(--active-bg, #ecf5ff);
+      background: #ecf5ff;
     }
 
     i {
@@ -1017,7 +1583,6 @@ export default {
       opacity: 0.8;
     }
 
-    /* 分割线 */
     &:not(:last-child)::after {
       content: "";
       position: absolute;
@@ -1025,7 +1590,7 @@ export default {
       left: 16px;
       right: 16px;
       height: 1px;
-      background: var(--border-light, #f0f0f0);
+      background: #f0f0f0;
     }
   }
 }
