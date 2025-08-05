@@ -5,6 +5,7 @@ import permission from './modules/permission'
 import app from './modules/app'
 import manager from './modules/manager'
 import tagsView from './modules/tagsView' // 添加 tagsView 模块
+import treeSelection from './modules/treeSelection'  // 引入树形选择模块
 
 Vue.use(Vuex)
 
@@ -44,7 +45,11 @@ const store = new Vuex.Store({
     shouldShowManagerSwitcher: state => state.manager.shouldShowManagerSwitcher,
     // tagsView 相关 getters
     visitedViews: state => state.tagsView.visitedViews,
-    cachedViews: state => state.tagsView.cachedViews
+    cachedViews: state => state.tagsView.cachedViews,
+     // treeSelection 相关 getters - 只获取ID集合
+     treeSelectedIds: state => state.treeSelection ? state.treeSelection.selectedIds : [],
+     treeSelectedCount: state => state.treeSelection ? state.treeSelection.selectedIds.length : 0,
+     hasTreeSelection: state => state.treeSelection ? state.treeSelection.selectedIds.length > 0 : false
   }
 })
 

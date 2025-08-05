@@ -419,49 +419,32 @@
 
             <!-- 树形结构 -->
             <div class="tree-content">
-              <el-tree
-                ref="tree"
-                :data="treeData"
-                :filter-node-method="filterNode"
-                :props="treeProps"
-                :default-expand-all="false"
-                :expand-on-click-node="false"
-                :check-on-click-node="false"
-                show-checkbox
-                node-key="id"
-                class="custom-tree"
-                @node-click="handleNodeClick"
-                @check-change="handleCheckChange"
-              >
-                <div class="custom-tree-node" slot-scope="{ node, data }">
-                  <div class="node-content">
-                    <i
-                      :class="getNodeIcon(data)"
-                      class="node-icon"
-                      :style="{ color: getNodeColor(data) }"
-                    ></i>
-                    <span class="node-label" :title="node.label">{{ node.label }}</span>
-                  </div>
-                  <div class="node-actions" v-if="!data.disabled">
-                    <i
-                      class="el-icon-plus action-icon"
-                      @click.stop="addNode(data, node)"
-                      title="添加子节点"
-                    ></i>
-                    <i
-                      class="el-icon-edit action-icon"
-                      @click.stop="editNode(data, node)"
-                      title="编辑节点"
-                    ></i>
-                    <i
-                      class="el-icon-delete action-icon delete-icon"
-                      @click.stop="deleteNode(data, node)"
-                      title="删除节点"
-                    ></i>
-                  </div>
-                </div>
-              </el-tree>
-            </div>
+  <el-tree
+    ref="tree"
+    :data="treeData"
+    :filter-node-method="filterNode"
+    :props="treeProps"
+    :default-expand-all="false"
+    :expand-on-click-node="false"
+    :check-on-click-node="false"
+    show-checkbox
+    node-key="id"
+    class="custom-tree"
+    @node-click="handleNodeClick"
+    @check-change="handleCheckChange"
+  >
+    <div class="custom-tree-node" slot-scope="{ node, data }">
+      <div class="node-content">
+        <i
+          :class="getNodeIcon(data)"
+          class="node-icon"
+          :style="{ color: getNodeColor(data) }"
+        ></i>
+        <span class="node-label" :title="node.label">{{ node.label }}</span>
+      </div>
+    </div>
+  </el-tree>
+</div>
           </div>
         </transition>
 
@@ -531,7 +514,7 @@ export default {
       },
 
       // ========== 树形面板相关数据 ==========
-      showTreePanel: true, // 是否显示树形面板
+      showTreePanel: false, // 是否显示树形面板
       treeFilterText: "", // 树形搜索文本
       treeProps: {
         children: "tenantTierDtoList",
@@ -826,28 +809,10 @@ export default {
     this.restoreCollapsedState();
 
     // 恢复树形面板状态
-    this.restoreTreePanelState();
-
-    // 输出调试信息
-    this.$nextTick(() => {
-      console.log("=== 平台权限调试信息 ===");
-      console.log("用户可用平台:", this.availablePlatforms);
-      console.log("是否可以切换平台:", this.canSwitchPlatform);
-      console.log("是否只有单一平台:", this.hasSinglePlatform);
-      console.log("当前平台:", this.currentPlatform);
-      console.log("=== 管理方调试信息 ===");
-      console.log("是否为控制台:", this.isConsolePlatform);
-      console.log("管理方列表:", this.managerList);
-      console.log("当前管理方:", this.currentManager);
-      console.log("是否显示管理方切换器:", this.shouldShowManagerSwitcher);
-      console.log("=== 子菜单调试信息 ===");
-      console.log("当前子菜单:", this.currentSubmenu);
-      console.log("展开项:", this.expandedItem);
-      console.log("可见子菜单项:", this.visibleSubmenuChildren);
-      console.log("=== 树形面板调试信息 ===");
-      console.log("树形面板调试信息:", this.getTreePanelDebugInfo());
-      console.log("========================");
-    });
+    // this.restoreTreePanelState();
+    if (this.shouldShowTreeByRoute && this.showTreePanel) {
+      await this.initTreeData();
+    }
   },
 
   beforeDestroy() {
@@ -860,6 +825,40 @@ export default {
 
   methods: {
     ...mapActions("manager", ["getManagerList", "switchManager"]),
+
+    earlyRestoreTreePanelState() {
+    const saved = localStorage.getItem("tree-panel-state");
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000;
+        
+        // 先判断路由是否支持显示树形面板
+        const currentPath = this.$route.path;
+        const shouldShow = this.treeVisibleRoutes.some(route => 
+          currentPath.includes(route) || currentPath.startsWith(route)
+        );
+        
+        if (isRecent && shouldShow) {
+          // 直接设置状态，不等待
+          this.showTreePanel = state.showTreePanel !== undefined ? state.showTreePanel : false;
+          this.forceHideTreePanel = state.forceHideTreePanel || false;
+        } else {
+          // 默认不显示
+          this.showTreePanel = false;
+          this.forceHideTreePanel = false;
+        }
+      } catch (e) {
+        // 出错时默认不显示
+        this.showTreePanel = false;
+        this.forceHideTreePanel = false;
+      }
+    } else {
+      // 没有保存的状态时默认不显示
+      this.showTreePanel = false;
+      this.forceHideTreePanel = false;
+    }
+  },
 
     // ========== 树形面板相关方法 ==========
     async initTreeData() {
@@ -958,37 +957,20 @@ export default {
     },
 
     // 恢复树形面板状态 - 修复：正确恢复状态
+    // 修改原有的 restoreTreePanelState 方法
     restoreTreePanelState() {
-      const saved = localStorage.getItem("tree-panel-state");
-      if (saved) {
-        try {
-          const state = JSON.parse(saved);
-
-          // 检查是否是最近的状态（24小时内）
-          const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000;
-
-          if (isRecent && this.shouldShowTreeByRoute) {
-            // 只有在支持树形面板的路由才恢复状态
-            this.showTreePanel = state.showTreePanel !== undefined ? state.showTreePanel : true;
-            this.forceHideTreePanel = state.forceHideTreePanel || false;
-
-            console.log("恢复树形面板状态:", state);
-          } else {
-            console.log("树形面板状态过期或路由不支持，使用默认状态");
-            this.showTreePanel = true;
-            this.forceHideTreePanel = false;
-          }
-        } catch (e) {
-          console.error("恢复树形面板状态失败:", e);
-          this.showTreePanel = true;
-          this.forceHideTreePanel = false;
-        }
-      } else {
-        // 默认状态
-        this.showTreePanel = true;
-        this.forceHideTreePanel = false;
+    // 这个方法现在主要用于 mounted 时的二次校验
+    // 实际恢复已经在 created 中完成
+    const saved = localStorage.getItem("tree-panel-state");
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        console.log("树形面板状态已在created中恢复:", state);
+      } catch (e) {
+        console.error("恢复树形面板状态失败:", e);
       }
-    },
+    }
+  },
 
     // 树形搜索过滤方法
     filterNode(value, data) {
@@ -1070,74 +1052,26 @@ export default {
     
     // 处理复选框变化
     handleCheckChange(data, checked, indeterminate) {
-      console.log("复选框变化:", data.label, checked, indeterminate);
+    console.log("复选框变化:", data, checked, indeterminate);
+    
+    if (!this.$refs.tree) {
+      console.warn('树形组件未就绪');
+      return;
+    }
+    
+    // 获取所有选中节点的ID（重点：只要ID）
+    const checkedKeys = this.$refs.tree.getCheckedKeys();
+    
+    // 更新到Vuex（只存储ID数组）
+    // this.$store.dispatch('treeSelection/updateSelection', checkedKeys);
+    
+    console.log('树形选择已更新，选中ID:', checkedKeys);
+  },
 
-      if (data.type === "device") {
-        this.$message.info(
-          `${checked ? "选中" : "取消选中"}了设备: ${data.label}`
-        );
-      }
-    },
+  
 
-    // 添加节点
-    addNode(data, node) {
-      console.log("添加节点:", data);
 
-      // 示例：添加新节点的逻辑
-      const newChild = {
-        id: Date.now(),
-        label: `新节点_${Date.now()}`,
-        type: data.type === "area" ? "floor" : "device",
-        status: "online",
-      };
-
-      if (!data.children) {
-        this.$set(data, "children", []);
-      }
-      data.children.push(newChild);
-
-      this.$message.success(`已添加新节点: ${newChild.label}`);
-    },
-
-    // 编辑节点
-    editNode(data, node) {
-      console.log("编辑节点:", data);
-
-      this.$prompt("请输入新的节点名称", "编辑节点", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        inputValue: data.label,
-      })
-        .then(({ value }) => {
-          data.label = value;
-          this.$message.success("节点名称已更新");
-        })
-        .catch(() => {
-          this.$message.info("取消编辑");
-        });
-    },
-
-    // 删除节点
-    deleteNode(data, node) {
-      console.log("删除节点:", data);
-
-      this.$confirm(`确定要删除节点 "${data.label}" 吗？`, "确认删除", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          const parent = node.parent;
-          const children = parent.data.children || parent.data;
-          const index = children.findIndex((d) => d.id === data.id);
-          children.splice(index, 1);
-          this.$message.success("节点已删除");
-        })
-        .catch(() => {
-          this.$message.info("取消删除");
-        });
-    },
-
+   
     // 刷新树形数据
     async refreshTreeData() {
       this.$message.info("正在刷新层级数据...");
@@ -3180,6 +3114,9 @@ export default {
 
     .custom-tree {
       background: transparent;
+      ::v-deep .el-tree-node__expand-icon.is-leaf {
+    visibility: hidden;  // 或者用 display: none;
+  }
 
       /* 树节点样式 */
       ::v-deep .el-tree-node {
