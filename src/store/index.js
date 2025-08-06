@@ -23,7 +23,8 @@ const store = new Vuex.Store({
     app,
     permission,
     manager,
-    tagsView  // 注册 tagsView 模块
+    tagsView, // 注册 tagsView 模块
+    treeSelection  
   },
   getters: {
     sidebar: state => state.app.sidebar,

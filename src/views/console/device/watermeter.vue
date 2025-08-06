@@ -796,6 +796,14 @@ export default {
   },
   computed: {
     ...mapGetters("manager", ["currentManagerId"]),
+    treeSelectedIds() {
+      const ids = this.$store.state.treeSelection?.selectedIds || [];
+      console.log("实时获取树形选中ID:", ids);
+      return ids;
+    },
+    hasTreeSelection() {
+      return this.treeSelectedIds.length > 0;
+    },
     // 计算需要显示的列
     displayColumns() {
       return this.tableKey.filter((col) => col.checked !== false);
@@ -858,20 +866,9 @@ export default {
       },
       immediate: true,
     },
-  },
-  created() {
-    // 初始化数据
-    this.initData();
+    // 移除了对 treeSelectedIds 的监听，不再自动调用接口
   },
   methods: {
-    // 初始化数据
-    async initData() {
-      // 获取管理方列表
-      // this.managerNames = await this.getManagerList()
-      // 检查路由权限
-      // this.routerAuth = this.$store.state.user.routerAuth
-    },
-
     // 获取水表列表数据
     async fetchTableData() {
       this.loading = true;
@@ -961,10 +958,55 @@ export default {
       return item ? item.label : "-";
     },
 
-    // 查询
+    // 查询 - 修改这个方法来支持树形选择参数
     handleSearch() {
       this.pageData.current = 1;
-      this.fetchTableData();
+      this.fetchTableDataWithTreeSelection();
+    },
+
+    // 新增方法：带树形选择参数的数据获取
+    async fetchTableDataWithTreeSelection() {
+      this.loading = true;
+      try {
+        // 去除空格
+        this.queryData.serial = this.queryData.serial.trim();
+
+        const params = {
+          bindId: this.queryData.bindId,
+          bindType: this.queryData.bindType,
+          id: this.queryData.id,
+          waterName: this.queryData.waterName,
+          serial: this.queryData.serial,
+          managerId: this.queryData.managerId,
+          mfrsNo: this.queryData.mfrsNo,
+          switchStatus: this.queryData.switchStatus,
+          page: {
+            size: this.pageData.size,
+            current: this.pageData.current,
+          },
+        };
+
+        // 只有在点击搜索时才添加树形选择参数
+        // if (this.hasTreeSelection) {
+        //   params.tierIds = this.treeSelectedIds;
+        //   console.log("搜索时使用树形选中查询:", this.treeSelectedIds);
+        // }
+
+        const response = await waterPageWater(params);
+
+        if (response.code === 200 && response.data) {
+          this.tableData = this.formatTableData(response.data.dataList || []);
+          this.pageData.total = response.data.total || 0;
+          this.pageData.current = response.data.current || 1;
+        } else {
+          this.$message.error(response.msg || "获取数据失败");
+        }
+      } catch (error) {
+        this.$message.error("获取水表数据失败");
+        console.error("获取水表数据失败:", error);
+      } finally {
+        this.loading = false;
+      }
     },
 
     // 重置
@@ -1189,12 +1231,14 @@ export default {
     handleSizeChange(val) {
       this.pageData.size = val;
       this.pageData.current = 1;
+      // 分页变化时不传递树形选择参数，使用普通的 fetchTableData
       this.fetchTableData();
     },
 
     // 当前页变化
     handleCurrentChange(val) {
       this.pageData.current = val;
+      // 分页变化时不传递树形选择参数，使用普通的 fetchTableData
       this.fetchTableData();
     },
   },

@@ -419,32 +419,34 @@
 
             <!-- 树形结构 -->
             <div class="tree-content">
-  <el-tree
-    ref="tree"
-    :data="treeData"
-    :filter-node-method="filterNode"
-    :props="treeProps"
-    :default-expand-all="false"
-    :expand-on-click-node="false"
-    :check-on-click-node="false"
-    show-checkbox
-    node-key="id"
-    class="custom-tree"
-    @node-click="handleNodeClick"
-    @check-change="handleCheckChange"
-  >
-    <div class="custom-tree-node" slot-scope="{ node, data }">
-      <div class="node-content">
-        <i
-          :class="getNodeIcon(data)"
-          class="node-icon"
-          :style="{ color: getNodeColor(data) }"
-        ></i>
-        <span class="node-label" :title="node.label">{{ node.label }}</span>
-      </div>
-    </div>
-  </el-tree>
-</div>
+              <el-tree
+                ref="tree"
+                :data="treeData"
+                :filter-node-method="filterNode"
+                :props="treeProps"
+                :default-expand-all="false"
+                :expand-on-click-node="false"
+                :check-on-click-node="false"
+                show-checkbox
+                node-key="id"
+                class="custom-tree"
+                @node-click="handleNodeClick"
+                @check-change="handleCheckChange"
+              >
+                <div class="custom-tree-node" slot-scope="{ node, data }">
+                  <div class="node-content">
+                    <i
+                      :class="getNodeIcon(data)"
+                      class="node-icon"
+                      :style="{ color: getNodeColor(data) }"
+                    ></i>
+                    <span class="node-label" :title="node.label">{{
+                      node.label
+                    }}</span>
+                  </div>
+                </div>
+              </el-tree>
+            </div>
           </div>
         </transition>
 
@@ -524,14 +526,20 @@ export default {
       // ========== 树形面板路由控制相关数据 ==========
       // 需要显示树形面板的路由列表
       treeVisibleRoutes: [
-        "/device/doorlock",
+        "/device/electricity",
         "/device/watermeter",
-        "/device/camera",
-        "/device/sensor",
-        "/asset/building",
-        "/asset/floor",
-        "/monitor/realtime",
-        "/monitor/statistics",
+        "/device/electricitySharing",
+        "/device/watermeterSharing",
+        "/device/conditioningSharing",
+        "/application/energy/electricity-report",
+        "/application/energy/electricity-sankey",
+        "/application/energy/water-report",
+        "/application/energy/water-sankey",
+        "/application/fee/electricity-plan",
+        "/application/fee/water-plan",
+        "/application/fee/service-plan",
+        "/application/fee/electricity-adjustment",
+        "/application/tenant/list",
         // 可以根据需要添加更多路由
       ],
 
@@ -563,7 +571,13 @@ export default {
       "currentManagerId",
       "currentManager",
     ]),
-
+    ...mapGetters("treeSelection", [
+      "selectedIds",
+      "selectedCount",
+      "selectedNodes",
+      "selectedTenantIds",
+      "selectedTierIds",
+    ]),
     classObj() {
       return {
         hideSidebar: !this.sidebar.opened,
@@ -676,7 +690,7 @@ export default {
       // 否则使用原来的showTreePanel状态
       return this.showTreePanel;
     },
-    
+
     processedTreeData() {
       return this.processTreeData(this.treeData);
     },
@@ -686,13 +700,6 @@ export default {
     // 监听路由变化
     $route: {
       handler(newRoute, oldRoute) {
-        console.log("路由变化:", oldRoute?.path, "->", newRoute?.path);
-
-        console.log("=== 路由变化，检查树形面板显示状态 ===");
-        console.log("从路由:", oldRoute?.path);
-        console.log("到路由:", newRoute?.path);
-        console.log("是否应该显示树形面板:", this.shouldShowTreeByRoute);
-
         // 如果新路由需要显示树形面板，且之前没有显示，则自动显示
         if (this.shouldShowTreeByRoute && !this.showTreePanel) {
           this.showTreePanel = true;
@@ -795,12 +802,12 @@ export default {
     if (this.isConsolePlatform) {
       await this.loadManagerList();
     }
-    
+
     if (this.$store.hasModule("tagsView")) {
       const routes = this.permission_routes || [];
       await this.$store.dispatch("tagsView/initAffixTags", routes);
     }
-    
+
     if (this.shouldShowTreeByRoute) {
       await this.initTreeData();
     }
@@ -825,40 +832,48 @@ export default {
 
   methods: {
     ...mapActions("manager", ["getManagerList", "switchManager"]),
+    ...mapActions("treeSelection", [
+      "updateTreeSelection",
+      "clearSelection",
+      "saveSelection",
+      "restoreSelection",
+    ]),
 
     earlyRestoreTreePanelState() {
-    const saved = localStorage.getItem("tree-panel-state");
-    if (saved) {
-      try {
-        const state = JSON.parse(saved);
-        const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000;
-        
-        // 先判断路由是否支持显示树形面板
-        const currentPath = this.$route.path;
-        const shouldShow = this.treeVisibleRoutes.some(route => 
-          currentPath.includes(route) || currentPath.startsWith(route)
-        );
-        
-        if (isRecent && shouldShow) {
-          // 直接设置状态，不等待
-          this.showTreePanel = state.showTreePanel !== undefined ? state.showTreePanel : false;
-          this.forceHideTreePanel = state.forceHideTreePanel || false;
-        } else {
-          // 默认不显示
+      const saved = localStorage.getItem("tree-panel-state");
+      if (saved) {
+        try {
+          const state = JSON.parse(saved);
+          const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000;
+
+          // 先判断路由是否支持显示树形面板
+          const currentPath = this.$route.path;
+          const shouldShow = this.treeVisibleRoutes.some(
+            (route) =>
+              currentPath.includes(route) || currentPath.startsWith(route)
+          );
+
+          if (isRecent && shouldShow) {
+            // 直接设置状态，不等待
+            this.showTreePanel =
+              state.showTreePanel !== undefined ? state.showTreePanel : false;
+            this.forceHideTreePanel = state.forceHideTreePanel || false;
+          } else {
+            // 默认不显示
+            this.showTreePanel = false;
+            this.forceHideTreePanel = false;
+          }
+        } catch (e) {
+          // 出错时默认不显示
           this.showTreePanel = false;
           this.forceHideTreePanel = false;
         }
-      } catch (e) {
-        // 出错时默认不显示
+      } else {
+        // 没有保存的状态时默认不显示
         this.showTreePanel = false;
         this.forceHideTreePanel = false;
       }
-    } else {
-      // 没有保存的状态时默认不显示
-      this.showTreePanel = false;
-      this.forceHideTreePanel = false;
-    }
-  },
+    },
 
     // ========== 树形面板相关方法 ==========
     async initTreeData() {
@@ -959,18 +974,18 @@ export default {
     // 恢复树形面板状态 - 修复：正确恢复状态
     // 修改原有的 restoreTreePanelState 方法
     restoreTreePanelState() {
-    // 这个方法现在主要用于 mounted 时的二次校验
-    // 实际恢复已经在 created 中完成
-    const saved = localStorage.getItem("tree-panel-state");
-    if (saved) {
-      try {
-        const state = JSON.parse(saved);
-        console.log("树形面板状态已在created中恢复:", state);
-      } catch (e) {
-        console.error("恢复树形面板状态失败:", e);
+      // 这个方法现在主要用于 mounted 时的二次校验
+      // 实际恢复已经在 created 中完成
+      const saved = localStorage.getItem("tree-panel-state");
+      if (saved) {
+        try {
+          const state = JSON.parse(saved);
+          console.log("树形面板状态已在created中恢复:", state);
+        } catch (e) {
+          console.error("恢复树形面板状态失败:", e);
+        }
       }
-    }
-  },
+    },
 
     // 树形搜索过滤方法
     filterNode(value, data) {
@@ -985,7 +1000,7 @@ export default {
 
     // 新增：获取节点展开图标
     getNodeExpandIcon(node) {
-      return node.expanded ? 'el-icon-arrow-down' : 'el-icon-arrow-right';
+      return node.expanded ? "el-icon-arrow-down" : "el-icon-arrow-right";
     },
 
     // 新增：切换节点展开状态
@@ -1049,36 +1064,27 @@ export default {
         });
       }
     },
-    
+
     // 处理复选框变化
     handleCheckChange(data, checked, indeterminate) {
-    console.log("复选框变化:", data, checked, indeterminate);
-    
-    if (!this.$refs.tree) {
-      console.warn('树形组件未就绪');
-      return;
-    }
-    
-    // 获取所有选中节点的ID（重点：只要ID）
-    const checkedKeys = this.$refs.tree.getCheckedKeys();
-    
-    // 更新到Vuex（只存储ID数组）
-    // this.$store.dispatch('treeSelection/updateSelection', checkedKeys);
-    
-    console.log('树形选择已更新，选中ID:', checkedKeys);
-  },
+      if (!this.$refs.tree) return;
 
-  
+      // 获取选中的ID集合
+      const checkedKeys = this.$refs.tree.getCheckedKeys();
 
+      // 存到 Vuex
+      this.$store.commit("treeSelection/SET_SELECTED_IDS", checkedKeys);
 
-   
+      console.log("已选中ID:", checkedKeys);
+    },
+
     // 刷新树形数据
     async refreshTreeData() {
       this.$message.info("正在刷新层级数据...");
       await this.loadTreeData();
       this.$message.success("层级数据已刷新");
     },
-    
+
     // 展开/折叠所有节点
     toggleAllNodes(expand = true) {
       if (expand) {
@@ -1093,13 +1099,13 @@ export default {
         });
       }
     },
-    
+
     async handleManagerChange() {
       if (this.shouldShowTreeByRoute && this.currentManagerId) {
         await this.initTreeData();
       }
     },
-    
+
     // 获取所有节点的key
     getAllNodeKeys(data, keys = []) {
       data.forEach((item) => {
@@ -2622,6 +2628,7 @@ export default {
   flex-direction: column;
   background: transparent;
   min-width: 0;
+  background: none
 }
 
 /* 顶部导航栏样式 - 管理方切换功能 */
@@ -3014,12 +3021,15 @@ export default {
   width: 240px;
   background: var(--card-bg);
   border-right: 1px solid var(--border-color);
-  height: calc(100vh - 104px); /* 减去navbar和breadcrumb的高度 */
+  // height: calc(100vh - 104px); /* 减去navbar和breadcrumb的高度 */
+  height: 80vh;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   position: relative;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  margin-left: 20px;
+  margin-top: 16px;
 
   .tree-header {
     height: 50px;
@@ -3115,8 +3125,8 @@ export default {
     .custom-tree {
       background: transparent;
       ::v-deep .el-tree-node__expand-icon.is-leaf {
-    visibility: hidden;  // 或者用 display: none;
-  }
+        visibility: hidden; // 或者用 display: none;
+      }
 
       /* 树节点样式 */
       ::v-deep .el-tree-node {
