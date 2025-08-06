@@ -1269,15 +1269,75 @@ export default {
         "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif";
     },
 
+    // 在 Layout.vue 的 methods 中，替换 logout 方法为以下代码：
+
     async logout() {
       try {
-        await this.$store.dispatch("manager/resetManager");
-        this.$message.success("退出登录成功");
-        // 退出后强制刷新页面，确保完全重置
-        window.location.href = "/login";
+        // 显示加载状态
+        const loading = this.$loading({
+          lock: true,
+          text: "正在退出...",
+          spinner: "el-icon-loading",
+          background: "rgba(0, 0, 0, 0.7)",
+        });
+
+        // 步骤1: 重置管理方状态
+        if (this.$store.hasModule("manager")) {
+          await this.$store.dispatch("manager/resetManager");
+          console.log("管理方状态已重置");
+        }
+
+        // 步骤2: 清空 TagsView
+        if (this.$store.hasModule("tagsView")) {
+          await this.$store.dispatch("tagsView/clearAllForPlatformSwitch");
+          console.log("TagsView 已清空");
+        }
+
+        // 步骤3: 调用用户退出（这会自动重置路由）
+        await this.$store.dispatch("user/logout");
+        console.log("用户退出成功，路由已重置");
+
+        // 步骤4: 清除本地存储的额外数据
+        localStorage.removeItem("selectedPlatform");
+        localStorage.removeItem("tree-panel-state");
+        localStorage.removeItem("submenu-collapsed-groups");
+        console.log("本地存储已清理");
+
+        loading.close();
+
+        // 步骤5: 显示成功消息
+        this.$message({
+          type: "success",
+          message: "退出登录成功",
+          duration: 1500,
+        });
+
+        // 步骤6: 强制跳转到登录页（避免路由问题）
+        setTimeout(() => {
+          console.log("强制跳转到登录页");
+          window.location.href = "/login";
+        }, 1000);
       } catch (error) {
         console.error("退出登录失败:", error);
-        this.$message.error("退出登录失败");
+
+        // 关闭加载状态
+        const loadingInstance = this.$loading.service();
+        if (loadingInstance) {
+          loadingInstance.close();
+        }
+
+        // 显示错误消息
+        this.$message.error(`退出登录失败：${error.message || "请稍后重试"}`);
+
+        // 即使失败也尝试清理
+        try {
+          await this.$store.dispatch("user/resetToken");
+          localStorage.clear(); // 强制清除所有本地存储
+          window.location.href = "/login"; // 强制跳转到登录页
+        } catch (resetError) {
+          console.error("强制重置失败:", resetError);
+          window.location.reload(); // 最后手段：刷新页面
+        }
       }
     },
 
@@ -2628,7 +2688,7 @@ export default {
   flex-direction: column;
   background: transparent;
   min-width: 0;
-  background: none
+  background: none;
 }
 
 /* 顶部导航栏样式 - 管理方切换功能 */

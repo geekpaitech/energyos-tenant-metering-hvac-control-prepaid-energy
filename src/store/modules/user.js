@@ -116,9 +116,15 @@ const actions = {
   },
 
   // 用户退出
-  logout ({ commit }) {
+  logout({ commit, dispatch }) {
     return new Promise((resolve, reject) => {
-      logout().then(() => {
+      console.log('执行用户退出action...')
+      
+      // 调用退出API
+      logout().then(async () => {
+        console.log('退出API调用成功')
+        
+        // 清除用户状态
         commit('SET_TOKEN', '')
         commit('SET_NAME', '')
         commit('SET_AVATAR', '')
@@ -129,19 +135,59 @@ const actions = {
         commit('SET_PHONE', '')
         removeToken()
         
-        // 重置路由 - 这里很重要！
-        this.dispatch('permission/resetRoutes', null, { root: true })
+        console.log('用户状态已清除')
+        
+        try {
+          // 重置权限路由
+          await dispatch('permission/resetRoutes', null, { root: true })
+          console.log('权限路由已重置')
+          
+          // 重置路由标记
+          const { resetRouteFlag } = require('@/permission')
+          resetRouteFlag()
+        } catch (routeError) {
+          console.warn('重置权限路由失败:', routeError)
+        }
         
         resolve()
-      }).catch(error => {
-        reject(error)
+        
+      }).catch(async error => {
+        console.error('退出API调用失败:', error)
+        
+        // 即使API调用失败，也要清除本地状态
+        commit('SET_TOKEN', '')
+        commit('SET_NAME', '')
+        commit('SET_AVATAR', '')
+        commit('SET_INTRODUCTION', '')
+        commit('SET_ROLES', [])
+        commit('SET_PERMISSIONS', [])
+        commit('SET_ROLE', '')
+        commit('SET_PHONE', '')
+        removeToken()
+        
+        console.log('本地状态已强制清除')
+        
+        try {
+          // 尝试重置路由
+          await dispatch('permission/resetRoutes', null, { root: true })
+          console.log('权限路由已重置')
+          
+          // 重置路由标记
+          const { resetRouteFlag } = require('@/permission')
+          resetRouteFlag()
+        } catch (routeError) {
+          console.warn('重置权限路由失败:', routeError)
+        }
+        
+        // 不reject，让退出流程继续
+        resolve()
       })
     })
   },
 
   // 删除token
-  resetToken ({ commit }) {
-    return new Promise(resolve => {
+  resetToken ({ commit, dispatch }) {
+    return new Promise(async resolve => {
       console.log('重置token')
       commit('SET_TOKEN', '')
       commit('SET_NAME', '')
@@ -153,8 +199,17 @@ const actions = {
       commit('SET_PHONE', '')
       removeToken()
       
-      // 重置路由
-      this.dispatch('permission/resetRoutes', null, { root: true })
+      try {
+        // 重置路由
+        await dispatch('permission/resetRoutes', null, { root: true })
+        console.log('Token重置时路由已重置')
+        
+        // 重置路由标记
+        const { resetRouteFlag } = require('@/permission')
+        resetRouteFlag()
+      } catch (error) {
+        console.warn('Token重置时路由重置失败:', error)
+      }
       
       resolve()
     })

@@ -447,8 +447,7 @@
   <style lang="scss" scoped>
   .water-detail-dashboard {
     min-height: 100vh;
-    background: #f8f9fa;
-    padding: 24px;
+    padding: 16px;
   }
   
   // 顶部操作栏
@@ -458,7 +457,7 @@
     align-items: center;
     margin-bottom: 24px;
     background: white;
-    padding: 20px 24px;
+    padding: 16px 24px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
