@@ -184,3 +184,14 @@ export function shareWaterShareDeduction(params) {
     params
   })
 }
+export function waterSharePageWaterSettleShare(data) {
+  return request({
+    url: '/api/ebc-content/waterShare/pageWaterSettleShare',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}

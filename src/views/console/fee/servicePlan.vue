@@ -642,7 +642,6 @@
           const { data } = await meterPriceQueryPriceMeterEdit({ 
             priceId: row.id 
           })
-          console.log(JSON.stringify(data))
           
           // 处理数据
           if (data) {

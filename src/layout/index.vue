@@ -540,6 +540,9 @@ export default {
         "/application/fee/service-plan",
         "/application/fee/electricity-adjustment",
         "/application/tenant/list",
+        "/application/bill/energy-bill",
+        "/application/bill/floating-price",
+        "/application/bill/manual-bill"
         // 可以根据需要添加更多路由
       ],
 
