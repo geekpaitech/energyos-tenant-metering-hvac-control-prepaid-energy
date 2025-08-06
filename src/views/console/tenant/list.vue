@@ -1,155 +1,254 @@
 <template>
-    <div class="table-page-container">
-      <!-- 搜索区域 -->
-      <div class="search-container">
-        <el-card class="search-card" shadow="never">
-          <el-form
-            :model="queryData"
-            ref="searchForm"
-            class="search-form compact-form"
-            label-position="left"
-            label-width="80px"
-          >
-            <!-- 基础筛选 -->
-            <el-row :gutter="16" class="search-row">
-              <el-col
-                v-for="field in displayBasicFields"
-                :key="field.prop"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="6"
-              >
-                <el-form-item
-                  :label="field.label"
-                  :prop="field.prop"
-                  class="compact-form-item"
+  <div class="table-page-container">
+    <!-- 搜索区域 -->
+    <div class="search-container">
+      <el-card class="search-card" shadow="never">
+        <el-form
+          :model="queryData"
+          ref="searchForm"
+          class="search-form compact-form"
+          label-position="left"
+          label-width="80px"
+        >
+          <!-- 基础筛选 -->
+          <el-row :gutter="20" class="search-row">
+            <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-form-item label="租户ID" class="compact-form-item">
+                <el-input
+                  v-model="queryData.id"
+                  placeholder="请输入租户ID"
+                  clearable
+                  size="small"
+                />
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-form-item label="标签" class="compact-form-item">
+                <el-select
+                  v-model="queryData.labelIds"
+                  multiple
+                  placeholder="请选择标签"
+                  clearable
+                  size="small"
+                  style="width: 100%"
                 >
-                  <!-- 输入框 -->
-                  <el-input
-                    v-if="field.type === 'input'"
-                    v-model="queryData[field.prop]"
-                    placeholder="请输入"
-                    clearable
-                    size="small"
+                  <el-option
+                    v-for="item in labelList"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id"
                   />
-                  <!-- 选择框 -->
-                  <el-select
-                    v-else-if="field.type === 'select'"
-                    v-model="queryData[field.prop]"
-                    placeholder="请选择"
-                    clearable
-                    size="small"
-                    style="width: 100%"
-                  >
-                    <!-- 标签选项 -->
-                    <template v-if="field.prop === 'tags'">
-                      <el-option label="全部" value="" />
-                      <el-option label="VIP客户" value="VIP" />
-                      <el-option label="普通客户" value="NORMAL" />
-                      <el-option label="欠费用户" value="ARREARS" />
-                      <el-option label="新用户" value="NEW" />
-                    </template>
-                    <!-- 余额状态选项 -->
-                    <template v-else-if="field.prop === 'balanceStatus'">
-                      <el-option label="全部" value="" />
-                      <el-option label="余额充足" value="SUFFICIENT" />
-                      <el-option label="余额不足" value="INSUFFICIENT" />
-                      <el-option label="余额为零" value="ZERO" />
-                      <el-option label="欠费" value="ARREARS" />
-                    </template>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
-  
-            <!-- 操作按钮行 -->
-            <div class="form-actions compact-actions">
-              <div class="action-left">
-                <el-button
-                  type="primary"
-                  icon="el-icon-plus"
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-form-item label="余额状态" class="compact-form-item">
+                <el-select
+                  v-model="queryData.balanceStatus"
+                  placeholder="请选择余额状态"
+                  clearable
                   size="small"
-                  @click="handleAdd"
+                  style="width: 100%"
                 >
-                  新增租户
-                </el-button>
-              </div>
-              <div class="action-right">
-                <el-button
-                  type="primary"
-                  icon="el-icon-search"
-                  size="small"
-                  @click="handleSearch"
-                >
-                  查询
-                </el-button>
-                <el-button
-                  icon="el-icon-refresh"
-                  size="small"
-                  @click="handleReset"
-                >
-                  重置
-                </el-button>
-                <el-divider direction="vertical" style="margin: 0 8px"></el-divider>
-                <!-- 视图切换按钮组 -->
-                <el-button-group class="view-toggle">
-                  <el-button
-                    :type="viewType === 'table' ? 'primary' : ''"
-                    size="small"
-                    @click="viewType = 'table'"
-                  >
-                    <i class="el-icon-s-grid"></i>
-                    表格
-                  </el-button>
-                  <el-button
-                    :type="viewType === 'card' ? 'primary' : ''"
-                    size="small"
-                    @click="viewType = 'card'"
-                  >
-                    <i class="el-icon-menu"></i>
-                    卡片
-                  </el-button>
-                </el-button-group>
-                <el-divider direction="vertical" style="margin: 0 8px"></el-divider>
-                <el-dropdown trigger="click" @command="handleCommand">
-                  <el-button size="small" type="text" style="padding: 7px 12px">
-                    更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
-                  </el-button>
-                  <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item command="export" icon="el-icon-download">
-                      导出数据
-                    </el-dropdown-item>
-                    <el-dropdown-item command="import" icon="el-icon-upload2">
-                      导入数据
-                    </el-dropdown-item>
-                    <el-dropdown-item
-                      command="batch"
-                      icon="el-icon-s-operation"
-                      divided
-                    >
-                      批量操作
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </el-dropdown>
-              </div>
+                  <el-option
+                    v-for="item in balanceStatusOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <!-- 操作按钮行 -->
+          <div class="form-actions compact-actions">
+            <div class="action-left">
+              <el-button
+                type="primary"
+                icon="el-icon-plus"
+                size="small"
+                @click="handleAdd"
+                class="gradient-button"
+              >
+                新增租户
+              </el-button>
             </div>
-          </el-form>
-        </el-card>
-      </div>
-  
-      <!-- 表格视图 -->
-      <div class="table-container" v-if="viewType === 'table'">
-        <div class="table-card" shadow="never">
-          <!-- 表格工具栏 -->
-          <div class="table-toolbar" v-if="selectedData.length > 0">
-            <div class="toolbar-left">
-              <span class="selection-info">
-                已选择 <span class="count">{{ selectedData.length }}</span> 条数据
-              </span>
+
+            <div class="action-center">
+              <!-- 视图切换 -->
+              <el-radio-group
+                v-model="viewType"
+                size="small"
+                class="view-switcher"
+              >
+                <el-radio-button label="card">
+                  <i class="el-icon-menu"></i> 卡片视图
+                </el-radio-button>
+                <el-radio-button label="table">
+                  <i class="el-icon-s-grid"></i> 表格视图
+                </el-radio-button>
+              </el-radio-group>
+            </div>
+
+            <div class="action-right">
+              <el-button
+                type="primary"
+                icon="el-icon-search"
+                size="small"
+                @click="handleSearch"
+              >
+                查询
+              </el-button>
+              <el-button
+                icon="el-icon-refresh"
+                size="small"
+                @click="handleReset"
+              >
+                重置
+              </el-button>
             </div>
           </div>
-  
+        </el-form>
+      </el-card>
+    </div>
+
+    <!-- 数据展示区域 - 使用 v-show 替代 v-if 避免闪烁 -->
+    <div class="data-container">
+      <!-- 卡片视图 -->
+      <div v-show="viewType === 'card'" class="card-view-container">
+        <div v-loading="loading" class="card-grid">
+          <div
+            v-for="item in tableData"
+            :key="item.id"
+            class="tenant-card-modern"
+            @click="handleDetail(item)"
+          >
+            <!-- 卡片头部 - 重新设计 -->
+            <div
+              class="card-ribbon"
+              :class="'ribbon-' + getBalanceStatusClass(item.balanceStatus)"
+            >
+              {{ getBalanceStatusLabel(item.balanceStatus) }}
+            </div>
+
+            <div class="card-header-modern">
+              <div class="tenant-avatar">
+                <img
+                  v-if="item.logoUrl"
+                  :src="item.logoUrl"
+                  alt=""
+                  @error="handleImageError($event)"
+                />
+                <div v-else class="avatar-placeholder">
+                  {{ (item.name || "租户")[0] }}
+                </div>
+              </div>
+              <div class="tenant-info">
+                <h3 class="tenant-name" :title="item.name">
+                  {{ item.name || "-" }}
+                </h3>
+                <span class="tenant-code">ID: {{ item.id }}</span>
+              </div>
+              <el-button
+                type="text"
+                size="mini"
+                icon="el-icon-s-grid"
+                class="qr-button"
+                @click.stop="handleQrcode(item)"
+              >
+              </el-button>
+            </div>
+
+            <!-- 标签展示 - 多彩设计 -->
+            <div class="card-tags">
+              <el-tag
+                v-for="(tag, index) in (item.labelList || []).slice(0, 3)"
+                :key="tag.id"
+                size="mini"
+                :class="'custom-tag tag-color-' + (index % 5)"
+              >
+                {{ tag.name }}
+              </el-tag>
+              <el-tag
+                v-if="item.labelList && item.labelList.length > 3"
+                size="mini"
+                type="info"
+              >
+                +{{ item.labelList.length - 3 }}
+              </el-tag>
+              <span
+                v-if="!item.labelList || item.labelList.length === 0"
+                class="no-tags"
+                >暂无标签</span
+              >
+            </div>
+
+            <!-- 关键信息展示 -->
+            <div class="card-metrics">
+              <div class="metric-item">
+                <span class="metric-label">公摊面积</span>
+                <span class="metric-value">{{ item.publicArea || 0 }}㎡</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">创建时间</span>
+                <span class="metric-value">{{
+                  formatDate(item.createTime)
+                }}</span>
+              </div>
+            </div>
+
+            <!-- 余额展示 - 突出设计 -->
+            <div class="balance-section">
+              <div class="balance-main">
+                <span class="balance-label">账户余额</span>
+                <span
+                  class="balance-amount"
+                  :class="getBalanceClass(item.balance)"
+                >
+                  <span class="currency">¥</span>
+                  <span class="amount">{{ formatBalance(item.balance) }}</span>
+                </span>
+              </div>
+              <div class="balance-actions">
+                <el-button
+                type="primary"
+                  size="mini"
+                  @click.stop="handleDetail(item)"
+                >
+                  详情
+                </el-button>
+                <el-button size="mini"  @click.stop="handleRecharge(item)">
+                  充值
+                </el-button>
+                <el-button size="mini"  @click.stop="handleDeduct(item)">
+                  扣款
+                </el-button>
+                <el-button
+                  v-if="item.balanceStatus !== 1"
+                  size="mini"
+                  type="warning"
+                  plain
+                  @click.stop="handleUrge(item)"
+                >
+                  催缴
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 空数据提示 -->
+        <el-empty
+          v-if="!loading && tableData.length === 0"
+          description="暂无数据"
+        />
+      </div>
+
+      <!-- 表格视图 -->
+      <div v-show="viewType === 'table'" class="table-container">
+        <div class="table-card" shadow="never">
           <!-- 数据表格 -->
           <el-table
             :height="dataLength > 9 ? dynamicTableHeight : null"
@@ -158,175 +257,206 @@
             stripe
             style="width: 100%"
             class="custom-table"
-            @selection-change="handleSelectionChange"
             :header-cell-style="{
-              background: '#f5f7fa',
-              color: '#606266',
+              background: 'linear-gradient(180deg, #f8f9fc 0%, #f0f2f5 100%)',
+              color: '#1f2329',
               fontWeight: '600',
+              fontSize: '13px',
+              borderBottom: '2px solid #e8e8e8',
             }"
+            :row-class-name="tableRowClassName"
           >
-            <el-table-column type="selection" width="55" align="center" />
-  
-            <!-- 租户编号 -->
+            <!-- 租户ID -->
             <el-table-column
-              prop="tenantId"
-              label="租户编号"
-              width="120"
+              prop="id"
+              label="租户ID"
+              width="100"
               align="center"
+              fixed="left"
             />
-  
-            <!-- 租户姓名 -->
+
+            <!-- 租户名 - 优化对齐 -->
             <el-table-column
-              prop="tenantName"
-              label="租户姓名"
-              width="150"
-              align="center"
+              prop="name"
+              label="租户名"
+              min-width="200"
+              fixed="left"
             >
               <template slot-scope="scope">
-                <el-link type="primary" @click="handleDetail(scope.row)">
-                  <i class="el-icon-user"></i>
-                  {{ scope.row.tenantName }}
-                </el-link>
+                <div class="tenant-cell">
+                  <img
+                    v-if="scope.row.logoUrl"
+                    :src="scope.row.logoUrl"
+                    alt=""
+                    class="tenant-logo"
+                    @error="handleImageError($event)"
+                  />
+                  <div v-else class="logo-placeholder">
+                    {{ (scope.row.name || "租")[0] }}
+                  </div>
+                  <el-link
+                    type="primary"
+                    @click="handleDetail(scope.row)"
+                    class="tenant-link"
+                  >
+                    {{ scope.row.name }}
+                  </el-link>
+                </div>
               </template>
             </el-table-column>
-  
-            <!-- 联系电话 -->
+
+            <!-- 标签 - 多彩展示 -->
             <el-table-column
-              prop="phone"
-              label="联系电话"
-              width="130"
-              align="center"
-            />
-  
-            <!-- 房间信息 -->
-            <el-table-column
-              prop="roomInfo"
-              label="房间信息"
-              width="200"
-              align="center"
-            />
-  
-            <!-- 标签 -->
-            <el-table-column
-              prop="tags"
+              prop="labelList"
               label="标签"
-              width="120"
+              width="220"
               align="center"
             >
               <template slot-scope="scope">
-                <el-tag
-                  v-if="scope.row.tags === 'VIP'"
-                  type="warning"
-                  size="small"
-                  effect="plain"
+                <div
+                  v-if="scope.row.labelList && scope.row.labelList.length"
+                  class="table-tags"
                 >
-                  VIP客户
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.tags === 'NORMAL'"
-                  type="primary"
-                  size="small"
-                  effect="plain"
-                >
-                  普通客户
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.tags === 'ARREARS'"
-                  type="danger"
-                  size="small"
-                  effect="plain"
-                >
-                  欠费用户
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.tags === 'NEW'"
-                  type="success"
-                  size="small"
-                  effect="plain"
-                >
-                  新用户
-                </el-tag>
-                <span v-else>-</span>
+                  <el-tag
+                    v-for="(tag, index) in scope.row.labelList.slice(0, 3)"
+                    :key="tag.id"
+                    size="mini"
+                    :class="'custom-tag tag-color-' + (index % 5)"
+                  >
+                    {{ tag.name }}
+                  </el-tag>
+                  <el-tag
+                    v-if="scope.row.labelList.length > 3"
+                    size="mini"
+                    type="info"
+                  >
+                    +{{ scope.row.labelList.length - 3 }}
+                  </el-tag>
+                </div>
+                <span v-else class="no-data">-</span>
               </template>
             </el-table-column>
-  
-            <!-- 账户余额 -->
+
+            <!-- 租户余额 -->
             <el-table-column
               prop="balance"
-              label="账户余额"
-              width="120"
+              label="租户余额"
+              width="130"
               align="center"
+              sortable
             >
               <template slot-scope="scope">
                 <span
-                  :style="{
-                    color: scope.row.balance < 0 ? '#F56C6C' : scope.row.balance < 50 ? '#E6A23C' : '#67C23A'
-                  }"
+                  :class="getBalanceClass(scope.row.balance)"
+                  class="balance-cell"
                 >
-                  ¥{{ scope.row.balance.toFixed(2) }}
+                  ¥{{ formatBalance(scope.row.balance) }}
                 </span>
               </template>
             </el-table-column>
-  
+
             <!-- 余额状态 -->
             <el-table-column
               prop="balanceStatus"
               label="余额状态"
-              width="100"
+              width="110"
               align="center"
             >
               <template slot-scope="scope">
                 <el-tag
                   :type="getBalanceStatusType(scope.row.balanceStatus)"
                   size="small"
+                  effect="dark"
                 >
                   {{ getBalanceStatusLabel(scope.row.balanceStatus) }}
                 </el-tag>
               </template>
             </el-table-column>
-  
-            <!-- 创建时间 -->
+
+            <!-- 线上充值金额 -->
             <el-table-column
-              prop="createTime"
-              label="创建时间"
-              width="180"
+              prop="onlineRechargeAmt"
+              label="线上充值"
+              width="130"
               align="center"
-            />
-  
-            <!-- 操作列 -->
+            >
+              <template slot-scope="scope">
+                <span class="amount-cell">
+                  {{
+                    scope.row.onlineRechargeAmt ||
+                    scope.row.onlineRechargeAmt === 0
+                      ? "¥" + formatNumber(scope.row.onlineRechargeAmt)
+                      : "-"
+                  }}
+                </span>
+              </template>
+            </el-table-column>
+
+            <!-- 开票总金额 -->
+            <el-table-column
+              prop="onBillAmt"
+              label="开票金额"
+              width="130"
+              align="center"
+            >
+              <template slot-scope="scope">
+                <span class="amount-cell">
+                  {{
+                    scope.row.onBillAmt || scope.row.onBillAmt === 0
+                      ? "¥" + formatNumber(scope.row.onBillAmt)
+                      : "-"
+                  }}
+                </span>
+              </template>
+            </el-table-column>
+
+            <!-- 二维码 -->
+            <el-table-column label="二维码" width="90" align="center">
+              <template slot-scope="scope">
+                <el-button
+                  type="text"
+                  size="small"
+                  icon="el-icon-s-grid"
+                  @click="handleQrcode(scope.row)"
+                  class="icon-button"
+                >
+                </el-button>
+              </template>
+            </el-table-column>
+
+            <!-- 操作列 - 固定右侧 -->
             <el-table-column
               label="操作"
-              width="280"
+              width="200"
               fixed="right"
               align="center"
+              class-name="table-actions-column"
             >
               <template slot-scope="scope">
                 <div class="table-actions-group">
                   <el-button
                     type="text"
                     size="small"
-                    icon="el-icon-view"
                     @click="handleDetail(scope.row)"
+                    class="action-btn primary"
                   >
                     详情
                   </el-button>
-                  <el-divider direction="vertical"></el-divider>
                   <el-button
+                    v-if="scope.row.balanceStatus !== 1"
                     type="text"
                     size="small"
-                    icon="el-icon-message"
                     @click="handleUrge(scope.row)"
+                    class="action-btn warning"
                   >
                     催缴
                   </el-button>
-                  <el-divider direction="vertical"></el-divider>
                   <el-dropdown
                     trigger="click"
                     @command="handleTableCommand($event, scope.row)"
                   >
-                    <el-button type="text" size="small">
-                      更多
-                      <i class="el-icon-arrow-down el-icon--right"></i>
+                    <el-button type="text" size="small" class="action-btn">
+                      更多<i class="el-icon-arrow-down el-icon--right"></i>
                     </el-button>
                     <el-dropdown-menu slot="dropdown">
                       <el-dropdown-item command="recharge" icon="el-icon-plus">
@@ -335,958 +465,1007 @@
                       <el-dropdown-item command="deduct" icon="el-icon-minus">
                         手动扣款
                       </el-dropdown-item>
-                      <el-dropdown-item command="qrcode" icon="el-icon-s-grid" divided>
-                        查看二维码
-                      </el-dropdown-item>
                     </el-dropdown-menu>
                   </el-dropdown>
                 </div>
               </template>
             </el-table-column>
           </el-table>
+
+          <!-- 空数据提示 -->
+          <el-empty
+            v-if="!loading && tableData.length === 0"
+            description="暂无数据"
+          />
         </div>
       </div>
-  
-      <!-- 卡片视图 -->
-      <div class="card-container" v-else>
-        <div class="card-grid" v-loading="loading">
-          <div
-            v-for="item in tableData"
-            :key="item.tenantId"
-            class="tenant-card"
-            @click="handleDetail(item)"
-          >
-            <!-- 卡片头部 -->
-            <div class="card-header">
-              <div class="tenant-basic-info">
-                <div class="tenant-avatar">
-                  <i class="el-icon-user-solid"></i>
-                </div>
-                <div class="tenant-info">
-                  <h3 class="tenant-name">{{ item.tenantName }}</h3>
-                  <p class="tenant-id">编号：{{ item.tenantId }}</p>
-                </div>
-              </div>
-              <div class="tenant-tags">
-                <el-tag
-                  v-if="item.tags === 'VIP'"
-                  type="warning"
-                  size="mini"
-                  effect="dark"
-                >
-                  VIP
-                </el-tag>
-                <el-tag
-                  v-else-if="item.tags === 'NORMAL'"
-                  type="primary"
-                  size="mini"
-                  effect="dark"
-                >
-                  普通
-                </el-tag>
-                <el-tag
-                  v-else-if="item.tags === 'ARREARS'"
-                  type="danger"
-                  size="mini"
-                  effect="dark"
-                >
-                  欠费
-                </el-tag>
-                <el-tag
-                  v-else-if="item.tags === 'NEW'"
-                  type="success"
-                  size="mini"
-                  effect="dark"
-                >
-                  新用户
-                </el-tag>
-              </div>
-            </div>
-  
-            <!-- 卡片内容 -->
-            <div class="card-content">
-              <!-- 联系信息 -->
-              <div class="info-row">
-                <div class="info-item">
-                  <i class="el-icon-phone info-icon"></i>
-                  <span class="info-label">电话：</span>
-                  <span class="info-value">{{ item.phone }}</span>
-                </div>
-              </div>
-              
-              <!-- 房间信息 -->
-              <div class="info-row">
-                <div class="info-item">
-                  <i class="el-icon-office-building info-icon"></i>
-                  <span class="info-label">房间：</span>
-                  <span class="info-value">{{ item.roomInfo }}</span>
-                </div>
-              </div>
-  
-              <!-- 余额信息 -->
-              <div class="balance-section">
-                <div class="balance-info">
-                  <span class="balance-label">账户余额</span>
-                  <span 
-                    class="balance-amount"
-                    :style="{
-                      color: item.balance < 0 ? '#F56C6C' : item.balance < 50 ? '#E6A23C' : '#67C23A'
-                    }"
-                  >
-                    ¥{{ item.balance.toFixed(2) }}
-                  </span>
-                </div>
-                <el-tag
-                  :type="getBalanceStatusType(item.balanceStatus)"
-                  size="small"
-                  class="balance-status"
-                >
-                  {{ getBalanceStatusLabel(item.balanceStatus) }}
-                </el-tag>
-              </div>
-  
-              <!-- 时间信息 -->
-              <div class="time-info">
-                <span class="create-time">创建时间：{{ item.createTime }}</span>
-              </div>
-            </div>
-  
-            <!-- 卡片底部操作按钮 -->
-            <div class="card-actions">
-              <el-button
-                size="mini"
-                type="primary"
-                icon="el-icon-view"
-                @click.stop="handleDetail(item)"
-              >
-                详情
-              </el-button>
-              <el-button
-                size="mini"
-                type="warning"
-                icon="el-icon-message"
-                @click.stop="handleUrge(item)"
-              >
-                催缴
-              </el-button>
-              <el-dropdown
-                trigger="click"
-                @command="handleTableCommand($event, item)"
-                @click.native.stop
-              >
-                <el-button size="mini" type="info">
-                  更多<i class="el-icon-arrow-down el-icon--right"></i>
-                </el-button>
-                <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item command="recharge" icon="el-icon-plus">
-                    手动充值
-                  </el-dropdown-item>
-                  <el-dropdown-item command="deduct" icon="el-icon-minus">
-                    手动扣款
-                  </el-dropdown-item>
-                  <el-dropdown-item command="qrcode" icon="el-icon-s-grid" divided>
-                    查看二维码
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </el-dropdown>
-            </div>
-          </div>
-        </div>
-      </div>
-  
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination
-          :current-page="pageData.current"
-          :page-sizes="[15, 30, 60, 100]"
-          :page-size="pageData.size"
-          :total="pageData.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-  
-      <!-- 手动充值弹窗 -->
-      <el-dialog
-        title="手动充值"
-        :visible.sync="rechargeVisible"
-        width="500px"
-        :close-on-click-modal="false"
-      >
-        <el-form ref="rechargeForm" :model="rechargeForm" :rules="rechargeRules" label-width="100px">
-          <el-form-item label="租户姓名">
-            <el-input v-model="currentTenant.tenantName" disabled />
-          </el-form-item>
-          <el-form-item label="充值金额" prop="amount">
-            <el-input-number
-              v-model="rechargeForm.amount"
-              :min="0.01"
-              :max="9999"
-              :precision="2"
-              placeholder="请输入充值金额"
-              style="width: 100%"
-            />
-          </el-form-item>
-          <el-form-item label="充值备注" prop="remark">
-            <el-input
-              v-model="rechargeForm.remark"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入充值备注"
-            />
-          </el-form-item>
-        </el-form>
-        <span slot="footer" class="dialog-footer">
-          <el-button @click="rechargeVisible = false">取 消</el-button>
-          <el-button type="primary" @click="handleRechargeSubmit">确 定</el-button>
-        </span>
-      </el-dialog>
-  
-      <!-- 手动扣款弹窗 -->
-      <el-dialog
-        title="手动扣款"
-        :visible.sync="deductVisible"
-        width="500px"
-        :close-on-click-modal="false"
-      >
-        <el-form ref="deductForm" :model="deductForm" :rules="deductRules" label-width="100px">
-          <el-form-item label="租户姓名">
-            <el-input v-model="currentTenant.tenantName" disabled />
-          </el-form-item>
-          <el-form-item label="当前余额">
-            <el-input :value="'¥' + currentTenant.balance?.toFixed(2)" disabled />
-          </el-form-item>
-          <el-form-item label="扣款金额" prop="amount">
-            <el-input-number
-              v-model="deductForm.amount"
-              :min="0.01"
-              :max="currentTenant.balance || 0"
-              :precision="2"
-              placeholder="请输入扣款金额"
-              style="width: 100%"
-            />
-          </el-form-item>
-          <el-form-item label="扣款原因" prop="reason">
-            <el-input
-              v-model="deductForm.reason"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入扣款原因"
-            />
-          </el-form-item>
-        </el-form>
-        <span slot="footer" class="dialog-footer">
-          <el-button @click="deductVisible = false">取 消</el-button>
-          <el-button type="primary" @click="handleDeductSubmit">确 定</el-button>
-        </span>
-      </el-dialog>
-  
-      <!-- 二维码查看弹窗 -->
-      <el-dialog
-        title="租户缴费二维码"
-        :visible.sync="qrcodeVisible"
-        width="400px"
-        center
-      >
-        <div class="qrcode-container">
-          <div class="qrcode-info">
-            <h3>{{ currentTenant.tenantName }}</h3>
-            <p>租户编号：{{ currentTenant.tenantId }}</p>
-            <p>房间：{{ currentTenant.roomInfo }}</p>
-          </div>
-          <div class="qrcode-image">
-            <!-- 这里可以集成真实的二维码生成库 -->
-            <div class="mock-qrcode">
-              <i class="el-icon-s-grid"></i>
-              <p>二维码</p>
-            </div>
-          </div>
-          <div class="qrcode-tips">
-            <p>请租户扫描此二维码进行缴费</p>
-          </div>
-        </div>
-        <span slot="footer" class="dialog-footer">
-          <el-button type="primary" @click="qrcodeVisible = false">关 闭</el-button>
-        </span>
-      </el-dialog>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    name: "TenantManagement",
-    data() {
-      return {
-        // 视图类型：table 表格 / card 卡片
-        viewType: 'table',
-        
-        // 查询参数
-        queryData: {
-          tenantName: "",
-          phone: "",
-          tags: "",
-          balanceStatus: "",
-        },
-        
-        // 搜索字段配置
-        searchFields: {
-          basic: [
-            { prop: "tenantName", label: "租户姓名", type: "input" },
-            { prop: "phone", label: "联系电话", type: "input" },
-            { prop: "tags", label: "标签", type: "select" },
-            { prop: "balanceStatus", label: "余额状态", type: "select" },
-          ],
-          advanced: []
-        },
-        
-        // 表格高度配置
-        tableHeightConfig: {
-          headerHeight: 48,
-          rowHeight: 47,
-          minHeight: 200,
-          maxRows: 10,
-          paginationHeight: 68,
-        },
-        
-        // 表格数据
-        tableData: [],
-        loading: false,
-        selectedData: [],
-        
-        // 分页数据
-        pageData: {
-          current: 1,
-          size: 15,
-          total: 0,
-        },
-        
-        // 弹窗状态
-        rechargeVisible: false,
-        deductVisible: false,
-        qrcodeVisible: false,
-        
-        // 当前操作的租户
-        currentTenant: {},
-        
-        // 充值表单
-        rechargeForm: {
-          amount: null,
-          remark: ""
-        },
-        rechargeRules: {
-          amount: [
-            { required: true, message: "请输入充值金额", trigger: "blur" },
-            { type: "number", min: 0.01, message: "充值金额不能小于0.01元", trigger: "blur" }
-          ],
-          remark: [
-            { required: true, message: "请输入充值备注", trigger: "blur" }
-          ]
-        },
-        
-        // 扣款表单
-        deductForm: {
-          amount: null,
-          reason: ""
-        },
-        deductRules: {
-          amount: [
-            { required: true, message: "请输入扣款金额", trigger: "blur" },
-            { type: "number", min: 0.01, message: "扣款金额不能小于0.01元", trigger: "blur" }
-          ],
-          reason: [
-            { required: true, message: "请输入扣款原因", trigger: "blur" }
-          ]
-        }
-      };
+
+    <!-- 分页 -->
+    <div class="pagination-container" v-if="pageData.total > 0">
+      <el-pagination
+        :current-page="pageData.current"
+        :page-sizes="[6, 12, 30, 60]"
+        :page-size="pageData.size"
+        :total="pageData.total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        class="modern-pagination"
+      />
+    </div>
+
+    <!-- 新增/编辑租户弹窗 -->
+    <AddTenantDialog
+      :visible.sync="addDialogVisible"
+      :tenant-data="editForm"
+      :label-list="labelList"
+      :manager-id="currentManagerId"
+      @success="handleAddSuccess"
+    />
+
+    <!-- 手动充值弹窗 -->
+    <RechargeDialog
+      :visible.sync="rechargeVisible"
+      :tenant-data="currentTenant"
+      @success="handleRechargeSuccess"
+    />
+
+    <!-- 手动扣款弹窗 -->
+    <DeductDialog
+      :visible.sync="deductVisible"
+      :tenant-data="currentTenant"
+      @success="handleDeductSuccess"
+    />
+
+    <!-- 二维码查看弹窗 -->
+    <QrcodeDialog :visible.sync="qrcodeVisible" :tenant-data="currentTenant" />
+  </div>
+</template>
+
+<script>
+// 导入API
+import {
+  tenantPageTenant,
+  tenantAdd,
+  tenantUpdate,
+  tenantGetById,
+} from "@/api/tenant";
+import { labelList } from "@/api/label";
+import { balancePush } from "@/api/pay";
+import { mapGetters } from "vuex";
+
+// 导入子组件
+import AddTenantDialog from "./components/AddTenantDialog.vue";
+import RechargeDialog from "./components/RechargeDialog.vue";
+import DeductDialog from "./components/DeductDialog.vue";
+import QrcodeDialog from "./components/QrcodeDialog.vue";
+
+export default {
+  name: "TenantManagement",
+  components: {
+    AddTenantDialog,
+    RechargeDialog,
+    DeductDialog,
+    QrcodeDialog,
+  },
+  data() {
+    return {
+      tableHeightConfig: {
+        headerHeight: 48, // 表头高度
+        rowHeight: 47, // 每行高度
+        minHeight: 200, // 最小高度
+        maxRows: 10, // 最大显示行数（超过9行显示滚动条）
+        paginationHeight: 68, // 分页高度
+      },
+      // 视图类型：默认卡片视图
+      viewType: "card",
+
+      // 查询参数
+      queryData: {
+        id: "",
+        name: "",
+        labelIds: [],
+        balanceStatus: "",
+        managerId: "",
+        tenantStatus: 0, // 0-正常，1-注销
+      },
+
+      // 余额状态选项
+      balanceStatusOptions: [
+        { value: 1, label: "正常" },
+        { value: 2, label: "余额不足" },
+        { value: 3, label: "欠费" },
+      ],
+
+      // 标签列表
+      labelList: [],
+
+      // 表格数据
+      tableData: [],
+      loading: false,
+      submitting: false,
+
+      // 分页数据
+      pageData: {
+        current: 1,
+        size: 6,
+        total: 0,
+      },
+
+      // 弹窗状态
+      addDialogVisible: false,
+      rechargeVisible: false,
+      deductVisible: false,
+      qrcodeVisible: false,
+
+      // 当前操作的租户
+      currentTenant: {},
+
+      // 编辑表单
+      editForm: {},
+    };
+  },
+
+  computed: {
+    ...mapGetters("manager", ["currentManagerId"]),
+    dataLength() {
+      return this.tableData.length;
     },
-    
-    computed: {
-      displayBasicFields() {
-        return this.searchFields.basic;
-      },
-      
-      dataLength() {
-        return this.tableData.length;
-      },
-      
-      dynamicTableHeight() {
-        const dataLength = this.tableData.length;
-        if (dataLength === 0) {
-          return this.tableHeightConfig.minHeight;
-        }
-        if (dataLength <= this.tableHeightConfig.maxRows) {
-          return (
-            this.tableHeightConfig.headerHeight +
-            dataLength * this.tableHeightConfig.rowHeight
-          );
-        }
+    dynamicTableHeight() {
+      const dataLength = this.tableData.length;
+
+      if (dataLength === 0) {
+        return this.tableHeightConfig.minHeight;
+      }
+
+      // 数据 <= 9条：显示实际行数高度
+      if (dataLength <= this.tableHeightConfig.maxRows) {
         return (
           this.tableHeightConfig.headerHeight +
-          this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
+          dataLength * this.tableHeightConfig.rowHeight
         );
       }
+
+      // 数据 > 9条：固定显示9行高度 + 内部滚动
+      return (
+        this.tableHeightConfig.headerHeight +
+        this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
+      );
     },
-    
-    mounted() {
+  },
+
+  watch: {
+    currentManagerId: {
+      handler(newVal) {
+        if (newVal) {
+          this.queryData.managerId = newVal;
+          this.fetchLabelList();
+          this.fetchTableData();
+        }
+      },
+      immediate: true,
+    },
+  },
+
+  methods: {
+    // 获取标签列表
+    async fetchLabelList() {
+      try {
+        const response = await labelList({
+          managerId: this.queryData.managerId,
+          type: 1, // 租户标签类型
+        });
+        if (response.code === 200) {
+          this.labelList = response.data || [];
+        }
+      } catch (error) {
+        console.error("获取标签列表失败:", error);
+      }
+    },
+
+    // 获取表格数据
+    async fetchTableData() {
+      this.loading = true;
+      try {
+        const params = {
+          id: this.queryData.id,
+          managerId: this.queryData.managerId,
+          labelIds: this.queryData.labelIds.join(","),
+          balanceStatus: this.queryData.balanceStatus || null,
+          tenantStatus: this.queryData.tenantStatus,
+          idList: [],
+          page: {
+            current: this.pageData.current,
+            size: this.pageData.size,
+            orders: [
+              { asc: true, column: "id" },
+              { asc: true, column: "tenantStatus" },
+            ],
+          },
+        };
+
+        const response = await tenantPageTenant(params);
+
+        if (response.code === 200 && response.data) {
+          this.tableData = response.data.dataList || [];
+          this.pageData.total = response.data.total || 0;
+        } else {
+          this.$message.error(response.msg || "获取数据失败");
+        }
+      } catch (error) {
+        this.$message.error("获取租户数据失败");
+        console.error("获取租户数据失败:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 格式化余额
+    formatBalance(balance) {
+      return (balance || 0).toFixed(2);
+    },
+
+    // 格式化数字（千分位）
+    formatNumber(num) {
+      return num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
+    },
+
+    // 格式化日期
+    formatDate(date) {
+      if (!date) return "-";
+      const d = new Date(date);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(d.getDate()).padStart(2, "0")}`;
+    },
+
+    // 格式化电话列表
+    formatPhoneList(phoneList) {
+      if (!phoneList || phoneList.length === 0) return "-";
+      return phoneList.filter((phone) => phone).join("、") || "-";
+    },
+
+    // 获取余额样式类
+    getBalanceClass(balance) {
+      if (balance < 0) return "balance-danger";
+      if (balance < 50) return "balance-warning";
+      return "balance-success";
+    },
+
+    // 获取余额状态类
+    getBalanceStatusClass(status) {
+      const classMap = {
+        1: "success",
+        2: "warning",
+        3: "info",
+        4: "danger",
+      };
+      return classMap[status] || "info";
+    },
+
+    // 获取余额状态标签
+    getBalanceStatusLabel(status) {
+      const statusMap = {
+        1: "正常",
+        2: "余额不足",
+        3: "欠费",
+      };
+      return statusMap[status] || "未知";
+    },
+
+    // 获取余额状态类型
+    getBalanceStatusType(status) {
+      const typeMap = {
+        1: "success",
+        2: "warning",
+        3: "info",
+        4: "danger",
+      };
+      return typeMap[status] || "info";
+    },
+
+    // 表格行样式
+    tableRowClassName({ row, rowIndex }) {
+      return rowIndex % 2 === 0 ? "even-row" : "odd-row";
+    },
+
+    // 处理图片加载错误
+    handleImageError(event) {
+      event.target.style.display = "none";
+    },
+
+    // 查询
+    handleSearch() {
+      this.pageData.current = 1;
       this.fetchTableData();
     },
-    
-    methods: {
-      // 获取模拟数据
-      fetchTableData() {
-        this.loading = true;
-        
-        // 模拟API调用
-        setTimeout(() => {
-          const mockData = [
-            {
-              tenantId: "T20250001",
-              tenantName: "张三",
-              phone: "13800138001",
-              roomInfo: "A座-101室",
-              tags: "VIP",
-              balance: 156.80,
-              balanceStatus: "SUFFICIENT",
-              createTime: "2024-12-01 10:30:00"
-            },
-            {
-              tenantId: "T20250002", 
-              tenantName: "李四",
-              phone: "13800138002",
-              roomInfo: "A座-102室",
-              tags: "NORMAL",
-              balance: 25.30,
-              balanceStatus: "INSUFFICIENT",
-              createTime: "2024-12-02 14:20:00"
-            },
-            {
-              tenantId: "T20250003",
-              tenantName: "王五",
-              phone: "13800138003", 
-              roomInfo: "B座-201室",
-              tags: "ARREARS",
-              balance: -50.00,
-              balanceStatus: "ARREARS",
-              createTime: "2024-11-28 09:15:00"
-            },
-            {
-              tenantId: "T20250004",
-              tenantName: "赵六",
-              phone: "13800138004",
-              roomInfo: "B座-202室", 
-              tags: "NEW",
-              balance: 0,
-              balanceStatus: "ZERO",
-              createTime: "2024-12-05 16:45:00"
-            },
-            {
-              tenantId: "T20250005",
-              tenantName: "孙七",
-              phone: "13800138005",
-              roomInfo: "C座-301室",
-              tags: "VIP", 
-              balance: 890.50,
-              balanceStatus: "SUFFICIENT",
-              createTime: "2024-11-25 11:00:00"
-            },
-            {
-              tenantId: "T20250006",
-              tenantName: "周八",
-              phone: "13800138006",
-              roomInfo: "C座-302室",
-              tags: "NORMAL",
-              balance: 78.90,
-              balanceStatus: "SUFFICIENT", 
-              createTime: "2024-12-03 13:25:00"
-            }
-          ];
-          
-          this.tableData = mockData;
-          this.pageData.total = mockData.length;
-          this.loading = false;
-        }, 500);
-      },
-      
-      // 获取余额状态标签
-      getBalanceStatusLabel(status) {
-        const statusMap = {
-          'SUFFICIENT': '充足',
-          'INSUFFICIENT': '不足', 
-          'ZERO': '为零',
-          'ARREARS': '欠费'
-        };
-        return statusMap[status] || '未知';
-      },
-      
-      // 获取余额状态类型
-      getBalanceStatusType(status) {
-        const typeMap = {
-          'SUFFICIENT': 'success',
-          'INSUFFICIENT': 'warning',
-          'ZERO': 'info', 
-          'ARREARS': 'danger'
-        };
-        return typeMap[status] || 'info';
-      },
-      
-      // 查询
-      handleSearch() {
-        this.pageData.current = 1;
-        this.fetchTableData();
-      },
-      
-      // 重置
-      handleReset() {
-        this.queryData = {
-          tenantName: "",
-          phone: "",
-          tags: "",
-          balanceStatus: "",
-        };
-        this.handleSearch();
-      },
-      
-      // 新增租户
-      handleAdd() {
-        this.$message.info("新增租户功能开发中...");
-      },
-      
-      // 查看详情
-      handleDetail(row) {
-        this.$message.info(`查看租户 ${row.tenantName} 的详情`);
-      },
-      
-      // 催缴
-      handleUrge(row) {
-        this.$confirm(`确定要向租户 ${row.tenantName} 发送催缴通知吗？`, '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }).then(() => {
-          this.$message.success('催缴通知发送成功！');
-        }).catch(() => {
-          this.$message.info('已取消催缴');
-        });
-      },
-      
-      // 手动充值
-      handleRecharge(row) {
-        this.currentTenant = row;
-        this.rechargeForm = {
-          amount: null,
-          remark: ""
-        };
-        this.rechargeVisible = true;
-        this.$nextTick(() => {
-          this.$refs.rechargeForm && this.$refs.rechargeForm.clearValidate();
-        });
-      },
-      
-      // 充值提交
-      handleRechargeSubmit() {
-        this.$refs.rechargeForm.validate((valid) => {
-          if (valid) {
-            this.$confirm(`确定要为租户 ${this.currentTenant.tenantName} 充值 ¥${this.rechargeForm.amount} 吗？`, '确认充值', {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning',
-            }).then(() => {
-              // 模拟充值操作
-              setTimeout(() => {
-                this.$message.success('充值成功！');
-                this.rechargeVisible = false;
-                this.fetchTableData(); // 刷新数据
-              }, 1000);
-            });
-          }
-        });
-      },
-      
-      // 手动扣款
-      handleDeduct(row) {
-        this.currentTenant = row;
-        this.deductForm = {
-          amount: null,
-          reason: ""
-        };
-        this.deductVisible = true;
-        this.$nextTick(() => {
-          this.$refs.deductForm && this.$refs.deductForm.clearValidate();
-        });
-      },
-      
-      // 扣款提交
-      handleDeductSubmit() {
-        this.$refs.deductForm.validate((valid) => {
-          if (valid) {
-            this.$confirm(`确定要为租户 ${this.currentTenant.tenantName} 扣款 ¥${this.deductForm.amount} 吗？`, '确认扣款', {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning',
-            }).then(() => {
-              // 模拟扣款操作
-              setTimeout(() => {
-                this.$message.success('扣款成功！');
-                this.deductVisible = false;
-                this.fetchTableData(); // 刷新数据
-              }, 1000);
-            });
-          }
-        });
-      },
-      
-      // 查看二维码
-      handleQrcode(row) {
-        this.currentTenant = row;
-        this.qrcodeVisible = true;
-      },
-      
-      // 处理下拉命令
-      handleCommand(command) {
-        switch (command) {
-          case "export":
-            this.$message.info("导出功能开发中...");
-            break;
-          case "import":
-            this.$message.info("导入功能开发中...");
-            break;
-          case "batch":
-            this.$message.info("批量操作功能开发中...");
-            break;
-        }
-      },
-      
-      // 处理表格下拉命令
-      handleTableCommand(command, row) {
-        switch (command) {
-          case "recharge":
-            this.handleRecharge(row);
-            break;
-          case "deduct":
-            this.handleDeduct(row);
-            break;
-          case "qrcode":
-            this.handleQrcode(row);
-            break;
-        }
-      },
-      
-      // 选择变化
-      handleSelectionChange(selection) {
-        this.selectedData = selection;
-      },
-      
-      // 分页大小变化
-      handleSizeChange(val) {
-        this.pageData.size = val;
-        this.pageData.current = 1;
-        this.fetchTableData();
-      },
-      
-      // 当前页变化
-      handleCurrentChange(val) {
-        this.pageData.current = val;
-        this.fetchTableData();
+
+    // 重置
+    handleReset() {
+      this.queryData = {
+        id: "",
+        name: "",
+        labelIds: [],
+        balanceStatus: "",
+        managerId: this.currentManagerId,
+        tenantStatus: 0,
+      };
+      this.handleSearch();
+    },
+
+    // 新增租户
+    handleAdd() {
+      this.editForm = {};
+      this.addDialogVisible = true;
+    },
+
+    // 新增成功
+    handleAddSuccess() {
+      this.addDialogVisible = false;
+      this.fetchTableData();
+    },
+
+    // 查看详情
+    handleDetail(row) {
+      // this.$router.push({
+      //   path: "/tenant-detail",
+      //   query: { id: row.id },
+      // });
+    },
+
+    // 催缴
+    async handleUrge(row) {
+      if (row.balanceStatus === 1) {
+        this.$message.warning("该租户暂不需要催缴");
+        return;
       }
-    }
-  };
-  </script>
-  
-  <style lang="scss" scoped>
-  // 引入表格页面公共样式
-  @import "@/assets/styles/table-page.scss";
-  
-  // 视图切换按钮样式
-  .view-toggle {
-    .el-button {
-      padding: 7px 12px;
-      
-      &.is-active,
-      &.el-button--primary {
-        background-color: #409eff;
-        border-color: #409eff;
-        color: #fff;
+
+      try {
+        await this.$confirm(
+          `确定要向租户 ${row.name} 发送催缴通知吗？`,
+          "提示",
+          {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning",
+          }
+        );
+
+        const response = await balancePush(row.id);
+        if (response.code === 200) {
+          this.$message.success("催缴通知发送成功");
+          this.fetchTableData();
+        } else {
+          this.$message.error(response.msg || "催缴失败");
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          console.error("催缴失败:", error);
+        }
       }
-    }
-  }
-  
-  // 卡片视图样式
-  .card-container {
-    margin-top: 16px;
-    
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-      gap: 20px;
-      padding: 20px;
-      background: #fff;
-      border-radius: 6px;
-      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-    }
-  }
-  
-  // 租户卡片样式
-  .tenant-card {
-    background: #fff;
-    border: 1px solid #e4e7ed;
-    border-radius: 12px;
-    padding: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.06);
-    
+    },
+
+    // 手动充值
+    handleRecharge(row) {
+      this.currentTenant = row;
+      this.rechargeVisible = true;
+    },
+
+    // 充值成功
+    handleRechargeSuccess() {
+      this.rechargeVisible = false;
+      this.fetchTableData();
+    },
+
+    // 手动扣款
+    handleDeduct(row) {
+      this.currentTenant = row;
+      this.deductVisible = true;
+    },
+
+    // 扣款成功
+    handleDeductSuccess() {
+      this.deductVisible = false;
+      this.fetchTableData();
+    },
+
+    // 查看二维码
+    handleQrcode(row) {
+      this.currentTenant = row;
+      this.qrcodeVisible = true;
+    },
+
+    // 处理表格下拉命令
+    handleTableCommand(command, row) {
+      switch (command) {
+        case "recharge":
+          this.handleRecharge(row);
+          break;
+        case "deduct":
+          this.handleDeduct(row);
+          break;
+      }
+    },
+
+    // 分页大小变化
+    handleSizeChange(val) {
+      this.pageData.size = val;
+      this.pageData.current = 1;
+      this.fetchTableData();
+    },
+
+    // 当前页变化
+    handleCurrentChange(val) {
+      this.pageData.current = val;
+      this.fetchTableData();
+    },
+  },
+};
+</script>
+
+<style lang="scss" scoped>
+// 引入表格页面公共样式
+@import "@/assets/styles/table-page.scss";
+
+// 全局变量
+$primary-color: #409eff;
+$primary-light: #66b1ff;
+$success-color: #67c23a;
+$warning-color: #e6a23c;
+$danger-color: #f56c6c;
+$info-color: #909399;
+
+// 视图切换样式 - 改为蓝色
+.view-switcher {
+  margin: 0 24px;
+
+  ::v-deep .el-radio-button__inner {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 20px;
+    transition: all 0.3s;
+
     &:hover {
-      border-color: #409eff;
-      box-shadow: 0 4px 20px 0 rgba(64, 158, 255, 0.15);
-      transform: translateY(-2px);
+      background: rgba(64, 158, 255, 0.05);
     }
-    
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 16px;
-      
-      .tenant-basic-info {
+  }
+
+  ::v-deep .el-radio-button__orig-radio:checked + .el-radio-button__inner {
+    background: linear-gradient(135deg, $primary-color 0%, $primary-light 100%);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  }
+}
+
+// 操作栏布局
+.form-actions {
+  .action-center {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+// 渐变按钮 - 保持原有紫色渐变
+.gradient-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white !important;
+
+  &:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+}
+
+// 卡片视图容器
+.card-view-container {
+  min-height: 400px;
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); // 改小到340px
+    gap: 16px; // 减小间距
+    padding: 4px;
+  }
+}
+
+// 现代化卡片设计 - 保持原有样式，稍微缩小
+.tenant-card-modern {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+
+    .card-header-modern {
+      background: linear-gradient(135deg, #f6f8fb 0%, #fff 100%);
+    }
+  }
+
+  // 状态标签
+  .card-ribbon {
+    position: absolute;
+    top: 12px;
+    right: -30px;
+    transform: rotate(45deg);
+    width: 120px;
+    text-align: center;
+    font-size: 11px;
+    padding: 4px 0;
+    color: white;
+    font-weight: 500;
+    z-index: 1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    &.ribbon-success {
+      background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+    }
+
+    &.ribbon-warning {
+      background: linear-gradient(135deg, #faad14 0%, #ffc53d 100%);
+    }
+
+    &.ribbon-danger {
+      background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+    }
+
+    &.ribbon-info {
+      // background: linear-gradient(135deg, #8c8c8c 0%, #bfbfbf 100%);
+      background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+    }
+  }
+
+  // 卡片头部 - 稍微缩小尺寸
+  .card-header-modern {
+    display: flex;
+    align-items: center;
+    padding: 16px; // 从20px改为16px
+    background: linear-gradient(135deg, #fff 0%, #f6f8fb 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: background 0.3s;
+
+    .tenant-avatar {
+      width: 42px; // 从48px改为42px
+      height: 42px;
+      margin-right: 14px; // 从16px改为14px
+      flex-shrink: 0;
+
+      img {
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        object-fit: cover;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: flex;
         align-items: center;
-        
-        .tenant-avatar {
-          width: 48px;
-          height: 48px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-right: 12px;
-          
-          i {
-            font-size: 24px;
-            color: #fff;
-          }
-        }
-        
-        .tenant-info {
-          .tenant-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: #303133;
-            margin: 0 0 4px 0;
-            line-height: 1.2;
-          }
-          
-          .tenant-id {
-            font-size: 12px;
-            color: #909399;
-            margin: 0;
-            line-height: 1.2;
-          }
-        }
-      }
-      
-      .tenant-tags {
-        flex-shrink: 0;
+        justify-content: center;
+        color: white;
+        font-size: 18px; // 从20px改为18px
+        font-weight: 600;
+        text-transform: uppercase;
       }
     }
-    
-    .card-content {
-      .info-row {
-        margin-bottom: 12px;
-        
-        .info-item {
-          display: flex;
-          align-items: center;
-          font-size: 13px;
-          
-          .info-icon {
-            font-size: 14px;
-            color: #909399;
-            margin-right: 6px;
-            width: 14px;
-          }
-          
-          .info-label {
-            color: #606266;
-            margin-right: 4px;
-          }
-          
-          .info-value {
-            color: #303133;
-            font-weight: 500;
-          }
-        }
+
+    .tenant-info {
+      flex: 1;
+      min-width: 0;
+
+      .tenant-name {
+        margin: 0;
+        font-size: 15px; // 从16px改为15px
+        font-weight: 600;
+        color: #1f2329;
+        line-height: 1.4;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
-      
-      .balance-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #f8f9fa;
+
+      .tenant-code {
+        font-size: 12px;
+        color: #8e92a0;
+        margin-top: 2px;
+        display: inline-block;
+      }
+    }
+
+    .qr-button {
+      color: #8e92a0;
+      padding: 8px;
+      font-size: 20px;
+
+      &:hover {
+        color: $primary-color;
+        background: rgba(64, 158, 255, 0.1);
         border-radius: 8px;
-        padding: 12px;
-        margin: 16px 0;
-        
-        .balance-info {
-          display: flex;
-          flex-direction: column;
-          
-          .balance-label {
-            font-size: 12px;
-            color: #909399;
-            margin-bottom: 4px;
-          }
-          
-          .balance-amount {
-            font-size: 18px;
-            font-weight: 600;
-          }
-        }
-        
-        .balance-status {
-          flex-shrink: 0;
-        }
-      }
-      
-      .time-info {
-        .create-time {
-          font-size: 12px;
-          color: #909399;
-        }
       }
     }
-    
-    .card-actions {
+  }
+
+  // 标签区域 - 保持原有彩色设计
+  .card-tags {
+    padding: 10px 16px; // 从12px改为10px
+    min-height: 32px; // 从36px改为32px
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+
+    .custom-tag {
+      border: none;
+      padding: 3px 8px; // 从4px改为3px
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+
+      &.tag-color-0 {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+        color: #d63031;
+      }
+
+      &.tag-color-1 {
+        background: linear-gradient(135deg, #a8e6cf 0%, #81c784 100%);
+        color: #2e7d32;
+      }
+
+      &.tag-color-2 {
+        background: linear-gradient(135deg, #c3cfe2 0%, #a1c4fd 100%);
+        color: #1565c0;
+      }
+
+      &.tag-color-3 {
+        background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%);
+        color: #6a1b9a;
+      }
+
+      &.tag-color-4 {
+        background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+        color: #512da8;
+      }
+    }
+
+    .no-tags {
+      color: #bfbfbf;
+      font-size: 12px;
+    }
+  }
+
+  // 指标展示
+  .card-metrics {
+    display: flex;
+    padding: 14px 16px; // 从16px改为14px
+    gap: 24px;
+    background: #fafbfc;
+
+    .metric-item {
+      flex: 1;
+
+      .metric-label {
+        display: block;
+        font-size: 11px;
+        color: #8e92a0;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .metric-value {
+        font-size: 14px;
+        color: #1f2329;
+        font-weight: 600;
+      }
+    }
+  }
+
+  // 余额展示区域
+  .balance-section {
+    padding: 14px; // 从16px改为14px
+    background: white;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+
+    .balance-main {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid #f0f2f5;
-      
+      margin-bottom: 10px;
+
+      .balance-label {
+        font-size: 11px;
+        color: #8e92a0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .balance-amount {
+        display: flex;
+        align-items: baseline;
+
+        .currency {
+          font-size: 13px;
+          margin-right: 2px;
+        }
+
+        .amount {
+          font-size: 20px;
+          font-weight: 700;
+        }
+
+        &.balance-success {
+          color: $success-color;
+        }
+
+        &.balance-warning {
+          color: $warning-color;
+        }
+
+        &.balance-danger {
+          color: $danger-color;
+        }
+      }
+    }
+
+    // 新的操作按钮设计 - 使用蓝色系
+    .balance-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+      gap: 4px;
+
       .el-button {
-        flex: 1;
-        margin-right: 8px;
-        
-        &:last-child {
-          margin-right: 0;
+        padding: 0;
+        height: 28px;
+        border-radius: 6px;
+        font-size: 12px;
+
+        &--mini {
+          padding: 0 8px;
+        }
+
+        // 详情按钮 - 蓝色
+        &--primary:not(.is-plain) {
+          background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+          border-color: transparent;
+          color: white;
+
+          &:hover {
+            background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+          }
+        }
+
+        // 普通操作按钮
+        &.is-plain {
+          background: #f4f5f7;
+          border: 1px solid #e4e7ed;
+          color: #606266;
+
+          &:hover {
+            background: #ecf5ff;
+            border-color: #409eff;
+            color: #409eff;
+          }
+        }
+
+        // 警告按钮 - 催缴
+        &--warning.is-plain {
+          background: #fef5ec;
+          border-color: #f6d5a5;
+          color: #e6a23c;
+
+          &:hover {
+            background: #fdf0e0;
+            border-color: #e6a23c;
+            color: #d48806;
+          }
         }
       }
     }
   }
-  
-  // 二维码弹窗样式
-  .qrcode-container {
-    text-align: center;
-    
-    .qrcode-info {
-      margin-bottom: 20px;
-      
-      h3 {
-        color: #303133;
-        margin-bottom: 8px;
+}
+
+// 表格视图样式优化 - 保持原有样式
+.table-container {
+  .table-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .custom-table {
+    ::v-deep .el-table__row {
+      &.even-row {
+        background: #fafbfc;
       }
-      
-      p {
-        color: #606266;
-        margin: 4px 0;
-        font-size: 14px;
+
+      &:hover > td {
+        background: #f0f5ff !important;
       }
     }
-    
-    .qrcode-image {
-      margin: 20px 0;
-      
-      .mock-qrcode {
-        width: 200px;
-        height: 200px;
-        border: 2px dashed #dcdfe6;
-        margin: 0 auto;
+
+    // 租户信息单元格
+    .tenant-cell {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+
+      .tenant-logo {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        object-fit: cover;
+        margin-right: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .logo-placeholder {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        margin-right: 12px;
+        flex-shrink: 0;
+      }
+
+      .tenant-link {
+        font-weight: 500;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    // 表格中的标签 - 保持原有彩色设计
+    .table-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    // 余额单元格
+    .balance-cell {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    // 金额单元格
+    .amount-cell {
+      font-weight: 500;
+      color: #1f2329;
+    }
+
+    // 操作按钮组 - 增加更多操作按钮
+    .table-actions-group {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+
+      .action-btn {
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+
+        &:hover {
+          background: rgba(64, 158, 255, 0.1);
+        }
+
+        &.primary {
+          color: $primary-color;
+        }
+
+        &.warning {
+          color: $warning-color;
+        }
+      }
+    }
+
+    // 图标按钮
+    .icon-button {
+      font-size: 18px;
+      color: #8e92a0;
+
+      &:hover {
+        color: $primary-color;
+      }
+    }
+  }
+}
+
+// 分页样式 - 使用蓝色
+.modern-pagination {
+  ::v-deep {
+    .el-pagination__total {
+      font-weight: 500;
+      color: #606266;
+    }
+
+    .el-pager li {
+      border-radius: 8px;
+      margin: 0 2px;
+
+      &.active {
+        background: linear-gradient(
+          135deg,
+          $primary-color 0%,
+          $primary-light 100%
+        );
+        color: white;
+      }
+    }
+
+    .el-pagination__jump {
+      .el-input__inner {
         border-radius: 8px;
-        background: #fafafa;
-        
-        i {
-          font-size: 48px;
-          color: #909399;
-          margin-bottom: 8px;
-        }
-        
-        p {
-          color: #909399;
-          font-size: 14px;
-          margin: 0;
-        }
-      }
-    }
-    
-    .qrcode-tips {
-      p {
-        color: #909399;
-        font-size: 13px;
-        margin: 0;
       }
     }
   }
-  
-  // 响应式设计
-  @media (max-width: 768px) {
-    .card-container {
-      .card-grid {
-        grid-template-columns: 1fr;
-        padding: 16px;
-        gap: 16px;
-      }
-    }
-    
-    .tenant-card {
-      padding: 16px;
-      
-      .card-header {
-        .tenant-basic-info {
-          .tenant-avatar {
-            width: 40px;
-            height: 40px;
-            
-            i {
-              font-size: 20px;
-            }
-          }
-          
-          .tenant-info {
-            .tenant-name {
-              font-size: 14px;
-            }
-          }
-        }
-      }
-      
-      .card-content {
-        .balance-section {
-          padding: 10px;
-          
-          .balance-info {
-            .balance-amount {
-              font-size: 16px;
-            }
-          }
-        }
-      }
+}
+
+// 防止页面切换闪烁
+.data-container {
+  min-height: 500px;
+  position: relative;
+}
+
+// 响应式设计
+@media (max-width: 1400px) {
+  .card-view-container {
+    .card-grid {
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     }
   }
-  
-  // 表格操作按钮组样式优化
-  .table-actions-group {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    .el-button + .el-divider {
-      margin: 0 8px;
+}
+
+@media (max-width: 768px) {
+  .form-actions {
+    flex-direction: column;
+    gap: 12px;
+
+    .action-left,
+    .action-center,
+    .action-right {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .view-switcher {
+      margin: 0;
     }
   }
-  </style>
+
+  .card-view-container {
+    .card-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+}
+</style>

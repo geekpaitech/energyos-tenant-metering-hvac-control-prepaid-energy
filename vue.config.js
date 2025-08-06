@@ -5,6 +5,7 @@ module.exports = {
     proxy: {
       '/api': {
         target: 'https://foggy.szcloudpulse.com',
+        // target: 'https://ebc.ajnelec.net',
         changeOrigin: true,
         secure: true,
         logLevel: 'debug'

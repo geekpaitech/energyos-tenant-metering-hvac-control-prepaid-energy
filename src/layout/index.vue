@@ -384,7 +384,7 @@
             <div class="tree-header">
               <div class="tree-title">
                 <i class="el-icon-folder tree-icon"></i>
-                <span>资源树</span>
+                <span>区域层级</span>
               </div>
               <div class="tree-actions">
                 <!-- 刷新按钮 -->

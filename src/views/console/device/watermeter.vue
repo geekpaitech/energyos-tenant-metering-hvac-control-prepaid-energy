@@ -191,10 +191,12 @@
           class="custom-table"
           @selection-change="handleSelectionChange"
           :header-cell-style="{
-            background: '#f5f7fa',
-            color: '#606266',
-            fontWeight: '600',
-          }"
+              background: 'linear-gradient(180deg, #f8f9fc 0%, #f0f2f5 100%)',
+              color: '#1f2329',
+              fontWeight: '600',
+              fontSize: '13px',
+              borderBottom: '2px solid #e8e8e8'
+            }"
         >
           <el-table-column type="selection" width="55" align="center" />
 
