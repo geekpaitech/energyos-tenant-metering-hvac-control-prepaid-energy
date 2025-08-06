@@ -3,15 +3,15 @@ import { login, logout, getUserInfo } from '@/api/user'
 
 const TokenKey = 'Admin-Token'
 
-function getToken () {
+function getToken() {
   return Cookies.get(TokenKey)
 }
 
-function setToken (token) {
+function setToken(token) {
   return Cookies.set(TokenKey, token)
 }
 
-function removeToken () {
+function removeToken() {
   return Cookies.remove(TokenKey)
 }
 
@@ -22,8 +22,9 @@ const state = {
   introduction: '',
   roles: [],
   permissions: [],
-  role: '', // 添加role字段
-  phone: '' // 添加phone字段
+  role: '', // 主要角色字段
+  phone: '', // 电话字段
+  userInfoLoaded: false // 用户信息是否已加载
 }
 
 const mutations = {
@@ -50,12 +51,26 @@ const mutations = {
   },
   SET_PHONE: (state, phone) => {
     state.phone = phone
+  },
+  SET_USER_INFO_LOADED: (state, loaded) => {
+    state.userInfoLoaded = loaded
+  },
+  RESET_USER_STATE: (state) => {
+    state.token = ''
+    state.name = ''
+    state.avatar = ''
+    state.introduction = ''
+    state.roles = []
+    state.permissions = []
+    state.role = ''
+    state.phone = ''
+    state.userInfoLoaded = false
   }
 }
 
 const actions = {
   // 用户登录
-  login ({ commit }, userInfo) {
+  login({ commit }, userInfo) {
     console.log('执行登录action:', userInfo)
     
     const { username, password } = userInfo
@@ -69,27 +84,37 @@ const actions = {
         const { data, msg } = response
         commit('SET_TOKEN', data)
         setToken(data)
-        console.log('登录成功，token:', data)
-        console.log('登录消息:', msg)
+        console.log('登录成功，token已保存')
         resolve(response)
       }).catch(error => {
-        console.log('登录失败:', error)
+        console.error('登录失败:', error)
         reject(error)
       })
     })
   },
 
   // 获取用户信息
-  getUserInfo ({ commit, state }) {
+  getUserInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
+      // 如果用户信息已经加载，直接返回
+      if (state.userInfoLoaded && state.role) {
+        console.log('用户信息已存在，直接返回')
+        resolve({ role: state.role, name: state.name, phone: state.phone })
+        return
+      }
+
+      console.log('开始获取用户信息...')
+      
       getUserInfo(state.token).then(response => {
         const { data } = response
 
         if (!data) {
           reject(new Error('验证失败，请重新登录'))
+          return
         }
 
         const { role, name, phone } = data
+        console.log('获取用户信息成功:', { role, name, phone })
 
         // 设置用户信息
         commit('SET_ROLE', role)
@@ -100,16 +125,22 @@ const actions = {
         const roles = [role] 
         commit('SET_ROLES', roles)
         
-        // 设置默认头像
+        // 设置默认头像和介绍
         commit('SET_AVATAR', 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif')
         commit('SET_INTRODUCTION', `我是${name || phone || '用户'}`)
         
         // 设置基础权限
         const permissions = ['*:*:*'] // 基础权限，具体权限通过菜单权限控制
         commit('SET_PERMISSIONS', permissions)
+        
+        // 标记用户信息已加载
+        commit('SET_USER_INFO_LOADED', true)
 
         resolve(data)
       }).catch(error => {
+        console.error('获取用户信息失败:', error)
+        // 清理可能的无效状态
+        commit('SET_USER_INFO_LOADED', false)
         reject(error)
       })
     })
@@ -123,62 +154,13 @@ const actions = {
       // 调用退出API
       logout().then(async () => {
         console.log('退出API调用成功')
-        
-        // 清除用户状态
-        commit('SET_TOKEN', '')
-        commit('SET_NAME', '')
-        commit('SET_AVATAR', '')
-        commit('SET_INTRODUCTION', '')
-        commit('SET_ROLES', [])
-        commit('SET_PERMISSIONS', [])
-        commit('SET_ROLE', '')
-        commit('SET_PHONE', '')
-        removeToken()
-        
-        console.log('用户状态已清除')
-        
-        try {
-          // 重置权限路由
-          await dispatch('permission/resetRoutes', null, { root: true })
-          console.log('权限路由已重置')
-          
-          // 重置路由标记
-          const { resetRouteFlag } = require('@/permission')
-          resetRouteFlag()
-        } catch (routeError) {
-          console.warn('重置权限路由失败:', routeError)
-        }
-        
+        await performLogoutCleanup(commit, dispatch)
         resolve()
         
       }).catch(async error => {
         console.error('退出API调用失败:', error)
-        
         // 即使API调用失败，也要清除本地状态
-        commit('SET_TOKEN', '')
-        commit('SET_NAME', '')
-        commit('SET_AVATAR', '')
-        commit('SET_INTRODUCTION', '')
-        commit('SET_ROLES', [])
-        commit('SET_PERMISSIONS', [])
-        commit('SET_ROLE', '')
-        commit('SET_PHONE', '')
-        removeToken()
-        
-        console.log('本地状态已强制清除')
-        
-        try {
-          // 尝试重置路由
-          await dispatch('permission/resetRoutes', null, { root: true })
-          console.log('权限路由已重置')
-          
-          // 重置路由标记
-          const { resetRouteFlag } = require('@/permission')
-          resetRouteFlag()
-        } catch (routeError) {
-          console.warn('重置权限路由失败:', routeError)
-        }
-        
+        await performLogoutCleanup(commit, dispatch)
         // 不reject，让退出流程继续
         resolve()
       })
@@ -186,41 +168,51 @@ const actions = {
   },
 
   // 删除token
-  resetToken ({ commit, dispatch }) {
+  resetToken({ commit, dispatch }) {
     return new Promise(async resolve => {
       console.log('重置token')
-      commit('SET_TOKEN', '')
-      commit('SET_NAME', '')
-      commit('SET_AVATAR', '')
-      commit('SET_INTRODUCTION', '')
-      commit('SET_ROLES', [])
-      commit('SET_PERMISSIONS', [])
-      commit('SET_ROLE', '')
-      commit('SET_PHONE', '')
-      removeToken()
-      
-      try {
-        // 重置路由
-        await dispatch('permission/resetRoutes', null, { root: true })
-        console.log('Token重置时路由已重置')
-        
-        // 重置路由标记
-        const { resetRouteFlag } = require('@/permission')
-        resetRouteFlag()
-      } catch (error) {
-        console.warn('Token重置时路由重置失败:', error)
-      }
-      
+      await performLogoutCleanup(commit, dispatch)
       resolve()
     })
   }
+}
+
+/**
+ * 执行退出清理操作
+ */
+async function performLogoutCleanup(commit, dispatch) {
+  // 清除用户状态
+  commit('RESET_USER_STATE')
+  removeToken()
+  console.log('用户状态已清除')
+  
+  try {
+    // 重置权限路由
+    await dispatch('permission/resetRoutes', null, { root: true })
+    console.log('权限路由已重置')
+  } catch (routeError) {
+    console.warn('重置权限路由失败:', routeError)
+  }
+}
+
+const getters = {
+  token: state => state.token,
+  name: state => state.name,
+  avatar: state => state.avatar,
+  introduction: state => state.introduction,
+  roles: state => state.roles,
+  permissions: state => state.permissions,
+  role: state => state.role,
+  phone: state => state.phone,
+  userInfoLoaded: state => state.userInfoLoaded
 }
 
 const userModule = {
   namespaced: true,
   state,
   mutations,
-  actions
+  actions,
+  getters
 }
 
 export default userModule
