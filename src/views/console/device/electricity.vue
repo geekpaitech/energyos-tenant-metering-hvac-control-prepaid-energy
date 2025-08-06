@@ -248,7 +248,7 @@
         <el-table
           v-loading="loading"
           :data="tableData"
-          :height="dataLength > 9 ? dynamicTableHeight : null"
+          :max-height="tableMaxHeight"
           stripe
           style="width: 100%"
           class="custom-table"
@@ -906,6 +906,13 @@ export default {
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
       );
     },
+    tableMaxHeight() {
+      // 始终返回最大高度（9行 + 表头）
+      return (
+        this.tableHeightConfig.headerHeight +
+        this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
+      );
+    },
   },
   watch: {
     currentManagerId: {
@@ -929,7 +936,6 @@ export default {
           managerId: this.queryData.managerId,
         };
         const response = await tenantPageTenant(params);
-        console.log(JSON.stringify(response.data), "response");
 
         if (response.code === 200 && response.data) {
           // 假设返回的数据格式为数组

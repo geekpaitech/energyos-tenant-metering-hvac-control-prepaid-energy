@@ -749,3 +749,259 @@
     }
   }
 }
+// 统计卡片区域 - B端高级设计
+.statistics-container {
+  margin-bottom: 16px;
+  
+  .statistics-card {
+    border-radius: 6px;
+    border: 1px solid #e8ecf0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    
+    ::v-deep .el-card__body {
+      padding: 0;
+    }
+    
+    // 统计内容包装器
+    .statistics-wrapper {
+      display: flex;
+      align-items: stretch;
+      height: 72px;
+      
+      // 统计项
+      .stat-item {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 0 24px;
+        position: relative;
+        transition: all 0.3s ease;
+        
+        // 分隔线
+        &:not(:last-child)::after {
+          content: '';
+          position: absolute;
+          right: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          height: 32px;
+          width: 1px;
+          background: linear-gradient(180deg, transparent, #e8ecf0, transparent);
+        }
+        
+        // 悬停效果
+        &:hover {
+          background: rgba(64, 158, 255, 0.02);
+          
+          .stat-value {
+            transform: scale(1.05);
+          }
+        }
+        
+        // 主要费用项样式
+        &.primary {
+          background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+          
+          .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+            img{
+              width: 26px;
+              height: 26px;
+            }
+          
+            
+            i {
+              font-size: 20px;
+              color: #fff;
+            }
+            
+            &.electricity {
+              background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            }
+            
+            &.water {
+              background: linear-gradient(135deg, #3B82F6, #06B6D4);
+            }
+            
+            &.service {
+              background: linear-gradient(135deg, #F59E0B, #FCD34D);
+            }
+          }
+          
+          .stat-content {
+            .stat-label {
+              font-size: 12px;
+              color: #86909c;
+              margin-bottom: 4px;
+              font-weight: 400;
+              letter-spacing: 0.5px;
+            }
+            
+            .stat-value {
+              font-size: 20px;
+              font-weight: 600;
+              color: #1d2129;
+              font-family: 'DIN Alternate', 'Helvetica Neue', sans-serif;
+              transition: transform 0.3s ease;
+              
+              .currency {
+                font-size: 14px;
+                font-weight: 400;
+                color: #86909c;
+                margin-right: 2px;
+              }
+            }
+          }
+        }
+        
+        // 次要费用项（设备）
+        &.secondary {
+          flex: 0.8;
+          
+          .stat-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: #f2f3f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            
+            
+            i {
+              font-size: 16px;
+              color: #86909c;
+            }
+          }
+          
+          .stat-content {
+            .stat-label {
+              font-size: 12px;
+              color: #a8b1bd;
+              margin-bottom: 2px;
+            }
+            
+            .stat-value {
+              font-size: 16px;
+              font-weight: 500;
+              color: #4e5969;
+              font-family: 'DIN Alternate', 'Helvetica Neue', sans-serif;
+              transition: transform 0.3s ease;
+              
+              .currency {
+                font-size: 12px;
+                color: #a8b1bd;
+              }
+            }
+          }
+        }
+        
+        // 合计样式
+        &.total {
+          flex: 1.2;
+          background: linear-gradient(135deg, #fff5f5 0%, #ffe4e4 100%);
+          padding-right: 32px;
+          
+          &::after {
+            display: none;
+          }
+          
+          .stat-content {
+            margin-left: auto;
+            text-align: right;
+            
+            .stat-label {
+              font-size: 12px;
+              color: #f56c6c;
+              margin-bottom: 4px;
+              font-weight: 500;
+              letter-spacing: 1px;
+              text-transform: uppercase;
+              opacity: 0.8;
+            }
+            
+            .stat-value {
+              font-size: 24px;
+              font-weight: 700;
+              background: linear-gradient(135deg, #f56c6c, #ff8e53);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              font-family: 'DIN Alternate', 'Helvetica Neue', sans-serif;
+              
+              .currency {
+                font-size: 16px;
+                font-weight: 400;
+                background: linear-gradient(135deg, #f56c6c, #ff8e53);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// 响应式布局
+@media (max-width: 1440px) {
+  .statistics-container {
+    .statistics-wrapper {
+      .stat-item {
+        padding: 0 16px;
+        
+        &.primary {
+          .stat-icon {
+            width: 36px;
+            height: 36px;
+            margin-right: 12px;
+            
+            i {
+              font-size: 18px;
+            }
+          }
+          
+          .stat-content {
+            .stat-value {
+              font-size: 18px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .statistics-container {
+    .statistics-wrapper {
+      height: auto;
+      flex-wrap: wrap;
+      
+      .stat-item {
+        width: 50%;
+        padding: 12px 16px;
+        
+        &::after {
+          display: none;
+        }
+        
+        &:nth-child(odd) {
+          border-right: 1px solid #e8ecf0;
+        }
+        
+        &:nth-child(n+3) {
+          border-top: 1px solid #e8ecf0;
+        }
+      }
+    }
+  }
+}

@@ -119,7 +119,7 @@
         <el-table
           v-loading="loading"
           :data="tableData"
-          :height="dataLength > 9 ? dynamicTableHeight : null"
+          :max-height="tableMaxHeight"
           stripe
           style="width: 100%"
           class="custom-table"
@@ -391,24 +391,12 @@ export default {
     },
 
     // 动态计算表格高度
-    dynamicTableHeight() {
-      const dataLength = this.tableData.length
-
-      if (dataLength === 0) {
-        return this.tableHeightConfig.minHeight
-      }
-
-      if (dataLength <= this.tableHeightConfig.maxRows) {
-        return (
-          this.tableHeightConfig.headerHeight +
-          dataLength * this.tableHeightConfig.rowHeight
-        )
-      }
-
+    tableMaxHeight() {
+      // 始终返回最大高度（9行 + 表头）
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-      )
+      );
     },
   },
 

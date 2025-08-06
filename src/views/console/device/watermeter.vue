@@ -183,7 +183,7 @@
 
         <!-- 数据表格 -->
         <el-table
-          :height="dataLength > 9 ? dynamicTableHeight : null"
+        :max-height="tableMaxHeight"
           v-loading="loading"
           :data="tableData"
           stripe
@@ -833,22 +833,8 @@ export default {
     displayAdvancedFields() {
       return this.searchFields.advanced;
     },
-    dynamicTableHeight() {
-      const dataLength = this.tableData.length;
-
-      if (dataLength === 0) {
-        return this.tableHeightConfig.minHeight;
-      }
-
-      // 数据 <= 9条：显示实际行数高度
-      if (dataLength <= this.tableHeightConfig.maxRows) {
-        return (
-          this.tableHeightConfig.headerHeight +
-          dataLength * this.tableHeightConfig.rowHeight
-        );
-      }
-
-      // 数据 > 9条：固定显示9行高度 + 内部滚动
+    tableMaxHeight() {
+      // 始终返回最大高度（9行 + 表头）
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight

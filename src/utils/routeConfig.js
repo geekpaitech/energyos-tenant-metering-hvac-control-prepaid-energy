@@ -268,19 +268,19 @@ export const consoleRoutes = [
             path: 'energy-bill',
             name: 'EnergyBill',
             component: () => import('@/views/console/bill/energyBill'),
-            meta: { title: '用能账单', icon: 'el-icon-s-order' }
+            meta: { title: '租户账单', icon: 'el-icon-s-order' }
           },
           {
             path: 'floating-price',
             name: 'FloatingPrice',
             component: () => import('@/views/console/bill/floatingPrice'),
-            meta: { title: '浮动电价', icon: 'el-icon-s-marketing' }
+            meta: { title: '账单统计', icon: 'el-icon-s-marketing' }
           },
           {
             path: 'manual-bill',
             name: 'ManualBill',
             component: () => import('@/views/console/bill/manualBill'),
-            meta: { title: '手动账单', icon: 'el-icon-edit' }
+            meta: { title: '公摊账单', icon: 'el-icon-edit' }
           }
         ]
       },
