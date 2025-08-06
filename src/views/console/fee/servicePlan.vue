@@ -801,15 +801,14 @@
   <style lang="scss" scoped>
   .electricity-plan-container {
     min-height: 100vh;
-    background: #f5f6f8;
-    padding: 24px;
+    padding: 16px;
   }
   
   // 页面头部
   .page-header {
     background: white;
     border-radius: 12px;
-    padding: 24px 32px;
+    padding: 16px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
