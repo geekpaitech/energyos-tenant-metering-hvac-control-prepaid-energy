@@ -39,7 +39,7 @@ router.beforeEach(async (to, from, next) => {
       return;
     }
 
-    // 检查是否有用户信息
+    // 检查是否有用户信息和路由
     const hasUserInfo = store.getters.name && store.getters.roles && store.getters.roles.length > 0;
     const hasRoutes = store.getters.permission_routes && store.getters.permission_routes.length > 0;
     
@@ -52,20 +52,58 @@ router.beforeEach(async (to, from, next) => {
       next();
     } else {
       try {
-        // 初始化用户信息和路由
-        await initializeUserAndRoutes();
-        
-        // 处理根路径重定向
-        if (to.path === "/" || to.path === "") {
-          const redirectPath = await getRedirectPath();
-          console.log("根路径重定向到:", redirectPath);
-          next({ path: redirectPath, replace: true });
-          return;
+        // 获取用户信息（如果还没有）
+        let role = store.getters.roles?.[0];
+        if (!hasUserInfo) {
+          console.log("获取用户信息...");
+          const userInfo = await store.dispatch("user/getUserInfo");
+          role = userInfo.role;
+          console.log("用户信息获取成功，角色:", role);
         }
 
-        // 确保目标路由存在，否则重新导航
-        console.log("重新导航到目标路由:", to.path);
-        next({ ...to, replace: true });
+        // 生成路由（如果还没有）
+        if (!hasRoutes) {
+          console.log("生成路由...");
+          
+          // 确定目标平台
+          const targetPlatform = await determinePlatform(role);
+          console.log("确定目标平台:", targetPlatform);
+
+          // 生成和添加路由
+          const accessRoutes = await store.dispatch("permission/generateRoutes", {
+            role,
+            platform: targetPlatform,
+          });
+          
+          console.log("生成的权限路由数量:", accessRoutes?.length || 0);
+
+          if (accessRoutes && accessRoutes.length > 0) {
+            // 添加路由
+            router.addRoutes(accessRoutes);
+            console.log("动态路由添加完成");
+            
+            // 处理根路径重定向
+            if (to.path === "/" || to.path === "") {
+              const redirectPath = await getRedirectPath();
+              console.log("根路径重定向到:", redirectPath);
+              next({ path: redirectPath, replace: true });
+              return;
+            }
+
+            // 重新导航到目标路由，让新添加的路由生效
+            console.log("重新导航到目标路由:", to.path);
+            next({ ...to, replace: true });
+            return;
+          } else {
+            console.error("没有生成任何路由，跳转401");
+            next({ path: "/401", replace: true });
+            NProgress.done();
+            return;
+          }
+        }
+        
+        // 如果用户信息和路由都已存在，直接通过
+        next();
         
       } catch (error) {
         console.error("初始化失败:", error);
@@ -97,52 +135,6 @@ router.onError((error) => {
   console.error("路由错误:", error);
   NProgress.done();
 });
-
-/**
- * 初始化用户信息和路由
- */
-async function initializeUserAndRoutes() {
-  console.log("开始初始化用户信息和路由...");
-  
-  // 1. 获取用户信息
-  let role = store.getters.roles?.[0];
-  if (!role) {
-    console.log("获取用户信息...");
-    const userInfo = await store.dispatch("user/getUserInfo");
-    role = userInfo.role;
-    console.log("用户信息获取成功，角色:", role);
-  }
-
-  // 2. 检查是否已有路由
-  const existingRoutes = store.getters.permission_routes;
-  if (existingRoutes && existingRoutes.length > 0) {
-    console.log("路由已存在，跳过路由生成");
-    return;
-  }
-
-  // 3. 确定目标平台
-  const targetPlatform = await determinePlatform(role);
-  console.log("确定目标平台:", targetPlatform);
-
-  // 4. 生成和添加路由
-  const accessRoutes = await store.dispatch("permission/generateRoutes", {
-    role,
-    platform: targetPlatform,
-  });
-  
-  console.log("生成的权限路由数量:", accessRoutes?.length || 0);
-
-  if (accessRoutes && accessRoutes.length > 0) {
-    // 添加路由
-    router.addRoutes(accessRoutes);
-    console.log("动态路由添加完成");
-    
-    // 等待路由生效
-    await new Promise(resolve => setTimeout(resolve, 100));
-  } else {
-    throw new Error("没有生成任何路由，用户可能无权限");
-  }
-}
 
 /**
  * 确定用户应该使用的平台
