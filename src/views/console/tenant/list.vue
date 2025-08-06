@@ -127,6 +127,7 @@
           >
             <!-- 卡片头部 - 重新设计 -->
             <div
+            v-if="item.balanceStatus !== 1"
               class="card-ribbon"
               :class="'ribbon-' + getBalanceStatusClass(item.balanceStatus)"
             >

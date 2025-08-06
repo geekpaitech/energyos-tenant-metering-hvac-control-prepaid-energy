@@ -29,7 +29,7 @@
                 v-model="form.publicArea" 
                 placeholder="请输入公摊面积"
               >
-                <template slot="suffix">平方米</template>
+                <template slot="suffix">m²</template>
               </el-input>
             </el-form-item>
           </el-col>
