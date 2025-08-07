@@ -542,7 +542,10 @@ export default {
         "/application/tenant/list",
         "/application/bill/energy-bill",
         "/application/bill/floating-price",
-        "/application/bill/manual-bill"
+        "/application/bill/manual-bill",
+        "/application/finance/withdrawal",
+        "/application/finance/fund-flow",
+        "/application/finance/tenant-refund"
         // 可以根据需要添加更多路由
       ],
 
