@@ -367,51 +367,6 @@ export default {
           powerUsage: 3.2
         },
         {
-          id: 'AC003',
-          name: '14-01-1401-1',
-          area: 'A',
-          location: 'A栋-14层-1401室',
-          online: true,
-          power: false,
-          currentTemp: 28,
-          setTemp: 26,
-          mode: 'cool',
-          fanSpeed: 'low',
-          swingH: false,
-          swingV: false,
-          powerUsage: 0
-        },
-        {
-          id: 'AC004',
-          name: '14-01-1402-2',
-          area: 'A',
-          location: 'A栋-14层-1402室',
-          online: false,
-          power: false,
-          currentTemp: 27,
-          setTemp: 25,
-          mode: 'cool',
-          fanSpeed: 'mid',
-          swingH: false,
-          swingV: false,
-          powerUsage: 0
-        },
-        {
-          id: 'AC005',
-          name: '15-12-1512-1',
-          area: 'B',
-          location: 'B栋-15层-1512室',
-          online: true,
-          power: true,
-          currentTemp: 23,
-          setTemp: 23,
-          mode: 'cool',
-          fanSpeed: 'auto',
-          swingH: true,
-          swingV: true,
-          powerUsage: 2.5
-        },
-        {
           id: 'AC006',
           name: '15-12-1513-2',
           area: 'B',
@@ -760,8 +715,7 @@ export default {
 /* 基础样式 */
 .hvac-management {
   min-height: 100vh;
-  background: #f0f2f5;
-  padding: 0;
+  padding: 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 

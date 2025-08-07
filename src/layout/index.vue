@@ -545,7 +545,13 @@ export default {
         "/application/bill/manual-bill",
         "/application/finance/withdrawal",
         "/application/finance/fund-flow",
-        "/application/finance/tenant-refund"
+        "/application/finance/tenant-refund",
+        "/device/conditioning",
+        "/device/lighting",
+        "/device/doorlock",
+        "/application/invoice/tenant-invoice",
+        "/application/invoice/invoice-quota",
+        "/application/invoice/quota-flow"
         // 可以根据需要添加更多路由
       ],
 

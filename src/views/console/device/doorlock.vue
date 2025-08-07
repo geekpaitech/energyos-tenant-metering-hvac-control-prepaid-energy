@@ -641,9 +641,9 @@ export default {
 <style scoped>
 .lock-management {
   height: 100vh;
-  background: #f0f2f5;
   display: flex;
   flex-direction: column;
+  padding: 16px;
 }
 
 /* 顶部栏 */

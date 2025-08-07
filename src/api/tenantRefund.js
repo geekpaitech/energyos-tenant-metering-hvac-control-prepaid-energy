@@ -144,3 +144,109 @@ export function checkCanWithdraw(params) {
     params
   })
 }
+
+// 租户退款相关接口
+
+// 租户申请退款
+export function tenantRefundApplyTenantRefund(data) {
+  return request({
+    url: '/api/ebc-settle/tenantRefund/applyTenantRefund',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 财务审核退款打款申请
+export function tenantRefundFinanceProcessRefund(data) {
+  return request({
+    url: '/api/ebc-settle/tenantRefund/financeProcessRefund',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 财务审核租户退款申请
+export function tenantRefundFinanceAuditRefund(data) {
+  return request({
+    url: '/api/ebc-settle/tenantRefund/financeAuditRefund',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 管理方申请租户退款
+export function tenantRefundManagerApplyTenantRefund(data) {
+  return request({
+    url: '/api/ebc-settle/tenantRefund/managerApplyTenantRefund',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 管理方审核租户退款申请
+export function tenantRefundManagerProcessRefund(data) {
+  return request({
+    url: '/api/ebc-settle/tenantRefund/managerProcessRefund',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 分页查询退款申请记录
+export function tenantRefundPageRefundRecord(data) {
+  return request({
+    url: '/api/ebc-settle/tenantRefund/pageTenantRefund',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 退款详情
+export function tenantRefundTenantRefundDetails(params) {
+  return request({
+    url: '/api/ebc-settle/tenantRefund/tenantRefundDetails',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    params
+  })
+}
+
+// 飞书发送
+export function tenantRefundFeiShuSend(params) {
+  return request({
+    url: '/api/ebc-settle/tenantRefund/feiShuSend',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    params
+  })
+}

@@ -923,11 +923,10 @@ export default {
 
 /* 页面容器 */
 .lighting-container {
-  padding: 20px;
+  padding: 16px;
   max-width: 1600px;
   margin: 0 auto;
   min-height: 100vh;
-  background: #f5f7fa;
 }
 
 /* 页面标题 */
