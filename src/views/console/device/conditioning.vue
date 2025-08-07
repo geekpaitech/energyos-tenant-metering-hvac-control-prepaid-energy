@@ -3066,7 +3066,7 @@ export default {
 }
 
 .action-col {
-  text-align: right;
+  /* text-align: right; */
 }
 
 .inline-input,

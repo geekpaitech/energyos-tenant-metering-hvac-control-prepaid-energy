@@ -551,7 +551,8 @@ export default {
         "/device/doorlock",
         "/application/invoice/tenant-invoice",
         "/application/invoice/invoice-quota",
-        "/application/invoice/quota-flow"
+        "/application/invoice/quota-flow",
+        "/device/parking"
         // 可以根据需要添加更多路由
       ],
 

@@ -5,7 +5,7 @@
       <div class="header-content">
         <h2>
           <i class="el-icon-s-grid"></i>
-          车位设备管理
+          车位设备
         </h2>
         <el-breadcrumb separator="/">
           <el-breadcrumb-item>物联中台</el-breadcrumb-item>

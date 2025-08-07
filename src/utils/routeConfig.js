@@ -79,6 +79,12 @@ export const consoleRoutes = [
         component: () => import('@/views/console/device/parking'),
         meta: { title: '车位', icon: 'el-icon-coffee-cup' }
       },
+      {
+        path: 'charging',
+        name: 'DeviceCharging',
+        component: () => import('@/views/console/device/charging'),
+        meta: { title: '充电桩', icon: 'el-icon-coffee-cup' }
+      },
       // 带标签的分隔线
       {
         path: 'divider-sharing',
