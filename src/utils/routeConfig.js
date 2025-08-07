@@ -178,30 +178,30 @@ export const consoleRoutes = [
             component: () => import('@/views/console/tenant/list'),
             meta: { title: '租户列表', icon: 'el-icon-s-custom' }
           },
-          {
-            path: 'account',
-            name: 'TenantAccount',
-            component: () => import('@/views/console/tenant/account'),
-            meta: { title: '租户账号', icon: 'el-icon-user-solid' }
-          },
-          {
-            path: 'bill-statistics',
-            name: 'BillStatistics',
-            component: () => import('@/views/console/tenant/billStatistics'),
-            meta: { title: '账单统计', icon: 'el-icon-s-data' }
-          },
-          {
-            path: 'transaction',
-            name: 'TenantTransaction',
-            component: () => import('@/views/console/tenant/transaction'),
-            meta: { title: '租户流水', icon: 'el-icon-tickets' }
-          },
-          {
-            path: 'payment-list',
-            name: 'PaymentList',
-            component: () => import('@/views/console/tenant/paymentList'),
-            meta: { title: '缴费清单', icon: 'el-icon-wallet' }
-          }
+          // {
+          //   path: 'account',
+          //   name: 'TenantAccount',
+          //   component: () => import('@/views/console/tenant/account'),
+          //   meta: { title: '租户账号', icon: 'el-icon-user-solid' }
+          // },
+          // {
+          //   path: 'bill-statistics',
+          //   name: 'BillStatistics',
+          //   component: () => import('@/views/console/tenant/billStatistics'),
+          //   meta: { title: '账单统计', icon: 'el-icon-s-data' }
+          // },
+          // {
+          //   path: 'transaction',
+          //   name: 'TenantTransaction',
+          //   component: () => import('@/views/console/tenant/transaction'),
+          //   meta: { title: '租户流水', icon: 'el-icon-tickets' }
+          // },
+          // {
+          //   path: 'payment-list',
+          //   name: 'PaymentList',
+          //   component: () => import('@/views/console/tenant/paymentList'),
+          //   meta: { title: '缴费清单', icon: 'el-icon-wallet' }
+          // }
         ]
       },
       // 计费管理

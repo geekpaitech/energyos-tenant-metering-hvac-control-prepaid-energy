@@ -1,1193 +1,1250 @@
 <template>
-    <div class="table-page-container">
-      <!-- 搜索区域 -->
-      <div class="search-container">
-        <el-card class="search-card" shadow="never">
-          <el-form
-            :model="queryData"
-            ref="searchForm"
-            class="search-form compact-form"
-            label-position="left"
-            label-width="90px"
-          >
-            <!-- 基础筛选 - 动态渲染 -->
-            <el-row :gutter="16" class="search-row">
-              <el-col
-                v-for="field in displayBasicFields"
-                :key="field.prop"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="6"
+  <div class="table-page-container">
+    <!-- 搜索区域 -->
+    <div class="search-container">
+      <el-card class="search-card" shadow="never">
+        <el-form
+          :model="queryData"
+          ref="searchForm"
+          class="search-form compact-form"
+          label-position="left"
+          label-width="90px"
+        >
+          <!-- 基础筛选 -->
+          <el-row :gutter="16" class="search-row">
+            <el-col
+              v-for="field in displayBasicFields"
+              :key="field.prop"
+              :xs="24"
+              :sm="12"
+              :md="8"
+              :lg="6"
+            >
+              <el-form-item
+                :label="field.label"
+                :prop="field.prop"
+                class="compact-form-item"
               >
-                <el-form-item
-                  :label="field.label"
-                  :prop="field.prop"
-                  class="compact-form-item"
-                >
-                  <!-- 输入框 -->
-                  <el-input
-                    v-if="field.type === 'input'"
-                    v-model="queryData[field.prop]"
-                    :placeholder="`请输入${field.label}`"
-                    clearable
-                    size="small"
-                  />
-                  <!-- 选择框 - 租户选择 -->
-                  <el-select
-                    v-else-if="field.type === 'select' && field.prop === 'tenantId'"
-                    v-model="queryData[field.prop]"
-                    placeholder="请选择租户"
-                    clearable
-                    size="small"
-                    style="width: 100%"
-                    filterable
-                  >
-                    <el-option
-                      v-for="tenant in tenantList"
-                      :key="tenant.id"
-                      :label="`${tenant.id}(${tenant.name})`"
-                      :value="tenant.id"
-                    >
-                      <span style="font-size: 12px">
-                        {{ tenant.id }}({{ tenant.name }})
-                      </span>
-                    </el-option>
-                  </el-select>
-                  <!-- 选择框 - 发票类型 -->
-                  <el-select
-                    v-else-if="field.type === 'select' && field.prop === 'invoiceType'"
-                    v-model="queryData[field.prop]"
-                    placeholder="请选择发票类型"
-                    clearable
-                    size="small"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="item in invoiceTypeOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
-                  </el-select>
-                  <!-- 选择框 - 审核状态 -->
-                  <el-select
-                    v-else-if="field.type === 'select' && field.prop === 'status'"
-                    v-model="queryData[field.prop]"
-                    placeholder="请选择审核状态"
-                    clearable
-                    size="small"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="item in invoiceStatusOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
-                  </el-select>
-                  <!-- 日期范围选择 -->
-                  <el-date-picker
-                    v-else-if="field.type === 'daterange'"
-                    v-model="queryData[field.prop]"
-                    type="daterange"
-                    value-format="yyyy-MM-dd"
-                    range-separator="至"
-                    start-placeholder="开始日期"
-                    end-placeholder="结束日期"
-                    size="small"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
-  
-            <!-- 高级筛选 -->
-            <el-collapse-transition v-if="needAdvancedSearch">
-              <el-row :gutter="16" v-show="showAdvanced" class="search-row">
-                <el-col
-                  v-for="field in displayAdvancedFields"
-                  :key="field.prop"
-                  :xs="24"
-                  :sm="12"
-                  :md="8"
-                  :lg="6"
-                >
-                  <el-form-item
-                    :label="field.label"
-                    :prop="field.prop"
-                    class="compact-form-item"
-                  >
-                    <!-- 输入框 -->
-                    <el-input
-                      v-if="field.type === 'input'"
-                      v-model="queryData[field.prop]"
-                      :placeholder="`请输入${field.label}`"
-                      clearable
-                      size="small"
-                    />
-                    <!-- 选择框 - 开票方式 -->
-                    <el-select
-                      v-else-if="field.type === 'select' && field.prop === 'billingMethod'"
-                      v-model="queryData[field.prop]"
-                      placeholder="请选择开票方式"
-                      clearable
-                      size="small"
-                      style="width: 100%"
-                    >
-                      <el-option
-                        v-for="item in billingMethodOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value"
-                      />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </el-collapse-transition>
-  
-            <!-- 操作按钮行 -->
-            <div class="form-actions compact-actions">
-              <div class="action-left">
-                <el-button
-                  type="primary"
-                  icon="el-icon-plus"
+                <!-- 输入框 -->
+                <el-input
+                  v-if="field.type === 'input'"
+                  v-model="queryData[field.prop]"
+                  :placeholder="`请输入${field.label}`"
+                  clearable
                   size="small"
-                  @click="handleAddInvoice"
+                />
+                <!-- 选择框 - 租户选择 -->
+                <el-select
+                  v-else-if="field.type === 'select' && field.prop === 'tenantId'"
+                  v-model="queryData[field.prop]"
+                  placeholder="请选择租户"
+                  clearable
+                  size="small"
+                  style="width: 100%"
+                  filterable
                 >
-                  新增开票申请
+                  <el-option
+                    v-for="tenant in tenantList"
+                    :key="tenant.id"
+                    :label="`${tenant.id}(${tenant.name})`"
+                    :value="tenant.id"
+                  >
+                    <span style="font-size: 12px">
+                      {{ tenant.id }}({{ tenant.name }})
+                    </span>
+                  </el-option>
+                </el-select>
+                <!-- 选择框 - 额度状态 -->
+                <el-select
+                  v-else-if="field.type === 'select' && field.prop === 'quotaStatus'"
+                  v-model="queryData[field.prop]"
+                  placeholder="请选择额度状态"
+                  clearable
+                  size="small"
+                  style="width: 100%"
+                >
+                  <el-option
+                    v-for="item in quotaStatusOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+                <!-- 日期选择器 -->
+                <el-date-picker
+                  v-else-if="field.type === 'month'"
+                  v-model="queryData[field.prop]"
+                  type="month"
+                  placeholder="选择月份"
+                  value-format="yyyy-MM"
+                  size="small"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <!-- 操作按钮行 -->
+          <div class="form-actions compact-actions">
+            <div class="action-left">
+              <el-button
+                type="primary"
+                icon="el-icon-plus"
+                size="small"
+                @click="handleAddQuota"
+              >
+                新增额度
+              </el-button>
+              <el-button
+                type="warning"
+                icon="el-icon-edit"
+                size="small"
+                @click="handleBatchAdjust"
+              >
+                批量调整
+              </el-button>
+            </div>
+            <div class="action-right">
+              <el-button
+                type="primary"
+                icon="el-icon-search"
+                size="small"
+                @click="handleSearch"
+              >
+                查询
+              </el-button>
+              <el-button
+                icon="el-icon-refresh"
+                size="small"
+                @click="handleReset"
+              >
+                重置
+              </el-button>
+              <el-divider direction="vertical" style="margin: 0 8px"></el-divider>
+              <el-dropdown trigger="click" @command="handleCommand">
+                <el-button size="small" type="text" style="padding: 7px 12px">
+                  更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
                 </el-button>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="export" icon="el-icon-download">
+                    导出数据
+                  </el-dropdown-item>
+                  <el-dropdown-item command="import" icon="el-icon-upload2">
+                    导入额度
+                  </el-dropdown-item>
+                  <el-dropdown-item command="history" icon="el-icon-time" divided>
+                    查看历史
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+            </div>
+          </div>
+        </el-form>
+      </el-card>
+    </div>
+
+    <!-- 统计卡片区域 -->
+    <div class="statistics-container">
+      <el-row :gutter="16">
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">总额度</span>
+              <i class="el-icon-coin stat-icon" style="color: #409EFF;"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" style="color: #409EFF;">
+                {{ formatMoney(statistics.totalQuota) }}
               </div>
-              <div class="action-right">
+              <div class="stat-desc">本月分配总额度</div>
+            </div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">已使用</span>
+              <i class="el-icon-check stat-icon" style="color: #67C23A;"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" style="color: #67C23A;">
+                {{ formatMoney(statistics.usedQuota) }}
+              </div>
+              <div class="stat-desc">使用率 {{ statistics.usedRate }}%</div>
+            </div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">剩余额度</span>
+              <i class="el-icon-wallet stat-icon" style="color: #E6A23C;"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" style="color: #E6A23C;">
+                {{ formatMoney(statistics.remainQuota) }}
+              </div>
+              <div class="stat-desc">可用额度</div>
+            </div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">预警企业</span>
+              <i class="el-icon-warning stat-icon" style="color: #F56C6C;"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" style="color: #F56C6C;">
+                {{ statistics.warningCount }}
+              </div>
+              <div class="stat-desc">额度不足企业数</div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+
+    <!-- 数据表格区域 -->
+    <div class="table-container" style="height:430px">
+      <div class="table-card" shadow="never">
+        <!-- 表格工具栏 -->
+        <div class="table-toolbar" v-if="selectedData.length > 0">
+          <div class="toolbar-left">
+            <span class="selection-info">
+              已选择 <span class="count">{{ selectedData.length }}</span> 条数据
+            </span>
+            <el-button size="mini" type="primary" @click="handleBatchIncrease">批量增加额度</el-button>
+            <el-button size="mini" type="warning" @click="handleBatchReset">批量重置</el-button>
+          </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <el-table
+          ref="table"
+          :max-height="tableMaxHeight"
+          v-loading="loading"
+          :data="tableData"
+          stripe
+          style="width: 100%"
+          class="custom-table"
+          @selection-change="handleSelectionChange"
+          :header-cell-style="{
+            background: '#f5f7fa',
+            color: '#606266',
+            fontWeight: '600',
+          }"
+        >
+          <el-table-column type="selection" width="55" align="center" />
+          
+          <!-- 租户ID -->
+          <el-table-column
+            prop="tenantId"
+            label="租户ID"
+            width="120"
+            align="center"
+            show-overflow-tooltip
+            fixed="left"
+          >
+            <template slot-scope="scope">
+              <span class="text-primary">{{ scope.row.tenantId || '-' }}</span>
+            </template>
+          </el-table-column>
+          
+          <!-- 租户名称 -->
+          <el-table-column
+            prop="tenantName"
+            label="租户名称"
+            min-width="180"
+            align="center"
+            show-overflow-tooltip
+          >
+            <template slot-scope="scope">
+              <el-link type="primary" @click="handleTenantDetail(scope.row)">
+                <i class="el-icon-office-building"></i>
+                {{ scope.row.tenantName || '-' }}
+              </el-link>
+            </template>
+          </el-table-column>
+          
+          <!-- 楼栋位置 -->
+          <el-table-column
+            prop="location"
+            label="楼栋位置"
+            width="100"
+            align="center"
+          >
+            <template slot-scope="scope">
+              <el-tag size="small" type="info">{{ scope.row.location }}</el-tag>
+            </template>
+          </el-table-column>
+          
+          <!-- 月度额度 -->
+          <el-table-column
+            prop="monthlyQuota"
+            label="月度额度"
+            width="130"
+            align="center"
+            sortable
+          >
+            <template slot-scope="scope">
+              <span class="amount-text text-primary">
+                {{ formatMoney(scope.row.monthlyQuota) }}
+              </span>
+            </template>
+          </el-table-column>
+          
+          <!-- 已开票金额 -->
+          <el-table-column
+            prop="issuedAmount"
+            label="已开票金额"
+            width="130"
+            align="center"
+            sortable
+          >
+            <template slot-scope="scope">
+              <span class="amount-text text-success">
+                {{ formatMoney(scope.row.issuedAmount) }}
+              </span>
+            </template>
+          </el-table-column>
+          
+          <!-- 待开票金额 -->
+          <el-table-column
+            prop="pendingAmount"
+            label="待开票金额"
+            width="130"
+            align="center"
+            sortable
+          >
+            <template slot-scope="scope">
+              <span class="amount-text text-warning">
+                {{ formatMoney(scope.row.pendingAmount) }}
+              </span>
+            </template>
+          </el-table-column>
+          
+          <!-- 剩余额度 -->
+          <el-table-column
+            prop="remainingQuota"
+            label="剩余额度"
+            width="130"
+            align="center"
+            sortable
+          >
+            <template slot-scope="scope">
+              <span 
+                class="amount-text"
+                :class="scope.row.remainingQuota < 10000 ? 'text-danger' : ''"
+              >
+                {{ formatMoney(scope.row.remainingQuota) }}
+              </span>
+            </template>
+          </el-table-column>
+          
+          <!-- 使用进度 -->
+          <el-table-column
+            prop="usageRate"
+            label="使用进度"
+            width="200"
+            align="center"
+          >
+            <template slot-scope="scope">
+              <div class="progress-wrapper">
+                <el-progress
+                  :percentage="scope.row.usageRate"
+                  :color="getProgressColor(scope.row.usageRate)"
+                  :stroke-width="6"
+                />
+                <span class="progress-text">{{ scope.row.usageRate }}%</span>
+              </div>
+            </template>
+          </el-table-column>
+          
+          <!-- 额度状态 -->
+          <el-table-column
+            prop="quotaStatus"
+            label="额度状态"
+            width="120"
+            align="center"
+          >
+            <template slot-scope="scope">
+              <el-tag
+                v-if="scope.row.quotaStatus === 'normal'"
+                type="success"
+                size="small"
+                effect="plain"
+              >
+                正常
+              </el-tag>
+              <el-tag
+                v-else-if="scope.row.quotaStatus === 'warning'"
+                type="warning"
+                size="small"
+                effect="plain"
+              >
+                预警
+              </el-tag>
+              <el-tag
+                v-else-if="scope.row.quotaStatus === 'exhausted'"
+                type="danger"
+                size="small"
+                effect="plain"
+              >
+                已用尽
+              </el-tag>
+              <el-tag
+                v-else-if="scope.row.quotaStatus === 'frozen'"
+                type="info"
+                size="small"
+                effect="plain"
+              >
+                已冻结
+              </el-tag>
+            </template>
+          </el-table-column>
+          
+          <!-- 最后更新时间 -->
+          <el-table-column
+            prop="updateTime"
+            label="最后更新"
+            width="160"
+            align="center"
+            show-overflow-tooltip
+          />
+
+          <!-- 操作列 -->
+          <el-table-column
+            label="操作"
+            width="220"
+            fixed="right"
+            align="center"
+          >
+            <template slot-scope="scope">
+              <div class="table-actions-group">
                 <el-button
-                  type="primary"
-                  icon="el-icon-search"
-                  size="small"
-                  @click="handleSearch"
-                >
-                  查询
-                </el-button>
-                <el-button
-                  icon="el-icon-refresh"
-                  size="small"
-                  @click="handleReset"
-                >
-                  重置
-                </el-button>
-                <el-button
-                  v-if="needAdvancedSearch"
                   type="text"
                   size="small"
-                  @click="showAdvanced = !showAdvanced"
-                  style="padding: 7px 8px"
+                  icon="el-icon-edit"
+                  @click="handleEdit(scope.row)"
                 >
-                  <i class="el-icon-s-operation" style="margin-right: 4px"></i>
-                  高级筛选
-                  <i
-                    :class="
-                      showAdvanced ? 'el-icon-arrow-up' : 'el-icon-arrow-down'
-                    "
-                    style="margin-left: 2px"
-                  ></i>
+                  调整
                 </el-button>
-                <el-divider
-                  direction="vertical"
-                  style="margin: 0 8px"
-                ></el-divider>
-                <el-dropdown trigger="click" @command="handleCommand">
-                  <el-button size="small" type="text" style="padding: 7px 12px">
-                    更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
+                <el-divider direction="vertical"></el-divider>
+                <el-button
+                  type="text"
+                  size="small"
+                  icon="el-icon-view"
+                  @click="handleViewDetail(scope.row)"
+                >
+                  明细
+                </el-button>
+                <el-divider direction="vertical"></el-divider>
+                <el-dropdown
+                  trigger="click"
+                  @command="handleTableCommand($event, scope.row)"
+                >
+                  <el-button type="text" size="small">
+                    更多
+                    <i class="el-icon-arrow-down el-icon--right"></i>
                   </el-button>
                   <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item command="export" icon="el-icon-download">
-                      导出数据
+                    <el-dropdown-item command="history" icon="el-icon-time">
+                      历史记录
                     </el-dropdown-item>
-                    <el-dropdown-item command="batchAudit" icon="el-icon-s-check">
-                      批量审核
+                    <el-dropdown-item 
+                      command="freeze" 
+                      icon="el-icon-lock"
+                      v-if="scope.row.quotaStatus !== 'frozen'"
+                    >
+                      冻结额度
+                    </el-dropdown-item>
+                    <el-dropdown-item 
+                      command="unfreeze" 
+                      icon="el-icon-unlock"
+                      v-else
+                    >
+                      解冻额度
+                    </el-dropdown-item>
+                    <el-dropdown-item command="reset" icon="el-icon-refresh">
+                      重置额度
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </el-dropdown>
               </div>
-            </div>
-          </el-form>
-        </el-card>
-      </div>
-  
-      <!-- 数据表格区域 -->
-      <div class="table-container">
-        <div class="table-card" shadow="never">
-          <!-- 表格工具栏 -->
-          <div class="table-toolbar" v-if="selectedData.length > 0">
-            <div class="toolbar-left">
-              <span class="selection-info">
-                已选择 <span class="count">{{ selectedData.length }}</span> 条数据
-              </span>
-              <el-button size="mini" @click="handleBatchPass">批量通过</el-button>
-              <el-button size="mini" type="danger" plain @click="handleBatchReject">批量拒绝</el-button>
-            </div>
-          </div>
-  
-          <!-- 数据表格 -->
-          <el-table
-            ref="table"
-            :max-height="tableMaxHeight"
-            v-loading="loading"
-            :data="tableData"
-            stripe
-            style="width: 100%"
-            class="custom-table"
-            @selection-change="handleSelectionChange"
-            :header-cell-style="{
-              background: '#f5f7fa',
-              color: '#606266',
-              fontWeight: '600',
-            }"
-          >
-            <el-table-column type="selection" width="55" align="center" />
-            
-            <!-- 发票编号 -->
-            <el-table-column
-              prop="invoiceNo"
-              label="发票编号"
-              width="160"
-              align="center"
-              show-overflow-tooltip
-              fixed="left"
-            >
-              <template slot-scope="scope">
-                <el-link type="primary" @click="handleDetail(scope.row)">
-                  {{ scope.row.invoiceNo || '-' }}
-                </el-link>
-              </template>
-            </el-table-column>
-            
-            <!-- 申请日期 -->
-            <el-table-column
-              prop="applyDate"
-              label="申请日期"
-              width="120"
-              align="center"
-              show-overflow-tooltip
-            />
-            
-            <!-- 租户ID -->
-            <el-table-column
-              prop="tenantId"
-              label="租户ID"
-              width="120"
-              align="center"
-              show-overflow-tooltip
-            >
-              <template slot-scope="scope">
-                <span class="text-primary">{{ scope.row.tenantId || '-' }}</span>
-              </template>
-            </el-table-column>
-            
-            <!-- 租户名称 -->
-            <el-table-column
-              prop="tenantName"
-              label="租户名称"
-              min-width="150"
-              align="center"
-              show-overflow-tooltip
-            >
-              <template slot-scope="scope">
-                <el-link type="primary" @click="handleTenantDetail(scope.row)">
-                  <i class="el-icon-user"></i>
-                  {{ scope.row.tenantName || '-' }}
-                </el-link>
-              </template>
-            </el-table-column>
-            
-            <!-- 发票类型 -->
-            <el-table-column
-              prop="invoiceType"
-              label="发票类型"
-              width="120"
-              align="center"
-            >
-              <template slot-scope="scope">
-                <el-tag
-                  v-if="scope.row.invoiceType === 1"
-                  type="primary"
-                  size="small"
-                  effect="plain"
-                >
-                  增值税普通发票
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.invoiceType === 2"
-                  type="warning"
-                  size="small"
-                  effect="plain"
-                >
-                  增值税专用发票
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.invoiceType === 3"
-                  type="success"
-                  size="small"
-                  effect="plain"
-                >
-                  电子发票
-                </el-tag>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            
-            <!-- 发票抬头 -->
-            <el-table-column
-              prop="invoiceTitle"
-              label="发票抬头"
-              min-width="180"
-              align="center"
-              show-overflow-tooltip
-            />
-            
-            <!-- 税号 -->
-            <el-table-column
-              prop="taxNumber"
-              label="税号"
-              width="180"
-              align="center"
-              show-overflow-tooltip
-            />
-            
-            <!-- 开票金额 -->
-            <el-table-column
-              prop="amount"
-              label="开票金额"
-              width="120"
-              align="center"
-              show-overflow-tooltip
-            >
-              <template slot-scope="scope">
-                <span class="amount-text text-warning">
-                  {{ formatMoney(scope.row.amount) }}
-                </span>
-              </template>
-            </el-table-column>
-            
-            <!-- 税额 -->
-            <el-table-column
-              prop="taxAmount"
-              label="税额"
-              width="100"
-              align="center"
-              show-overflow-tooltip
-            >
-              <template slot-scope="scope">
-                <span class="amount-text">
-                  {{ formatMoney(scope.row.taxAmount) }}
-                </span>
-              </template>
-            </el-table-column>
-            
-            <!-- 价税合计 -->
-            <el-table-column
-              prop="totalAmount"
-              label="价税合计"
-              width="120"
-              align="center"
-              show-overflow-tooltip
-            >
-              <template slot-scope="scope">
-                <span class="amount-text text-danger">
-                  {{ formatMoney(scope.row.totalAmount) }}
-                </span>
-              </template>
-            </el-table-column>
-            
-            <!-- 开票方式 -->
-            <el-table-column
-              prop="billingMethod"
-              label="开票方式"
-              width="100"
-              align="center"
-            >
-              <template slot-scope="scope">
-                <el-tag
-                  :type="scope.row.billingMethod === 1 ? 'success' : 'info'"
-                  size="small"
-                >
-                  {{ scope.row.billingMethod === 1 ? '自动开票' : '手动开票' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            
-            <!-- 审核状态 -->
-            <el-table-column
-              prop="status"
-              label="审核状态"
-              width="120"
-              align="center"
-            >
-              <template slot-scope="scope">
-                <el-tag
-                  v-if="scope.row.status === 0"
-                  type="warning"
-                  size="small"
-                  effect="plain"
-                >
-                  待审核
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.status === 1"
-                  type="success"
-                  size="small"
-                  effect="plain"
-                >
-                  已通过
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.status === 2"
-                  type="danger"
-                  size="small"
-                  effect="plain"
-                >
-                  已拒绝
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.status === 3"
-                  type="primary"
-                  size="small"
-                  effect="plain"
-                >
-                  已开票
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.status === 4"
-                  type="info"
-                  size="small"
-                  effect="plain"
-                >
-                  已作废
-                </el-tag>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            
-            <!-- 审核人 -->
-            <el-table-column
-              prop="auditor"
-              label="审核人"
-              width="100"
-              align="center"
-              show-overflow-tooltip
-            >
-              <template slot-scope="scope">
-                {{ scope.row.auditor || '-' }}
-              </template>
-            </el-table-column>
-            
-            <!-- 审核时间 -->
-            <el-table-column
-              prop="auditTime"
-              label="审核时间"
-              width="160"
-              align="center"
-              show-overflow-tooltip
-            >
-              <template slot-scope="scope">
-                {{ scope.row.auditTime || '-' }}
-              </template>
-            </el-table-column>
-  
-            <!-- 操作列 -->
-            <el-table-column
-              label="操作"
-              width="200"
-              fixed="right"
-              align="center"
-            >
-              <template slot-scope="scope">
-                <div class="table-actions-group">
-                  <!-- 待审核状态 -->
-                  <template v-if="scope.row.status === 0">
-                    <el-button
-                      type="text"
-                      size="small"
-                      @click="handleAudit(scope.row)"
-                    >
-                      审核
-                    </el-button>
-                    <el-divider direction="vertical"></el-divider>
-                  </template>
-                  
-                  <!-- 已通过状态 -->
-                  <template v-if="scope.row.status === 1">
-                    <el-button
-                      type="text"
-                      size="small"
-                      @click="handleIssueInvoice(scope.row)"
-                    >
-                      开票
-                    </el-button>
-                    <el-divider direction="vertical"></el-divider>
-                  </template>
-                  
-                  <!-- 已开票状态 -->
-                  <template v-if="scope.row.status === 3">
-                    <el-button
-                      type="text"
-                      size="small"
-                      @click="handleVoidInvoice(scope.row)"
-                    >
-                      作废
-                    </el-button>
-                    <el-divider direction="vertical"></el-divider>
-                  </template>
-                  
-                  <el-dropdown
-                    trigger="click"
-                    @command="handleTableCommand($event, scope.row)"
-                  >
-                    <el-button type="text" size="small">
-                      更多
-                      <i class="el-icon-arrow-down el-icon--right"></i>
-                    </el-button>
-                    <el-dropdown-menu slot="dropdown">
-                      <el-dropdown-item command="detail" icon="el-icon-view">
-                        查看详情
-                      </el-dropdown-item>
-                      <el-dropdown-item 
-                        v-if="scope.row.status === 4"
-                        command="reissue" 
-                        icon="el-icon-refresh"
-                      >
-                        重新开票
-                      </el-dropdown-item>
-                      <el-dropdown-item command="print" icon="el-icon-printer">
-                        打印发票
-                      </el-dropdown-item>
-                      <el-dropdown-item command="download" icon="el-icon-download">
-                        下载发票
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </el-dropdown>
-                </div>
-              </template>
-            </el-table-column>
-          </el-table>
-  
-          <!-- 空数据提示 -->
-          <div v-if="!loading && tableData.length === 0" class="empty-data">
-            <i class="el-icon-data-analysis" style="font-size: 48px; color: #909399;"></i>
-            <p style="color: #909399; margin-top: 16px;">暂无数据</p>
-          </div>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 空数据提示 -->
+        <div v-if="!loading && tableData.length === 0" class="empty-data">
+          <i class="el-icon-data-analysis" style="font-size: 48px; color: #909399;"></i>
+          <p style="color: #909399; margin-top: 16px;">暂无数据</p>
         </div>
       </div>
-      
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination
-          :current-page="pageData.current"
-          :page-sizes="[15, 30, 60, 100]"
-          :page-size="pageData.size"
-          :total="pageData.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
     </div>
-  </template>
-  
-  <script>
-  import moment from 'moment'
-  import { mapGetters } from 'vuex'
-  
-  // 发票状态枚举
-  const invoiceStatusOptions = [
-    { value: 0, label: '待审核' },
-    { value: 1, label: '已通过' },
-    { value: 2, label: '已拒绝' },
-    { value: 3, label: '已开票' },
-    { value: 4, label: '已作废' }
-  ]
-  
-  // 发票类型枚举
-  const invoiceTypeOptions = [
-    { value: 1, label: '增值税普通发票' },
-    { value: 2, label: '增值税专用发票' },
-    { value: 3, label: '电子发票' }
-  ]
-  
-  // 开票方式枚举
-  const billingMethodOptions = [
-    { value: 1, label: '自动开票' },
-    { value: 2, label: '手动开票' }
-  ]
-  
-  export default {
-    name: 'InvoiceAudit',
-    data() {
-      return {
-        // 表格高度配置
-        tableHeightConfig: {
-          headerHeight: 48,
-          rowHeight: 47,
-          minHeight: 200,
-          maxRows: 10,
-          paginationHeight: 68
-        },
-        // 查询参数
-        queryData: {
-          invoiceNo: '',
-          tenantId: '',
-          invoiceType: '',
-          status: '',
-          billingMethod: '',
-          taxNumber: '',
-          managerId: '',
-          timeRange: [
-            moment().subtract(1, 'months').format('YYYY-MM-DD'),
-            moment().format('YYYY-MM-DD')
-          ]
-        },
-        // 搜索字段配置
-        searchFields: {
-          basic: [
-            { prop: 'invoiceNo', label: '发票编号', type: 'input' },
-            { prop: 'tenantId', label: '租户', type: 'select', filterable: true },
-            { prop: 'invoiceType', label: '发票类型', type: 'select' },
-            { prop: 'status', label: '审核状态', type: 'select' },
-            { prop: 'timeRange', label: '申请日期', type: 'daterange' }
-          ],
-          advanced: [
-            { prop: 'taxNumber', label: '税号', type: 'input' },
-            { prop: 'billingMethod', label: '开票方式', type: 'select' }
-          ]
-        },
-        // 表格数据
-        tableData: [],
-        // 加载状态
-        loading: false,
-        // 是否显示高级筛选
-        showAdvanced: false,
-        // 分页数据
-        pageData: {
-          current: 1,
-          size: 15,
-          total: 0
-        },
-        // 选中的数据
-        selectedData: [],
-        // 枚举数据
-        invoiceStatusOptions,
-        invoiceTypeOptions,
-        billingMethodOptions,
-        // 租户列表（模拟数据）
-        tenantList: []
-      }
-    },
-    computed: {
-      ...mapGetters('manager', ['currentManagerId']),
-      // 判断是否需要显示高级筛选按钮
-      needAdvancedSearch() {
-        const totalFields = this.searchFields.basic.length + this.searchFields.advanced.length
-        return totalFields > 5
+    
+    <!-- 分页 -->
+    <div class="pagination-container">
+      <el-pagination
+        :current-page="pageData.current"
+        :page-sizes="[15, 30, 60, 100]"
+        :page-size="pageData.size"
+        :total="pageData.total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
+
+    <!-- 调整额度弹窗 -->
+    <el-dialog
+      :title="editForm.id ? '调整发票额度' : '新增发票额度'"
+      :visible.sync="dialogVisible"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="editForm"
+        :model="editForm"
+        :rules="rules"
+        label-width="100px"
+      >
+        <el-form-item label="租户" prop="tenantId">
+          <el-select
+            v-model="editForm.tenantId"
+            placeholder="请选择租户"
+            style="width: 100%"
+            :disabled="!!editForm.id"
+            filterable
+          >
+            <el-option
+              v-for="tenant in tenantList"
+              :key="tenant.id"
+              :label="`${tenant.id}(${tenant.name})`"
+              :value="tenant.id"
+            />
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="月度额度" prop="monthlyQuota">
+          <el-input-number
+            v-model="editForm.monthlyQuota"
+            :min="0"
+            :max="10000000"
+            :step="10000"
+            :precision="2"
+            style="width: 100%"
+          />
+        </el-form-item>
+        
+        <el-form-item label="调整原因" prop="reason">
+          <el-input
+            v-model="editForm.reason"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入调整原因"
+          />
+        </el-form-item>
+      </el-form>
+      
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleSave">确 定</el-button>
+      </span>
+    </el-dialog>
+
+    <!-- 批量增加额度弹窗 -->
+    <el-dialog
+      title="批量增加额度"
+      :visible.sync="batchIncreaseVisible"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="batchIncreaseForm"
+        :model="batchIncreaseForm"
+        :rules="batchIncreaseRules"
+        label-width="100px"
+      >
+        <el-form-item label="增加金额" prop="increaseAmount">
+          <el-input-number
+            v-model="batchIncreaseForm.increaseAmount"
+            :min="1"
+            :max="1000000"
+            :step="1000"
+            :precision="2"
+            style="width: 100%"
+          />
+        </el-form-item>
+        
+        <el-form-item label="调整原因" prop="reason">
+          <el-input
+            v-model="batchIncreaseForm.reason"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入批量调整原因"
+          />
+        </el-form-item>
+      </el-form>
+      
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="batchIncreaseVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleBatchIncreaseSave">确 定</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import moment from 'moment'
+import { mapGetters } from 'vuex'
+
+// 额度状态枚举
+const quotaStatusOptions = [
+  { value: 'normal', label: '正常' },
+  { value: 'warning', label: '预警' },
+  { value: 'exhausted', label: '已用尽' },
+  { value: 'frozen', label: '已冻结' }
+]
+
+export default {
+  name: 'InvoiceQuota',
+  data() {
+    return {
+      // 表格高度配置
+      tableHeightConfig: {
+        headerHeight: 48,
+        rowHeight: 47,
+        minHeight: 200,
+        maxRows: 10,
+        paginationHeight: 68
       },
-      // 显示的基础搜索字段
-      displayBasicFields() {
-        if (!this.needAdvancedSearch) {
-          return [...this.searchFields.basic, ...this.searchFields.advanced]
-        }
-        return this.searchFields.basic
+      // 查询参数
+      queryData: {
+        tenantId: '',
+        tenantName: '',
+        quotaStatus: '',
+        month: moment().format('YYYY-MM'),
+        managerId: ''
       },
-      // 显示的高级搜索字段
-      displayAdvancedFields() {
-        return this.searchFields.advanced
-      },
-      // 表格最大高度
-      tableMaxHeight() {
-        return (
-          this.tableHeightConfig.headerHeight +
-          this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-        )
-      }
-    },
-    watch: {
-      currentManagerId: {
-        handler(newVal) {
-          if (newVal) {
-            this.queryData.managerId = newVal
-            this.getTenantList()
-            this.fetchTableData()
-          }
-        },
-        immediate: true
-      }
-    },
-    created() {
-      this.init()
-    },
-    methods: {
-      // 初始化
-      init() {
-        if (this.currentManagerId) {
-          this.queryData.managerId = this.currentManagerId
-        }
-        this.fetchTableData()
-      },
-  
-      // 获取租户列表（模拟数据 - 智慧园区）
-      getTenantList() {
-        // 模拟智慧园区租户数据
-        this.tenantList = [
-          { id: 'PKA001', name: '智云科技有限公司' },
-          { id: 'PKB002', name: '金融科技服务有限公司' },
-          { id: 'PKC003', name: '文化传播有限公司' },
-          { id: 'PKD001', name: '生物医药研发中心' },
-          { id: 'PKE002', name: '绿色环保科技有限公司' },
-          { id: 'PKF001', name: '园区餐饮管理有限公司' }
+      // 搜索字段配置
+      searchFields: {
+        basic: [
+          { prop: 'tenantId', label: '租户', type: 'select', filterable: true },
+          { prop: 'tenantName', label: '租户名称', type: 'input' },
+          { prop: 'quotaStatus', label: '额度状态', type: 'select' },
+          { prop: 'month', label: '月份', type: 'month' }
         ]
       },
-  
-      // 获取表格数据（模拟数据）
-      async fetchTableData() {
-        this.loading = true
-        
-        // 模拟异步请求
-        setTimeout(() => {
-          // 生成模拟数据
-          const mockData = []
-          const statusList = [0, 1, 2, 3, 4]
-          const typeList = [1, 2, 3]
-          const methodList = [1, 2]
-          
-          // 根据不同企业类型设置不同的金额范围
-          const amountRanges = {
-            'PKA001': { min: 50000, max: 500000 },   // 科技公司 - 中大额
-            'PKB002': { min: 100000, max: 1000000 }, // 金融公司 - 大额
-            'PKC003': { min: 10000, max: 100000 },   // 文化公司 - 中小额
-            'PKD001': { min: 80000, max: 800000 },   // 医药研发 - 大额
-            'PKE002': { min: 30000, max: 300000 },   // 环保科技 - 中额
-            'PKF001': { min: 5000, max: 50000 }      // 餐饮服务 - 小额
-          }
-          
-          for (let i = 1; i <= 50; i++) {
-            const tenantIndex = Math.floor(Math.random() * this.tenantList.length)
-            const tenant = this.tenantList[tenantIndex] || this.tenantList[0]
-            const status = statusList[Math.floor(Math.random() * statusList.length)]
-            
-            // 根据租户类型获取金额范围
-            const range = amountRanges[tenant.id] || { min: 10000, max: 100000 }
-            const baseAmount = range.min + Math.random() * (range.max - range.min)
-            
-            // 计算税额（根据发票类型）
-            const invoiceType = typeList[Math.floor(Math.random() * typeList.length)]
-            let taxRate = 0.06 // 默认6%税率
-            if (invoiceType === 2) {
-              taxRate = 0.13 // 专票13%税率
-            } else if (invoiceType === 3) {
-              taxRate = 0.03 // 电子发票3%税率
-            }
-            
-            const amount = parseFloat(baseAmount.toFixed(2))
-            const taxAmount = parseFloat((amount * taxRate).toFixed(2))
-            const totalAmount = parseFloat((amount + taxAmount).toFixed(2))
-            
-            mockData.push({
-              id: i,
-              invoiceNo: `INV${moment().format('YYYYMM')}${String(i).padStart(4, '0')}`,
-              applyDate: moment().subtract(Math.floor(Math.random() * 30), 'days').format('YYYY-MM-DD'),
-              tenantId: tenant.id,
-              tenantName: tenant.name,
-              invoiceType: invoiceType,
-              invoiceTitle: tenant.name,
-              taxNumber: `91110000${Math.random().toString().substr(2, 9)}`,
-              amount: amount,
-              taxAmount: taxAmount,
-              totalAmount: totalAmount,
-              billingMethod: methodList[Math.floor(Math.random() * methodList.length)],
-              status: status,
-              auditor: status > 0 ? `审核员${Math.floor(Math.random() * 10) + 1}` : null,
-              auditTime: status > 0 ? moment().subtract(Math.floor(Math.random() * 20), 'days').format('YYYY-MM-DD HH:mm:ss') : null,
-              remark: this.generateRemark(tenant.id, amount)
-            })
-          }
-          
-          // 根据查询条件过滤数据
-          let filteredData = [...mockData]
-          
-          // 发票编号过滤
-          if (this.queryData.invoiceNo) {
-            filteredData = filteredData.filter(item => 
-              item.invoiceNo.includes(this.queryData.invoiceNo)
-            )
-          }
-          
-          // 租户过滤
-          if (this.queryData.tenantId) {
-            filteredData = filteredData.filter(item => 
-              item.tenantId === this.queryData.tenantId
-            )
-          }
-          
-          // 发票类型过滤
-          if (this.queryData.invoiceType !== '') {
-            filteredData = filteredData.filter(item => 
-              item.invoiceType === this.queryData.invoiceType
-            )
-          }
-          
-          // 状态过滤
-          if (this.queryData.status !== '') {
-            filteredData = filteredData.filter(item => 
-              item.status === this.queryData.status
-            )
-          }
-          
-          // 开票方式过滤
-          if (this.queryData.billingMethod !== '') {
-            filteredData = filteredData.filter(item => 
-              item.billingMethod === this.queryData.billingMethod
-            )
-          }
-          
-          // 税号过滤
-          if (this.queryData.taxNumber) {
-            filteredData = filteredData.filter(item => 
-              item.taxNumber.includes(this.queryData.taxNumber)
-            )
-          }
-          
-          // 日期范围过滤
-          if (this.queryData.timeRange && this.queryData.timeRange.length === 2) {
-            const [startDate, endDate] = this.queryData.timeRange
-            filteredData = filteredData.filter(item => {
-              const applyDate = moment(item.applyDate)
-              return applyDate.isSameOrAfter(startDate) && applyDate.isSameOrBefore(endDate)
-            })
-          }
-          
-          // 分页处理
-          this.pageData.total = filteredData.length
-          const start = (this.pageData.current - 1) * this.pageData.size
-          const end = start + this.pageData.size
-          this.tableData = filteredData.slice(start, end)
-          
-          this.loading = false
-        }, 800)
+      // 表格数据
+      tableData: [],
+      // 加载状态
+      loading: false,
+      // 分页数据
+      pageData: {
+        current: 1,
+        size: 15,
+        total: 0
       },
-  
-      // 生成备注信息
-      generateRemark(tenantId, amount) {
-        const remarkTemplates = {
-          'PKA001': ['软件服务费', '技术开发费', '云服务费', '系统维护费'],
-          'PKB002': ['咨询服务费', '金融服务费', '平台使用费', '数据服务费'],
-          'PKC003': ['设计服务费', '策划费', '宣传推广费', '版权费'],
-          'PKD001': ['研发费用', '检测费', '实验材料费', '技术服务费'],
-          'PKE002': ['环保服务费', '节能改造费', '碳排放服务费', '环境监测费'],
-          'PKF001': ['餐饮服务费', '物业管理费', '场地租赁费', '水电费']
+      // 选中的数据
+      selectedData: [],
+      // 枚举数据
+      quotaStatusOptions,
+      // 租户列表
+      tenantList: [],
+      // 统计数据
+      statistics: {
+        totalQuota: 0,
+        usedQuota: 0,
+        remainQuota: 0,
+        usedRate: 0,
+        warningCount: 0
+      },
+      // 编辑弹窗
+      dialogVisible: false,
+      editForm: {
+        id: '',
+        tenantId: '',
+        monthlyQuota: 0,
+        reason: ''
+      },
+      // 批量增加额度弹窗
+      batchIncreaseVisible: false,
+      batchIncreaseForm: {
+        increaseAmount: 0,
+        reason: ''
+      },
+      // 表单验证规则
+      rules: {
+        tenantId: [
+          { required: true, message: '请选择租户', trigger: 'change' }
+        ],
+        monthlyQuota: [
+          { required: true, message: '请输入月度额度', trigger: 'blur' }
+        ],
+        reason: [
+          { required: true, message: '请输入调整原因', trigger: 'blur' }
+        ]
+      },
+      // 批量增加额度验证规则
+      batchIncreaseRules: {
+        increaseAmount: [
+          { required: true, message: '请输入增加金额', trigger: 'blur' }
+        ],
+        reason: [
+          { required: true, message: '请输入调整原因', trigger: 'blur' }
+        ]
+      }
+    }
+  },
+  computed: {
+    ...mapGetters('manager', ['currentManagerId']),
+    // 显示的基础搜索字段
+    displayBasicFields() {
+      return this.searchFields.basic
+    },
+    // 表格最大高度
+    tableMaxHeight() {
+      return (
+        this.tableHeightConfig.headerHeight +
+        this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
+      )
+    }
+  },
+  watch: {
+    currentManagerId: {
+      handler(newVal) {
+        if (newVal) {
+          this.queryData.managerId = newVal
+          this.getTenantList()
+          this.fetchTableData()
+          this.fetchStatistics()
+        }
+      },
+      immediate: true
+    }
+  },
+  created() {
+    this.init()
+  },
+  methods: {
+    // 初始化
+    init() {
+      if (this.currentManagerId) {
+        this.queryData.managerId = this.currentManagerId
+      }
+      this.fetchTableData()
+      this.fetchStatistics()
+    },
+
+    // 获取租户列表
+    getTenantList() {
+      // 模拟智慧园区租户数据
+      this.tenantList = [
+        { id: 'PKA001', name: '智云科技有限公司' },
+        { id: 'PKB002', name: '金融科技服务有限公司' },
+        { id: 'PKC003', name: '文化传播有限公司' },
+        { id: 'PKD001', name: '生物医药研发中心' },
+        { id: 'PKE002', name: '绿色环保科技有限公司' },
+        { id: 'PKF001', name: '园区餐饮管理有限公司' }
+      ]
+    },
+
+    // 获取统计数据
+    fetchStatistics() {
+      // 模拟统计数据
+      this.statistics = {
+        totalQuota: 5680000,
+        usedQuota: 3852000,
+        remainQuota: 1828000,
+        usedRate: 67.8,
+        warningCount: 2
+      }
+    },
+
+    // 获取表格数据
+    async fetchTableData() {
+      this.loading = true
+      
+      setTimeout(() => {
+        // 生成模拟数据
+        const mockData = []
+        
+        // 企业额度配置
+        const quotaConfig = {
+          'PKA001': { monthly: 800000, issued: 520000, pending: 80000, location: 'A栋' },
+          'PKB002': { monthly: 1500000, issued: 1200000, pending: 250000, location: 'B栋' },
+          'PKC003': { monthly: 300000, issued: 180000, pending: 30000, location: 'C栋' },
+          'PKD001': { monthly: 1200000, issued: 850000, pending: 200000, location: 'D栋' },
+          'PKE002': { monthly: 600000, issued: 400000, pending: 50000, location: 'E栋' },
+          'PKF001': { monthly: 150000, issued: 120000, pending: 20000, location: 'F栋' }
         }
         
-        const templates = remarkTemplates[tenantId] || ['服务费']
-        const template = templates[Math.floor(Math.random() * templates.length)]
-        const month = moment().subtract(Math.floor(Math.random() * 3), 'months').format('YYYY年MM月')
+        this.tenantList.forEach((tenant, index) => {
+          const config = quotaConfig[tenant.id]
+          const remaining = config.monthly - config.issued - config.pending
+          const usageRate = Math.round((config.issued / config.monthly) * 100)
+          
+          // 判断额度状态
+          let quotaStatus = 'normal'
+          if (remaining <= 0) {
+            quotaStatus = 'exhausted'
+          } else if (remaining < config.monthly * 0.2) {
+            quotaStatus = 'warning'
+          }
+          
+          mockData.push({
+            id: index + 1,
+            tenantId: tenant.id,
+            tenantName: tenant.name,
+            location: config.location,
+            monthlyQuota: config.monthly,
+            issuedAmount: config.issued,
+            pendingAmount: config.pending,
+            remainingQuota: remaining,
+            usageRate: usageRate,
+            quotaStatus: quotaStatus,
+            updateTime: moment().subtract(Math.floor(Math.random() * 7), 'days').format('YYYY-MM-DD HH:mm:ss')
+          })
+        })
         
-        return `${month}${template}`
-      },
-  
-      // 格式化金额
-      formatMoney(value) {
-        if (value === null || value === undefined || value === '') {
-          return '-'
+        // 根据查询条件过滤
+        let filteredData = [...mockData]
+        
+        if (this.queryData.tenantId) {
+          filteredData = filteredData.filter(item => 
+            item.tenantId === this.queryData.tenantId
+          )
         }
-        return `¥${parseFloat(value).toFixed(2)}`
-      },
-  
-      // 查询
-      handleSearch() {
-        this.pageData.current = 1
+        
+        if (this.queryData.tenantName) {
+          filteredData = filteredData.filter(item => 
+            item.tenantName.includes(this.queryData.tenantName)
+          )
+        }
+        
+        if (this.queryData.quotaStatus) {
+          filteredData = filteredData.filter(item => 
+            item.quotaStatus === this.queryData.quotaStatus
+          )
+        }
+        
+        // 分页处理
+        this.pageData.total = filteredData.length
+        const start = (this.pageData.current - 1) * this.pageData.size
+        const end = start + this.pageData.size
+        this.tableData = filteredData.slice(start, end)
+        
+        this.loading = false
+      }, 500)
+    },
+
+    // 格式化金额
+    formatMoney(value) {
+      if (value === null || value === undefined || value === '') {
+        return '¥0.00'
+      }
+      return `¥${parseFloat(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    },
+
+    // 获取进度条颜色
+    getProgressColor(percentage) {
+      if (percentage < 60) return '#67C23A'
+      if (percentage < 80) return '#E6A23C'
+      return '#F56C6C'
+    },
+
+    // 查询
+    handleSearch() {
+      this.pageData.current = 1
+      this.fetchTableData()
+    },
+
+    // 重置
+    handleReset() {
+      this.queryData = {
+        tenantId: '',
+        tenantName: '',
+        quotaStatus: '',
+        month: moment().format('YYYY-MM'),
+        managerId: this.currentManagerId || ''
+      }
+      this.handleSearch()
+    },
+
+    // 处理下拉命令
+    handleCommand(command) {
+      switch (command) {
+        case 'export':
+          this.handleExport()
+          break
+        case 'import':
+          this.$message.info('导入功能开发中...')
+          break
+        case 'history':
+          this.$message.info('历史记录功能开发中...')
+          break
+      }
+    },
+
+    // 处理表格下拉命令
+    handleTableCommand(command, row) {
+      switch (command) {
+        case 'history':
+          this.handleHistory(row)
+          break
+        case 'freeze':
+          this.handleFreeze(row)
+          break
+        case 'unfreeze':
+          this.handleUnfreeze(row)
+          break
+        case 'reset':
+          this.handleResetQuota(row)
+          break
+      }
+    },
+
+    // 新增额度
+    handleAddQuota() {
+      this.editForm = {
+        id: '',
+        tenantId: '',
+        monthlyQuota: 0,
+        reason: ''
+      }
+      this.dialogVisible = true
+    },
+
+    // 批量调整
+    handleBatchAdjust() {
+      if (this.selectedData.length === 0) {
+        this.$message.warning('请先选择要调整的额度记录')
+        return
+      }
+      this.$message.info('批量调整功能开发中...')
+    },
+
+    // 批量增加额度
+    handleBatchIncrease() {
+      if (this.selectedData.length === 0) {
+        this.$message.warning('请先选择要增加额度的记录')
+        return
+      }
+      
+      this.batchIncreaseForm = {
+        increaseAmount: 0,
+        reason: ''
+      }
+      this.batchIncreaseVisible = true
+    },
+
+    // 批量重置
+    handleBatchReset() {
+      if (this.selectedData.length === 0) {
+        this.$message.warning('请先选择要重置的额度记录')
+        return
+      }
+      
+      this.$confirm(`确定要重置所选 ${this.selectedData.length} 条额度记录吗？`, '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$message.success('批量重置成功')
         this.fetchTableData()
-      },
-  
-      // 重置
-      handleReset() {
-        this.queryData = {
-          invoiceNo: '',
-          tenantId: '',
-          invoiceType: '',
-          status: '',
-          billingMethod: '',
-          taxNumber: '',
-          managerId: this.currentManagerId || '',
-          timeRange: [
-            moment().subtract(1, 'months').format('YYYY-MM-DD'),
-            moment().format('YYYY-MM-DD')
-          ]
+        this.fetchStatistics()
+      }).catch(() => {})
+    },
+
+    // 批量增加额度保存
+    handleBatchIncreaseSave() {
+      this.$refs.batchIncreaseForm.validate((valid) => {
+        if (valid) {
+          this.$confirm(`确定为所选 ${this.selectedData.length} 条记录增加 ${this.formatMoney(this.batchIncreaseForm.increaseAmount)} 额度吗？`, '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'info'
+          }).then(() => {
+            // 模拟保存操作
+            this.selectedData.forEach(item => {
+              item.monthlyQuota += this.batchIncreaseForm.increaseAmount
+              item.remainingQuota += this.batchIncreaseForm.increaseAmount
+              item.updateTime = moment().format('YYYY-MM-DD HH:mm:ss')
+            })
+            
+            this.batchIncreaseVisible = false
+            this.$message.success('批量增加额度成功')
+            this.fetchTableData()
+            this.fetchStatistics()
+          }).catch(() => {})
         }
-        this.showAdvanced = false
-        this.handleSearch()
-      },
-  
-      // 处理下拉命令
-      handleCommand(command) {
-        switch (command) {
-          case 'export':
-            this.handleExport()
-            break
-          case 'batchAudit':
-            this.handleBatchAudit()
-            break
+      })
+    },
+
+    // 编辑额度
+    handleEdit(row) {
+      this.editForm = {
+        id: row.id,
+        tenantId: row.tenantId,
+        monthlyQuota: row.monthlyQuota,
+        reason: ''
+      }
+      this.dialogVisible = true
+    },
+
+    // 保存编辑
+    handleSave() {
+      this.$refs.editForm.validate((valid) => {
+        if (valid) {
+          const action = this.editForm.id ? '调整' : '新增'
+          this.$confirm(`确定要${action}该额度记录吗？`, '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'info'
+          }).then(() => {
+            this.dialogVisible = false
+            this.$message.success(`${action}额度成功`)
+            this.fetchTableData()
+            this.fetchStatistics()
+          }).catch(() => {})
         }
-      },
-  
-      // 处理表格下拉命令
-      handleTableCommand(command, row) {
-        switch (command) {
-          case 'detail':
-            this.handleDetail(row)
-            break
-          case 'reissue':
-            this.handleReissue(row)
-            break
-          case 'print':
-            this.handlePrint(row)
-            break
-          case 'download':
-            this.handleDownload(row)
-            break
-        }
-      },
-  
-      // 新增开票申请
-      handleAddInvoice() {
-        this.$message.info('新增开票申请功能开发中...')
-        // this.$router.push('/invoice-apply')
-      },
-  
-      // 导出
-      handleExport() {
-        if (this.tableData.length === 0) {
-          this.$message.warning('暂无数据可导出')
-          return
-        }
-        
-        const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-        
-        const params = {
-          ele: this.$refs.table?.$el,
-          name: '发票审核.xlsx',
-          data: exportData
-        }
-        
-        if (this.$store && this.$store.dispatch) {
-          this.$store.dispatch('export/export', params)
+      })
+    },
+
+    // 查看明细
+    handleViewDetail(row) {
+      this.$message.info(`查看 ${row.tenantName} 的额度使用明细`)
+      // 可以跳转到详情页面
+      // this.$router.push({
+      //   path: '/invoice-quota-detail',
+      //   query: { tenantId: row.tenantId, month: this.queryData.month }
+      // })
+    },
+
+    // 查看租户详情
+    handleTenantDetail(row) {
+      this.$message.info(`查看 ${row.tenantName} 的租户详情`)
+      // this.$router.push({
+      //   path: '/tenant-detail',
+      //   query: { id: row.tenantId }
+      // })
+    },
+
+    // 查看历史记录
+    handleHistory(row) {
+      this.$message.info(`查看 ${row.tenantName} 的额度调整历史`)
+    },
+
+    // 冻结额度
+    handleFreeze(row) {
+      this.$confirm(`确定要冻结 ${row.tenantName} 的发票额度吗？`, '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        row.quotaStatus = 'frozen'
+        this.$message.success('额度冻结成功')
+        this.fetchTableData()
+      }).catch(() => {})
+    },
+
+    // 解冻额度
+    handleUnfreeze(row) {
+      this.$confirm(`确定要解冻 ${row.tenantName} 的发票额度吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }).then(() => {
+        // 重新计算状态
+        const remaining = row.remainingQuota
+        if (remaining <= 0) {
+          row.quotaStatus = 'exhausted'
+        } else if (remaining < row.monthlyQuota * 0.2) {
+          row.quotaStatus = 'warning'
         } else {
-          this.$message.info('导出功能开发中...')
+          row.quotaStatus = 'normal'
         }
-      },
-  
-      // 批量审核
-      handleBatchAudit() {
-        if (this.selectedData.length === 0) {
-          this.$message.warning('请先选择要审核的发票')
-          return
-        }
-        
-        const pendingCount = this.selectedData.filter(item => item.status === 0).length
-        if (pendingCount === 0) {
-          this.$message.warning('所选发票中没有待审核的发票')
-          return
-        }
-        
-        this.$message.info(`批量审核 ${pendingCount} 条发票...`)
-      },
-  
-      // 批量通过
-      handleBatchPass() {
-        const pendingData = this.selectedData.filter(item => item.status === 0)
-        if (pendingData.length === 0) {
-          this.$message.warning('所选发票中没有待审核的发票')
-          return
-        }
-        
-        this.$confirm(`确定要批量通过 ${pendingData.length} 条发票申请吗？`, '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.$message.success('批量审核通过成功')
-          this.fetchTableData()
-        }).catch(() => {})
-      },
-  
-      // 批量拒绝
-      handleBatchReject() {
-        const pendingData = this.selectedData.filter(item => item.status === 0)
-        if (pendingData.length === 0) {
-          this.$message.warning('所选发票中没有待审核的发票')
-          return
-        }
-        
-        this.$confirm(`确定要批量拒绝 ${pendingData.length} 条发票申请吗？`, '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.$message.success('批量拒绝成功')
-          this.fetchTableData()
-        }).catch(() => {})
-      },
-  
-      // 审核
-      handleAudit(row) {
-        this.$confirm('请选择审核操作', '发票审核', {
-          distinguishCancelAndClose: true,
-          confirmButtonText: '通过',
-          cancelButtonText: '拒绝',
-          type: 'info'
-        }).then(() => {
-          this.$message.success('审核通过成功')
-          row.status = 1
-          row.auditor = '当前用户'
-          row.auditTime = moment().format('YYYY-MM-DD HH:mm:ss')
-        }).catch(action => {
-          if (action === 'cancel') {
-            this.$message.error('审核已拒绝')
-            row.status = 2
-            row.auditor = '当前用户'
-            row.auditTime = moment().format('YYYY-MM-DD HH:mm:ss')
-          }
-        })
-      },
-  
-      // 开票
-      handleIssueInvoice(row) {
-        this.$confirm(`确定要为发票编号 ${row.invoiceNo} 开票吗？`, '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.$message.success('开票成功')
-          row.status = 3
-          this.fetchTableData()
-        }).catch(() => {})
-      },
-  
-      // 作废发票
-      handleVoidInvoice(row) {
-        this.$confirm(`确定要作废发票编号 ${row.invoiceNo} 吗？此操作不可恢复！`, '警告', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.$message.success('发票作废成功')
-          row.status = 4
-          this.fetchTableData()
-        }).catch(() => {})
-      },
-  
-      // 重新开票
-      handleReissue(row) {
-        this.$confirm(`确定要重新开具发票编号 ${row.invoiceNo} 吗？`, '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'info'
-        }).then(() => {
-          this.$message.success('重新开票申请已提交')
-          row.status = 0
-          row.auditor = null
-          row.auditTime = null
-          this.fetchTableData()
-        }).catch(() => {})
-      },
-  
-      // 打印发票
-      handlePrint(row) {
-        this.$message.info(`打印发票 ${row.invoiceNo}...`)
-        // window.print() 或其他打印逻辑
-      },
-  
-      // 下载发票
-      handleDownload(row) {
-        this.$message.success(`开始下载发票 ${row.invoiceNo}`)
-        // 实际下载逻辑
-      },
-  
-      // 详情
-      handleDetail(row) {
-        this.$message.info(`查看发票 ${row.invoiceNo} 详情`)
-        // this.$router.push({
-        //   path: '/invoice-detail',
-        //   query: { id: row.id, invoiceNo: row.invoiceNo }
-        // })
-      },
-  
-      // 查看租户详情
-      handleTenantDetail(row) {
-        this.$router.push({
-          path: '/control-tenement-detail',
-          query: { 
-            id: row.tenantId,
-            managerId: row.managerId || this.queryData.managerId
-          }
-        })
-      },
-  
-      // 选择变化
-      handleSelectionChange(selection) {
-        this.selectedData = selection
-      },
-  
-      // 分页大小变化
-      handleSizeChange(val) {
-        this.pageData.size = val
-        this.pageData.current = 1
+        this.$message.success('额度解冻成功')
         this.fetchTableData()
-      },
-  
-      // 当前页变化
-      handleCurrentChange(val) {
-        this.pageData.current = val
+      }).catch(() => {})
+    },
+
+    // 重置额度
+    handleResetQuota(row) {
+      this.$confirm(`确定要重置 ${row.tenantName} 的发票额度吗？此操作将清空已使用记录！`, '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        row.issuedAmount = 0
+        row.pendingAmount = 0
+        row.remainingQuota = row.monthlyQuota
+        row.usageRate = 0
+        row.quotaStatus = 'normal'
+        row.updateTime = moment().format('YYYY-MM-DD HH:mm:ss')
+        this.$message.success('额度重置成功')
         this.fetchTableData()
+        this.fetchStatistics()
+      }).catch(() => {})
+    },
+
+    // 导出数据
+    handleExport() {
+      if (this.tableData.length === 0) {
+        this.$message.warning('暂无数据可导出')
+        return
+      }
+      
+      const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
+      
+      const params = {
+        ele: this.$refs.table?.$el,
+        name: '发票额度管理.xlsx',
+        data: exportData
+      }
+      
+      if (this.$store && this.$store.dispatch) {
+        this.$store.dispatch('export/export', params)
+      } else {
+        this.$message.info('导出功能开发中...')
+      }
+    },
+
+    // 选择变化
+    handleSelectionChange(selection) {
+      this.selectedData = selection
+    },
+
+    // 分页大小变化
+    handleSizeChange(val) {
+      this.pageData.size = val
+      this.pageData.current = 1
+      this.fetchTableData()
+    },
+
+    // 当前页变化
+    handleCurrentChange(val) {
+      this.pageData.current = val
+      this.fetchTableData()
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+// 引入表格页面公共样式
+@import "@/assets/styles/table-page.scss";
+
+// 统计卡片样式
+.statistics-container {
+  margin-bottom: 16px;
+  
+  .stat-card {
+    background: #fff;
+    border-radius: 6px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    
+    .stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      
+      .stat-title {
+        font-size: 14px;
+        color: #606266;
+        font-weight: 500;
+      }
+      
+      .stat-icon {
+        font-size: 24px;
+      }
+    }
+    
+    .stat-content {
+      .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        line-height: 1;
+      }
+      
+      .stat-desc {
+        font-size: 12px;
+        color: #909399;
       }
     }
   }
-  </script>
+}
+
+// 金额文字样式
+.amount-text {
+  font-weight: 500;
+  color: #303133;
   
-  <style lang="scss" scoped>
-  // 引入表格页面公共样式
-  @import "@/assets/styles/table-page.scss";
-  
-  // 自定义样式补充
-  .amount-text {
-    font-weight: 500;
-    color: #303133;
-    
-    &.text-danger {
-      color: #F56C6C;
-    }
-    
-    &.text-warning {
-      color: #E6A23C;
-    }
-  }
-  
-  .text-primary {
+  &.text-primary {
     color: #409EFF;
   }
   
-  .empty-data {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 0;
+  &.text-success {
+    color: #67C23A;
   }
   
-  .table-actions-group {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    .el-divider--vertical {
-      height: 12px;
-      margin: 0 8px;
-    }
+  &.text-warning {
+    color: #E6A23C;
   }
-  </style>
+  
+  &.text-danger {
+    color: #F56C6C;
+  }
+}
+
+// 进度条样式
+.progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  .el-progress {
+    flex: 1;
+  }
+  
+  .progress-text {
+    font-size: 12px;
+    color: #606266;
+    min-width: 35px;
+  }
+}
+
+// 其他样式
+.text-primary {
+  color: #409EFF;
+}
+
+.empty-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.table-actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .el-divider--vertical {
+    height: 12px;
+    margin: 0 8px;
+  }
+}
+</style>

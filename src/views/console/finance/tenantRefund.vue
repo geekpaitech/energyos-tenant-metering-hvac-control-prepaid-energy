@@ -379,10 +379,7 @@ export default {
         tenantId: '',
         status: '',
         managerId: '',
-        timeRange: [
-          moment().subtract(1, 'months').format('YYYY-MM-DD'),
-          moment().format('YYYY-MM-DD')
-        ]
+        timeRange: []
       },
       // 搜索字段配置
       searchFields: {
