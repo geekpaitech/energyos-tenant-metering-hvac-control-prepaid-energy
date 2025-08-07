@@ -73,6 +73,12 @@ export const consoleRoutes = [
         component: () => import('@/views/console/device/watermeter'),
         meta: { title: '水表', icon: 'el-icon-coffee-cup' }
       },
+      {
+        path: 'parking',
+        name: 'DeviceParking',
+        component: () => import('@/views/console/device/parking'),
+        meta: { title: '车位', icon: 'el-icon-coffee-cup' }
+      },
       // 带标签的分隔线
       {
         path: 'divider-sharing',

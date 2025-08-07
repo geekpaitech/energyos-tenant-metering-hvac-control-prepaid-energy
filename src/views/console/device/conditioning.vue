@@ -18,8 +18,16 @@
         </div>
         <span class="update-time">{{ lastUpdateTime }}</span>
         <button class="btn-icon" @click="refreshData" title="刷新数据">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"
+            />
           </svg>
         </button>
       </div>
@@ -30,21 +38,32 @@
       <div class="action-left">
         <!-- 搜索框 -->
         <div class="search-box">
-          <input 
-            type="text" 
-            v-model="searchQuery" 
+          <input
+            type="text"
+            v-model="searchQuery"
             placeholder="搜索设备编号、名称、位置..."
             @input="handleSearch"
+          />
+          <svg
+            class="search-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
           >
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
           </svg>
         </div>
-        
+
         <!-- 筛选器 -->
         <div class="filter-group">
-          <select v-model="filterStatus" @change="applyFilters" class="filter-select">
+          <select
+            v-model="filterStatus"
+            @change="applyFilters"
+            class="filter-select"
+          >
             <option value="">全部状态</option>
             <option value="online">在线</option>
             <option value="offline">离线</option>
@@ -52,8 +71,12 @@
             <option value="standby">待机</option>
             <option value="fault">故障</option>
           </select>
-          
-          <select v-model="filterArea" @change="applyFilters" class="filter-select">
+
+          <select
+            v-model="filterArea"
+            @change="applyFilters"
+            class="filter-select"
+          >
             <option value="">全部区域</option>
             <option v-for="area in areas" :key="area.id" :value="area.id">
               {{ area.name }}
@@ -61,19 +84,35 @@
           </select>
         </div>
       </div>
-      
+
       <div class="action-right">
         <button class="btn-secondary" @click="exportData">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"
+            />
           </svg>
           导出数据
         </button>
-        <button class="btn-secondary" @click="showBatchControl = true">批量操作</button>
+        <button class="btn-secondary" @click="showBatchControl = true">
+          批量操作
+        </button>
         <button class="btn-primary" @click="showAddDevice = true">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           添加设备
         </button>
@@ -83,58 +122,65 @@
     <!-- 视图切换 -->
     <div class="view-switcher">
       <div class="view-tabs">
-        <button 
+        <button
           :class="['view-tab', { active: viewMode === 'card' }]"
           @click="viewMode = 'card'"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
           </svg>
           卡片视图
         </button>
-        <button 
+        <button
           :class="['view-tab', { active: viewMode === 'table' }]"
           @click="viewMode = 'table'"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <rect x="3" y="5" width="18" height="14" rx="1"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-            <line x1="8" y1="5" x2="8" y2="19"/>
-            <line x1="16" y1="5" x2="16" y2="19"/>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="1" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+            <line x1="8" y1="5" x2="8" y2="19" />
+            <line x1="16" y1="5" x2="16" y2="19" />
           </svg>
           列表视图
         </button>
       </div>
-      
-      <div class="pagination-info">
-        共 {{ filteredDevices.length }} 台设备
-      </div>
+
+      <div class="pagination-info">共 {{ filteredDevices.length }} 台设备</div>
     </div>
 
     <!-- 设备卡片视图 -->
     <div v-if="viewMode === 'card'" class="devices-container">
       <div class="devices-grid">
-        <div 
-          v-for="device in paginatedDevices" 
+        <div
+          v-for="device in paginatedDevices"
           :key="device.id"
-          :class="['device-card', { 
-            'is-offline': !device.online,
-            'is-fault': device.status === 'fault',
-            'is-selected': selectedDevices.includes(device.id)
-          }]"
+          :class="[
+            'device-card',
+            {
+              'is-offline': !device.online,
+              'is-fault': device.status === 'fault',
+              'is-selected': selectedDevices.includes(device.id),
+            },
+          ]"
         >
           <!-- 选择框 -->
           <div class="card-selector">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               :checked="selectedDevices.includes(device.id)"
               @change="toggleDeviceSelection(device.id)"
-            >
+            />
           </div>
-          
+
           <!-- 状态标识 -->
           <div class="card-status">
             <span :class="['status-badge', getStatusClass(device)]">
@@ -142,33 +188,46 @@
             </span>
             <div class="card-menu">
               <button class="menu-trigger" @click="toggleMenu(device.id)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="5" r="1"/>
-                  <circle cx="12" cy="12" r="1"/>
-                  <circle cx="12" cy="19" r="1"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <circle cx="12" cy="5" r="1" />
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="12" cy="19" r="1" />
                 </svg>
               </button>
               <div v-if="activeMenu === device.id" class="menu-dropdown">
                 <button @click="editDevice(device)">编辑</button>
                 <button @click="viewHistory(device)">历史记录</button>
                 <button @click="duplicateDevice(device)">复制</button>
-                <button class="danger" @click="confirmDelete(device)">删除</button>
+                <button class="danger" @click="confirmDelete(device)">
+                  删除
+                </button>
               </div>
             </div>
           </div>
-          
+
           <!-- 设备信息 -->
           <div class="card-body">
             <div class="device-id">{{ device.id }}</div>
             <div class="device-name">{{ device.name }}</div>
             <div class="device-location">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-                <circle cx="12" cy="10" r="3"/>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                <circle cx="12" cy="10" r="3" />
               </svg>
               {{ device.location }}
             </div>
-            
+
             <!-- 实时数据 -->
             <div class="realtime-data">
               <div class="data-row">
@@ -189,41 +248,63 @@
               </div>
             </div>
           </div>
-          
+
           <!-- 快速控制 -->
           <div class="card-footer">
-            <button 
+            <button
               :class="['power-btn', { active: device.power }]"
               @click="togglePower(device)"
               :disabled="!device.online"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10" />
               </svg>
             </button>
-            
+
             <div class="temp-control">
-              <button 
-                @click="adjustTemp(device, -1)" 
-                :disabled="!device.online || !device.power || device.setTemp <= 16"
+              <button
+                @click="adjustTemp(device, -1)"
+                :disabled="
+                  !device.online || !device.power || device.setTemp <= 16
+                "
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
               </button>
               <span class="temp-display">{{ device.setTemp }}°</span>
-              <button 
+              <button
                 @click="adjustTemp(device, 1)"
-                :disabled="!device.online || !device.power || device.setTemp >= 30"
+                :disabled="
+                  !device.online || !device.power || device.setTemp >= 30
+                "
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
               </button>
             </div>
-            
-            <button 
+
+            <button
               class="detail-btn"
               @click="openDeviceDetail(device)"
               :disabled="!device.online"
@@ -241,16 +322,16 @@
         <thead>
           <tr>
             <th class="checkbox-col">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="isAllSelected"
                 @change="toggleAllSelection"
-              >
+              />
             </th>
             <th @click="sortBy('id')" class="sortable">
               设备编号
               <span class="sort-icon" v-if="sortField === 'id'">
-                {{ sortOrder === 'asc' ? '↑' : '↓' }}
+                {{ sortOrder === "asc" ? "↑" : "↓" }}
               </span>
             </th>
             <th>设备名称</th>
@@ -258,7 +339,7 @@
             <th @click="sortBy('status')" class="sortable">
               状态
               <span class="sort-icon" v-if="sortField === 'status'">
-                {{ sortOrder === 'asc' ? '↑' : '↓' }}
+                {{ sortOrder === "asc" ? "↑" : "↓" }}
               </span>
             </th>
             <th>当前温度</th>
@@ -267,7 +348,7 @@
             <th @click="sortBy('powerUsage')" class="sortable">
               功率(kW)
               <span class="sort-icon" v-if="sortField === 'powerUsage'">
-                {{ sortOrder === 'asc' ? '↑' : '↓' }}
+                {{ sortOrder === "asc" ? "↑" : "↓" }}
               </span>
             </th>
             <th>最后更新</th>
@@ -275,17 +356,17 @@
           </tr>
         </thead>
         <tbody>
-          <tr 
-            v-for="device in paginatedDevices" 
+          <tr
+            v-for="device in paginatedDevices"
             :key="device.id"
-            :class="{ 'selected': selectedDevices.includes(device.id) }"
+            :class="{ selected: selectedDevices.includes(device.id) }"
           >
             <td class="checkbox-col">
-              <input 
+              <input
                 type="checkbox"
                 :checked="selectedDevices.includes(device.id)"
                 @change="toggleDeviceSelection(device.id)"
-              >
+              />
             </td>
             <td class="device-id-col">{{ device.id }}</td>
             <td>{{ device.name }}</td>
@@ -297,22 +378,26 @@
             </td>
             <td>{{ device.currentTemp }}°C</td>
             <td class="editable">
-              <input 
-                type="number" 
+              <input
+                type="number"
                 :value="device.setTemp"
                 @change="updateSetTemp(device, $event)"
-                min="16" 
+                min="16"
                 max="30"
                 class="inline-input"
-              >
+              />
             </td>
             <td>
-              <select 
-                :value="device.mode" 
+              <select
+                :value="device.mode"
                 @change="updateMode(device, $event)"
                 class="inline-select"
               >
-                <option v-for="mode in modes" :key="mode.value" :value="mode.value">
+                <option
+                  v-for="mode in modes"
+                  :key="mode.value"
+                  :value="mode.value"
+                >
                   {{ mode.label }}
                 </option>
               </select>
@@ -320,8 +405,15 @@
             <td>{{ device.powerUsage }}</td>
             <td>{{ device.lastUpdate }}</td>
             <td class="action-col">
-              <button class="btn-text-small" @click="editDevice(device)">编辑</button>
-              <button class="btn-text-small danger" @click="confirmDelete(device)">删除</button>
+              <button class="btn-text-small" @click="editDevice(device)">
+                编辑
+              </button>
+              <button
+                class="btn-text-small danger"
+                @click="confirmDelete(device)"
+              >
+                删除
+              </button>
             </td>
           </tr>
         </tbody>
@@ -330,23 +422,23 @@
 
     <!-- 分页 -->
     <div class="pagination">
-      <button 
+      <button
         class="page-btn"
         @click="currentPage = 1"
         :disabled="currentPage === 1"
       >
         首页
       </button>
-      <button 
+      <button
         class="page-btn"
         @click="currentPage--"
         :disabled="currentPage === 1"
       >
         上一页
       </button>
-      
+
       <div class="page-numbers">
-        <button 
+        <button
           v-for="page in displayPages"
           :key="page"
           :class="['page-number', { active: page === currentPage }]"
@@ -357,22 +449,22 @@
         </button>
         <span v-else class="page-ellipsis">...</span>
       </div>
-      
-      <button 
+
+      <button
         class="page-btn"
         @click="currentPage++"
         :disabled="currentPage === totalPages"
       >
         下一页
       </button>
-      <button 
+      <button
         class="page-btn"
         @click="currentPage = totalPages"
         :disabled="currentPage === totalPages"
       >
         末页
       </button>
-      
+
       <div class="page-size">
         <span>每页</span>
         <select v-model.number="pageSize" @change="currentPage = 1">
@@ -385,73 +477,109 @@
     </div>
 
     <!-- 添加/编辑设备弹窗 -->
-    <div v-if="showAddDevice || showEditDevice" class="modal-overlay" @click.self="closeDeviceForm">
+    <div
+      v-if="showAddDevice || showEditDevice"
+      class="modal-overlay"
+      @click.self="closeDeviceForm"
+    >
       <div class="modal-content">
         <div class="modal-header">
-          <h3>{{ showEditDevice ? '编辑设备' : '添加设备' }}</h3>
+          <h3>{{ showEditDevice ? "编辑设备" : "添加设备" }}</h3>
           <button class="modal-close" @click="closeDeviceForm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
-        
+
         <div class="modal-body">
           <form @submit.prevent="saveDevice" class="device-form">
             <div class="form-group">
               <label class="required">设备编号</label>
-              <input 
-                type="text" 
-                v-model="deviceForm.id" 
+              <input
+                type="text"
+                v-model="deviceForm.id"
                 placeholder="如：AC001"
                 required
                 :disabled="showEditDevice"
-              >
+              />
             </div>
-            
+
             <div class="form-group">
               <label class="required">设备名称</label>
-              <input 
-                type="text" 
-                v-model="deviceForm.name" 
+              <input
+                type="text"
+                v-model="deviceForm.name"
                 placeholder="如：13-24-1318-2"
                 required
-              >
+              />
             </div>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label class="required">所属区域</label>
-                <select v-model="deviceForm.area" required>
-                  <option value="">请选择</option>
-                  <option v-for="area in areas" :key="area.id" :value="area.id">
-                    {{ area.name }}
-                  </option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="required">楼层</label>
-                <input 
-                  type="number" 
-                  v-model.number="deviceForm.floor"
-                  placeholder="楼层号"
-                  required
+
+            <!-- 绑定租户折叠框（包含区域、楼层、房间号） -->
+            <div class="tenant-collapse">
+              <div
+                class="collapse-header"
+                @click="tenantCollapseOpen = !tenantCollapseOpen"
+              >
+                <span>绑定租户</span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  :class="{ 'rotate-90': tenantCollapseOpen }"
                 >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </div>
+
+              <div class="collapse-content" v-show="tenantCollapseOpen">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="required">所属区域</label>
+                    <select v-model="deviceForm.area" required>
+                      <option value="">请选择</option>
+                      <option
+                        v-for="area in areas"
+                        :key="area.id"
+                        :value="area.id"
+                      >
+                        {{ area.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="required">楼层</label>
+                    <input
+                      type="number"
+                      v-model.number="deviceForm.floor"
+                      placeholder="楼层号"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="required">房间号</label>
+                  <input
+                    type="text"
+                    v-model="deviceForm.room"
+                    placeholder="如：1318室"
+                    required
+                  />
+                </div>
               </div>
             </div>
-            
-            <div class="form-group">
-              <label class="required">房间号</label>
-              <input 
-                type="text" 
-                v-model="deviceForm.room"
-                placeholder="如：1318室"
-                required
-              >
-            </div>
-            
+
             <div class="form-row">
               <div class="form-group">
                 <label>品牌</label>
@@ -463,40 +591,37 @@
                   <option value="其他">其他</option>
                 </select>
               </div>
-              
+
               <div class="form-group">
                 <label>型号</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   v-model="deviceForm.model"
                   placeholder="设备型号"
-                >
+                />
               </div>
             </div>
-            
+
             <div class="form-row">
               <div class="form-group">
                 <label>额定功率(kW)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   v-model.number="deviceForm.ratedPower"
                   step="0.1"
                   placeholder="如：3.5"
-                >
+                />
               </div>
-              
+
               <div class="form-group">
                 <label>安装日期</label>
-                <input 
-                  type="date" 
-                  v-model="deviceForm.installDate"
-                >
+                <input type="date" v-model="deviceForm.installDate" />
               </div>
             </div>
-            
+
             <div class="form-group">
               <label>备注</label>
-              <textarea 
+              <textarea
                 v-model="deviceForm.remark"
                 rows="3"
                 placeholder="其他备注信息..."
@@ -504,128 +629,213 @@
             </div>
           </form>
         </div>
-        
+
         <div class="modal-footer">
           <button class="btn-default" @click="closeDeviceForm">取消</button>
           <button class="btn-primary" @click="saveDevice">
-            {{ showEditDevice ? '保存修改' : '添加设备' }}
+            {{ showEditDevice ? "保存修改" : "添加设备" }}
           </button>
         </div>
       </div>
     </div>
-
     <!-- 批量控制弹窗 -->
-    <div v-if="showBatchControl" class="modal-overlay" @click.self="showBatchControl = false">
+    <div
+      v-if="showBatchControl"
+      class="modal-overlay"
+      @click.self="showBatchControl = false"
+    >
       <div class="modal-content modal-large">
         <div class="modal-header">
           <h3>批量控制 (已选择 {{ selectedDevices.length }} 台设备)</h3>
           <button class="modal-close" @click="showBatchControl = false">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
-        
+
         <div class="modal-body">
           <!-- 快速操作 -->
           <!-- 修改批量控制弹窗中的快速操作部分 -->
-<div class="batch-section">
-  <h4>快速操作</h4>
-  <div class="quick-actions-grid">
-    <button 
-      :class="['quick-action', { 
-        'selected': quickActionSelected === 'powerOn',
-        'disabled': selectedDevices.length === 0
-      }]"
-      @click="batchAction('powerOn')"
-      :disabled="selectedDevices.length === 0"
-    >
-      <div class="quick-action-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-        </svg>
-      </div>
-      <span>全部开启</span>
-      <div class="action-badge" v-if="quickActionSelected === 'powerOn'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="20,6 9,17 4,12"/>
-        </svg>
-      </div>
-    </button>
-    
-    <button 
-      :class="['quick-action', { 
-        'selected': quickActionSelected === 'powerOff',
-        'disabled': selectedDevices.length === 0
-      }]"
-      @click="batchAction('powerOff')"
-      :disabled="selectedDevices.length === 0"
-    >
-      <div class="quick-action-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M4.93 4.93l14.14 14.14"/>
-        </svg>
-      </div>
-      <span>全部关闭</span>
-      <div class="action-badge" v-if="quickActionSelected === 'powerOff'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="20,6 9,17 4,12"/>
-        </svg>
-      </div>
-    </button>
-    
-    <button 
-      :class="['quick-action', { 
-        'selected': quickActionSelected === 'setTemp_26',
-        'disabled': selectedDevices.length === 0
-      }]"
-      @click="batchAction('setTemp', 26)"
-      :disabled="selectedDevices.length === 0"
-    >
-      <div class="quick-action-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"/>
-        </svg>
-      </div>
-      <span>设为26°C</span>
-      <div class="action-badge" v-if="quickActionSelected === 'setTemp_26'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="20,6 9,17 4,12"/>
-        </svg>
-      </div>
-    </button>
-    
-    <button 
-      :class="['quick-action', { 
-        'selected': quickActionSelected === 'setMode_cool',
-        'disabled': selectedDevices.length === 0
-      }]"
-      @click="batchAction('setMode', 'cool')"
-      :disabled="selectedDevices.length === 0"
-    >
-      <div class="quick-action-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M22 11h-4l-3 9L9 2l-3 9H2"/>
-        </svg>
-      </div>
-      <span>制冷模式</span>
-      <div class="action-badge" v-if="quickActionSelected === 'setMode_cool'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="20,6 9,17 4,12"/>
-        </svg>
-      </div>
-    </button>
-  </div>
-</div>
+          <div class="batch-section">
+            <h4>快速操作</h4>
+            <div class="quick-actions-grid">
+              <button
+                :class="[
+                  'quick-action',
+                  {
+                    selected: quickActionSelected === 'powerOn',
+                    disabled: selectedDevices.length === 0,
+                  },
+                ]"
+                @click="batchAction('powerOn')"
+                :disabled="selectedDevices.length === 0"
+              >
+                <div class="quick-action-icon">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10" />
+                  </svg>
+                </div>
+                <span>全部开启</span>
+                <div
+                  class="action-badge"
+                  v-if="quickActionSelected === 'powerOn'"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <polyline points="20,6 9,17 4,12" />
+                  </svg>
+                </div>
+              </button>
 
-<!-- 同时修改关闭按钮 -->
-<div class="modal-footer">
-  <button class="btn-default" @click="closeBatchControl">取消</button>
-  <button class="btn-primary" @click="applyBatchControl">应用设置</button>
-</div>
-          
+              <button
+                :class="[
+                  'quick-action',
+                  {
+                    selected: quickActionSelected === 'powerOff',
+                    disabled: selectedDevices.length === 0,
+                  },
+                ]"
+                @click="batchAction('powerOff')"
+                :disabled="selectedDevices.length === 0"
+              >
+                <div class="quick-action-icon">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M4.93 4.93l14.14 14.14" />
+                  </svg>
+                </div>
+                <span>全部关闭</span>
+                <div
+                  class="action-badge"
+                  v-if="quickActionSelected === 'powerOff'"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <polyline points="20,6 9,17 4,12" />
+                  </svg>
+                </div>
+              </button>
+
+              <button
+                :class="[
+                  'quick-action',
+                  {
+                    selected: quickActionSelected === 'setTemp_26',
+                    disabled: selectedDevices.length === 0,
+                  },
+                ]"
+                @click="batchAction('setTemp', 26)"
+                :disabled="selectedDevices.length === 0"
+              >
+                <div class="quick-action-icon">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"
+                    />
+                  </svg>
+                </div>
+                <span>设为26°C</span>
+                <div
+                  class="action-badge"
+                  v-if="quickActionSelected === 'setTemp_26'"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <polyline points="20,6 9,17 4,12" />
+                  </svg>
+                </div>
+              </button>
+
+              <button
+                :class="[
+                  'quick-action',
+                  {
+                    selected: quickActionSelected === 'setMode_cool',
+                    disabled: selectedDevices.length === 0,
+                  },
+                ]"
+                @click="batchAction('setMode', 'cool')"
+                :disabled="selectedDevices.length === 0"
+              >
+                <div class="quick-action-icon">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path d="M22 11h-4l-3 9L9 2l-3 9H2" />
+                  </svg>
+                </div>
+                <span>制冷模式</span>
+                <div
+                  class="action-badge"
+                  v-if="quickActionSelected === 'setMode_cool'"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <polyline points="20,6 9,17 4,12" />
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 同时修改关闭按钮 -->
+          <div class="modal-footer">
+            <button class="btn-default" @click="closeBatchControl">取消</button>
+            <button class="btn-primary" @click="applyBatchControl">
+              应用设置
+            </button>
+          </div>
+
           <!-- 参数设置 -->
           <div class="batch-section">
             <h4>参数设置</h4>
@@ -634,31 +844,39 @@
                 <div class="form-group">
                   <label>温度设定</label>
                   <div class="input-group">
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       v-model.number="batchSettings.temperature"
-                      min="16" 
+                      min="16"
                       max="30"
-                    >
+                    />
                     <span class="input-suffix">°C</span>
                   </div>
                 </div>
-                
+
                 <div class="form-group">
                   <label>运行模式</label>
                   <select v-model="batchSettings.mode">
                     <option value="">不修改</option>
-                    <option v-for="mode in modes" :key="mode.value" :value="mode.value">
+                    <option
+                      v-for="mode in modes"
+                      :key="mode.value"
+                      :value="mode.value"
+                    >
                       {{ mode.label }}
                     </option>
                   </select>
                 </div>
-                
+
                 <div class="form-group">
                   <label>风速</label>
                   <select v-model="batchSettings.fanSpeed">
                     <option value="">不修改</option>
-                    <option v-for="speed in fanSpeeds" :key="speed.value" :value="speed.value">
+                    <option
+                      v-for="speed in fanSpeeds"
+                      :key="speed.value"
+                      :value="speed.value"
+                    >
                       {{ speed.label }}
                     </option>
                   </select>
@@ -666,7 +884,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- 定时任务 -->
           <div class="batch-section">
             <h4>定时任务</h4>
@@ -674,14 +892,14 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>开启时间</label>
-                  <input type="time" v-model="schedule.startTime">
+                  <input type="time" v-model="schedule.startTime" />
                 </div>
-                
+
                 <div class="form-group">
                   <label>关闭时间</label>
-                  <input type="time" v-model="schedule.endTime">
+                  <input type="time" v-model="schedule.endTime" />
                 </div>
-                
+
                 <div class="form-group">
                   <label>重复周期</label>
                   <select v-model="schedule.repeat">
@@ -692,44 +910,56 @@
                   </select>
                 </div>
               </div>
-              
+
               <div v-if="schedule.repeat === 'custom'" class="weekday-selector">
-                <label 
-                  v-for="day in weekdays" 
+                <label
+                  v-for="day in weekdays"
                   :key="day.value"
                   class="weekday-checkbox"
                 >
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     :value="day.value"
                     v-model="schedule.days"
-                  >
+                  />
                   <span>{{ day.label }}</span>
                 </label>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div class="modal-footer">
-          <button class="btn-default" @click="showBatchControl = false">取消</button>
-          <button class="btn-primary" @click="applyBatchControl">应用设置</button>
+          <button class="btn-default" @click="showBatchControl = false">
+            取消
+          </button>
+          <button class="btn-primary" @click="applyBatchControl">
+            应用设置
+          </button>
         </div>
       </div>
     </div>
 
     <!-- 删除确认弹窗 -->
-    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
+    <div
+      v-if="showDeleteConfirm"
+      class="modal-overlay"
+      @click.self="showDeleteConfirm = false"
+    >
       <div class="modal-content modal-small">
         <div class="modal-header">
           <h3>确认删除</h3>
         </div>
         <div class="modal-body">
-          <p>确定要删除设备 <strong>{{ deviceToDelete?.name }}</strong> 吗？</p>
+          <p>
+            确定要删除设备 <strong>{{ deviceToDelete?.name }}</strong> 吗？
+          </p>
           <p class="text-muted">此操作不可恢复，请谨慎操作。</p>
         </div>
         <div class="modal-footer">
-          <button class="btn-default" @click="showDeleteConfirm = false">取消</button>
+          <button class="btn-default" @click="showDeleteConfirm = false">
+            取消
+          </button>
           <button class="btn-danger" @click="deleteDevice">确认删除</button>
         </div>
       </div>
@@ -742,1099 +972,1216 @@
       </div>
     </transition>
     <!-- 设备详情控制弹窗 -->
-<div v-if="showDeviceDetail" class="modal-overlay" @click.self="closeDeviceDetail">
-  <div class="modal-content modal-device-detail">
-    <div class="modal-header">
-      <div class="device-header-info">
-        <h3>{{ currentDevice?.name }}</h3>
-        <div class="device-meta">
-          <span :class="['status-dot', getStatusClass(currentDevice)]"></span>
-          <span class="device-location-text">{{ currentDevice?.location }}</span>
-        </div>
-      </div>
-      <button class="modal-close" @click="closeDeviceDetail">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
-    
-    <div class="modal-body device-detail-body">
-      <!-- 实时状态卡片 -->
-      <div class="status-card">
-        <h4>实时状态</h4>
-        <div class="status-items">
-          <div class="status-item">
-            <div class="status-icon temp-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"/>
-              </svg>
-            </div>
-            <div class="status-info">
-              <span class="status-label">室内温度</span>
-              <span class="status-value">{{ currentDevice?.currentTemp }}°C</span>
+    <div
+      v-if="showDeviceDetail"
+      class="modal-overlay"
+      @click.self="closeDeviceDetail"
+    >
+      <div class="modal-content modal-device-detail">
+        <div class="modal-header">
+          <div class="device-header-info">
+            <h3>{{ currentDevice?.name }}</h3>
+            <div class="device-meta">
+              <span
+                :class="['status-dot', getStatusClass(currentDevice)]"
+              ></span>
+              <span class="device-location-text">{{
+                currentDevice?.location
+              }}</span>
             </div>
           </div>
-          
-          <div class="status-item">
-            <div class="status-icon power-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M22 11h-4l-3 9L9 2l-3 9H2"/>
-              </svg>
-            </div>
-            <div class="status-info">
-              <span class="status-label">功率</span>
-              <span class="status-value">{{ currentDevice?.powerUsage }}kW</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 基础控制 -->
-      <div class="control-card">
-        <h4>基础控制</h4>
-        
-        <!-- 电源开关 -->
-        <div class="control-row">
-          <div class="control-info">
-            <span class="control-title">电源</span>
-            <span class="control-desc">设备开关控制</span>
-          </div>
-          <div class="control-action">
-            <label class="power-switch">
-              <input 
-                type="checkbox" 
-                v-model="deviceDetailForm.power"
-                :disabled="!currentDevice?.online"
-              >
-              <span class="power-slider"></span>
-            </label>
-          </div>
+          <button class="modal-close" @click="closeDeviceDetail">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
 
-        <!-- 温度设置 -->
-        <div class="control-row" v-if="deviceDetailForm.power">
-          <div class="control-info">
-            <span class="control-title">目标温度</span>
-            <span class="control-desc">当前设定 {{ deviceDetailForm.setTemp }}°C</span>
-          </div>
-          <div class="control-action">
-            <div class="temp-adjuster">
-              <button 
-                class="temp-btn minus"
-                @click="deviceDetailForm.setTemp = Math.max(16, deviceDetailForm.setTemp - 1)"
-                :disabled="deviceDetailForm.setTemp <= 16"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </button>
-              <div class="temp-value">{{ deviceDetailForm.setTemp }}°</div>
-              <button 
-                class="temp-btn plus"
-                @click="deviceDetailForm.setTemp = Math.min(30, deviceDetailForm.setTemp + 1)"
-                :disabled="deviceDetailForm.setTemp >= 30"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 模式选择 -->
-        <div class="control-row" v-if="deviceDetailForm.power">
-          <div class="control-info">
-            <span class="control-title">运行模式</span>
-            <span class="control-desc">{{ modeMap[deviceDetailForm.mode] }}</span>
-          </div>
-          <div class="control-action">
-            <div class="mode-selector">
-              <button 
-                v-for="mode in modes" 
-                :key="mode.value"
-                :class="['mode-option', { active: deviceDetailForm.mode === mode.value }]"
-                @click="deviceDetailForm.mode = mode.value"
-              >
-                {{ mode.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 风速设置 -->
-        <div class="control-row" v-if="deviceDetailForm.power">
-          <div class="control-info">
-            <span class="control-title">风速</span>
-            <span class="control-desc">{{ windMap[deviceDetailForm.fanSpeed] }}</span>
-          </div>
-          <div class="control-action">
-            <div class="fan-selector">
-              <button 
-                v-for="speed in fanSpeeds" 
-                :key="speed.value"
-                :class="['fan-option', { active: deviceDetailForm.fanSpeed === speed.value }]"
-                @click="deviceDetailForm.fanSpeed = speed.value"
-              >
-                {{ speed.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 高级设置 -->
-      <div class="control-card" v-if="deviceDetailForm.power">
-        <h4>高级设置</h4>
-        
-        <!-- 摆风设置 -->
-        <div class="control-row">
-          <div class="control-info">
-            <span class="control-title">摆风设置</span>
-            <span class="control-desc">自动调节出风方向</span>
-          </div>
-          <div class="control-action">
-            <div class="swing-options">
-              <label class="swing-checkbox">
-                <input 
-                  type="checkbox" 
-                  v-model="deviceDetailForm.swingH"
-                >
-                <span class="checkmark"></span>
-                <span class="swing-label">水平</span>
-              </label>
-              <label class="swing-checkbox">
-                <input 
-                  type="checkbox" 
-                  v-model="deviceDetailForm.swingV"
-                >
-                <span class="checkmark"></span>
-                <span class="swing-label">垂直</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 定时设置 -->
-        <div class="control-row">
-          <div class="control-info">
-            <span class="control-title">定时功能</span>
-            <span class="control-desc">自动开关机设置</span>
-          </div>
-          <div class="control-action">
-            <div class="timer-settings">
-              <div class="timer-group">
-                <label class="timer-checkbox">
-                  <input type="checkbox" v-model="deviceDetailForm.timerOn">
-                  <span class="checkmark"></span>
-                  <span class="timer-label">定时开启</span>
-                </label>
-                <input 
-                  type="time" 
-                  v-model="deviceDetailForm.timerOnTime"
-                  :disabled="!deviceDetailForm.timerOn"
-                  class="timer-input"
-                >
+        <div class="modal-body device-detail-body">
+          <!-- 实时状态卡片 -->
+          <div class="status-card">
+            <h4>实时状态</h4>
+            <div class="status-items">
+              <div class="status-item">
+                <div class="status-icon temp-icon">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"
+                    />
+                  </svg>
+                </div>
+                <div class="status-info">
+                  <span class="status-label">室内温度</span>
+                  <span class="status-value"
+                    >{{ currentDevice?.currentTemp }}°C</span
+                  >
+                </div>
               </div>
-              <div class="timer-group">
-                <label class="timer-checkbox">
-                  <input type="checkbox" v-model="deviceDetailForm.timerOff">
-                  <span class="checkmark"></span>
-                  <span class="timer-label">定时关闭</span>
-                </label>
-                <input 
-                  type="time" 
-                  v-model="deviceDetailForm.timerOffTime"
-                  :disabled="!deviceDetailForm.timerOff"
-                  class="timer-input"
-                >
+
+              <div class="status-item">
+                <div class="status-icon power-icon">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path d="M22 11h-4l-3 9L9 2l-3 9H2" />
+                  </svg>
+                </div>
+                <div class="status-info">
+                  <span class="status-label">功率</span>
+                  <span class="status-value"
+                    >{{ currentDevice?.powerUsage }}kW</span
+                  >
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- 基础控制 -->
+          <div class="control-card">
+            <h4>基础控制</h4>
+
+            <!-- 电源开关 -->
+            <div class="control-row">
+              <div class="control-info">
+                <span class="control-title">电源</span>
+                <span class="control-desc">设备开关控制</span>
+              </div>
+              <div class="control-action">
+                <label class="power-switch">
+                  <input
+                    type="checkbox"
+                    v-model="deviceDetailForm.power"
+                    :disabled="!currentDevice?.online"
+                  />
+                  <span class="power-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 温度设置 -->
+            <div class="control-row" v-if="deviceDetailForm.power">
+              <div class="control-info">
+                <span class="control-title">目标温度</span>
+                <span class="control-desc"
+                  >当前设定 {{ deviceDetailForm.setTemp }}°C</span
+                >
+              </div>
+              <div class="control-action">
+                <div class="temp-adjuster">
+                  <button
+                    class="temp-btn minus"
+                    @click="
+                      deviceDetailForm.setTemp = Math.max(
+                        16,
+                        deviceDetailForm.setTemp - 1
+                      )
+                    "
+                    :disabled="deviceDetailForm.setTemp <= 16"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                  </button>
+                  <div class="temp-value">{{ deviceDetailForm.setTemp }}°</div>
+                  <button
+                    class="temp-btn plus"
+                    @click="
+                      deviceDetailForm.setTemp = Math.min(
+                        30,
+                        deviceDetailForm.setTemp + 1
+                      )
+                    "
+                    :disabled="deviceDetailForm.setTemp >= 30"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 模式选择 -->
+            <div class="control-row" v-if="deviceDetailForm.power">
+              <div class="control-info">
+                <span class="control-title">运行模式</span>
+                <span class="control-desc">{{
+                  modeMap[deviceDetailForm.mode]
+                }}</span>
+              </div>
+              <div class="control-action">
+                <div class="mode-selector">
+                  <button
+                    v-for="mode in modes"
+                    :key="mode.value"
+                    :class="[
+                      'mode-option',
+                      { active: deviceDetailForm.mode === mode.value },
+                    ]"
+                    @click="deviceDetailForm.mode = mode.value"
+                  >
+                    {{ mode.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 风速设置 -->
+            <div class="control-row" v-if="deviceDetailForm.power">
+              <div class="control-info">
+                <span class="control-title">风速</span>
+                <span class="control-desc">{{
+                  windMap[deviceDetailForm.fanSpeed]
+                }}</span>
+              </div>
+              <div class="control-action">
+                <div class="fan-selector">
+                  <button
+                    v-for="speed in fanSpeeds"
+                    :key="speed.value"
+                    :class="[
+                      'fan-option',
+                      { active: deviceDetailForm.fanSpeed === speed.value },
+                    ]"
+                    @click="deviceDetailForm.fanSpeed = speed.value"
+                  >
+                    {{ speed.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 高级设置 -->
+          <div class="control-card" v-if="deviceDetailForm.power">
+            <h4>高级设置</h4>
+
+            <!-- 摆风设置 -->
+            <div class="control-row">
+              <div class="control-info">
+                <span class="control-title">摆风设置</span>
+                <span class="control-desc">自动调节出风方向</span>
+              </div>
+              <div class="control-action">
+                <div class="swing-options">
+                  <label class="swing-checkbox">
+                    <input type="checkbox" v-model="deviceDetailForm.swingH" />
+                    <span class="checkmark"></span>
+                    <span class="swing-label">水平</span>
+                  </label>
+                  <label class="swing-checkbox">
+                    <input type="checkbox" v-model="deviceDetailForm.swingV" />
+                    <span class="checkmark"></span>
+                    <span class="swing-label">垂直</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 定时设置 -->
+            <div class="control-row">
+              <div class="control-info">
+                <span class="control-title">定时功能</span>
+                <span class="control-desc">自动开关机设置</span>
+              </div>
+              <div class="control-action">
+                <div class="timer-settings">
+                  <div class="timer-group">
+                    <label class="timer-checkbox">
+                      <input
+                        type="checkbox"
+                        v-model="deviceDetailForm.timerOn"
+                      />
+                      <span class="checkmark"></span>
+                      <span class="timer-label">定时开启</span>
+                    </label>
+                    <input
+                      type="time"
+                      v-model="deviceDetailForm.timerOnTime"
+                      :disabled="!deviceDetailForm.timerOn"
+                      class="timer-input"
+                    />
+                  </div>
+                  <div class="timer-group">
+                    <label class="timer-checkbox">
+                      <input
+                        type="checkbox"
+                        v-model="deviceDetailForm.timerOff"
+                      />
+                      <span class="checkmark"></span>
+                      <span class="timer-label">定时关闭</span>
+                    </label>
+                    <input
+                      type="time"
+                      v-model="deviceDetailForm.timerOffTime"
+                      :disabled="!deviceDetailForm.timerOff"
+                      class="timer-input"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-default" @click="closeDeviceDetail">取消</button>
+          <button
+            class="btn-primary"
+            @click="applyDeviceDetail"
+            :disabled="!currentDevice?.online"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <polyline points="20,6 9,17 4,12" />
+            </svg>
+            应用设置
+          </button>
         </div>
       </div>
     </div>
-    
-    <div class="modal-footer">
-      <button class="btn-default" @click="closeDeviceDetail">取消</button>
-      <button 
-        class="btn-primary" 
-        @click="applyDeviceDetail"
-        :disabled="!currentDevice?.online"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="20,6 9,17 4,12"/>
-        </svg>
-        应用设置
-      </button>
-    </div>
-  </div>
-</div>
   </div>
 </template>
 <script>
 export default {
-  name: 'HvacManagement',
-  
+  name: "HvacManagement",
+
   data() {
     return {
+      tenantCollapseOpen: false, // 默认展开绑定租户区域
       quickActionSelected: null, // 记录当前选中的快速操作
-      showDeviceDetail:false,
-         // 设备详情表单
-    deviceDetailForm: {
-      power: false,
-      setTemp: 24,
-      mode: 'cool',
-      fanSpeed: 'auto',
-      swingH: false,
-      swingV: false,
-      timerOn: false,
-      timerOff: false,
-      timerOnTime: '08:00',
-      timerOffTime: '22:00'
-    },
+      showDeviceDetail: false,
+      // 设备详情表单
+      deviceDetailForm: {
+        power: false,
+        setTemp: 24,
+        mode: "cool",
+        fanSpeed: "auto",
+        swingH: false,
+        swingV: false,
+        timerOn: false,
+        timerOff: false,
+        timerOnTime: "08:00",
+        timerOffTime: "22:00",
+      },
       // 时间相关
-      lastUpdateTime: '',
+      lastUpdateTime: "",
       updateTimer: null,
-      
+
       // 视图控制
-      viewMode: 'card', // card | table
+      viewMode: "card", // card | table
       currentPage: 1,
       pageSize: 8,
-      
+
       // 搜索和筛选
-      searchQuery: '',
-      filterStatus: '',
-      filterArea: '',
-      sortField: '',
-      sortOrder: 'asc',
-      
+      searchQuery: "",
+      filterStatus: "",
+      filterArea: "",
+      sortField: "",
+      sortOrder: "asc",
+
       // 选择相关
       selectedDevices: [],
       activeMenu: null,
-      
+
       // 弹窗控制
       showAddDevice: false,
       showEditDevice: false,
       showBatchControl: false,
       showDeleteConfirm: false,
       showDeviceDetail: false,
-      
+
       // 当前操作的设备
       currentDevice: null,
       deviceToDelete: null,
-      
+
       // 设备表单
       deviceForm: {
-        id: '',
-        name: '',
-        area: '',
-        floor: '',
-        room: '',
-        brand: '格力',
-        model: '',
+        id: "",
+        name: "",
+        area: "",
+        floor: "",
+        room: "",
+        brand: "格力",
+        model: "",
         ratedPower: 3.5,
-        installDate: '',
-        remark: ''
+        installDate: "",
+        remark: "",
       },
-      
+
       // 批量设置
       batchSettings: {
         temperature: 26,
-        mode: '',
-        fanSpeed: ''
+        mode: "",
+        fanSpeed: "",
       },
-      
+
       // 定时任务
       schedule: {
-        startTime: '08:00',
-        endTime: '18:00',
-        repeat: 'weekdays',
-        days: [1, 2, 3, 4, 5]
+        startTime: "08:00",
+        endTime: "18:00",
+        repeat: "weekdays",
+        days: [1, 2, 3, 4, 5],
       },
-      
+
       // 消息提示
       toast: {
         show: false,
-        message: '',
-        type: 'success' // success | error | warning
+        message: "",
+        type: "success", // success | error | warning
       },
-      
+
       // 统计数据
       stats: {
         total: 48,
         online: 45,
         running: 32,
         avgTemp: 24.5,
-        totalPower: 89.6
+        totalPower: 89.6,
       },
-      
+
       // 区域数据
       areas: [
-        { id: 'A', name: 'A栋', floors: 20 },
-        { id: 'B', name: 'B栋', floors: 18 },
-        { id: 'C', name: 'C栋', floors: 22 },
-        { id: 'D', name: 'D栋', floors: 16 },
-        { id: 'E', name: 'E栋', floors: 15 }
+        { id: "A", name: "A栋", floors: 20 },
+        { id: "B", name: "B栋", floors: 18 },
+        { id: "C", name: "C栋", floors: 22 },
+        { id: "D", name: "D栋", floors: 16 },
+        { id: "E", name: "E栋", floors: 15 },
       ],
-      
+
       // 设备列表
       devices: [
         {
-          id: 'AC001',
-          name: '13-24-1318-2',
-          area: 'A',
+          id: "AC001",
+          name: "13-24-1318-2",
+          area: "A",
           floor: 13,
-          room: '1318',
-          location: 'A栋-13层-1318室',
+          room: "1318",
+          location: "A栋-13层-1318室",
           online: true,
           power: true,
-          status: 'running',
+          status: "running",
           currentTemp: 26,
           setTemp: 24,
-          mode: 'cool',
-          fanSpeed: 'mid',
+          mode: "cool",
+          fanSpeed: "mid",
           swingH: false,
           swingV: false,
           powerUsage: 2.8,
-          brand: '格力',
-          model: 'KFR-35GW',
-          installDate: '2023-03-15',
-          lastUpdate: '10:23:45'
+          brand: "格力",
+          model: "KFR-35GW",
+          installDate: "2023-03-15",
+          lastUpdate: "10:23:45",
         },
         {
-          id: 'AC002',
-          name: '13-24-1319-1',
-          area: 'A',
+          id: "AC002",
+          name: "13-24-1319-1",
+          area: "A",
           floor: 13,
-          room: '1319',
-          location: 'A栋-13层-1319室',
+          room: "1319",
+          location: "A栋-13层-1319室",
           online: true,
           power: true,
-          status: 'running',
+          status: "running",
           currentTemp: 25,
           setTemp: 23,
-          mode: 'cool',
-          fanSpeed: 'high',
+          mode: "cool",
+          fanSpeed: "high",
           swingH: true,
           swingV: false,
           powerUsage: 3.2,
-          brand: '美的',
-          model: 'KFR-35GW',
-          installDate: '2023-03-15',
-          lastUpdate: '10:22:12'
+          brand: "美的",
+          model: "KFR-35GW",
+          installDate: "2023-03-15",
+          lastUpdate: "10:22:12",
         },
         {
-          id: 'AC003',
-          name: '14-10-1410-1',
-          area: 'A',
+          id: "AC003",
+          name: "14-10-1410-1",
+          area: "A",
           floor: 14,
-          room: '1410',
-          location: 'A栋-14层-1410室',
+          room: "1410",
+          location: "A栋-14层-1410室",
           online: true,
           power: false,
-          status: 'standby',
+          status: "standby",
           currentTemp: 28,
           setTemp: 26,
-          mode: 'cool',
-          fanSpeed: 'auto',
+          mode: "cool",
+          fanSpeed: "auto",
           swingH: false,
           swingV: false,
           powerUsage: 0,
-          brand: '大金',
-          model: 'FTXS35',
-          installDate: '2023-04-20',
-          lastUpdate: '10:21:33'
+          brand: "大金",
+          model: "FTXS35",
+          installDate: "2023-04-20",
+          lastUpdate: "10:21:33",
         },
         {
-          id: 'AC004',
-          name: '14-15-1415-2',
-          area: 'A', 
+          id: "AC004",
+          name: "14-15-1415-2",
+          area: "A",
           floor: 14,
-          room: '1415',
-          location: 'A栋-14层-1415室',
+          room: "1415",
+          location: "A栋-14层-1415室",
           online: false,
           power: false,
-          status: 'offline',
+          status: "offline",
           currentTemp: 27,
           setTemp: 25,
-          mode: 'cool',
-          fanSpeed: 'mid',
+          mode: "cool",
+          fanSpeed: "mid",
           swingH: false,
           swingV: false,
           powerUsage: 0,
-          brand: '格力',
-          model: 'KFR-26GW',
-          installDate: '2023-03-15',
-          lastUpdate: '09:45:21'
+          brand: "格力",
+          model: "KFR-26GW",
+          installDate: "2023-03-15",
+          lastUpdate: "09:45:21",
         },
         {
-          id: 'AC005',
-          name: '15-08-1508-1',
-          area: 'B',
+          id: "AC005",
+          name: "15-08-1508-1",
+          area: "B",
           floor: 15,
-          room: '1508',
-          location: 'B栋-15层-1508室',
+          room: "1508",
+          location: "B栋-15层-1508室",
           online: true,
           power: true,
-          status: 'running',
+          status: "running",
           currentTemp: 24,
           setTemp: 24,
-          mode: 'dry',
-          fanSpeed: 'low',
+          mode: "dry",
+          fanSpeed: "low",
           swingH: false,
           swingV: true,
           powerUsage: 1.5,
-          brand: '海尔',
-          model: 'KFR-35GW',
-          installDate: '2023-05-10',
-          lastUpdate: '10:24:01'
+          brand: "海尔",
+          model: "KFR-35GW",
+          installDate: "2023-05-10",
+          lastUpdate: "10:24:01",
         },
         {
-          id: 'AC006',
-          name: '16-12-1612-1',
-          area: 'B',
+          id: "AC006",
+          name: "16-12-1612-1",
+          area: "B",
           floor: 16,
-          room: '1612',
-          location: 'B栋-16层-1612室',
+          room: "1612",
+          location: "B栋-16层-1612室",
           online: true,
           power: true,
-          status: 'fault',
+          status: "fault",
           currentTemp: 30,
           setTemp: 22,
-          mode: 'cool',
-          fanSpeed: 'high',
+          mode: "cool",
+          fanSpeed: "high",
           swingH: true,
           swingV: true,
           powerUsage: 0,
-          brand: '美的',
-          model: 'KFR-26GW',
-          installDate: '2023-05-10',
-          lastUpdate: '10:20:15'
+          brand: "美的",
+          model: "KFR-26GW",
+          installDate: "2023-05-10",
+          lastUpdate: "10:20:15",
         },
         {
-          id: 'AC007',
-          name: '17-05-1705-2',
-          area: 'C',
+          id: "AC007",
+          name: "17-05-1705-2",
+          area: "C",
           floor: 17,
-          room: '1705',
-          location: 'C栋-17层-1705室',
+          room: "1705",
+          location: "C栋-17层-1705室",
           online: true,
           power: true,
-          status: 'running',
+          status: "running",
           currentTemp: 23,
           setTemp: 23,
-          mode: 'cool',
-          fanSpeed: 'auto',
+          mode: "cool",
+          fanSpeed: "auto",
           swingH: false,
           swingV: false,
           powerUsage: 2.6,
-          brand: '格力',
-          model: 'KFR-35GW',
-          installDate: '2023-06-01',
-          lastUpdate: '10:23:58'
+          brand: "格力",
+          model: "KFR-35GW",
+          installDate: "2023-06-01",
+          lastUpdate: "10:23:58",
         },
         {
-          id: 'AC008',
-          name: '18-03-1803-1',
-          area: 'C',
+          id: "AC008",
+          name: "18-03-1803-1",
+          area: "C",
           floor: 18,
-          room: '1803',
-          location: 'C栋-18层-1803室',
+          room: "1803",
+          location: "C栋-18层-1803室",
           online: true,
           power: true,
-          status: 'running',
+          status: "running",
           currentTemp: 25,
           setTemp: 24,
-          mode: 'cool',
-          fanSpeed: 'mid',
+          mode: "cool",
+          fanSpeed: "mid",
           swingH: false,
           swingV: true,
           powerUsage: 2.9,
-          brand: '大金',
-          model: 'FTXS50',
-          installDate: '2023-06-01',
-          lastUpdate: '10:24:12'
-        }
+          brand: "大金",
+          model: "FTXS50",
+          installDate: "2023-06-01",
+          lastUpdate: "10:24:12",
+        },
       ],
-      
+
       // 映射表
       modeMap: {
-        cool: '制冷',
-        heat: '制热',
-        dry: '除湿',
-        fan: '送风',
-        auto: '自动'
+        cool: "制冷",
+        heat: "制热",
+        dry: "除湿",
+        fan: "送风",
+        auto: "自动",
       },
-      
+
       windMap: {
-        low: '低风',
-        mid: '中风',
-        high: '高风',
-        auto: '自动'
+        low: "低风",
+        mid: "中风",
+        high: "高风",
+        auto: "自动",
       },
-      
+
       // 选项列表
       modes: [
-        { value: 'cool', label: '制冷' },
-        { value: 'heat', label: '制热' },
-        { value: 'dry', label: '除湿' },
-        { value: 'fan', label: '送风' },
-        { value: 'auto', label: '自动' }
+        { value: "cool", label: "制冷" },
+        { value: "heat", label: "制热" },
+        { value: "dry", label: "除湿" },
+        { value: "fan", label: "送风" },
+        { value: "auto", label: "自动" },
       ],
-      
+
       fanSpeeds: [
-        { value: 'low', label: '低速' },
-        { value: 'mid', label: '中速' },
-        { value: 'high', label: '高速' },
-        { value: 'auto', label: '自动' }
+        { value: "low", label: "低速" },
+        { value: "mid", label: "中速" },
+        { value: "high", label: "高速" },
+        { value: "auto", label: "自动" },
       ],
-      
+
       weekdays: [
-        { value: 1, label: '周一' },
-        { value: 2, label: '周二' },
-        { value: 3, label: '周三' },
-        { value: 4, label: '周四' },
-        { value: 5, label: '周五' },
-        { value: 6, label: '周六' },
-        { value: 0, label: '周日' }
-      ]
-    }
+        { value: 1, label: "周一" },
+        { value: 2, label: "周二" },
+        { value: 3, label: "周三" },
+        { value: 4, label: "周四" },
+        { value: 5, label: "周五" },
+        { value: 6, label: "周六" },
+        { value: 0, label: "周日" },
+      ],
+    };
   },
-  
+
   computed: {
     // 过滤后的设备列表
     filteredDevices() {
-      let result = [...this.devices]
-      
+      let result = [...this.devices];
+
       // 搜索过滤
       if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase()
-        result = result.filter(device => 
-          device.id.toLowerCase().includes(query) ||
-          device.name.toLowerCase().includes(query) ||
-          device.location.toLowerCase().includes(query)
-        )
+        const query = this.searchQuery.toLowerCase();
+        result = result.filter(
+          (device) =>
+            device.id.toLowerCase().includes(query) ||
+            device.name.toLowerCase().includes(query) ||
+            device.location.toLowerCase().includes(query)
+        );
       }
-      
+
       // 状态过滤
       if (this.filterStatus) {
-        result = result.filter(device => {
-          switch(this.filterStatus) {
-            case 'online': return device.online
-            case 'offline': return !device.online
-            case 'running': return device.status === 'running'
-            case 'standby': return device.status === 'standby'
-            case 'fault': return device.status === 'fault'
-            default: return true
+        result = result.filter((device) => {
+          switch (this.filterStatus) {
+            case "online":
+              return device.online;
+            case "offline":
+              return !device.online;
+            case "running":
+              return device.status === "running";
+            case "standby":
+              return device.status === "standby";
+            case "fault":
+              return device.status === "fault";
+            default:
+              return true;
           }
-        })
+        });
       }
-      
+
       // 区域过滤
       if (this.filterArea) {
-        result = result.filter(device => device.area === this.filterArea)
+        result = result.filter((device) => device.area === this.filterArea);
       }
-      
+
       // 排序
       if (this.sortField) {
         result.sort((a, b) => {
-          let aVal = a[this.sortField]
-          let bVal = b[this.sortField]
-          
-          if (typeof aVal === 'string') {
-            aVal = aVal.toLowerCase()
-            bVal = bVal.toLowerCase()
+          let aVal = a[this.sortField];
+          let bVal = b[this.sortField];
+
+          if (typeof aVal === "string") {
+            aVal = aVal.toLowerCase();
+            bVal = bVal.toLowerCase();
           }
-          
-          if (this.sortOrder === 'asc') {
-            return aVal > bVal ? 1 : aVal < bVal ? -1 : 0
+
+          if (this.sortOrder === "asc") {
+            return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
           } else {
-            return aVal < bVal ? 1 : aVal > bVal ? -1 : 0
+            return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
           }
-        })
+        });
       }
-      
-      return result
+
+      return result;
     },
-    
+
     // 分页后的设备列表
     paginatedDevices() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.filteredDevices.slice(start, end)
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      return this.filteredDevices.slice(start, end);
     },
-    
+
     // 总页数
     totalPages() {
-      return Math.ceil(this.filteredDevices.length / this.pageSize)
+      return Math.ceil(this.filteredDevices.length / this.pageSize);
     },
-    
+
     // 显示的页码
     displayPages() {
-      const pages = []
-      const total = this.totalPages
-      const current = this.currentPage
-      
+      const pages = [];
+      const total = this.totalPages;
+      const current = this.currentPage;
+
       if (total <= 7) {
         for (let i = 1; i <= total; i++) {
-          pages.push(i)
+          pages.push(i);
         }
       } else {
         if (current <= 3) {
           for (let i = 1; i <= 5; i++) {
-            pages.push(i)
+            pages.push(i);
           }
-          pages.push('...')
-          pages.push(total)
+          pages.push("...");
+          pages.push(total);
         } else if (current >= total - 2) {
-          pages.push(1)
-          pages.push('...')
+          pages.push(1);
+          pages.push("...");
           for (let i = total - 4; i <= total; i++) {
-            pages.push(i)
+            pages.push(i);
           }
         } else {
-          pages.push(1)
-          pages.push('...')
+          pages.push(1);
+          pages.push("...");
           for (let i = current - 1; i <= current + 1; i++) {
-            pages.push(i)
+            pages.push(i);
           }
-          pages.push('...')
-          pages.push(total)
+          pages.push("...");
+          pages.push(total);
         }
       }
-      
-      return pages
+
+      return pages;
     },
-    
+
     // 是否全选
     isAllSelected() {
-      return this.paginatedDevices.length > 0 && 
-             this.paginatedDevices.every(device => this.selectedDevices.includes(device.id))
-    }
+      return (
+        this.paginatedDevices.length > 0 &&
+        this.paginatedDevices.every((device) =>
+          this.selectedDevices.includes(device.id)
+        )
+      );
+    },
   },
-  
+
   mounted() {
-    this.initializeData()
-    this.startAutoUpdate()
-    this.startSimulation()
-    
+    this.initializeData();
+    this.startAutoUpdate();
+    this.startSimulation();
+
     // 点击外部关闭菜单
-    document.addEventListener('click', this.handleClickOutside)
+    document.addEventListener("click", this.handleClickOutside);
   },
-  
+
   beforeDestroy() {
-    this.stopAutoUpdate()
-    document.removeEventListener('click', this.handleClickOutside)
+    this.stopAutoUpdate();
+    document.removeEventListener("click", this.handleClickOutside);
   },
-  
+
   methods: {
     // 初始化数据
     initializeData() {
-      this.updateTime()
-      this.updateStats()
-      
+      this.updateTime();
+      this.updateStats();
+
       // 模拟生成更多设备数据
-      this.generateMoreDevices()
+      this.generateMoreDevices();
     },
-    
+
     // 生成更多设备数据
     generateMoreDevices() {
-      const brands = ['格力', '美的', '大金', '海尔', '三菱']
-      const models = ['KFR-26GW', 'KFR-35GW', 'KFR-50GW', 'FTXS35', 'FTXS50']
-      
+      const brands = ["格力", "美的", "大金", "海尔", "三菱"];
+      const models = ["KFR-26GW", "KFR-35GW", "KFR-50GW", "FTXS35", "FTXS50"];
+
       for (let i = 9; i <= 48; i++) {
-        const areaIndex = Math.floor(Math.random() * this.areas.length)
-        const area = this.areas[areaIndex]
-        const floor = Math.floor(Math.random() * area.floors) + 1
-        const room = Math.floor(Math.random() * 20) + 1
-        
+        const areaIndex = Math.floor(Math.random() * this.areas.length);
+        const area = this.areas[areaIndex];
+        const floor = Math.floor(Math.random() * area.floors) + 1;
+        const room = Math.floor(Math.random() * 20) + 1;
+
         this.devices.push({
-          id: `AC${String(i).padStart(3, '0')}`,
-          name: `${floor}-${String(room).padStart(2, '0')}-${floor}${String(room).padStart(2, '0')}-${Math.floor(Math.random() * 2) + 1}`,
+          id: `AC${String(i).padStart(3, "0")}`,
+          name: `${floor}-${String(room).padStart(2, "0")}-${floor}${String(
+            room
+          ).padStart(2, "0")}-${Math.floor(Math.random() * 2) + 1}`,
           area: area.id,
           floor: floor,
-          room: `${floor}${String(room).padStart(2, '0')}`,
-          location: `${area.name}-${floor}层-${floor}${String(room).padStart(2, '0')}室`,
+          room: `${floor}${String(room).padStart(2, "0")}`,
+          location: `${area.name}-${floor}层-${floor}${String(room).padStart(
+            2,
+            "0"
+          )}室`,
           online: Math.random() > 0.1,
           power: Math.random() > 0.3,
           status: this.getRandomStatus(),
           currentTemp: Math.floor(Math.random() * 8) + 22,
           setTemp: Math.floor(Math.random() * 6) + 22,
           mode: this.modes[Math.floor(Math.random() * this.modes.length)].value,
-          fanSpeed: this.fanSpeeds[Math.floor(Math.random() * this.fanSpeeds.length)].value,
+          fanSpeed:
+            this.fanSpeeds[Math.floor(Math.random() * this.fanSpeeds.length)]
+              .value,
           swingH: Math.random() > 0.5,
           swingV: Math.random() > 0.5,
           powerUsage: (Math.random() * 3 + 1).toFixed(1),
           brand: brands[Math.floor(Math.random() * brands.length)],
           model: models[Math.floor(Math.random() * models.length)],
           installDate: this.getRandomDate(),
-          lastUpdate: this.getRandomTime()
-        })
+          lastUpdate: this.getRandomTime(),
+        });
       }
     },
-    
+
     // 获取随机状态
     getRandomStatus() {
-      const rand = Math.random()
-      if (rand < 0.05) return 'fault'
-      if (rand < 0.2) return 'standby'
-      if (rand < 0.3) return 'offline'
-      return 'running'
+      const rand = Math.random();
+      if (rand < 0.05) return "fault";
+      if (rand < 0.2) return "standby";
+      if (rand < 0.3) return "offline";
+      return "running";
     },
-    
+
     // 获取随机日期
     getRandomDate() {
-      const start = new Date(2023, 0, 1)
-      const end = new Date(2024, 0, 1)
-      const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
-      return date.toISOString().split('T')[0]
+      const start = new Date(2023, 0, 1);
+      const end = new Date(2024, 0, 1);
+      const date = new Date(
+        start.getTime() + Math.random() * (end.getTime() - start.getTime())
+      );
+      return date.toISOString().split("T")[0];
     },
-    
+
     // 获取随机时间
     getRandomTime() {
-      const hours = Math.floor(Math.random() * 24)
-      const minutes = Math.floor(Math.random() * 60)
-      const seconds = Math.floor(Math.random() * 60)
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      const hours = Math.floor(Math.random() * 24);
+      const minutes = Math.floor(Math.random() * 60);
+      const seconds = Math.floor(Math.random() * 60);
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+        2,
+        "0"
+      )}:${String(seconds).padStart(2, "0")}`;
     },
-    
+
     // 更新时间
     updateTime() {
-      const now = new Date()
-      const hours = String(now.getHours()).padStart(2, '0')
-      const minutes = String(now.getMinutes()).padStart(2, '0')
-      this.lastUpdateTime = `${hours}:${minutes}`
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      this.lastUpdateTime = `${hours}:${minutes}`;
     },
-    
+
     // 自动更新
     startAutoUpdate() {
       this.updateTimer = setInterval(() => {
-        this.updateTime()
-        this.updateDeviceStatus()
-      }, 60000)
+        this.updateTime();
+        this.updateDeviceStatus();
+      }, 60000);
     },
-    
+
     stopAutoUpdate() {
       if (this.updateTimer) {
-        clearInterval(this.updateTimer)
+        clearInterval(this.updateTimer);
       }
     },
-    
+
     // 更新设备状态
     updateDeviceStatus() {
-      this.devices.forEach(device => {
-        device.lastUpdate = this.getRandomTime()
-      })
+      this.devices.forEach((device) => {
+        device.lastUpdate = this.getRandomTime();
+      });
     },
-    
+
     // 开始模拟
     startSimulation() {
       setInterval(() => {
-        this.simulateTemperatureChange()
-        this.updateStats()
-      }, 5000)
+        this.simulateTemperatureChange();
+        this.updateStats();
+      }, 5000);
     },
-    
+
     // 模拟温度变化
     simulateTemperatureChange() {
-      this.devices.forEach(device => {
-        if (device.online && device.power && device.status === 'running') {
-          const diff = device.setTemp - device.currentTemp
+      this.devices.forEach((device) => {
+        if (device.online && device.power && device.status === "running") {
+          const diff = device.setTemp - device.currentTemp;
           if (Math.abs(diff) > 0.5) {
-            const changeRate = device.mode === 'cool' ? -0.3 : 
-                             device.mode === 'heat' ? 0.3 : 
-                             diff > 0 ? 0.2 : -0.2
-            
+            const changeRate =
+              device.mode === "cool"
+                ? -0.3
+                : device.mode === "heat"
+                ? 0.3
+                : diff > 0
+                ? 0.2
+                : -0.2;
+
             const speedMultiplier = {
               low: 0.7,
               mid: 1,
               high: 1.3,
-              auto: 1
-            }
-            
-            const actualChange = changeRate * speedMultiplier[device.fanSpeed]
-            device.currentTemp = Math.round((device.currentTemp + actualChange) * 10) / 10
-            
-            if ((device.mode === 'cool' && device.currentTemp < device.setTemp) ||
-                (device.mode === 'heat' && device.currentTemp > device.setTemp)) {
-              device.currentTemp = device.setTemp
+              auto: 1,
+            };
+
+            const actualChange = changeRate * speedMultiplier[device.fanSpeed];
+            device.currentTemp =
+              Math.round((device.currentTemp + actualChange) * 10) / 10;
+
+            if (
+              (device.mode === "cool" && device.currentTemp < device.setTemp) ||
+              (device.mode === "heat" && device.currentTemp > device.setTemp)
+            ) {
+              device.currentTemp = device.setTemp;
             }
           }
         }
-      })
+      });
     },
-    
+
     // 更新统计
     updateStats() {
-      const online = this.devices.filter(d => d.online)
-      const running = online.filter(d => d.power && d.status === 'running')
-      
-      this.stats.total = this.devices.length
-      this.stats.online = online.length
-      this.stats.running = running.length
-      
+      const online = this.devices.filter((d) => d.online);
+      const running = online.filter((d) => d.power && d.status === "running");
+
+      this.stats.total = this.devices.length;
+      this.stats.online = online.length;
+      this.stats.running = running.length;
+
       if (running.length > 0) {
-        this.stats.avgTemp = (running.reduce((sum, d) => sum + d.currentTemp, 0) / running.length).toFixed(1)
-        this.stats.totalPower = running.reduce((sum, d) => sum + parseFloat(d.powerUsage), 0).toFixed(1)
+        this.stats.avgTemp = (
+          running.reduce((sum, d) => sum + d.currentTemp, 0) / running.length
+        ).toFixed(1);
+        this.stats.totalPower = running
+          .reduce((sum, d) => sum + parseFloat(d.powerUsage), 0)
+          .toFixed(1);
       }
     },
-    
+
     // 刷新数据
     refreshData() {
-      this.updateTime()
-      this.updateDeviceStatus()
-      this.updateStats()
-      this.showToast('数据已刷新', 'success')
+      this.updateTime();
+      this.updateDeviceStatus();
+      this.updateStats();
+      this.showToast("数据已刷新", "success");
     },
-    
+
     // 搜索处理
     handleSearch() {
-      this.currentPage = 1
+      this.currentPage = 1;
     },
-    
+
     // 应用筛选
     applyFilters() {
-      this.currentPage = 1
+      this.currentPage = 1;
     },
-    
+
     // 排序
     sortBy(field) {
       if (this.sortField === field) {
-        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
+        this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
       } else {
-        this.sortField = field
-        this.sortOrder = 'asc'
+        this.sortField = field;
+        this.sortOrder = "asc";
       }
     },
-    
+
     // 设备选择
     toggleDeviceSelection(deviceId) {
-      const index = this.selectedDevices.indexOf(deviceId)
+      const index = this.selectedDevices.indexOf(deviceId);
       if (index > -1) {
-        this.selectedDevices.splice(index, 1)
+        this.selectedDevices.splice(index, 1);
       } else {
-        this.selectedDevices.push(deviceId)
+        this.selectedDevices.push(deviceId);
       }
     },
-    
+
     toggleAllSelection() {
       if (this.isAllSelected) {
-        this.paginatedDevices.forEach(device => {
-          const index = this.selectedDevices.indexOf(device.id)
+        this.paginatedDevices.forEach((device) => {
+          const index = this.selectedDevices.indexOf(device.id);
           if (index > -1) {
-            this.selectedDevices.splice(index, 1)
+            this.selectedDevices.splice(index, 1);
           }
-        })
+        });
       } else {
-        this.paginatedDevices.forEach(device => {
+        this.paginatedDevices.forEach((device) => {
           if (!this.selectedDevices.includes(device.id)) {
-            this.selectedDevices.push(device.id)
+            this.selectedDevices.push(device.id);
           }
-        })
+        });
       }
     },
-    
+
     // 菜单控制
     toggleMenu(deviceId) {
       if (this.activeMenu === deviceId) {
-        this.activeMenu = null
+        this.activeMenu = null;
       } else {
-        this.activeMenu = deviceId
+        this.activeMenu = deviceId;
       }
     },
-    
+
     handleClickOutside(e) {
-      if (!e.target.closest('.card-menu')) {
-        this.activeMenu = null
+      if (!e.target.closest(".card-menu")) {
+        this.activeMenu = null;
       }
     },
-    
+
     // 获取状态类名
     getStatusClass(device) {
-      if (!device.online) return 'offline'
-      if (device.status === 'fault') return 'fault'
-      if (device.power) return 'running'
-      return 'standby'
+      if (!device.online) return "offline";
+      if (device.status === "fault") return "fault";
+      if (device.power) return "running";
+      return "standby";
     },
-    
+
     // 获取状态文本
     getStatusText(device) {
-      if (!device.online) return '离线'
-      if (device.status === 'fault') return '故障'
-      if (device.power) return '运行中'
-      return '待机'
+      if (!device.online) return "离线";
+      if (device.status === "fault") return "故障";
+      if (device.power) return "运行中";
+      return "待机";
     },
-    
+
     // 设备控制
     togglePower(device) {
-      device.power = !device.power
+      device.power = !device.power;
       if (!device.power) {
-        device.powerUsage = 0
-        device.status = 'standby'
+        device.powerUsage = 0;
+        device.status = "standby";
       } else {
-        device.powerUsage = this.calculatePower(device)
-        device.status = 'running'
+        device.powerUsage = this.calculatePower(device);
+        device.status = "running";
       }
-      this.updateStats()
-      this.showToast(`设备 ${device.name} 已${device.power ? '开启' : '关闭'}`, 'success')
+      this.updateStats();
+      this.showToast(
+        `设备 ${device.name} 已${device.power ? "开启" : "关闭"}`,
+        "success"
+      );
     },
-    
+
     adjustTemp(device, delta) {
-      const newTemp = device.setTemp + delta
+      const newTemp = device.setTemp + delta;
       if (newTemp >= 16 && newTemp <= 30) {
-        device.setTemp = newTemp
+        device.setTemp = newTemp;
         if (device.power) {
-          device.powerUsage = this.calculatePower(device)
+          device.powerUsage = this.calculatePower(device);
         }
       }
     },
-    
+
     updateSetTemp(device, event) {
-      const value = parseInt(event.target.value)
+      const value = parseInt(event.target.value);
       if (value >= 16 && value <= 30) {
-        device.setTemp = value
+        device.setTemp = value;
         if (device.power) {
-          device.powerUsage = this.calculatePower(device)
+          device.powerUsage = this.calculatePower(device);
         }
       }
     },
-    
+
     updateMode(device, event) {
-      device.mode = event.target.value
+      device.mode = event.target.value;
       if (device.power) {
-        device.powerUsage = this.calculatePower(device)
+        device.powerUsage = this.calculatePower(device);
       }
     },
-    
+
     calculatePower(device) {
-      const baseMap = { cool: 3, heat: 3.5, dry: 2, fan: 0.5, auto: 2.5 }
-      const speedMap = { low: 0.8, mid: 1, high: 1.2, auto: 1 }
-      return (baseMap[device.mode] * speedMap[device.fanSpeed]).toFixed(1)
+      const baseMap = { cool: 3, heat: 3.5, dry: 2, fan: 0.5, auto: 2.5 };
+      const speedMap = { low: 0.8, mid: 1, high: 1.2, auto: 1 };
+      return (baseMap[device.mode] * speedMap[device.fanSpeed]).toFixed(1);
     },
-    
+
     // 打开设备详情
     openDeviceDetail(device) {
-    this.currentDevice = device
-    this.deviceDetailForm = {
-      power: device.power,
-      setTemp: device.setTemp,
-      mode: device.mode,
-      fanSpeed: device.fanSpeed,
-      swingH: device.swingH,
-      swingV: device.swingV,
-      timerOn: false,
-      timerOff: false,
-      timerOnTime: '08:00',
-      timerOffTime: '22:00'
-    }
-    this.showDeviceDetail = true
-  },
-  closeDeviceDetail() {
-    this.showDeviceDetail = false
-    this.currentDevice = null
-  },
-  applyDeviceDetail() {
-    if (this.currentDevice) {
-      this.currentDevice.power = this.deviceDetailForm.power
-      this.currentDevice.setTemp = this.deviceDetailForm.setTemp
-      this.currentDevice.mode = this.deviceDetailForm.mode
-      this.currentDevice.fanSpeed = this.deviceDetailForm.fanSpeed
-      this.currentDevice.swingH = this.deviceDetailForm.swingH
-      this.currentDevice.swingV = this.deviceDetailForm.swingV
-      
-      // 更新功率和状态
-      if (this.currentDevice.power) {
-        this.currentDevice.powerUsage = this.calculatePower(this.currentDevice)
-        this.currentDevice.status = 'running'
-      } else {
-        this.currentDevice.powerUsage = 0
-        this.currentDevice.status = 'standby'
+      this.currentDevice = device;
+      this.deviceDetailForm = {
+        power: device.power,
+        setTemp: device.setTemp,
+        mode: device.mode,
+        fanSpeed: device.fanSpeed,
+        swingH: device.swingH,
+        swingV: device.swingV,
+        timerOn: false,
+        timerOff: false,
+        timerOnTime: "08:00",
+        timerOffTime: "22:00",
+      };
+      this.showDeviceDetail = true;
+    },
+    closeDeviceDetail() {
+      this.showDeviceDetail = false;
+      this.currentDevice = null;
+    },
+    applyDeviceDetail() {
+      if (this.currentDevice) {
+        this.currentDevice.power = this.deviceDetailForm.power;
+        this.currentDevice.setTemp = this.deviceDetailForm.setTemp;
+        this.currentDevice.mode = this.deviceDetailForm.mode;
+        this.currentDevice.fanSpeed = this.deviceDetailForm.fanSpeed;
+        this.currentDevice.swingH = this.deviceDetailForm.swingH;
+        this.currentDevice.swingV = this.deviceDetailForm.swingV;
+
+        // 更新功率和状态
+        if (this.currentDevice.power) {
+          this.currentDevice.powerUsage = this.calculatePower(
+            this.currentDevice
+          );
+          this.currentDevice.status = "running";
+        } else {
+          this.currentDevice.powerUsage = 0;
+          this.currentDevice.status = "standby";
+        }
+
+        this.updateStats();
+        this.showToast(`设备 ${this.currentDevice.name} 设置已更新`, "success");
       }
-      
-      this.updateStats()
-      this.showToast(`设备 ${this.currentDevice.name} 设置已更新`, 'success')
-    }
-    this.closeDeviceDetail()
-  },
-    
+      this.closeDeviceDetail();
+    },
+
     // 编辑设备
     editDevice(device) {
-      this.currentDevice = device
+      this.currentDevice = device;
       this.deviceForm = {
         id: device.id,
         name: device.name,
         area: device.area,
         floor: device.floor,
         room: device.room,
-        brand: device.brand || '格力',
-        model: device.model || '',
+        brand: device.brand || "格力",
+        model: device.model || "",
         ratedPower: 3.5,
-        installDate: device.installDate || '',
-        remark: ''
-      }
-      this.showEditDevice = true
-      this.activeMenu = null
+        installDate: device.installDate || "",
+        remark: "",
+      };
+      this.showEditDevice = true;
+      this.activeMenu = null;
     },
-    
+
     // 复制设备
     duplicateDevice(device) {
-      const newDevice = { ...device }
-      const maxId = Math.max(...this.devices.map(d => parseInt(d.id.replace('AC', ''))))
-      newDevice.id = `AC${String(maxId + 1).padStart(3, '0')}`
-      newDevice.name = device.name + '-复制'
-      
-      this.devices.push(newDevice)
-      this.updateStats()
-      this.showToast('设备复制成功', 'success')
-      this.activeMenu = null
+      const newDevice = { ...device };
+      const maxId = Math.max(
+        ...this.devices.map((d) => parseInt(d.id.replace("AC", "")))
+      );
+      newDevice.id = `AC${String(maxId + 1).padStart(3, "0")}`;
+      newDevice.name = device.name + "-复制";
+
+      this.devices.push(newDevice);
+      this.updateStats();
+      this.showToast("设备复制成功", "success");
+      this.activeMenu = null;
     },
-    
+
     // 查看历史记录
     viewHistory(device) {
-      console.log('查看历史记录', device)
-      this.showToast('历史记录功能开发中', 'warning')
-      this.activeMenu = null
+      console.log("查看历史记录", device);
+      this.showToast("历史记录功能开发中", "warning");
+      this.activeMenu = null;
     },
-    
+
     // 确认删除
     confirmDelete(device) {
-      this.deviceToDelete = device
-      this.showDeleteConfirm = true
-      this.activeMenu = null
+      this.deviceToDelete = device;
+      this.showDeleteConfirm = true;
+      this.activeMenu = null;
     },
-    
+
     // 删除设备
     deleteDevice() {
-      const index = this.devices.findIndex(d => d.id === this.deviceToDelete.id)
+      const index = this.devices.findIndex(
+        (d) => d.id === this.deviceToDelete.id
+      );
       if (index > -1) {
-        this.devices.splice(index, 1)
-        this.updateStats()
-        this.showToast(`设备 ${this.deviceToDelete.name} 已删除`, 'success')
+        this.devices.splice(index, 1);
+        this.updateStats();
+        this.showToast(`设备 ${this.deviceToDelete.name} 已删除`, "success");
       }
-      this.showDeleteConfirm = false
-      this.deviceToDelete = null
+      this.showDeleteConfirm = false;
+      this.deviceToDelete = null;
     },
-    
+
     // 保存设备
     saveDevice() {
       if (this.showEditDevice) {
         // 编辑设备
-        const device = this.devices.find(d => d.id === this.deviceForm.id)
+        const device = this.devices.find((d) => d.id === this.deviceForm.id);
         if (device) {
-          device.name = this.deviceForm.name
-          device.area = this.deviceForm.area
-          device.floor = this.deviceForm.floor
-          device.room = this.deviceForm.room
-          device.location = `${this.deviceForm.area}栋-${this.deviceForm.floor}层-${this.deviceForm.room}室`
-          device.brand = this.deviceForm.brand
-          device.model = this.deviceForm.model
-          device.installDate = this.deviceForm.installDate
-          
-          this.showToast('设备信息已更新', 'success')
+          device.name = this.deviceForm.name;
+          device.area = this.deviceForm.area;
+          device.floor = this.deviceForm.floor;
+          device.room = this.deviceForm.room;
+          device.location = `${this.deviceForm.area}栋-${this.deviceForm.floor}层-${this.deviceForm.room}室`;
+          device.brand = this.deviceForm.brand;
+          device.model = this.deviceForm.model;
+          device.installDate = this.deviceForm.installDate;
+
+          this.showToast("设备信息已更新", "success");
         }
       } else {
         // 添加设备
@@ -1847,174 +2194,190 @@ export default {
           location: `${this.deviceForm.area}栋-${this.deviceForm.floor}层-${this.deviceForm.room}室`,
           online: true,
           power: false,
-          status: 'standby',
+          status: "standby",
           currentTemp: 26,
           setTemp: 24,
-          mode: 'cool',
-          fanSpeed: 'auto',
+          mode: "cool",
+          fanSpeed: "auto",
           swingH: false,
           swingV: false,
           powerUsage: 0,
           brand: this.deviceForm.brand,
           model: this.deviceForm.model,
           installDate: this.deviceForm.installDate,
-          lastUpdate: this.getRandomTime()
-        }
-        
-        this.devices.push(newDevice)
-        this.updateStats()
-        this.showToast('设备添加成功', 'success')
+          lastUpdate: this.getRandomTime(),
+        };
+
+        this.devices.push(newDevice);
+        this.updateStats();
+        this.showToast("设备添加成功", "success");
       }
-      
-      this.closeDeviceForm()
+
+      this.closeDeviceForm();
     },
-    
+
     // 关闭设备表单
     closeDeviceForm() {
-      this.showAddDevice = false
-      this.showEditDevice = false
-      this.currentDevice = null
+      this.showAddDevice = false;
+      this.showEditDevice = false;
+      this.currentDevice = null;
       this.deviceForm = {
-        id: '',
-        name: '',
-        area: '',
-        floor: '',
-        room: '',
-        brand: '格力',
-        model: '',
+        id: "",
+        name: "",
+        area: "",
+        floor: "",
+        room: "",
+        brand: "格力",
+        model: "",
         ratedPower: 3.5,
-        installDate: '',
-        remark: ''
-      }
+        installDate: "",
+        remark: "",
+      };
     },
-    
+
     // 批量操作
     batchAction(action, value) {
-    // 设置选中状态
-    this.quickActionSelected = action + (value ? '_' + value : '');
-    
-    const selectedDeviceObjects = this.devices.filter(d => this.selectedDevices.includes(d.id));
-    
-    selectedDeviceObjects.forEach(device => {
-      if (device.online) {
-        switch(action) {
-          case 'powerOn':
-            device.power = true;
-            device.status = 'running';
-            device.powerUsage = this.calculatePower(device);
-            break;
-          case 'powerOff':
-            device.power = false;
-            device.status = 'standby';
-            device.powerUsage = 0;
-            break;
-          case 'setTemp':
-            device.setTemp = value;
-            break;
-          case 'setMode':
-            device.mode = value;
-            if (device.power) {
+      // 设置选中状态
+      this.quickActionSelected = action + (value ? "_" + value : "");
+
+      const selectedDeviceObjects = this.devices.filter((d) =>
+        this.selectedDevices.includes(d.id)
+      );
+
+      selectedDeviceObjects.forEach((device) => {
+        if (device.online) {
+          switch (action) {
+            case "powerOn":
+              device.power = true;
+              device.status = "running";
               device.powerUsage = this.calculatePower(device);
-            }
-            break;
+              break;
+            case "powerOff":
+              device.power = false;
+              device.status = "standby";
+              device.powerUsage = 0;
+              break;
+            case "setTemp":
+              device.setTemp = value;
+              break;
+            case "setMode":
+              device.mode = value;
+              if (device.power) {
+                device.powerUsage = this.calculatePower(device);
+              }
+              break;
+          }
         }
-      }
-    });
-    
-    this.updateStats();
-    this.showToast(`已对 ${selectedDeviceObjects.length} 台设备执行操作`, 'success');
-    
-    // 3秒后清除选中状态
-    setTimeout(() => {
+      });
+
+      this.updateStats();
+      this.showToast(
+        `已对 ${selectedDeviceObjects.length} 台设备执行操作`,
+        "success"
+      );
+
+      // 3秒后清除选中状态
+      setTimeout(() => {
+        this.quickActionSelected = null;
+      }, 3000);
+    },
+
+    // 重置快速操作选中状态（在关闭弹窗时调用）
+    resetQuickActionSelection() {
       this.quickActionSelected = null;
-    }, 3000);
-  },
+    },
 
-  // 重置快速操作选中状态（在关闭弹窗时调用）
-  resetQuickActionSelection() {
-    this.quickActionSelected = null;
-  },
+    // 修改关闭批量控制弹窗的方法
+    closeBatchControl() {
+      this.showBatchControl = false;
+      this.resetQuickActionSelection();
+    },
 
-  // 修改关闭批量控制弹窗的方法
-  closeBatchControl() {
-    this.showBatchControl = false;
-    this.resetQuickActionSelection();
-  },
-    
     // 应用批量控制
     applyBatchControl() {
-      const selectedDeviceObjects = this.devices.filter(d => this.selectedDevices.includes(d.id))
-      
-      selectedDeviceObjects.forEach(device => {
+      const selectedDeviceObjects = this.devices.filter((d) =>
+        this.selectedDevices.includes(d.id)
+      );
+
+      selectedDeviceObjects.forEach((device) => {
         if (device.online) {
           if (this.batchSettings.temperature) {
-            device.setTemp = this.batchSettings.temperature
+            device.setTemp = this.batchSettings.temperature;
           }
           if (this.batchSettings.mode) {
-            device.mode = this.batchSettings.mode
+            device.mode = this.batchSettings.mode;
           }
           if (this.batchSettings.fanSpeed) {
-            device.fanSpeed = this.batchSettings.fanSpeed
+            device.fanSpeed = this.batchSettings.fanSpeed;
           }
           if (device.power) {
-            device.powerUsage = this.calculatePower(device)
+            device.powerUsage = this.calculatePower(device);
           }
         }
-      })
-      
-      this.updateStats()
-      this.showBatchControl = false
-      this.showToast(`批量设置已应用到 ${selectedDeviceObjects.length} 台设备`, 'success')
+      });
+
+      this.updateStats();
+      this.showBatchControl = false;
+      this.showToast(
+        `批量设置已应用到 ${selectedDeviceObjects.length} 台设备`,
+        "success"
+      );
     },
-    
+
     // 导出数据
     exportData() {
       // 准备导出数据
-      const exportData = this.filteredDevices.map(device => ({
+      const exportData = this.filteredDevices.map((device) => ({
         设备编号: device.id,
         设备名称: device.name,
         所在位置: device.location,
         状态: this.getStatusText(device),
-        当前温度: device.currentTemp + '°C',
-        设定温度: device.setTemp + '°C',
+        当前温度: device.currentTemp + "°C",
+        设定温度: device.setTemp + "°C",
         运行模式: this.modeMap[device.mode],
         风速: this.windMap[device.fanSpeed],
-        功率: device.powerUsage + 'kW',
+        功率: device.powerUsage + "kW",
         品牌: device.brand,
         型号: device.model,
         安装日期: device.installDate,
-        最后更新: device.lastUpdate
-      }))
-      
+        最后更新: device.lastUpdate,
+      }));
+
       // 转换为CSV格式
-      const headers = Object.keys(exportData[0])
+      const headers = Object.keys(exportData[0]);
       const csvContent = [
-        headers.join(','),
-        ...exportData.map(row => headers.map(header => row[header]).join(','))
-      ].join('\n')
-      
+        headers.join(","),
+        ...exportData.map((row) =>
+          headers.map((header) => row[header]).join(",")
+        ),
+      ].join("\n");
+
       // 创建下载
-      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `空调设备数据_${new Date().toISOString().split('T')[0]}.csv`
-      link.click()
-      
-      this.showToast('数据导出成功', 'success')
+      const blob = new Blob(["\ufeff" + csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `空调设备数据_${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
+      link.click();
+
+      this.showToast("数据导出成功", "success");
     },
-    
+
     // 显示提示消息
-    showToast(message, type = 'success') {
-      this.toast.message = message
-      this.toast.type = type
-      this.toast.show = true
-      
+    showToast(message, type = "success") {
+      this.toast.message = message;
+      this.toast.type = type;
+      this.toast.show = true;
+
       setTimeout(() => {
-        this.toast.show = false
-      }, 3000)
-    }
-  }
-}
+        this.toast.show = false;
+      }, 3000);
+    },
+  },
+};
 </script>
 <style scoped>
 * {
@@ -2027,7 +2390,8 @@ export default {
 .hvac-management {
   min-height: 100vh;
   padding: 16px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   color: #1f2329;
 }
 
@@ -2053,8 +2417,6 @@ export default {
   font-weight: 600;
   color: #1f2329;
 }
-
-
 
 .header-right {
   display: flex;
@@ -2911,7 +3273,7 @@ export default {
 }
 
 .form-group label.required::after {
-  content: ' *';
+  content: " *";
   color: #f54a45;
 }
 
@@ -3003,7 +3365,7 @@ export default {
 }
 
 .quick-action.selected::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -3147,17 +3509,17 @@ export default {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
-  
+
   .quick-action {
     padding: 16px 12px;
     gap: 8px;
   }
-  
+
   .quick-action-icon {
     width: 40px;
     height: 40px;
   }
-  
+
   .quick-action span {
     font-size: 13px;
   }
@@ -3266,7 +3628,7 @@ export default {
 }
 
 .status-card h4::before {
-  content: '';
+  content: "";
   width: 4px;
   height: 16px;
   background: #3370ff;
@@ -3583,7 +3945,7 @@ export default {
 }
 
 .swing-checkbox input:checked + .checkmark:after {
-  content: '✓';
+  content: "✓";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -3662,34 +4024,86 @@ export default {
     width: 95%;
     max-width: none;
   }
-  
+
   .status-items {
     grid-template-columns: 1fr;
   }
-  
+
   .control-row {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
-  
+
   .control-action {
     margin-left: 0;
   }
-  
+
   .mode-selector,
   .fan-selector {
     flex-wrap: wrap;
   }
-  
+
   .timer-settings {
     min-width: auto;
   }
-  
+
   .timer-group {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
+}
+/* 租户折叠框样式 */
+.tenant-collapse {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.collapse-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.collapse-header:hover {
+  background-color: #f1f3f5;
+}
+
+.collapse-header svg {
+  transition: transform 0.3s ease;
+}
+
+.collapse-header .rotate-90 {
+  transform: rotate(90deg);
+}
+
+.collapse-content {
+  padding: 16px;
+  background-color: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* 折叠框内的表单布局优化 */
+.collapse-content .form-group {
+  margin-bottom: 12px;
+}
+
+.collapse-content .form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.collapse-content .form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
 }
 </style>
