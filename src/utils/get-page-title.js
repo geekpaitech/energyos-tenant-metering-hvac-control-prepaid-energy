@@ -1,4 +1,4 @@
-const title = '园区智慧物联'
+const title = ' 物联中台'
 
 export default function getPageTitle (pageTitle) {
   if (pageTitle) {

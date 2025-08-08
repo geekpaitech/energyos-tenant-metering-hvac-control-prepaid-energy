@@ -22,7 +22,7 @@
               </svg>
             </div>
             <div class="system-info">
-              <h1 class="system-title">园区智慧物联</h1>
+              <h1 class="system-title"> 物联中台</h1>
               <p class="system-subtitle">Park Intelligent IoT System</p>
             </div>
           </div>
@@ -105,7 +105,7 @@
         </div>
 
         <div class="login-footer">
-          <p class="copyright">园区智慧物联系统 v2.0</p>
+          <p class="copyright"> 物联中台系统 v2.0</p>
         </div>
       </div>
     </div>

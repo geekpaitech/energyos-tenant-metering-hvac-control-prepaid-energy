@@ -1,5 +1,5 @@
 module.exports = {
-  title: '园区智慧物联',
+  title: ' 物联中台',
 
   /**
    * @type {boolean} true | false

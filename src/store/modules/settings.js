@@ -1,5 +1,5 @@
 const state = {
-  title: '园区智慧物联',
+  title: ' 物联中台',
   fixedHeader: true,
   sidebarLogo: true,
   showSettings: true,
