@@ -495,6 +495,9 @@ export default {
       if (systemPaths.includes(route.path)) {
         return false;
       }
+      if (route.path.includes("/detail/") || route.path.endsWith("/detail")) {
+        return false;
+      }
 
       if (route.meta) {
         if (route.meta.noTagsView || route.meta.hidden) {

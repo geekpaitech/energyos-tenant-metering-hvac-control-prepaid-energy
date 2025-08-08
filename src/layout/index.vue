@@ -552,7 +552,8 @@ export default {
         "/application/invoice/tenant-invoice",
         "/application/invoice/invoice-quota",
         "/application/invoice/quota-flow",
-        "/device/parking"
+        "/device/parking",
+        "/device/charging"
         // 可以根据需要添加更多路由
       ],
 
@@ -676,6 +677,11 @@ export default {
     // 判断当前路由是否应该显示树形面板
     shouldShowTreeByRoute() {
       const currentPath = this.$route.path;
+        // ========== 新增：排除所有详情页 ==========
+    // 如果路径包含 /detail/ 或以 /detail 结尾，不显示树形面板
+    if (currentPath.includes('/detail/') || currentPath.endsWith('/detail')) {
+      return false;
+    }
 
       // 精确匹配
       if (this.treeVisibleRoutes.includes(currentPath)) {

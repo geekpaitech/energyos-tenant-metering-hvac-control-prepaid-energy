@@ -1242,17 +1242,25 @@ export default {
     // 电表监控
     handleMonitor(row) {
       this.$router.push({
-        path: "/mt-ammeterIncident",
-        query: { id: row.serial, type: 1 },
-      });
+      path: `/device/electricity/detail/${row.id}`,
+      query: { 
+        name: row.meterName,
+        serial: row.serial,
+        deviceId: row.id
+      }
+    });
     },
 
     // 项目点击
     handleProjectClick(row) {
       this.$router.push({
-        path: "/project-maintain-detail",
-        query: { id: row.managerId },
-      });
+      path: `/device/electricity/detail/${row.id}`,
+      query: { 
+        name: row.meterName,
+        serial: row.serial,
+        deviceId: row.id
+      }
+    });
     },
 
     // 租户点击

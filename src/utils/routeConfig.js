@@ -50,6 +50,18 @@ export const consoleRoutes = [
         meta: { title: '电表', icon: 'el-icon-lightning' }
       },
       {
+        path: 'electricity/detail/:id',
+        name: 'DeviceElectricityDetail',
+        component: () => import('@/views/console/device/electricity/detail'),
+        hidden: true, // 在路由根级别也设置
+        meta: { 
+          title: '电表详情', 
+          icon: 'el-icon-monitor',
+          hidden: true, // 在菜单中隐藏
+          activeMenu: '/device/electricity' // 激活父级菜单
+        }
+      },
+      {
         path: 'conditioning',
         name: 'DeviceConditioning',
         component: () => import('@/views/console/device/conditioning'),
@@ -77,13 +89,13 @@ export const consoleRoutes = [
         path: 'parking',
         name: 'DeviceParking',
         component: () => import('@/views/console/device/parking'),
-        meta: { title: '车位', icon: 'el-icon-coffee-cup' }
+        meta: { title: '车位', icon: 'el-icon-place' }
       },
       {
         path: 'charging',
         name: 'DeviceCharging',
         component: () => import('@/views/console/device/charging'),
-        meta: { title: '充电桩', icon: 'el-icon-coffee-cup' }
+        meta: { title: '充电桩', icon: 'el-icon-data-analysis' }
       },
       // 带标签的分隔线
       {

@@ -128,25 +128,28 @@
               'is-fault': device.status === 'fault',
               'is-selected': selectedDevices.includes(device.id),
               'is-charging': device.status === 'charging',
+              'is-self-operated': device.isSelfOperated,
             },
           ]"
         >
-          <!-- 选择框 -->
-          <div class="card-selector">
-            <input
-              type="checkbox"
-              :checked="selectedDevices.includes(device.id)"
-              @change="toggleDeviceSelection(device.id)"
-            />
-          </div>
+          <!-- 卡片头部 -->
+          <div class="card-header">
+            <div class="card-checkbox">
+              <input
+                type="checkbox"
+                :checked="selectedDevices.includes(device.id)"
+                @change="toggleDeviceSelection(device.id)"
+              />
+            </div>
+            
+            <div class="card-status">
+              <span :class="['status-indicator', getStatusClass(device)]">
+                {{ getStatusText(device) }}
+              </span>
+            </div>
 
-          <!-- 状态标识 -->
-          <div class="card-status">
-            <span :class="['status-badge', getStatusClass(device)]">
-              {{ getStatusText(device) }}
-            </span>
             <div class="card-menu">
-              <button class="menu-trigger" @click="toggleMenu(device.id)">
+              <button class="menu-btn" @click="toggleMenu(device.id)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="5" r="1"/>
                   <circle cx="12" cy="12" r="1"/>
@@ -162,71 +165,111 @@
             </div>
           </div>
 
-          <!-- 设备信息 -->
-          <div class="card-body">
-            <div class="device-id">{{ device.id }}</div>
-            <div class="device-name">{{ device.name }}</div>
-            <div class="device-location">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              {{ device.location }}
+          <!-- 设备基本信息 -->
+          <div class="card-content">
+            <div class="device-info">
+              <div class="device-id">#{{ device.id }}</div>
+              <div class="device-name">{{ device.name }}</div>
+              <div class="device-location">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                {{ device.location }}
+              </div>
             </div>
 
-            <!-- 充电桩类型标识 -->
-            <div class="device-type">
-              <span :class="['type-badge', device.type]">
-                {{ typeMap[device.type] }}
-              </span>
-              <span class="power-label">{{ device.maxPower }}kW</span>
+            <!-- 设备属性 -->
+            <div class="device-attrs">
+              <div class="attr-row">
+                <div class="attr-item">
+                  <span class="attr-label">类型</span>
+                  <span :class="['attr-value', 'type-' + device.type]">
+                    {{ typeMap[device.type] }}
+                  </span>
+                </div>
+                <div class="attr-item">
+                  <span class="attr-label">功率</span>
+                  <span class="attr-value">{{ device.maxPower }}kW</span>
+                </div>
+              </div>
+              <div class="attr-row">
+                <div class="attr-item">
+                  <span class="attr-label">协议</span>
+                  <span class="attr-value">{{ device.protocol || 'OCPP 1.6' }}</span>
+                </div>
+                <div class="attr-item">
+                  <span class="attr-label">运营</span>
+                  <span :class="['attr-value', device.isSelfOperated ? 'self-operated' : 'partner']">
+                    {{ device.isSelfOperated ? '自营' : '合作' }}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <!-- 实时数据 -->
             <div class="realtime-data">
-              <div class="data-row">
-                <span class="data-label">当前功率</span>
-                <span class="data-value">{{ device.currentPower }}kW</span>
+              <div class="data-grid">
+                <div class="data-item">
+                  <div class="data-label">当前功率</div>
+                  <div class="data-value primary">{{ device.currentPower }}kW</div>
+                </div>
+                <div class="data-item">
+                  <div class="data-label">电压</div>
+                  <div class="data-value">{{ device.voltage }}V</div>
+                </div>
+                <div class="data-item">
+                  <div class="data-label">电流</div>
+                  <div class="data-value">{{ device.current }}A</div>
+                </div>
+                <div class="data-item">
+                  <div class="data-label">利用率</div>
+                  <div class="data-value">{{ device.utilizationRate }}%</div>
+                </div>
               </div>
-              <div class="data-row">
-                <span class="data-label">输出电压</span>
-                <span class="data-value">{{ device.voltage }}V</span>
-              </div>
-              <div class="data-row">
-                <span class="data-label">输出电流</span>
-                <span class="data-value">{{ device.current }}A</span>
-              </div>
-              <div class="data-row" v-if="device.status === 'charging'">
-                <span class="data-label">充电时长</span>
-                <span class="data-value primary">{{ device.chargingTime }}</span>
+
+              <!-- 充电时长 -->
+              <div v-if="device.status === 'charging'" class="charging-duration">
+                <div class="duration-indicator">
+                  <div class="pulse-dot"></div>
+                  <span>充电时长：{{ device.chargingTime }}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- 快速控制 -->
+          <!-- 卡片底部 -->
           <div class="card-footer">
-            <button
-              :class="['power-btn', { active: device.power && device.online }]"
-              @click="togglePower(device)"
-              :disabled="!device.online || device.status === 'maintenance'"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-              </svg>
-            </button>
-
-            <div class="status-info">
-              <div class="status-text">{{ getDetailedStatus(device) }}</div>
-              <div class="utilization">利用率: {{ device.utilizationRate }}%</div>
+            <div class="footer-info">
+              <div class="temp-status" :class="getTempStatusClass(device.temperature)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"/>
+                </svg>
+                {{ device.temperature }}°C
+              </div>
+              <div class="last-update">{{ device.lastUpdate }}</div>
             </div>
-
-            <button
-              class="detail-btn"
-              @click="openDeviceDetail(device)"
-              :disabled="!device.online"
-            >
-              控制
-            </button>
+            
+            <div class="footer-actions">
+              <button
+                :class="['power-btn', { active: device.power && device.online }]"
+                @click="togglePower(device)"
+                :disabled="!device.online || device.status === 'maintenance'"
+                :title="device.power ? '停用' : '启用'"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
+                </svg>
+              </button>
+              
+              <button
+                class="control-btn"
+                @click="openDeviceDetail(device)"
+                :disabled="!device.online"
+              >
+                控制
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -253,6 +296,8 @@
             <th>设备名称</th>
             <th>所在位置</th>
             <th>类型</th>
+            <th>协议</th>
+            <th>运营模式</th>
             <th @click="sortBy('status')" class="sortable">
               状态
               <span class="sort-icon" v-if="sortField === 'status'">
@@ -293,6 +338,11 @@
               <span :class="['type-badge', device.type]">
                 {{ typeMap[device.type] }}
               </span>
+            </td>
+            <td>{{ device.protocol || 'OCPP 1.6' }}</td>
+            <td>
+              <span v-if="device.isSelfOperated" class="operation-badge self">自营</span>
+              <span v-else class="operation-badge partner">合作</span>
             </td>
             <td>
               <span :class="['status-badge', getStatusClass(device)]">
@@ -431,6 +481,39 @@
                       required
                       step="0.1"
                     />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="required">通信协议</label>
+                    <select v-model="deviceForm.protocol" required>
+                      <option value="">请选择协议</option>
+                      <option value="OCPP 1.6">OCPP 1.6</option>
+                      <option value="OCPP 2.0">OCPP 2.0</option>
+                      <option value="CHAdeMO">CHAdeMO</option>
+                      <option value="CCS">CCS</option>
+                      <option value="GB/T">GB/T</option>
+                      <option value="Tesla">Tesla专用</option>
+                      <option value="Modbus">Modbus</option>
+                      <option value="自定义">自定义协议</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="required">运营模式</label>
+                    <div class="radio-group">
+                      <label class="radio-item">
+                        <input type="radio" v-model="deviceForm.isSelfOperated" :value="true" />
+                        <span class="radio-mark"></span>
+                        <span class="radio-label">自营</span>
+                      </label>
+                      <label class="radio-item">
+                        <input type="radio" v-model="deviceForm.isSelfOperated" :value="false" />
+                        <span class="radio-mark"></span>
+                        <span class="radio-label">合作运营</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -1075,6 +1158,7 @@
     </transition>
   </div>
 </template>
+
 <script>
 export default {
   name: "ChargingManagement",
@@ -1135,6 +1219,8 @@ export default {
         id: "",
         name: "",
         type: "dc_fast",
+        protocol: "OCPP 1.6", // 新增：通信协议
+        isSelfOperated: true, // 新增：是否自营
         maxPower: 60,
         ratedVoltage: 380,
         ratedCurrent: 160,
@@ -1195,6 +1281,8 @@ export default {
           id: "CP001",
           name: "A区-01号桩",
           type: "dc_fast",
+          protocol: "OCPP 1.6",
+          isSelfOperated: true,
           area: "A",
           parkingSpot: "A01",
           location: "A区停车场-A01车位",
@@ -1220,6 +1308,8 @@ export default {
           id: "CP002",
           name: "A区-02号桩",
           type: "dc_fast",
+          protocol: "OCPP 2.0",
+          isSelfOperated: true,
           area: "A",
           parkingSpot: "A02",
           location: "A区停车场-A02车位",
@@ -1245,6 +1335,8 @@ export default {
           id: "CP003",
           name: "A区-03号桩",
           type: "dc_slow",
+          protocol: "CHAdeMO",
+          isSelfOperated: false,
           area: "A",
           parkingSpot: "A03",
           location: "A区停车场-A03车位",
@@ -1270,6 +1362,8 @@ export default {
           id: "CP004",
           name: "A区-04号桩",
           type: "ac",
+          protocol: "GB/T",
+          isSelfOperated: false,
           area: "A",
           parkingSpot: "A04",
           location: "A区停车场-A04车位",
@@ -1295,6 +1389,8 @@ export default {
           id: "CP005",
           name: "B区-01号桩",
           type: "dc_fast",
+          protocol: "CCS",
+          isSelfOperated: true,
           area: "B",
           parkingSpot: "B01",
           location: "B区停车场-B01车位",
@@ -1320,6 +1416,8 @@ export default {
           id: "CP006",
           name: "B区-02号桩",
           type: "dc_fast",
+          protocol: "OCPP 1.6",
+          isSelfOperated: true,
           area: "B",
           parkingSpot: "B02",
           location: "B区停车场-B02车位",
@@ -1345,6 +1443,8 @@ export default {
           id: "CP007",
           name: "B区-03号桩",
           type: "ac",
+          protocol: "GB/T",
+          isSelfOperated: false,
           area: "B",
           parkingSpot: "B03",
           location: "B区停车场-B03车位",
@@ -1370,6 +1470,8 @@ export default {
           id: "CP008",
           name: "C区-01号桩",
           type: "dc_slow",
+          protocol: "Modbus",
+          isSelfOperated: true,
           area: "C",
           parkingSpot: "C01",
           location: "C区停车场-C01车位",
@@ -1390,306 +1492,6 @@ export default {
           model: "SGCC-DC30-C2",
           installDate: "2023-06-01",
           lastUpdate: "10:24:12",
-        },
-        {
-          id: "CP009",
-          name: "C区-02号桩",
-          type: "dc_fast",
-          area: "C",
-          parkingSpot: "C02",
-          location: "C区停车场-C02车位",
-          online: true,
-          power: true,
-          status: "maintenance",
-          maxPower: 60,
-          currentPower: 0,
-          voltage: 0,
-          current: 0,
-          utilizationRate: 0,
-          chargingTime: "0分钟",
-          temperature: 25,
-          ratedVoltage: 380,
-          ratedCurrent: 160,
-          portCount: 1,
-          brand: "小鹏充电",
-          model: "XP-DC60-G1",
-          installDate: "2023-07-10",
-          lastUpdate: "10:15:32",
-        },
-        {
-          id: "CP010",
-          name: "D区-01号桩",
-          type: "dc_fast",
-          area: "D",
-          parkingSpot: "D01",
-          location: "地下停车场-D01车位",
-          online: true,
-          power: true,
-          status: "charging",
-          maxPower: 120,
-          currentPower: 115.8,
-          voltage: 750,
-          current: 154,
-          utilizationRate: 95,
-          chargingTime: "1小时05分",
-          temperature: 52,
-          ratedVoltage: 750,
-          ratedCurrent: 160,
-          portCount: 2,
-          brand: "蔚来",
-          model: "NIO-SC120-E2",
-          installDate: "2023-07-15",
-          lastUpdate: "10:24:45",
-        },
-        {
-          id: "CP011",
-          name: "D区-02号桩",
-          type: "dc_fast",
-          area: "D",
-          parkingSpot: "D02",
-          location: "地下停车场-D02车位",
-          online: true,
-          power: true,
-          status: "idle",
-          maxPower: 60,
-          currentPower: 0,
-          voltage: 380,
-          current: 0,
-          utilizationRate: 82,
-          chargingTime: "0分钟",
-          temperature: 33,
-          ratedVoltage: 380,
-          ratedCurrent: 160,
-          portCount: 1,
-          brand: "特来电",
-          model: "TEL-DC60-A3",
-          installDate: "2023-07-15",
-          lastUpdate: "10:22:33",
-        },
-        {
-          id: "CP012",
-          name: "D区-03号桩",
-          type: "ac",
-          area: "D",
-          parkingSpot: "D03",
-          location: "地下停车场-D03车位",
-          online: true,
-          power: true,
-          status: "charging",
-          maxPower: 7,
-          currentPower: 6.8,
-          voltage: 220,
-          current: 31,
-          utilizationRate: 58,
-          chargingTime: "6小时42分",
-          temperature: 29,
-          ratedVoltage: 220,
-          ratedCurrent: 32,
-          portCount: 1,
-          brand: "星星充电",
-          model: "XX-AC7-H1",
-          installDate: "2023-08-01",
-          lastUpdate: "10:23:18",
-        },
-        {
-          id: "CP013",
-          name: "D区-04号桩",
-          type: "dc_slow",
-          area: "D",
-          parkingSpot: "D04",
-          location: "地下停车场-D04车位",
-          online: true,
-          power: true,
-          status: "charging",
-          maxPower: 30,
-          currentPower: 25.6,
-          voltage: 380,
-          current: 67,
-          utilizationRate: 71,
-          chargingTime: "2小时18分",
-          temperature: 38,
-          ratedVoltage: 380,
-          ratedCurrent: 80,
-          portCount: 1,
-          brand: "国家电网",
-          model: "SGCC-DC30-C3",
-          installDate: "2023-08-01",
-          lastUpdate: "10:21:55",
-        },
-        {
-          id: "CP014",
-          name: "E区-01号桩",
-          type: "ac",
-          area: "E",
-          parkingSpot: "E01",
-          location: "访客停车区-E01车位",
-          online: true,
-          power: true,
-          status: "idle",
-          maxPower: 11,
-          currentPower: 0,
-          voltage: 220,
-          current: 0,
-          utilizationRate: 35,
-          chargingTime: "0分钟",
-          temperature: 26,
-          ratedVoltage: 220,
-          ratedCurrent: 50,
-          portCount: 1,
-          brand: "小鹏充电",
-          model: "XP-AC11-I1",
-          installDate: "2023-08-15",
-          lastUpdate: "10:20:42",
-        },
-        {
-          id: "CP015",
-          name: "E区-02号桩",
-          type: "dc_fast",
-          area: "E",
-          parkingSpot: "E02",
-          location: "访客停车区-E02车位",
-          online: true,
-          power: true,
-          status: "charging",
-          maxPower: 60,
-          currentPower: 42.3,
-          voltage: 380,
-          current: 111,
-          utilizationRate: 62,
-          chargingTime: "55分钟",
-          temperature: 36,
-          ratedVoltage: 380,
-          ratedCurrent: 160,
-          portCount: 1,
-          brand: "蔚来",
-          model: "NIO-DC60-J1",
-          installDate: "2023-08-15",
-          lastUpdate: "10:24:28",
-        },
-        {
-          id: "CP016",
-          name: "A区-05号桩",
-          type: "dc_fast",
-          area: "A",
-          parkingSpot: "A05",
-          location: "A区停车场-A05车位",
-          online: true,
-          power: true,
-          status: "charging",
-          maxPower: 120,
-          currentPower: 87.5,
-          voltage: 750,
-          current: 116,
-          utilizationRate: 78,
-          chargingTime: "1小时48分",
-          temperature: 45,
-          ratedVoltage: 750,
-          ratedCurrent: 160,
-          portCount: 2,
-          brand: "特来电",
-          model: "TEL-SC120-K1",
-          installDate: "2023-09-01",
-          lastUpdate: "10:23:15",
-        },
-        {
-          id: "CP017",
-          name: "B区-04号桩",
-          type: "ac",
-          area: "B",
-          parkingSpot: "B04",
-          location: "B区停车场-B04车位",
-          online: false,
-          power: false,
-          status: "offline",
-          maxPower: 7,
-          currentPower: 0,
-          voltage: 0,
-          current: 0,
-          utilizationRate: 52,
-          chargingTime: "0分钟",
-          temperature: 24,
-          ratedVoltage: 220,
-          ratedCurrent: 32,
-          portCount: 1,
-          brand: "星星充电",
-          model: "XX-AC7-L1",
-          installDate: "2023-09-01",
-          lastUpdate: "08:15:23",
-        },
-        {
-          id: "CP018",
-          name: "C区-03号桩",
-          type: "dc_slow",
-          area: "C",
-          parkingSpot: "C03",
-          location: "C区停车场-C03车位",
-          online: true,
-          power: true,
-          status: "idle",
-          maxPower: 30,
-          currentPower: 0,
-          voltage: 380,
-          current: 0,
-          utilizationRate: 59,
-          chargingTime: "0分钟",
-          temperature: 30,
-          ratedVoltage: 380,
-          ratedCurrent: 80,
-          portCount: 1,
-          brand: "国家电网",
-          model: "SGCC-DC30-C4",
-          installDate: "2023-09-10",
-          lastUpdate: "10:19:47",
-        },
-        {
-          id: "CP019",
-          name: "D区-05号桩",
-          type: "dc_fast",
-          area: "D",
-          parkingSpot: "D05",
-          location: "地下停车场-D05车位",
-          online: true,
-          power: true,
-          status: "charging",
-          maxPower: 60,
-          currentPower: 55.8,
-          voltage: 380,
-          current: 146,
-          utilizationRate: 84,
-          chargingTime: "1小时22分",
-          temperature: 43,
-          ratedVoltage: 380,
-          ratedCurrent: 160,
-          portCount: 1,
-          brand: "小鹏充电",
-          model: "XP-DC60-G2",
-          installDate: "2023-09-10",
-          lastUpdate: "10:24:05",
-        },
-        {
-          id: "CP020",
-          name: "E区-03号桩",
-          type: "dc_fast",
-          area: "E",
-          parkingSpot: "E03",
-          location: "访客停车区-E03车位",
-          online: true,
-          power: true,
-          status: "charging",
-          maxPower: 120,
-          currentPower: 103.2,
-          voltage: 750,
-          current: 137,
-          utilizationRate: 91,
-          chargingTime: "2小时35分",
-          temperature: 49,
-          ratedVoltage: 750,
-          ratedCurrent: 160,
-          portCount: 2,
-          brand: "蔚来",
-          model: "NIO-SC120-E3",
-          installDate: "2023-09-15",
-          lastUpdate: "10:23:52",
         },
       ],
 
@@ -2169,6 +1971,8 @@ export default {
         id: device.id,
         name: device.name,
         type: device.type,
+        protocol: device.protocol || "OCPP 1.6",
+        isSelfOperated: device.isSelfOperated,
         maxPower: device.maxPower,
         ratedVoltage: device.ratedVoltage,
         ratedCurrent: device.ratedCurrent,
@@ -2237,6 +2041,8 @@ export default {
         if (device) {
           device.name = this.deviceForm.name;
           device.type = this.deviceForm.type;
+          device.protocol = this.deviceForm.protocol;
+          device.isSelfOperated = this.deviceForm.isSelfOperated;
           device.maxPower = this.deviceForm.maxPower;
           device.ratedVoltage = this.deviceForm.ratedVoltage;
           device.ratedCurrent = this.deviceForm.ratedCurrent;
@@ -2258,6 +2064,8 @@ export default {
           id: this.deviceForm.id,
           name: this.deviceForm.name,
           type: this.deviceForm.type,
+          protocol: this.deviceForm.protocol,
+          isSelfOperated: this.deviceForm.isSelfOperated,
           area: this.deviceForm.area,
           parkingSpot: this.deviceForm.parkingSpot,
           location: `${
@@ -2299,6 +2107,8 @@ export default {
         id: "",
         name: "",
         type: "dc_fast",
+        protocol: "OCPP 1.6",
+        isSelfOperated: true,
         maxPower: 60,
         ratedVoltage: 380,
         ratedCurrent: 160,
@@ -2403,6 +2213,8 @@ export default {
         设备名称: device.name,
         所在位置: device.location,
         设备类型: this.typeMap[device.type],
+        通信协议: device.protocol,
+        运营模式: device.isSelfOperated ? "自营" : "合作运营",
         状态: this.getStatusText(device),
         最大功率: device.maxPower + "kW",
         当前功率: device.currentPower + "kW",
@@ -2452,6 +2264,7 @@ export default {
   },
 };
 </script>
+
 <style scoped>
 * {
   box-sizing: border-box;
@@ -2466,6 +2279,7 @@ export default {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   color: #1f2329;
+  background: #f5f7fa;
 }
 
 /* 页面头部 */
@@ -2477,6 +2291,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #e5e6eb;
+  border-radius: 8px 8px 0 0;
 }
 
 .header-left {
@@ -2519,11 +2334,11 @@ export default {
 }
 
 .stat-dot.online {
-  background: #00b365;
+  background: #52c41a;
 }
 
 .stat-dot.charging {
-  background: #ff6b35;
+  background: #ff7875;
   animation: charging-pulse 2s infinite;
 }
 
@@ -2786,42 +2601,40 @@ export default {
 
 .devices-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
 }
 
-/* 设备卡片 */
+/* 设备卡片 - 重新设计 */
 .device-card {
   background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid #e5e6eb;
+  border-radius: 12px;
+  border: 1px solid #eaecf0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05), 0 1px 2px rgba(16, 24, 40, 0.05);
 }
 
 .device-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.08), 0 2px 6px rgba(16, 24, 40, 0.08);
+  transform: translateY(-2px);
+  border-color: #d0d5dd;
 }
 
 .device-card.is-offline {
   opacity: 0.6;
+  border-color: #f2f4f7;
 }
 
 .device-card.is-fault {
-  border-color: #ffece8;
-  background: #fffbfa;
+  border-color: #fed7d7;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);
 }
 
 .device-card.is-selected {
-  border-color: #3370ff;
-  background: #f7f9ff;
-}
-
-.device-card.is-charging {
-  border-color: #fff2e8;
-  background: linear-gradient(135deg, #fff9f5 0%, #fff2e8 100%);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 1px 3px rgba(16, 24, 40, 0.05);
 }
 
 .device-card.is-charging::before {
@@ -2829,291 +2642,451 @@ export default {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #ff6b35, #ff8c42);
-  border-radius: 8px 8px 0 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
 }
 
-.card-selector {
-  position: absolute;
-  top: 12px;
-  left: 12px;
+/* 卡片头部 */
+.card-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-.card-selector input[type="checkbox"] {
+.card-checkbox input[type="checkbox"] {
   width: 16px;
   height: 16px;
   cursor: pointer;
+  accent-color: #6366f1;
 }
 
-.card-status {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.status-badge {
+.status-indicator {
   font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: 500;
-  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
-.status-badge.charging {
-  background: #fff2e8;
-  color: #ff6b35;
+.status-indicator.charging {
+  background: #d1fae5;
+  color: #065f46;
 }
 
-.status-badge.idle {
-  background: #f2f3f5;
-  color: #646a73;
+.status-indicator.idle {
+  background: #f3f4f6;
+  color: #374151;
 }
 
-.status-badge.offline {
-  background: #f2f3f5;
-  color: #8f959e;
+.status-indicator.offline {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
-.status-badge.fault {
-  background: #ffece8;
-  color: #f54a45;
+.status-indicator.fault {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
-.status-badge.maintenance {
-  background: #e8f4ff;
-  color: #1890ff;
-}
-
-/* 设备类型标识 */
-.device-type {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.type-badge {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.type-badge.dc_fast {
-  background: #e8f5e8;
-  color: #52c41a;
-}
-
-.type-badge.dc_slow {
-  background: #e8f0ff;
-  color: #1890ff;
-}
-
-.type-badge.ac {
-  background: #fff2e8;
-  color: #fa8c16;
-}
-
-.power-label {
-  font-size: 11px;
-  color: #8f959e;
-  font-weight: 500;
+.status-indicator.maintenance {
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .card-menu {
   position: relative;
 }
 
-.menu-trigger {
-  width: 24px;
-  height: 24px;
+.menu-btn {
+  width: 28px;
+  height: 28px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #8f959e;
+  color: #6b7280;
   transition: all 0.2s;
 }
 
-.menu-trigger:hover {
-  background: #f2f3f5;
-  color: #1f2329;
+.menu-btn:hover {
+  background: #f9fafb;
+  color: #374151;
 }
 
 .menu-dropdown {
   position: absolute;
   right: 0;
-  top: 28px;
+  top: 32px;
   background: #fff;
-  border: 1px solid #e5e6eb;
-  border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  min-width: 120px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 140px;
   z-index: 100;
+  overflow: hidden;
 }
 
 .menu-dropdown button {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   background: none;
   border: none;
   text-align: left;
   font-size: 13px;
-  color: #1f2329;
+  color: #374151;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .menu-dropdown button:hover {
-  background: #f2f3f5;
+  background: #f9fafb;
 }
 
 .menu-dropdown button.danger {
-  color: #f54a45;
+  color: #dc2626;
 }
 
-.card-body {
-  padding: 0 24px;
+.menu-dropdown button.danger:hover {
+  background: #fef2f2;
+}
+
+/* 卡片内容 */
+.card-content {
+  padding: 20px;
+}
+
+.device-info {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .device-id {
-  font-size: 11px;
-  color: #8f959e;
-  margin-bottom: 4px;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
 }
 
 .device-name {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1f2329;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
   margin-bottom: 8px;
+  line-height: 1.3;
 }
 
 .device-location {
-  font-size: 12px;
-  color: #646a73;
+  font-size: 13px;
+  color: #64748b;
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 16px;
+  gap: 6px;
 }
 
-.realtime-data {
+.device-location svg {
+  color: #94a3b8;
+}
+
+/* 设备属性网格 */
+.device-attrs {
+  margin-bottom: 20px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 12px;
-  background: #f7f8fa;
-  border-radius: 6px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
-.data-row {
+.attr-item {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.attr-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.attr-value {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.attr-value.type-dc_fast {
+  color: #059669;
+}
+
+.attr-value.type-dc_slow {
+  color: #2563eb;
+}
+
+.attr-value.type-ac {
+  color: #d97706;
+}
+
+.attr-value.self-operated {
+  color: #059669;
+}
+
+.attr-value.partner {
+  color: #2563eb;
+}
+
+/* 实时数据网格 */
+.realtime-data {
+  margin-bottom: 20px;
+}
+
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.data-item {
+  text-align: center;
+  padding: 12px 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
 }
 
 .data-label {
-  font-size: 12px;
-  color: #8f959e;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .data-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2329;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  font-feature-settings: 'tnum';
 }
 
 .data-value.primary {
-  color: #ff6b35;
+  color: #059669;
 }
 
-.card-footer {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #e5e6eb;
+/* 充电时长 */
+.charging-duration {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
 }
 
-.power-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #dee0e3;
-  background: #fff;
-  border-radius: 50%;
+.duration-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+/* 卡片底部 */
+.card-footer {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
+}
+
+.footer-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.temp-status {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.temp-status.normal {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.temp-status.warm {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.temp-status.hot {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.last-update {
+  font-size: 11px;
+  color: #64748b;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 充电桩专用开关按钮 */
+.power-btn {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  background: #e2e8f0;
+  border: 2px solid #cbd5e1;
+  border-radius: 14px;
   cursor: pointer;
-  color: #8f959e;
-  transition: all 0.2s;
-  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2px;
 }
 
 .power-btn:hover:not(:disabled) {
-  border-color: #3370ff;
-  color: #3370ff;
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.2);
 }
 
 .power-btn.active {
-  background: #3370ff;
-  border-color: #3370ff;
-  color: #fff;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #059669;
+  justify-content: flex-end;
+}
+
+.power-btn.active:hover {
+  border-color: #047857;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
 }
 
 .power-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-.status-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.status-text {
-  font-size: 12px;
-  color: #1f2329;
-  font-weight: 500;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.utilization {
-  font-size: 11px;
-  color: #8f959e;
-}
-
-.detail-btn {
-  padding: 6px 12px;
+.power-btn::before {
+  content: "";
+  width: 20px;
+  height: 20px;
   background: #fff;
-  border: 1px solid #dee0e3;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #1f2329;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.power-btn.active::before {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 控制按钮 */
+.control-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
   cursor: pointer;
   transition: all 0.2s;
-  flex-shrink: 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.detail-btn:hover:not(:disabled) {
-  background: #f2f3f5;
-  border-color: #bbbfc4;
+.control-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
 }
 
-.detail-btn:disabled {
-  opacity: 0.4;
+.control-btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .device-attrs {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .data-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .footer-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .device-attrs {
+    grid-template-columns: 1fr;
+  }
+  
+  .data-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .footer-actions {
+    justify-content: center;
+  }
 }
 
 /* 表格视图 */
@@ -3130,7 +3103,7 @@ export default {
 }
 
 .data-table thead {
-  background: #f7f8fa;
+  background: #fafbfc;
 }
 
 .data-table th {
@@ -3185,6 +3158,77 @@ export default {
 
 .action-col {
   text-align: right;
+}
+
+.type-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.type-badge.dc_fast {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.type-badge.dc_slow {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.type-badge.ac {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.operation-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.operation-badge.self {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.operation-badge.partner {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.status-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.status-badge.charging {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status-badge.idle {
+  background: #f2f3f5;
+  color: #646a73;
+}
+
+.status-badge.offline {
+  background: #f2f3f5;
+  color: #8f959e;
+}
+
+.status-badge.fault {
+  background: #ffece8;
+  color: #f54a45;
+}
+
+.status-badge.maintenance {
+  background: #e8f4ff;
+  color: #1890ff;
 }
 
 /* 分页 */
@@ -3344,6 +3388,32 @@ export default {
   color: #646a73;
 }
 
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.charging {
+  background: #52c41a;
+}
+
+.status-dot.idle {
+  background: #8c8c8c;
+}
+
+.status-dot.offline {
+  background: #d9d9d9;
+}
+
+.status-dot.fault {
+  background: #f54a45;
+}
+
+.status-dot.maintenance {
+  background: #1890ff;
+}
+
 .modal-close {
   width: 32px;
   height: 32px;
@@ -3440,6 +3510,57 @@ export default {
 .form-row {
   display: flex;
   gap: 16px;
+}
+
+/* 单选按钮组 */
+.radio-group {
+  display: flex;
+  gap: 16px;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #1f2329;
+}
+
+.radio-item input[type="radio"] {
+  display: none;
+}
+
+.radio-mark {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dee0e3;
+  border-radius: 50%;
+  background: #fff;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.radio-item input[type="radio"]:checked + .radio-mark {
+  border-color: #3370ff;
+  background: #3370ff;
+}
+
+.radio-item input[type="radio"]:checked + .radio-mark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.radio-label {
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /* 折叠框样式 */
@@ -4271,6 +4392,15 @@ export default {
   .header-stats {
     flex-direction: column;
     gap: 4px;
+  }
+
+  .data-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .attr-row {
+    flex-direction: column;
+    gap: 8px;
   }
 }
 </style>
