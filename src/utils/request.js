@@ -4,7 +4,7 @@ import store from '@/store'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: process.env.NODE_ENV === 'development' ? '' : 'https://foggy.szcloudpulse.com', // 开发环境使用代理，生产环境使用完整URL
+  baseURL: process.env.NODE_ENV === 'development' ? '' : 'https://iot-console.ajnelec.net', // 开发环境使用代理，生产环境使用完整URL
   // baseURL: process.env.NODE_ENV === 'development' ? '' : 'https://ebc.ajnelec.net', // 开发环境使用代理，生产环境使用完整URL
   timeout: 10000 // 请求超时时间增加到10秒
 })

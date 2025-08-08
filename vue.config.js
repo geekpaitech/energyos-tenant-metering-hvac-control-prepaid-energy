@@ -4,7 +4,7 @@ module.exports = {
     open: true,
     proxy: {
       '/api': {
-        target: 'https://foggy.szcloudpulse.com',
+        target: 'https://iot-console.ajnelec.net',
         // target: 'https://ebc.ajnelec.net',
         changeOrigin: true,
         secure: true,
