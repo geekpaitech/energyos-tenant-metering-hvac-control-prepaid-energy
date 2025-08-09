@@ -32,11 +32,9 @@
       <div v-if="currentSubmenu && sidebar.opened" class="submenu-panel">
         <div class="submenu-header">
           <div class="submenu-title">
-            <i
-              v-if="currentSubmenu.meta && currentSubmenu.meta.icon"
-              :class="currentSubmenu.meta.icon"
-              class="submenu-icon"
-            />
+            <i v-if="currentSubmenu.meta && currentSubmenu.meta.icon"
+   :class="['iconfont', currentSubmenu.meta.icon]"
+   class="submenu-icon" />
             <span>{{
               currentSubmenu.meta ? currentSubmenu.meta.title : ""
             }}</span>
@@ -109,11 +107,9 @@
                   }"
                   @click="toggleSubmenuItem(child.path)"
                 >
-                  <i
-                    v-if="child.meta && child.meta.icon"
-                    :class="child.meta.icon"
-                    class="submenu-item-icon"
-                  />
+                <i v-if="child.meta && child.meta.icon"
+   :class="['iconfont', child.meta.icon]"
+   class="submenu-item-icon" />
                   <span class="submenu-item-title">{{
                     child.meta ? child.meta.title : ""
                   }}</span>
@@ -163,11 +159,11 @@
                             ),
                           }"
                         >
-                          <i
-                            v-if="subChild.meta && subChild.meta.icon"
-                            :class="subChild.meta.icon"
-                            class="submenu-child-icon"
-                          />
+                        <i
+  v-if="subChild.meta && subChild.meta.icon"
+  :class="['iconfont', subChild.meta.icon]"
+  class="submenu-child-icon"
+/>
                           <span class="submenu-child-title">{{
                             subChild.meta ? subChild.meta.title : ""
                           }}</span>
@@ -190,11 +186,9 @@
                   class="submenu-item"
                   :class="{ 'is-active': isSubmenuItemActive(child.path) }"
                 >
-                  <i
-                    v-if="child.meta && child.meta.icon"
-                    :class="child.meta.icon"
-                    class="submenu-item-icon"
-                  />
+                <i v-if="child.meta && child.meta.icon"
+   :class="['iconfont', child.meta.icon]"
+   class="submenu-item-icon" />
                   <span class="submenu-item-title">{{
                     child.meta ? child.meta.title : ""
                   }}</span>

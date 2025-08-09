@@ -201,7 +201,7 @@
               </button>
               <div v-if="activeMenu === device.id" class="menu-dropdown">
                 <button @click="editDevice(device)">编辑</button>
-                <button @click="viewHistory(device)">历史记录</button>
+                <button @click="viewDetails(device)">详情</button>
                 <button @click="duplicateDevice(device)">复制</button>
                 <button class="danger" @click="confirmDelete(device)">
                   删除
@@ -1947,6 +1947,16 @@ export default {
         this.sortField = field;
         this.sortOrder = "asc";
       }
+    },
+    viewDetails(row){
+      this.$router.push({
+      path: `/device/conditioning/detail/${row.id}`,
+      query: { 
+        name: row.meterName,
+        serial: row.serial,
+        deviceId: row.id
+      }
+    });
     },
 
     // 设备选择

@@ -1593,7 +1593,14 @@ export default {
 
     // 电表监控（保持兼容性）
     handleMonitor(row) {
-      this.$message.info(`打开车位 ${row.parkingCode} 监控页面`);
+      this.$router.push({
+      path: `/device/parking/detail/${row.id}`,
+      query: { 
+        name: row.meterName,
+        serial: row.serial,
+        deviceId: row.id
+      }
+    });
     },
 
     // 导出数据

@@ -21,8 +21,8 @@
         >
           <div class="menu-content">
             <i v-if="onlyOneChild.meta.icon || (item.meta && item.meta.icon)" 
-               :class="onlyOneChild.meta.icon || (item.meta && item.meta.icon)" 
-               class="menu-icon" />
+   :class="['iconfont', onlyOneChild.meta.icon || (item.meta && item.meta.icon)]" 
+   class="menu-icon" />
             <span class="menu-title" v-show="!isCollapsed">
               {{ onlyOneChild.meta.title }}
             </span>
@@ -42,8 +42,8 @@
          @click="handleParentClick(item)">
       <div class="menu-content">
         <i v-if="item.meta && item.meta.icon" 
-           :class="item.meta.icon" 
-           class="menu-icon" />
+   :class="['iconfont', item.meta.icon]" 
+   class="menu-icon" />
         <span class="menu-title" v-show="!isCollapsed">
           {{ item.meta.title }}
         </span>

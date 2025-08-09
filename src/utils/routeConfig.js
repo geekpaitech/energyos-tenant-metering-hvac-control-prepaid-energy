@@ -6,13 +6,13 @@ export const consoleRoutes = [
     path: '/',
     component: Layout,
     redirect: '/console/dashboard',
-    meta: { title: '首页', icon: 'el-icon-monitor' },
+    meta: { title: '首页', icon: 'icon-icon-jiankongtai' },
     children: [
       {
         path: 'console/dashboard',
         name: 'ConsoleDashboard',
         component: () => import('@/views/console/dashboard/index'),
-        meta: { title: '首页', icon: 'el-icon-data-analysis', affix: true }
+        meta: { title: '首页', icon: 'icon-icon-jiankongtai', affix: true }
       }
     ]
   },
@@ -20,7 +20,7 @@ export const consoleRoutes = [
     path: '/console',
     component: Layout,
     redirect: '/console/test',
-    meta: { title: '区域', icon: 'el-icon-cpu' },
+    meta: { title: '区域', icon: 'icon-cengji' },
     children: [
       {
         path: 'test',
@@ -40,14 +40,14 @@ export const consoleRoutes = [
     path: '/device',
     component: Layout,
     redirect: '/device/electricity',
-    meta: { title: '设备', icon: 'el-icon-cpu' },
+    meta: { title: '设备', icon: 'icon-shebeipeizhi' },
     children: [
       // 基础设备管理
       {
         path: 'electricity',
         name: 'DeviceElectricity',
         component: () => import('@/views/console/device/electricity'),
-        meta: { title: '电表', icon: 'el-icon-lightning' }
+        meta: { title: '电表', icon: 'icon-dianbiao' }
       },
       {
         path: 'electricity/detail/:id',
@@ -68,16 +68,52 @@ export const consoleRoutes = [
         meta: { title: '空调', icon: 'el-icon-wind-power' }
       },
       {
+        path: 'conditioning/detail/:id',
+        name: 'DeviceConditioningDetail',
+        component: () => import('@/views/console/device/conditioning/detail'),
+        hidden: true, // 在路由根级别也设置
+        meta: { 
+          title: '空调详情', 
+          icon: 'el-icon-monitor',
+          hidden: true, // 在菜单中隐藏
+          activeMenu: '/device/conditioning' // 激活父级菜单
+        }
+      },
+      {
+        path: 'charging',
+        name: 'DeviceCharging',
+        component: () => import('@/views/console/device/charging'),
+        meta: { title: '充电桩', icon: 'el-icon-data-analysis' }
+      },
+      {
+        path: 'charging/detail/:id',
+        name: 'DeviceChargingDetail',
+        component: () => import('@/views/console/device/charging/detail'),
+        hidden: true, // 在路由根级别也设置
+        meta: { 
+          title: '充电桩详情', 
+          icon: 'el-icon-monitor',
+          hidden: true, // 在菜单中隐藏
+          activeMenu: '/device/charging' // 激活父级菜单
+        }
+      },
+      {
         path: 'lighting',
         name: 'DeviceLighting',
         component: () => import('@/views/console/device/lighting'),
         meta: { title: '照明', icon: 'el-icon-sunny' }
       },
       {
-        path: 'doorlock',
-        name: 'DeviceDoorlock',
-        component: () => import('@/views/console/device/doorlock'),
-        meta: { title: '门锁', icon: 'el-icon-lock' }
+        path: 'lighting/detail/:id',
+        name: 'DeviceLightingDetail',
+        component: () => import('@/views/console/device/lighting/detail'),
+        hidden: true, // 在路由根级别也设置
+        meta: { 
+          title: '照明详情', 
+          icon: 'el-icon-monitor',
+          hidden: true, // 在菜单中隐藏
+          activeMenu: '/device/lighting' // 激活父级菜单
+        }
       },
       {
         path: 'watermeter',
@@ -86,17 +122,42 @@ export const consoleRoutes = [
         meta: { title: '水表', icon: 'el-icon-coffee-cup' }
       },
       {
+        path: 'watermeter/detail/:id',
+        name: 'DeviceWatermeterDetail',
+        component: () => import('@/views/console/device/watermeter/detail'),
+        hidden: true, // 在路由根级别也设置
+        meta: { 
+          title: '水表详情', 
+          icon: 'el-icon-monitor',
+          hidden: true, // 在菜单中隐藏
+          activeMenu: '/device/watermeter' // 激活父级菜单
+        }
+      },
+      {
         path: 'parking',
         name: 'DeviceParking',
         component: () => import('@/views/console/device/parking'),
         meta: { title: '车位', icon: 'el-icon-place' }
       },
       {
-        path: 'charging',
-        name: 'DeviceCharging',
-        component: () => import('@/views/console/device/charging'),
-        meta: { title: '充电桩', icon: 'el-icon-data-analysis' }
+        path: 'parking/detail/:id',
+        name: 'DeviceParkingDetail',
+        component: () => import('@/views/console/device/parking/detail'),
+        hidden: true, // 在路由根级别也设置
+        meta: { 
+          title: '车位详情', 
+          icon: 'el-icon-monitor',
+          hidden: true, // 在菜单中隐藏
+          activeMenu: '/device/parking' // 激活父级菜单
+        }
       },
+      {
+        path: 'doorlock',
+        name: 'DeviceDoorlock',
+        component: () => import('@/views/console/device/doorlock'),
+        meta: { title: '门锁', icon: 'el-icon-lock' }
+      },
+      
       // 带标签的分隔线
       {
         path: 'divider-sharing',
@@ -133,7 +194,7 @@ export const consoleRoutes = [
     path: '/application',
     component: Layout,
     redirect: '/application/energy',
-    meta: { title: '应用', icon: 'el-icon-s-grid' },
+    meta: { title: '应用', icon: 'icon-yingyongzhongxin' },
     children: [
       // 用能管理
       {

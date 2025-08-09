@@ -1,0 +1,44 @@
+{
+  "id": "4995633",
+  "name": "intelligent",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "11148808",
+      "name": "层级",
+      "font_class": "cengji",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    },
+    {
+      "icon_id": "1304891",
+      "name": "应用中心",
+      "font_class": "yingyongzhongxin",
+      "unicode": "e623",
+      "unicode_decimal": 58915
+    },
+    {
+      "icon_id": "12316664",
+      "name": "设备配置",
+      "font_class": "shebeipeizhi",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "14596826",
+      "name": "icon-监控台",
+      "font_class": "icon-jiankongtai",
+      "unicode": "e61d",
+      "unicode_decimal": 58909
+    },
+    {
+      "icon_id": "16981772",
+      "name": "电表",
+      "font_class": "dianbiao",
+      "unicode": "e606",
+      "unicode_decimal": 58886
+    }
+  ]
+}

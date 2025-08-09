@@ -1163,23 +1163,25 @@ export default {
     // 查看抄表记录
     handleRecord(row) {
       this.$router.push({
-        path: "/water-meter-record",
-        query: {
-          id: row.id,
-          name: row.waterName,
-        },
-      });
+      path: `/device/watermeter/detail/${row.id}`,
+      query: { 
+        name: row.waterName,
+        serial: row.serial,
+        deviceId: row.id
+      }
+    });
     },
 
     // 水表监控
     handleMonitor(row) {
       this.$router.push({
-        path: "/water-monitor",
-        query: {
-          id: row.serial,
-          type: 2,
-        },
-      });
+      path: `/device/watermeter/detail/${row.id}`,
+      query: { 
+        name: row.meterName,
+        serial: row.serial,
+        deviceId: row.id
+      }
+    });
     },
 
     // 绑定信息点击

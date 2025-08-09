@@ -771,7 +771,14 @@ export default {
 
     // 选择区域
     selectArea(area) {
-      this.$message.info(`选中区域: ${area.name}`);
+      this.$router.push({
+      path: `/device/lighting/detail/${area.id}`,
+      query: { 
+        name: area.meterName,
+        serial: area.serial,
+        deviceId: area.id
+      }
+    });
     },
 
     // 切换区域照明
@@ -902,7 +909,6 @@ export default {
     this.loading = true;
     setTimeout(() => {
       this.loading = false;
-      this.$message.success("照明系统数据加载完成");
     }, 1000);
 
     // 设置默认日期范围（最近7天）

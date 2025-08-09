@@ -10,6 +10,9 @@ import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import moment from 'moment'
 
+// icon
+import '@/assets/iconfont/iconfont.css'
+
 // 设置 moment 中文语言
 import 'moment/locale/zh-cn'
 moment.locale('zh-cn')
