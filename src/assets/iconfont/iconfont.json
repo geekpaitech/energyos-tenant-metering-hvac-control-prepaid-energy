@@ -6,6 +6,97 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "13638717",
+      "name": "照明",
+      "font_class": "zhaoming1",
+      "unicode": "e65a",
+      "unicode_decimal": 58970
+    },
+    {
+      "icon_id": "20911086",
+      "name": "电表",
+      "font_class": "dianbiao1",
+      "unicode": "e6b3",
+      "unicode_decimal": 59059
+    },
+    {
+      "icon_id": "28784675",
+      "name": "照明",
+      "font_class": "zhaoming",
+      "unicode": "e60e",
+      "unicode_decimal": 58894
+    },
+    {
+      "icon_id": "658032",
+      "name": "空调",
+      "font_class": "kongdiao",
+      "unicode": "e65f",
+      "unicode_decimal": 58975
+    },
+    {
+      "icon_id": "34997150",
+      "name": "空调",
+      "font_class": "kongtiao",
+      "unicode": "e680",
+      "unicode_decimal": 59008
+    },
+    {
+      "icon_id": "1150626",
+      "name": "落地空调",
+      "font_class": "bingxiang",
+      "unicode": "e618",
+      "unicode_decimal": 58904
+    },
+    {
+      "icon_id": "5961329",
+      "name": "水表",
+      "font_class": "shuibiao",
+      "unicode": "ec67",
+      "unicode_decimal": 60519
+    },
+    {
+      "icon_id": "7830619",
+      "name": "调节",
+      "font_class": "tiaojie",
+      "unicode": "e630",
+      "unicode_decimal": 58928
+    },
+    {
+      "icon_id": "19811074",
+      "name": "空调监控",
+      "font_class": "kongtiaojiankong_1",
+      "unicode": "e617",
+      "unicode_decimal": 58903
+    },
+    {
+      "icon_id": "11755505",
+      "name": "车位办理",
+      "font_class": "peizhitubiaosvg-",
+      "unicode": "e661",
+      "unicode_decimal": 58977
+    },
+    {
+      "icon_id": "13672652",
+      "name": "充电桩",
+      "font_class": "chongdianzhuang1",
+      "unicode": "e672",
+      "unicode_decimal": 58994
+    },
+    {
+      "icon_id": "25840721",
+      "name": "房间",
+      "font_class": "fangjian",
+      "unicode": "e6b2",
+      "unicode_decimal": 59058
+    },
+    {
+      "icon_id": "12382954",
+      "name": "设置 配置",
+      "font_class": "shezhipeizhi",
+      "unicode": "e613",
+      "unicode_decimal": 58899
+    },
+    {
       "icon_id": "11148808",
       "name": "层级",
       "font_class": "cengji",

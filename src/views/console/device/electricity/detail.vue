@@ -5,9 +5,10 @@
         <div class="loading-spinner">
           <i class="el-icon-loading"></i>
         </div>
-        <div class="loading-text">正在加载设备详情...</div>
+        <div class="loading-text">正在加载电表详情...</div>
       </div>
     </div>
+    
     <!-- 页面主体 -->
     <div class="page-content">
       <!-- 左侧设备信息 -->
@@ -21,12 +22,13 @@
               size="mini"
               style="margin-left: -20px"
             >
-              <i class="el-icon-arrow-left"></i> 返回 </el-button
-            >{{ meterInfo.meterName }}
+              <i class="el-icon-arrow-left"></i> 返回 
+            </el-button>
+            {{ meterInfo.meterName }}
           </h2>
           <div class="device-tags">
             <el-tag type="success" size="small">正常</el-tag>
-            <el-tag type="warning" size="small">在线</el-tag>
+            <el-tag type="info" size="small">在线</el-tag>
             <el-tag size="small">监控中</el-tag>
           </div>
         </div>
@@ -46,23 +48,25 @@
             </div>
             <div class="meta-row">
               <span class="label">编号</span>
-              <span class="value">{{ meterInfo.deviceId }}</span>
+              <span class="value">{{ meterInfo.id }}</span>
             </div>
             <div class="meta-row">
               <span class="label">余额</span>
-              <span class="value balance">¥ {{ meterInfo.balance }}</span>
+              <span class="value balance">¥ {{ meterInfo.balance || '0.00' }}</span>
             </div>
             <div class="meta-row">
-              <span class="label">电路方案</span>
-              <span class="value">{{ meterInfo.circuitScheme }}</span>
+              <span class="label">电表类型</span>
+              <span class="value">{{ getBindTypeLabel(meterInfo.bindType) }}</span>
             </div>
             <div class="meta-row">
-              <span class="label">联络菜方案</span>
-              <span class="value">{{ meterInfo.contactScheme }}</span>
+              <span class="label">付费模式</span>
+              <span class="value">{{ getPayTypeLabel(meterInfo.logicPayType) }}</span>
             </div>
             <div class="meta-row">
-              <span class="label">负载限制</span>
-              <span class="value">{{ meterInfo.loadLimit }}</span>
+              <span class="label">分合闸状态</span>
+              <span class="value" :class="{'status-open': meterInfo.switchStatus == 1, 'status-closed': meterInfo.switchStatus == 0}">
+                {{ meterInfo.switchStatus == 1 ? '合闸' : '分闸' }}
+              </span>
             </div>
           </div>
         </div>
@@ -71,28 +75,28 @@
         <div class="device-controls">
           <div class="button-wrapper">
             <el-button
-              :type="meterInfo.switchStatus === '分闸' ? 'primary' : 'warning'"
+              :type="meterInfo.switchStatus == 0 ? 'primary' : 'warning'"
               @click="handleSwitchControl"
               :loading="switchLoading"
               class="switch-button"
             >
-              {{ meterInfo.switchStatus === "分闸" ? "合闸" : "分闸" }}
+              {{ meterInfo.switchStatus == 0 ? "合闸" : "分闸" }}
             </el-button>
           </div>
           <div class="button-wrapper">
-            <el-button @click="showSettingsDialog" class="control-button"
-              >设置</el-button
-            >
+            <el-button @click="showSettingsDialog" class="control-button">
+              参数设置
+            </el-button>
           </div>
           <div class="button-wrapper">
-            <el-button @click="showRechargeDialog" class="control-button"
-              >充值测试</el-button
-            >
+            <el-button @click="showRechargeDialog" class="control-button">
+              电费充值
+            </el-button>
           </div>
           <div class="button-wrapper">
-            <el-button @click="showMaintenanceDialog" class="control-button"
-              >余额清零</el-button
-            >
+            <el-button @click="showMaintenanceDialog" class="control-button">
+              设备维护
+            </el-button>
           </div>
         </div>
 
@@ -102,57 +106,48 @@
             <h4>设备参数</h4>
             <div class="detail-list">
               <div class="detail-item">
-                <span class="label">设备型号</span>
-                <span class="value">{{
-                  meterInfo.deviceModel || "DTS866"
-                }}</span>
+                <span class="label">IMEI</span>
+                <span class="value">{{ meterInfo.imei || "-" }}</span>
               </div>
               <div class="detail-item">
-                <span class="label">通信方式</span>
-                <span class="value">{{ meterInfo.commType || "NB-IoT" }}</span>
+                <span class="label">CT变比</span>
+                <span class="value">{{ meterInfo.ct || "1" }}</span>
               </div>
               <div class="detail-item">
-                <span class="label">安装位置</span>
-                <span class="value">{{
-                  meterInfo.location || "15层公共区域"
-                }}</span>
+                <span class="label">PT变比</span>
+                <span class="value">{{ meterInfo.pt || "1" }}</span>
               </div>
               <div class="detail-item">
-                <span class="label">维护状态</span>
-                <span class="value status-normal">{{
-                  meterInfo.maintenanceStatus
-                }}</span>
+                <span class="label">创建时间</span>
+                <span class="value">{{ meterInfo.createTime || "-" }}</span>
               </div>
             </div>
           </div>
 
           <div class="detail-section">
-            <h4>运行状态</h4>
-            <div class="status-indicators">
-              <div class="indicator-item">
-                <span
-                  class="indicator"
-                  :class="statusIndicators.communication.class"
-                ></span>
-                <span class="label">{{
-                  statusIndicators.communication.label
-                }}</span>
+            <h4>绑定信息</h4>
+            <div class="bind-info-list">
+              <div v-if="meterInfo.bindId && meterInfo.bindName">
+                <div 
+                  class="bind-item"
+                  @click="handleBindClick(meterInfo)"
+                >
+                  <div class="bind-id">{{ meterInfo.bindId }}</div>
+                  <div class="bind-name">{{ meterInfo.bindName }}</div>
+                </div>
               </div>
-              <div class="indicator-item">
-                <span
-                  class="indicator"
-                  :class="statusIndicators.switch.class"
-                ></span>
-                <span class="label">{{ statusIndicators.switch.label }}</span>
-              </div>
-              <div class="indicator-item">
-                <span
-                  class="indicator"
-                  :class="statusIndicators.measurement.class"
-                ></span>
-                <span class="label">{{
-                  statusIndicators.measurement.label
-                }}</span>
+              <div v-else class="no-bind">暂无绑定信息</div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>余额信息</h4>
+            <div class="balance-info">
+              <div class="balance-amount">¥{{ meterInfo.balance || '0.00' }}</div>
+              <div class="balance-status">
+                <span :class="getBalanceStatusClass(meterInfo.balance)">
+                  {{ getBalanceStatusText(meterInfo.balance) }}
+                </span>
               </div>
             </div>
           </div>
@@ -165,43 +160,41 @@
         <div class="latest-data-section">
           <div class="section-header">
             <h3>最新数据</h3>
-            <span class="update-time"
-              >更新时间: {{ meterInfo.updateTime }}</span
-            >
+            <span class="update-time">更新时间: {{ meterInfo.syncTime || new Date().toLocaleString() }}</span>
           </div>
 
           <div class="data-overview">
             <div class="overview-item">
-              <span class="label">ICCID</span>
-              <span class="value">{{ meterInfo.iccid || "-" }}</span>
+              <span class="label">IMEI</span>
+              <span class="value">{{ meterInfo.imei || "-" }}</span>
             </div>
             <div class="overview-item">
               <span class="label">电表付费模式</span>
-              <span class="value">{{ meterInfo.paymentMode }}</span>
+              <span class="value">{{ getPayTypeLabel(meterInfo.logicPayType) }}</span>
             </div>
             <div class="overview-item">
-              <span class="label">费控开关</span>
-              <span class="value">{{ meterInfo.feeControlSwitch }}</span>
+              <span class="label">分合闸状态</span>
+              <span class="value">{{ meterInfo.switchStatus == 1 ? '合闸' : '分闸' }}</span>
             </div>
             <div class="overview-item">
               <span class="label">电压变比PT</span>
-              <span class="value">{{ meterInfo.voltagePT }}</span>
+              <span class="value">{{ meterInfo.pt || "1" }}</span>
             </div>
             <div class="overview-item">
               <span class="label">电流变比CT</span>
-              <span class="value">{{ meterInfo.currentCT }}</span>
+              <span class="value">{{ meterInfo.ct || "1" }}</span>
             </div>
             <div class="overview-item">
-              <span class="label">购电次数</span>
-              <span class="value">{{ meterInfo.purchaseCount || "-" }}</span>
+              <span class="label">在线状态</span>
+              <span class="value">{{ meterInfo.onlineStatus == 1 ? '在线' : '离线' }}</span>
             </div>
             <div class="overview-item">
-              <span class="label">电表制格</span>
-              <span class="value">{{ meterInfo.meterSpec }}</span>
+              <span class="label">电表相位</span>
+              <span class="value">{{ getPhaseLabel(meterInfo.phase) }}</span>
             </div>
             <div class="overview-item">
-              <span class="label">网络地址</span>
-              <span class="value">{{ meterInfo.networkAddress }}</span>
+              <span class="label">监控类型</span>
+              <span class="value">{{ getMonitorTypeLabel(meterInfo.monitorType) }}</span>
             </div>
           </div>
 
@@ -214,17 +207,17 @@
                   <th>尖电量</th>
                   <th>峰电量</th>
                   <th>平电量</th>
-                  <th>合电量</th>
+                  <th>谷电量</th>
                   <th>总电量</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td class="row-label"></td>
+                  <td class="row-label">当前读数</td>
                   <td>{{ powerData.peak }}</td>
                   <td>{{ powerData.high }}</td>
                   <td>{{ powerData.flat }}</td>
-                  <td>{{ powerData.combined }}</td>
+                  <td>{{ powerData.valley }}</td>
                   <td>{{ powerData.total }}</td>
                 </tr>
               </tbody>
@@ -234,40 +227,40 @@
               <thead>
                 <tr>
                   <th></th>
-                  <th>A</th>
-                  <th>B</th>
-                  <th>C</th>
+                  <th>A相</th>
+                  <th>B相</th>
+                  <th>C相</th>
                   <th>合计</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td class="row-label">电压</td>
+                  <td class="row-label">电压(V)</td>
                   <td>{{ phaseData.voltageA }}</td>
                   <td>{{ phaseData.voltageB }}</td>
                   <td>{{ phaseData.voltageC }}</td>
                   <td>-</td>
                 </tr>
                 <tr>
-                  <td class="row-label">电流</td>
+                  <td class="row-label">电流(A)</td>
                   <td>{{ phaseData.currentA }}</td>
                   <td>{{ phaseData.currentB }}</td>
                   <td>{{ phaseData.currentC }}</td>
                   <td>-</td>
                 </tr>
                 <tr>
-                  <td class="row-label">有功功率</td>
+                  <td class="row-label">有功功率(kW)</td>
                   <td>{{ phaseData.activePowerA }}</td>
                   <td>{{ phaseData.activePowerB }}</td>
                   <td>{{ phaseData.activePowerC }}</td>
                   <td>{{ phaseData.totalActivePower }}</td>
                 </tr>
                 <tr>
-                  <td class="row-label">无功功率</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
+                  <td class="row-label">无功功率(kVar)</td>
+                  <td>{{ phaseData.reactivePowerA }}</td>
+                  <td>{{ phaseData.reactivePowerB }}</td>
+                  <td>{{ phaseData.reactivePowerC }}</td>
+                  <td>{{ phaseData.totalReactivePower }}</td>
                 </tr>
                 <tr>
                   <td class="row-label">功率因数</td>
@@ -288,13 +281,14 @@
               <div class="control-group">
                 <span class="control-label">序列号</span>
                 <el-input
-                  v-model="queryParams.serialNumber"
+                  v-model="queryParams.serial"
                   size="small"
                   style="width: 150px"
+                  disabled
                 />
               </div>
               <div class="control-group">
-                <span class="control-label">时间</span>
+                <span class="control-label">时间范围</span>
                 <el-date-picker
                   v-model="queryParams.dateRange"
                   type="datetimerange"
@@ -307,149 +301,69 @@
                 />
               </div>
               <div class="control-group">
-                <el-button type="primary" size="small" @click="queryData"
-                  >查询</el-button
-                >
+                <el-button type="primary" size="small" @click="queryData">
+                  查询
+                </el-button>
               </div>
             </div>
 
             <div class="tab-controls">
               <el-radio-group v-model="activeTab" size="small">
-                <el-radio-button label="电力数据">电力数据</el-radio-button>
-                <el-radio-button label="业务事件">业务事件</el-radio-button>
-                <el-radio-button label="电表数据定制报表"
-                  >电表数据定制报表</el-radio-button
-                >
+                <el-radio-button label="用电趋势">用电趋势</el-radio-button>
+                <el-radio-button label="设备事件">设备事件</el-radio-button>
+                <el-radio-button label="抄表记录">抄表记录</el-radio-button>
               </el-radio-group>
-              <span class="extra-controls">+{{ extraTabsCount }}</span>
             </div>
           </div>
 
-          <!-- 电力数据图表 -->
-          <div v-show="activeTab === '电力数据'" class="chart-container">
+          <!-- 用电趋势图表 -->
+          <div v-show="activeTab === '用电趋势'" class="chart-container">
             <div class="chart-stats">
               <div class="stat-item">
-                <span class="stat-label">总用电量(kWh)</span>
-                <span class="stat-value">{{
-                  chartStats.totalPowerConsumption
-                }}</span>
-                <span class="stat-change" :class="chartStats.changeClass"
-                  >{{ chartStats.changePercent }}%</span
-                >
+                <span class="stat-label">本月总用电量</span>
+                <span class="stat-value">{{ chartStats.totalPowerConsumption }}</span>
+                <span class="stat-unit">kWh</span>
+                <span class="stat-change" :class="chartStats.changeClass">
+                  {{ chartStats.changePercent }}%
+                </span>
               </div>
             </div>
             <div ref="powerChart" class="power-chart"></div>
-
-            <!-- 点击详情显示 -->
-            <div v-if="selectedDataPoint" class="data-point-detail">
-              <div class="detail-card">
-                <h4>{{ selectedDataPoint.date }} 电力详情</h4>
-                <div class="detail-grid">
-                  <div class="detail-item">
-                    <span class="label">用电量</span>
-                    <span class="value"
-                      >{{ selectedDataPoint.consumption }} kWh</span
-                    >
-                  </div>
-                  <div class="detail-item">
-                    <span class="label">峰值功率</span>
-                    <span class="value"
-                      >{{ selectedDataPoint.maxPower }} kW</span
-                    >
-                  </div>
-                  <div class="detail-item">
-                    <span class="label">平均功率</span>
-                    <span class="value"
-                      >{{ selectedDataPoint.avgPower }} kW</span
-                    >
-                  </div>
-                  <div class="detail-item">
-                    <span class="label">功率因数</span>
-                    <span class="value">{{
-                      selectedDataPoint.powerFactor
-                    }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="label">电费</span>
-                    <span class="value">¥{{ selectedDataPoint.cost }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="label">碳排放</span>
-                    <span class="value"
-                      >{{ selectedDataPoint.carbonEmission }} kg CO₂</span
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
-          <!-- 业务事件表格 -->
-          <div v-show="activeTab === '业务事件'" class="events-container">
-            <div class="events-timeline">
-              <div class="timeline-header">
-                <span class="offline-dot"></span>
-                <span class="time-label">电表上下线</span>
-                <div class="timeline-dates">
-                  <span
-                    v-for="event in offlineEvents"
-                    :key="event.id"
-                    class="event-time"
-                    >{{ event.time }}</span
-                  >
-                </div>
-              </div>
-            </div>
-
-            <div class="events-filter">
-              <el-button
-                v-for="filter in eventFilters"
-                :key="filter.key"
-                :type="selectedFilter === filter.key ? 'primary' : ''"
-                size="small"
-                @click="selectEventFilter(filter.key)"
-              >
-                {{ filter.label }}
-              </el-button>
-            </div>
-
+          <!-- 设备事件表格 -->
+          <div v-show="activeTab === '设备事件'" class="events-container">
             <div class="events-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>时间</th>
-                    <th>上下线类型</th>
-                    <th>上报频率</th>
-                    <th>新号强度</th>
-                    <th>sim卡号</th>
-                    <th>version1</th>
-                    <th>version2</th>
-                    <th>version3</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="event in filteredEvents" :key="event.id">
-                    <td>{{ event.time }}</td>
-                    <td>
-                      <span class="event-type">{{ event.type }}</span>
-                    </td>
-                    <td>{{ event.frequency || "-" }}</td>
-                    <td>{{ event.signalStrength || "-" }}</td>
-                    <td>{{ event.simCard || "-" }}</td>
-                    <td>{{ event.version1 || "-" }}</td>
-                    <td>{{ event.version2 || "-" }}</td>
-                    <td>{{ event.version3 || "-" }}</td>
-                  </tr>
-                </tbody>
-              </table>
+              <el-table
+                :data="deviceEvents"
+                style="width: 100%"
+                stripe
+                size="small"
+              >
+                <el-table-column prop="time" label="时间" width="180"/>
+                <el-table-column prop="type" label="事件类型" width="120">
+                  <template slot-scope="scope">
+                    <el-tag size="mini" :type="getEventTagType(scope.row.type)">
+                      {{ scope.row.type }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="switchStatus" label="开关状态" width="100"/>
+                <el-table-column prop="voltage" label="电压值" width="100"/>
+                <el-table-column prop="current" label="电流值" width="100"/>
+                <el-table-column prop="power" label="功率值" width="100"/>
+                <el-table-column prop="remark" label="备注"/>
+              </el-table>
             </div>
           </div>
 
-          <!-- 定制报表 -->
-          <div v-show="activeTab === '电表数据定制报表'" class="custom-report">
-            <div class="report-placeholder">
-              <i class="el-icon-document"></i>
-              <p>定制报表功能开发中...</p>
+          <!-- 抄表记录 -->
+          <div v-show="activeTab === '抄表记录'" class="reading-records">
+            <div class="records-placeholder">
+              <div class="placeholder-icon">
+                <i class="el-icon-document"></i>
+              </div>
+              <p>抄表记录功能开发中...</p>
             </div>
           </div>
         </div>
@@ -458,7 +372,7 @@
 
     <!-- 弹窗组件 -->
     <el-dialog
-      title="充值测试"
+      title="电费充值"
       :visible.sync="rechargeDialog.visible"
       width="400px"
     >
@@ -482,61 +396,45 @@
     </el-dialog>
 
     <el-dialog
-      title="设置"
+      title="参数设置"
       :visible.sync="settingsDialog.visible"
       width="500px"
       :close-on-click-modal="false"
     >
       <el-form ref="settingsForm" :model="settingsForm" label-width="100px">
-        <el-form-item label="电表编号">
-          <el-input v-model="settingsForm.meterId" disabled />
-        </el-form-item>
-        <el-form-item label="电表序列号" required>
-          <el-input v-model="settingsForm.serialNumber" />
-        </el-form-item>
-        <el-form-item label="项目编号" required>
-          <el-select
-            v-model="settingsForm.projectId"
-            placeholder="请选择项目"
-            style="width: 100%"
-          >
-            <el-option label="内部测试专用" value="project_001" />
-            <el-option label="科技园区二期" value="project_002" />
-            <el-option label="智慧办公楼" value="project_003" />
-          </el-select>
+        <el-form-item label="序列号">
+          <el-input v-model="settingsForm.serial" disabled />
         </el-form-item>
         <el-form-item label="电表名称" required>
           <el-input v-model="settingsForm.meterName" />
         </el-form-item>
-        <el-form-item label="电表类型">
-          <el-select v-model="settingsForm.meterType" style="width: 100%">
-            <el-option label="专用表" value="dedicated" />
-            <el-option label="公摊表" value="shared" />
-            <el-option label="总表" value="main" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="电表规格">
-          <el-select v-model="settingsForm.meterSpec" style="width: 100%">
-            <el-option label="单相一次" value="single_phase_primary" />
-            <el-option label="三相一次" value="three_phase_primary" />
-            <el-option label="三相二次" value="three_phase_secondary" />
+        <el-form-item label="电表类型" required>
+          <el-select v-model="settingsForm.bindType" style="width: 100%">
+            <el-option label="专用表" :value="1" />
+            <el-option label="公摊表" :value="2" />
+            <el-option label="公式表" :value="3" />
           </el-select>
         </el-form-item>
         <el-form-item label="付费模式">
-          <el-select v-model="settingsForm.paymentMode" style="width: 100%">
-            <el-option label="预付费" value="prepaid" />
-            <el-option label="强控（欠费不跳闸）" value="control_no_trip" />
-            <el-option label="强控（欠费跳闸）" value="control_trip" />
+          <el-select v-model="settingsForm.logicPayType" style="width: 100%">
+            <el-option label="预付费" :value="0" />
+            <el-option label="强控" :value="1" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="电表相位">
+          <el-select v-model="settingsForm.phase" style="width: 100%">
+            <el-option label="单相" :value="1" />
+            <el-option label="三相" :value="3" />
           </el-select>
         </el-form-item>
         <el-form-item label="CT变比">
-          <el-input v-model="settingsForm.ctRatio" />
+          <el-input-number v-model="settingsForm.ct" :min="1" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="ICCID">
-          <el-input v-model="settingsForm.iccid" placeholder="请输入" />
+        <el-form-item label="PT变比">
+          <el-input-number v-model="settingsForm.pt" :min="1" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="负载限制">
-          <el-switch v-model="settingsForm.loadLimit" />
+        <el-form-item label="IMEI">
+          <el-input v-model="settingsForm.imei" />
         </el-form-item>
       </el-form>
       <span slot="footer">
@@ -546,35 +444,43 @@
     </el-dialog>
 
     <el-dialog
-      title="余额清零"
+      title="设备维护"
       :visible.sync="maintenanceDialog.visible"
       width="400px"
     >
       <div class="maintenance-content">
         <el-alert
-          title="警告"
-          type="warning"
-          description="此操作将清零电表余额，请谨慎操作！"
+          title="提示"
+          type="info"
+          description="设备维护操作将影响正常使用，请谨慎操作！"
           :closable="false"
         />
         <div style="margin-top: 20px">
-          <el-checkbox v-model="confirmClear">我确认要清零余额</el-checkbox>
+          <el-checkbox v-model="confirmMaintenance">我确认要执行维护操作</el-checkbox>
         </div>
       </div>
       <span slot="footer">
         <el-button @click="maintenanceDialog.visible = false">取消</el-button>
         <el-button
-          type="danger"
-          :disabled="!confirmClear"
-          @click="handleClearBalance"
-          >确定清零</el-button
+          type="warning"
+          :disabled="!confirmMaintenance"
+          @click="handleMaintenance"
         >
+          确定维护
+        </el-button>
       </span>
     </el-dialog>
   </div>
 </template>
 
 <script>
+// 导入相关API（根据实际项目路径调整）
+import {
+  meterPageMeterInfoByAdmin,
+  tenantDoMeterSwitchOffOn,
+  meterUpdateMeterBase,
+} from "@/api/meter";
+
 export default {
   name: "MeterDetail",
   data() {
@@ -586,153 +492,107 @@ export default {
       routeParams: {
         deviceId: null,
         serial: null,
-        name: null,
+        meterName: null,
       },
-      // 电表基本信息
+      
+      // 电表基本信息 - 基于真实接口数据结构
       meterInfo: {
-        meterName: "",
+        id: "",
         serial: "",
-        deviceId: "",
-        balance: "4.45",
-        circuitScheme: "-",
-        contactScheme: "-",
-        loadLimit: "关",
-        updateTime: "2025-08-08 11:13:04",
-        iccid: "-",
-        paymentMode: "提费",
-        feeControlSwitch: "分闸",
-        voltagePT: "1",
-        currentCT: "1",
-        purchaseCount: "-",
-        meterSpec: "单相一次",
-        networkAddress: "117.132.195.177:52480",
-        switchStatus: "分闸",
-        deviceModel: "DTS866-L",
-        commType: "NB-IoT",
-        location: "15层公共配电箱",
-        maintenanceStatus: "正常",
+        meterName: "",
+        bindType: "",
+        logicPayType: "",
+        phase: "",
+        switchStatus: 0,
+        onlineStatus: 1,
+        imei: "",
+        ct: 1,
+        pt: 1,
+        balance: "0.00",
+        createTime: "",
+        bindId: "",
+        bindName: "",
+        managerId: "",
       },
 
-      // 运行状态指示器
-      statusIndicators: {
-        communication: {
-          label: "通信状态：在线",
-          class: "online",
-        },
-        switch: {
-          label: "开关状态：分闸",
-          class: "warning",
-        },
-        measurement: {
-          label: "计量状态：正常",
-          class: "normal",
-        },
-      },
-
-      // 电力数据
+      // 电力数据 - 基于真实电表数据结构
       powerData: {
-        peak: "0.51",
-        high: "0.87",
-        flat: "1.55",
-        combined: "1.52",
-        total: "4.45",
+        peak: "0.51",      // 尖电量
+        high: "0.87",      // 峰电量  
+        flat: "1.55",      // 平电量
+        valley: "1.52",    // 谷电量
+        total: "4.45",     // 总电量
       },
 
-      // 相位数据
+      // 相位数据 - 基于真实电表参数
       phaseData: {
         voltageA: "231.9",
-        voltageB: "231.9",
+        voltageB: "231.9", 
         voltageC: "231.9",
         currentA: "0.19",
         currentB: "0.19",
         currentC: "0.19",
         activePowerA: "0.024",
-        activePowerB: "0.024",
+        activePowerB: "0.024", 
         activePowerC: "0.024",
-        totalActivePower: "0.024",
-        powerFactorA: "1",
-        powerFactorB: "1",
-        powerFactorC: "1",
-        totalPowerFactor: "1",
+        totalActivePower: "0.072",
+        reactivePowerA: "0.000",
+        reactivePowerB: "0.000",
+        reactivePowerC: "0.000", 
+        totalReactivePower: "0.000",
+        powerFactorA: "0.99",
+        powerFactorB: "0.99",
+        powerFactorC: "0.99",
+        totalPowerFactor: "0.99",
       },
 
       // 图表统计数据
       chartStats: {
-        totalPowerConsumption: 156.8,
-        changePercent: 12.5,
+        totalPowerConsumption: "3,126.6",
+        changePercent: 15.8,
         changeClass: "increase",
       },
 
-      // 选中的数据点详情
-      selectedDataPoint: null,
-
       // 查询参数
       queryParams: {
-        serialNumber: "25072108620294",
-        dateRange: ["2025-08-08 00:00:00", "2025-08-08 23:59:59"],
+        serial: "",
+        dateRange: [],
       },
 
       // 活跃标签页
-      activeTab: "电力数据",
-      extraTabsCount: 8,
+      activeTab: "用电趋势",
 
-      // 事件相关
-      selectedFilter: "电表数据定制报表",
-      eventFilters: [
-        { key: "电表数据定制报表", label: "电表数据定制报表" },
-        { key: "电表充值", label: "电表充值" },
-        { key: "电表同步", label: "电表同步" },
-        { key: "电表付费模式", label: "电表付费模式" },
-        { key: "电表上下线", label: "电表上下线" },
-        { key: "电表测试", label: "电表测试" },
-        { key: "电表报警", label: "电表报警" },
-        { key: "电表分合闸", label: "电表分合闸" },
-        { key: "电表维护", label: "电表维护" },
-      ],
-
-      // 下线事件
-      offlineEvents: [
-        { id: 1, time: "2025-08-08 00:00:00" },
-        { id: 2, time: "2025-08-08 06:00:00" },
-        { id: 3, time: "2025-08-08 12:00:00" },
-        { id: 4, time: "2025-08-08 18:00:00" },
-        { id: 5, time: "2025-08-08 23:59:59" },
-      ],
-
-      // 业务事件列表
-      businessEvents: [
+      // 设备事件列表
+      deviceEvents: [
         {
           id: 1,
-          time: "2025-08-08 01:58:23",
-          type: "离线",
-          frequency: "-",
-          signalStrength: "-",
-          simCard: "-",
-          version1: "-",
-          version2: "-",
-          version3: "-",
+          time: "2025-08-08 02:15:30",
+          type: "在线",
+          switchStatus: "合闸",
+          voltage: "220V",
+          current: "14.5A",
+          power: "3.2kW",
+          remark: "正常运行",
         },
         {
           id: 2,
-          time: "2025-08-08 06:10:24",
-          type: "离线",
-          frequency: "-",
-          signalStrength: "-",
-          simCard: "-",
-          version1: "-",
-          version2: "-",
-          version3: "-",
+          time: "2025-08-08 08:20:45",
+          type: "分合闸操作",
+          switchStatus: "合闸",
+          voltage: "220V",
+          current: "15.2A",
+          power: "3.5kW",
+          remark: "用户操作合闸",
         },
         {
           id: 3,
-          time: "2025-08-08 10:22:24",
-          type: "离线",
-          frequency: "-",
-          signalStrength: "-",
-          simCard: "-",
-          version1: "-",
-          version2: "-",
-          version3: "-",
+          time: "2025-08-08 14:30:12",
+          type: "数据上报",
+          switchStatus: "合闸",
+          voltage: "218V",
+          current: "12.7A",
+          power: "2.8kW",
+          remark: "定时数据上报",
         },
       ],
 
@@ -747,52 +607,35 @@ export default {
       // 表单数据
       rechargeForm: { amount: null, remark: "" },
       settingsForm: {
-        meterId: "1029334",
-        serialNumber: "25072108620294",
-        projectId: "project_001",
-        meterName: "君联大厦-15公共1",
-        meterType: "dedicated",
-        meterSpec: "single_phase_primary",
-        paymentMode: "prepaid",
-        ctRatio: "1",
-        iccid: "",
-        loadLimit: false,
+        serial: "",
+        meterName: "",
+        bindType: "",
+        logicPayType: "",
+        phase: "",
+        ct: 1,
+        pt: 1,
+        imei: "",
       },
-      confirmClear: false,
+      confirmMaintenance: false,
 
       // 图表实例
       powerChart: null,
     };
   },
 
-  computed: {
-    filteredEvents() {
-      return this.businessEvents;
-    },
-  },
-
-  watch: {
-    "meterInfo.switchStatus": {
-      handler(newStatus) {
-        this.updateStatusIndicators();
-      },
-      immediate: true,
-    },
-  },
-
   async mounted() {
-    console.log("详情页组件已挂载");
+    console.log("电表详情页组件已挂载");
 
-    // 🔥 步骤1：提取路由参数
+    // 提取路由参数
     this.extractRouteParams();
 
-    // 🔥 步骤2：模拟加载数据
+    // 加载电表数据
     await this.loadMeterData();
 
-    // 🔥 步骤3：初始化图表
+    // 初始化图表
     this.initChart();
 
-    // 🔥 步骤4：处理布局变化
+    // 处理布局变化
     this.$nextTick(() => {
       this.handleLayoutChange();
     });
@@ -804,7 +647,6 @@ export default {
   },
 
   beforeDestroy() {
-    // 清理定时器和事件监听
     clearTimeout(this.resizeTimer);
     window.removeEventListener("resize", this.handleResize);
 
@@ -814,85 +656,393 @@ export default {
   },
 
   methods: {
-    // 🔥 新增：提取路由参数
-    extractRouteParams() {
-      this.routeParams.deviceId =
-        this.$route.params.id || this.$route.query.deviceId || null;
-      this.routeParams.serial = this.$route.query.serial || null;
-      this.routeParams.name = this.$route.query.name || null;
+    // 加载电表数据后更新相关数据
+    updateDataFromMeter() {
+      // 更新电力数据
+      this.powerData = {
+        peak: this.meterInfo.peak || "0.51",
+        high: this.meterInfo.high || "0.87",
+        flat: this.meterInfo.flat || "1.55", 
+        valley: this.meterInfo.valley || "1.52",
+        total: this.meterInfo.total || "4.45",
+      };
 
-      if (this.routeParams.serial) {
-        this.queryParams.serialNumber = this.routeParams.serial;
-      }
+      // 更新相位数据
+      this.phaseData = {
+        voltageA: this.meterInfo.ua || "231.9",
+        voltageB: this.meterInfo.ub || "231.9",
+        voltageC: this.meterInfo.uc || "231.9", 
+        currentA: this.meterInfo.ia || "0.19",
+        currentB: this.meterInfo.ib || "0.19",
+        currentC: this.meterInfo.ic || "0.19",
+        activePowerA: this.meterInfo.pa || "0.024",
+        activePowerB: this.meterInfo.pb || "0.024",
+        activePowerC: this.meterInfo.pc || "0.024",
+        totalActivePower: this.meterInfo.p || "0.072",
+        reactivePowerA: this.meterInfo.qa || "0.000", 
+        reactivePowerB: this.meterInfo.qb || "0.000",
+        reactivePowerC: this.meterInfo.qc || "0.000",
+        totalReactivePower: this.meterInfo.q || "0.000",
+        powerFactorA: "0.99",
+        powerFactorB: "0.99", 
+        powerFactorC: "0.99",
+        totalPowerFactor: "0.99",
+      };
     },
 
-    // 🔥 新增：加载电表数据
+    // 提取路由参数
+    extractRouteParams() {
+      // 确保 routeParams 对象存在
+      if (!this.routeParams) {
+        this.routeParams = {};
+      }
+      
+      this.routeParams.deviceId = this.$route.params.id || this.$route.query.deviceId;
+      this.routeParams.serial = this.$route.query.serial;
+      this.routeParams.meterName = this.$route.query.name;
+
+      console.log("路由参数:", this.routeParams);
+
+      // 设置查询参数
+      if (this.routeParams.serial) {
+        this.queryParams.serial = this.routeParams.serial;
+      }
+
+      // 设置默认时间范围（最近7天）
+      const endTime = new Date();
+      const startTime = new Date();
+      startTime.setDate(endTime.getDate() - 7);
+      
+      this.queryParams.dateRange = [
+        startTime.toISOString().slice(0, 19).replace('T', ' '),
+        endTime.toISOString().slice(0, 19).replace('T', ' ')
+      ];
+    },
+
+    // 加载电表数据
     async loadMeterData() {
       this.pageLoading = true;
 
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
         if (this.routeParams.deviceId) {
-          this.simulateDataByDeviceId(this.routeParams.deviceId);
+          // 调用真实接口获取电表详情
+          const response = await meterPageMeterInfoByAdmin({
+            id: this.routeParams.deviceId,
+            page: { size: 1, current: 1 }
+          });
+
+          if (response.code === 200 && response.data && response.data.dataList.length > 0) {
+            this.meterInfo = response.data.dataList[0];
+            console.log("加载的电表数据:", this.meterInfo);
+            
+            // 更新相关数据
+            this.updateDataFromMeter();
+          } else {
+            // 如果接口没有返回数据，使用路由参数构造基本信息
+            this.meterInfo = {
+              id: this.routeParams.deviceId,
+              serial: this.routeParams.serial || "",
+              meterName: this.routeParams.meterName || "未知电表",
+              bindType: 1,
+              logicPayType: 0,
+              phase: 1,
+              switchStatus: 0,
+              onlineStatus: 1,
+              imei: "",
+              ct: 1,
+              pt: 1,
+              balance: "0.00",
+              createTime: "",
+              bindId: "",
+              bindName: "",
+              managerId: "",
+            };
+            
+            // 更新相关数据
+            this.updateDataFromMeter();
+          }
         } else {
-          this.loadDefaultData();
+          throw new Error("缺少设备ID参数");
         }
       } catch (error) {
-        this.$message.error("加载设备数据失败");
+        console.error("加载电表数据失败:", error);
+        this.$message.error("加载电表数据失败");
+        
+        // 使用路由参数作为后备方案
+        this.meterInfo = {
+          id: this.routeParams.deviceId || "",
+          serial: this.routeParams.serial || "",
+          meterName: this.routeParams.meterName || "未知电表",
+          bindType: 1,
+          logicPayType: 0,
+          phase: 1,
+          switchStatus: 0,
+          onlineStatus: 1,
+          imei: "",
+          ct: 1,
+          pt: 1,
+          balance: "0.00",
+          createTime: "",
+          bindId: "",
+          bindName: "",
+          managerId: "",
+        };
+        
+        // 更新相关数据
+        this.updateDataFromMeter();
       } finally {
         this.pageLoading = false;
       }
     },
 
-    // 🔥 新增：根据设备ID模拟数据
-    simulateDataByDeviceId(deviceId) {
-      const deviceDataMap = {
-        1029334: {
-          meterName: "君联大厦-15公共1",
-          serial: "25072108620294",
-          deviceId: "1029334",
-          balance: "4.45",
-          // ... 完整数据
-        },
-        default: {
-          meterName: this.routeParams.name || "未知设备",
-          serial: this.routeParams.serial || "未知序列号",
-          deviceId: this.routeParams.deviceId || "未知编号",
-          // ... 默认数据
-        },
+    // 获取电表类型标签
+    getBindTypeLabel(type) {
+      const typeMap = {
+        1: "专用表",
+        2: "公摊表", 
+        3: "公式表"
       };
-
-      const deviceData = deviceDataMap[deviceId] || deviceDataMap["default"];
-      Object.assign(this.meterInfo, deviceData);
+      return typeMap[type] || "未知";
     },
+
+    // 获取付费模式标签
+    getPayTypeLabel(type) {
+      const typeMap = {
+        0: "预付费",
+        1: "强控"
+      };
+      return typeMap[type] || "未知";
+    },
+
+    // 获取电表相位标签
+    getPhaseLabel(phase) {
+      const phaseMap = {
+        1: "单相",
+        3: "三相"
+      };
+      return phaseMap[phase] || "未知";
+    },
+
+    // 获取监控类型标签
+    getMonitorTypeLabel(type) {
+      const typeMap = {
+        1: "电能表",
+        2: "预付费表", 
+        3: "远程表"
+      };
+      return typeMap[type] || "电能表";
+    },
+
+    // 获取余额状态样式
+    getBalanceStatusClass(balance) {
+      const amount = parseFloat(balance) || 0;
+      if (amount <= 0) return "balance-empty";
+      if (amount < 50) return "balance-low";
+      return "balance-normal";
+    },
+
+    // 获取余额状态文本
+    getBalanceStatusText(balance) {
+      const amount = parseFloat(balance) || 0;
+      if (amount <= 0) return "余额不足";
+      if (amount < 50) return "余额偏低";
+      return "余额充足";
+    },
+
+    // 获取事件标签类型
+    getEventTagType(eventType) {
+      const typeMap = {
+        "在线": "success",
+        "离线": "danger",
+        "分合闸操作": "warning",
+        "数据上报": "info",
+        "报警": "danger",
+      };
+      return typeMap[eventType] || "";
+    },
+
+    // 处理绑定信息点击
+    handleBindClick(meterInfo) {
+      console.log("点击绑定信息:", meterInfo);
+      if (meterInfo.bindId) {
+        this.$router.push({
+          path: "/project-tenement-detail",
+          query: { 
+            id: meterInfo.bindId, 
+            managerId: meterInfo.managerId 
+          }
+        });
+      }
+    },
+
+    // 分合闸控制
+    async handleSwitchControl() {
+      // 如果是预付费模式，需要先修改为强控
+      if (this.meterInfo.logicPayType === 0 || this.meterInfo.logicPayType === "0") {
+        this.$message.warning("预付费模式下不能直接操作分合闸，请先修改为强控模式");
+        return;
+      }
+
+      const targetStatus = this.meterInfo.switchStatus == 1 ? 0 : 1;
+      const actionText = targetStatus == 1 ? "合闸" : "分闸";
+
+      try {
+        await this.$confirm(
+          `确定要对电表"${this.meterInfo.meterName}"执行${actionText}操作吗？`,
+          "提示",
+          {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning",
+          }
+        );
+
+        this.switchLoading = true;
+
+        const response = await tenantDoMeterSwitchOffOn({
+          meterId: this.meterInfo.id,
+          type: targetStatus,
+        });
+
+        if (response.code === 200) {
+          this.meterInfo.switchStatus = targetStatus;
+          this.$message.success(`${actionText}操作成功`);
+        } else {
+          this.$message.error(response.msg || `${actionText}操作失败`);
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          this.$message.error(`${actionText}操作失败`);
+          console.error("分合闸控制失败:", error);
+        }
+      } finally {
+        this.switchLoading = false;
+      }
+    },
+
+    // 显示充值弹窗
+    showRechargeDialog() {
+      this.rechargeForm = { amount: null, remark: "" };
+      this.rechargeDialog.visible = true;
+    },
+
+    // 显示设置弹窗
+    showSettingsDialog() {
+      this.settingsForm = {
+        serial: this.meterInfo.serial,
+        meterName: this.meterInfo.meterName,
+        bindType: this.meterInfo.bindType,
+        logicPayType: this.meterInfo.logicPayType,
+        phase: this.meterInfo.phase,
+        ct: this.meterInfo.ct,
+        pt: this.meterInfo.pt,
+        imei: this.meterInfo.imei,
+      };
+      this.settingsDialog.visible = true;
+    },
+
+    // 显示维护弹窗
+    showMaintenanceDialog() {
+      this.confirmMaintenance = false;
+      this.maintenanceDialog.visible = true;
+    },
+
+    // 保存设置
+    async saveSettings() {
+      try {
+        const response = await meterUpdateMeterBase({
+          id: this.meterInfo.id,
+          ...this.settingsForm,
+        });
+
+        if (response.code === 200) {
+          // 更新本地数据
+          Object.assign(this.meterInfo, this.settingsForm);
+          this.settingsDialog.visible = false;
+          this.$message.success("参数设置保存成功");
+        } else {
+          this.$message.error(response.msg || "参数设置保存失败");
+        }
+      } catch (error) {
+        this.$message.error("参数设置保存失败");
+        console.error("保存设置失败:", error);
+      }
+    },
+
+    // 处理充值
+    async handleRecharge() {
+      if (!this.rechargeForm.amount) {
+        this.$message.warning("请输入充值金额");
+        return;
+      }
+
+      try {
+        // 这里应该调用实际的充值接口
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        // 更新余额
+        const currentBalance = parseFloat(this.meterInfo.balance) || 0;
+        const newBalance = currentBalance + this.rechargeForm.amount;
+        this.meterInfo.balance = newBalance.toFixed(2);
+        
+        this.rechargeDialog.visible = false;
+        this.$message.success(
+          `电费充值成功！充值金额：¥${this.rechargeForm.amount}`
+        );
+      } catch (error) {
+        this.$message.error("充值失败");
+        console.error("充值失败:", error);
+      }
+    },
+
+    // 处理维护
+    async handleMaintenance() {
+      try {
+        // 这里应该调用实际的维护接口
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        this.maintenanceDialog.visible = false;
+        this.$message.success("设备维护操作成功");
+      } catch (error) {
+        this.$message.error("维护操作失败");
+        console.error("维护失败:", error);
+      }
+    },
+
+    // 查询数据
+    queryData() {
+      this.$message.info("查询数据中...");
+      // 重新绘制图表
+      if (this.powerChart) {
+        this.updateChart();
+      }
+    },
+
+    // 返回上一页
+    goBack() {
+      this.$router.go(-1);
+    },
+
+    // 加载ECharts
     loadEcharts() {
       const script = document.createElement("script");
-      script.src =
-        "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js";
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js";
       script.onload = () => {
         this.initChart();
       };
       document.head.appendChild(script);
     },
 
-    updateStatusIndicators() {
-      this.statusIndicators.switch = {
-        label: `开关状态：${this.meterInfo.switchStatus}`,
-        class: this.meterInfo.switchStatus === "合闸" ? "normal" : "warning",
-      };
-    },
+    // 处理布局变化
     handleLayoutChange() {
-      // 延迟执行，等待CSS动画完成
       this.resizeTimer = setTimeout(() => {
         if (this.powerChart) {
-          console.log("详情页：执行图表重绘");
           this.powerChart.resize();
         }
-      }, 350); // 等待树面板动画完成（Layout.vue中动画时间是0.3s）
+      }, 350);
     },
 
-    // 👇 新增：防抖的resize处理
+    // 防抖的resize处理
     handleResize() {
       clearTimeout(this.resizeTimer);
       this.resizeTimer = setTimeout(() => {
@@ -902,6 +1052,7 @@ export default {
       }, 100);
     },
 
+    // 初始化图表
     initChart() {
       this.$nextTick(() => {
         if (typeof echarts !== "undefined") {
@@ -911,42 +1062,31 @@ export default {
             this.updateChart();
 
             // 监听窗口大小变化
-            window.addEventListener("resize", () => {
-              if (this.powerChart) {
-                this.powerChart.resize();
-              }
-            });
+            window.addEventListener("resize", this.handleResize);
           }
         }
       });
     },
 
+    // 更新图表
     updateChart() {
       if (!this.powerChart) return;
 
-      // 生成用电相关的数据
+      // 生成用电数据
       const dates = [];
       const powerConsumption = [];
 
       for (let i = 1; i <= 14; i++) {
         const day = String(i).padStart(2, "0");
-        const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
         const weekday = weekdays[(i - 1) % 7];
-        dates.push(`${day}\n${weekday}`);
+        dates.push(`08/${day}\n${weekday}`);
 
         // 模拟用电量数据，工作日用电量较高
-        if (i >= 1 && i <= 5) {
-          powerConsumption.push(Math.floor(Math.random() * 10) + 25); // 工作日 25-35
-        } else if (i === 6 || i === 7) {
-          powerConsumption.push(Math.floor(Math.random() * 8) + 15); // 周末 15-23
-        } else if (i === 8) {
-          powerConsumption.push(42); // 当天突出数据点
-        } else if (i >= 9 && i <= 12) {
-          powerConsumption.push(Math.floor(Math.random() * 8) + 20); // 20-28
-        } else if (i === 13) {
-          powerConsumption.push(35); // 倒数第二天
-        } else if (i === 14) {
-          powerConsumption.push(68); // 最后一天大幅上升
+        if ([1, 2, 3, 4, 5].includes(i % 7)) {
+          powerConsumption.push(Math.floor(Math.random() * 50) + 80); // 工作日 80-130
+        } else {
+          powerConsumption.push(Math.floor(Math.random() * 30) + 40); // 周末 40-70
         }
       }
 
@@ -962,7 +1102,7 @@ export default {
         tooltip: {
           trigger: "axis",
           backgroundColor: "#ffffff",
-          borderColor: "#d9d9d9",
+          borderColor: "#e8e8e8",
           borderWidth: 1,
           textStyle: {
             color: "#262626",
@@ -1001,8 +1141,6 @@ export default {
         yAxis: {
           type: "value",
           min: 0,
-          max: 80,
-          interval: 20,
           axisLine: {
             show: false,
           },
@@ -1012,11 +1150,11 @@ export default {
           axisLabel: {
             color: "#8c8c8c",
             fontSize: 12,
-            formatter: "{value}",
+            formatter: "{value}kWh",
           },
           splitLine: {
             lineStyle: {
-              color: "#f5f5f5",
+              color: "#f0f0f0",
               width: 1,
               type: "solid",
             },
@@ -1027,11 +1165,14 @@ export default {
             data: powerConsumption,
             type: "line",
             smooth: true,
-            smoothMonotone: "x",
-            symbol: "none",
+            symbol: "circle",
+            symbolSize: 4,
             lineStyle: {
-              color: "#597ef7",
-              width: 3,
+              color: "#1890ff",
+              width: 2,
+            },
+            itemStyle: {
+              color: "#1890ff",
             },
             areaStyle: {
               color: {
@@ -1043,15 +1184,11 @@ export default {
                 colorStops: [
                   {
                     offset: 0,
-                    color: "rgba(89, 126, 247, 0.2)",
-                  },
-                  {
-                    offset: 0.7,
-                    color: "rgba(89, 126, 247, 0.1)",
+                    color: "rgba(24, 144, 255, 0.1)",
                   },
                   {
                     offset: 1,
-                    color: "rgba(89, 126, 247, 0.02)",
+                    color: "rgba(24, 144, 255, 0.02)",
                   },
                 ],
               },
@@ -1061,155 +1198,6 @@ export default {
       };
 
       this.powerChart.setOption(option);
-
-      // 添加点击事件
-      this.powerChart.on("click", (params) => {
-        if (params.componentType === "series") {
-          this.showDataPointDetail(params);
-        }
-      });
-    },
-
-    showDataPointDetail(params) {
-      const dateIndex = params.dataIndex;
-      const consumption = params.value;
-      const dates = [];
-
-      for (let i = 1; i <= 14; i++) {
-        const day = String(i).padStart(2, "0");
-        const weekdays = [
-          "周一",
-          "周二",
-          "周三",
-          "周四",
-          "周五",
-          "周六",
-          "周日",
-        ];
-        const weekday = weekdays[(i - 1) % 7];
-        dates.push(`08月${day}日 ${weekday}`);
-      }
-
-      // 生成详细数据
-      this.selectedDataPoint = {
-        date: dates[dateIndex],
-        consumption: consumption,
-        maxPower: (consumption * 1.8 + Math.random() * 5).toFixed(2),
-        avgPower: (consumption * 0.7 + Math.random() * 3).toFixed(2),
-        powerFactor: (0.85 + Math.random() * 0.1).toFixed(3),
-        cost: (consumption * 0.65).toFixed(2),
-        carbonEmission: (consumption * 0.785).toFixed(2),
-      };
-    },
-
-    // 控制方法
-    async handleSwitchControl() {
-      this.switchLoading = true;
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        this.meterInfo.switchStatus =
-          this.meterInfo.switchStatus === "分闸" ? "合闸" : "分闸";
-        this.$message.success("分合闸操作成功");
-      } catch (error) {
-        this.$message.error("操作失败");
-      } finally {
-        this.switchLoading = false;
-      }
-    },
-
-    showRechargeDialog() {
-      this.rechargeForm = { amount: null, remark: "" };
-      this.rechargeDialog.visible = true;
-    },
-
-    showSettingsDialog() {
-      // 初始化设置表单数据
-      this.settingsForm = {
-        meterId: this.meterInfo.deviceId,
-        serialNumber: this.meterInfo.serial,
-        projectId: "project_001",
-        meterName: this.meterInfo.meterName,
-        meterType: "dedicated",
-        meterSpec:
-          this.meterInfo.meterSpec === "单相一次"
-            ? "single_phase_primary"
-            : "three_phase_primary",
-        paymentMode:
-          this.meterInfo.paymentMode === "提费" ? "prepaid" : "control_no_trip",
-        ctRatio: this.meterInfo.currentCT,
-        iccid: this.meterInfo.iccid || "",
-        loadLimit: this.meterInfo.loadLimit === "开",
-      };
-      this.settingsDialog.visible = true;
-    },
-
-    async saveSettings() {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // 更新设备信息
-        this.meterInfo.meterName = this.settingsForm.meterName;
-        this.meterInfo.currentCT = this.settingsForm.ctRatio;
-        this.meterInfo.iccid = this.settingsForm.iccid;
-        this.meterInfo.loadLimit = this.settingsForm.loadLimit ? "开" : "关";
-
-        this.settingsDialog.visible = false;
-        this.$message.success("设置保存成功");
-      } catch (error) {
-        this.$message.error("设置保存失败");
-      }
-    },
-
-    showMaintenanceDialog() {
-      this.confirmClear = false;
-      this.maintenanceDialog.visible = true;
-    },
-
-    async handleRecharge() {
-      if (!this.rechargeForm.amount) {
-        this.$message.warning("请输入充值金额");
-        return;
-      }
-
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const currentBalance = parseFloat(this.meterInfo.balance);
-        const newBalance = currentBalance + this.rechargeForm.amount;
-        this.meterInfo.balance = newBalance.toFixed(2);
-        this.rechargeDialog.visible = false;
-        this.$message.success(
-          `充值成功！充值金额：¥${this.rechargeForm.amount}`
-        );
-      } catch (error) {
-        this.$message.error("充值失败");
-      }
-    },
-
-    async handleClearBalance() {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        this.meterInfo.balance = "0.00";
-        this.maintenanceDialog.visible = false;
-        this.$message.success("余额已清零");
-      } catch (error) {
-        this.$message.error("操作失败");
-      }
-    },
-
-    queryData() {
-      this.$message.info("查询数据...");
-      // 重新绘制图表
-      if (this.powerChart) {
-        this.updateChart();
-      }
-    },
-
-    selectEventFilter(filterKey) {
-      this.selectedFilter = filterKey;
-    },
-
-    goBack() {
-      this.$router.go(-1);
     },
   },
 };
@@ -1218,21 +1206,56 @@ export default {
 <style lang="scss" scoped>
 .meter-detail-page {
   padding: 16px 20px;
-  background: #f5f6fa;
+  background: #f5f5f5;
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.breadcrumb-nav {
-  margin-bottom: 16px;
+// 简单加载动画
+.page-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  .clickable {
-    cursor: pointer;
-    color: #1890ff;
+  .loading-content {
+    text-align: center;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 
-    &:hover {
-      text-decoration: underline;
+    .loading-spinner {
+      margin-bottom: 20px;
+      font-size: 32px;
+      color: #1890ff;
+
+      i {
+        animation: rotate 1s linear infinite;
+      }
     }
+
+    .loading-text {
+      color: #666;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -1243,10 +1266,12 @@ export default {
 
 .device-info-panel {
   width: 320px;
-  background: white;
-  border-radius: 4px;
+  background: #ffffff;
+  border-radius: 8px;
   border: 1px solid #e8e8e8;
   padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  height: fit-content;
 }
 
 .device-header {
@@ -1255,7 +1280,7 @@ export default {
   .device-name {
     margin: 0 0 12px 0;
     font-size: 18px;
-    font-weight: 500;
+    font-weight: 600;
     color: #262626;
   }
 
@@ -1293,20 +1318,32 @@ export default {
     .meta-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       font-size: 13px;
+      padding: 4px 0;
 
       .label {
         color: #8c8c8c;
         width: 70px;
+        font-weight: 500;
       }
 
       .value {
         color: #262626;
+        font-weight: 500;
+        text-align: right;
 
         &.balance {
           color: #52c41a;
           font-weight: 500;
+        }
+
+        &.status-open {
+          color: #52c41a;
+        }
+
+        &.status-closed {
+          color: #ff4d4f;
         }
       }
     }
@@ -1316,37 +1353,38 @@ export default {
 .device-controls {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 24px;
 
   .switch-button,
   .control-button {
     width: 100%;
     height: 36px;
-    font-size: 13px;
+    font-size: 14px;
+    border-radius: 6px;
+    font-weight: 500;
   }
 
   .switch-button {
     &.el-button--primary {
-      background-color: #1890ff;
+      background: #1890ff;
       border-color: #1890ff;
-      color: white;
-
-      &:hover {
-        background-color: #40a9ff;
-        border-color: #40a9ff;
-      }
     }
 
     &.el-button--warning {
-      background-color: #ffbb96;
-      border-color: #ffbb96;
-      color: #8c4a1a;
+      background: #faad14;
+      border-color: #faad14;
+    }
+  }
 
-      &:hover {
-        background-color: #ffd591;
-        border-color: #ffd591;
-      }
+  .control-button {
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    color: #595959;
+
+    &:hover {
+      border-color: #1890ff;
+      color: #1890ff;
     }
   }
 }
@@ -1358,7 +1396,7 @@ export default {
     h4 {
       margin: 0 0 12px 0;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       color: #262626;
       padding-bottom: 8px;
       border-bottom: 1px solid #f0f0f0;
@@ -1370,63 +1408,87 @@ export default {
         justify-content: space-between;
         align-items: center;
         padding: 8px 0;
-        border-bottom: 1px solid #f8f8f8;
+        border-bottom: 1px solid #f5f5f5;
+        font-size: 13px;
 
         &:last-child {
           border-bottom: none;
         }
 
         .label {
-          font-size: 12px;
           color: #8c8c8c;
+          font-weight: 500;
         }
 
         .value {
-          font-size: 12px;
           color: #262626;
-
-          &.status-normal {
-            color: #52c41a;
-          }
+          font-weight: 500;
         }
       }
     }
 
-    .status-indicators {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .bind-info-list {
+      .bind-item {
+        padding: 8px 12px;
+        border: 1px solid #e8e8e8;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
 
-      .indicator-item {
-        display: flex;
-        align-items: center;
-
-        .indicator {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          margin-right: 8px;
-
-          &.online {
-            background: #52c41a;
-          }
-
-          &.normal {
-            background: #1890ff;
-          }
-
-          &.warning {
-            background: #faad14;
-          }
-
-          &.error {
-            background: #ff4d4f;
-          }
+        &:hover {
+          border-color: #1890ff;
+          background: #f6f9fc;
         }
 
-        .label {
+        .bind-id {
+          font-size: 13px;
+          font-weight: 600;
+          color: #262626;
+        }
+
+        .bind-name {
           font-size: 12px;
-          color: #595959;
+          color: #8c8c8c;
+          margin-top: 2px;
+        }
+      }
+
+      .no-bind {
+        color: #8c8c8c;
+        font-size: 13px;
+        text-align: center;
+        padding: 20px;
+      }
+    }
+
+    .balance-info {
+      padding: 12px;
+      background: #f6f9fc;
+      border-radius: 6px;
+      border: 1px solid #e6f7ff;
+      text-align: center;
+
+      .balance-amount {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1890ff;
+        margin-bottom: 8px;
+      }
+
+      .balance-status {
+        font-size: 12px;
+
+        .balance-normal {
+          color: #52c41a;
+        }
+
+        .balance-low {
+          color: #faad14;
+        }
+
+        .balance-empty {
+          color: #ff4d4f;
         }
       }
     }
@@ -1441,9 +1503,10 @@ export default {
 }
 
 .latest-data-section {
-  background: white;
-  border-radius: 4px;
+  background: #ffffff;
+  border-radius: 8px;
   border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   .section-header {
     display: flex;
@@ -1455,16 +1518,16 @@ export default {
     h3 {
       margin: 0;
       font-size: 16px;
-      font-weight: 500;
+      font-weight: 600;
       color: #262626;
     }
 
     .update-time {
       font-size: 12px;
       color: #8c8c8c;
+      font-weight: 500;
     }
   }
-}
 
 .data-overview {
   display: grid;
@@ -1526,16 +1589,19 @@ export default {
     }
   }
 }
+}
 
 .chart-section {
-  background: white;
-  border-radius: 4px;
+  background: #ffffff;
+  border-radius: 8px;
   border: 1px solid #e8e8e8;
-  flex: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
 
   .chart-header {
     padding: 16px 20px;
     border-bottom: 1px solid #f0f0f0;
+    background: #fafafa;
 
     .chart-controls {
       display: flex;
@@ -1550,7 +1616,8 @@ export default {
 
         .control-label {
           font-size: 13px;
-          color: #262626;
+          color: #595959;
+          font-weight: 500;
           white-space: nowrap;
         }
       }
@@ -1558,14 +1625,8 @@ export default {
 
     .tab-controls {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-
-      .extra-controls {
-        color: #1890ff;
-        cursor: pointer;
-        font-size: 13px;
-      }
+      justify-content: space-between;
     }
   }
 }
@@ -1574,231 +1635,208 @@ export default {
   padding: 20px;
 
   .chart-stats {
+    display: flex;
+    gap: 24px;
     margin-bottom: 20px;
 
     .stat-item {
       display: flex;
       align-items: center;
       gap: 12px;
+      padding: 12px 16px;
+      background: #e6f7ff;
+      border-radius: 6px;
+      border: 1px solid #91d5ff;
 
       .stat-label {
+        font-size: 13px;
         color: #8c8c8c;
-        font-size: 14px;
+        font-weight: 500;
       }
 
       .stat-value {
-        font-size: 24px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
         color: #262626;
       }
 
+      .stat-unit {
+        font-size: 13px;
+        color: #8c8c8c;
+        margin-left: -4px;
+      }
+
       .stat-change {
-        font-size: 14px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 3px;
 
         &.increase {
           color: #52c41a;
-
-          &::before {
-            content: "↗ ";
-          }
+          background: rgba(82, 196, 26, 0.1);
         }
 
         &.decrease {
           color: #ff4d4f;
-
-          &::before {
-            content: "↘ ";
-          }
+          background: rgba(255, 77, 79, 0.1);
         }
       }
     }
   }
 
   .power-chart {
-    width: 100%;
     height: 300px;
-    margin-bottom: 20px;
-  }
-
-  .data-point-detail {
-    .detail-card {
-      background: #fafafa;
-      border: 1px solid #d9d9d9;
-      border-radius: 4px;
-      padding: 20px;
-      margin-top: 16px;
-
-      h4 {
-        margin: 0 0 16px 0;
-        color: #262626;
-        font-size: 14px;
-        font-weight: 500;
-        border-bottom: 1px solid #f0f0f0;
-        padding-bottom: 8px;
-      }
-
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1px;
-        background: #e8e8e8;
-        border: 1px solid #d9d9d9;
-
-        .detail-item {
-          background: #ffffff;
-          padding: 12px;
-          text-align: center;
-
-          .label {
-            display: block;
-            font-size: 12px;
-            color: #8c8c8c;
-            margin-bottom: 4px;
-          }
-
-          .value {
-            font-size: 14px;
-            font-weight: 500;
-            color: #262626;
-          }
-        }
-      }
-    }
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #f0f0f0;
   }
 }
 
 .events-container {
   padding: 20px;
-}
 
-.events-timeline {
-  margin-bottom: 16px;
+  .events-table {
+    ::v-deep .el-table {
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      overflow: hidden;
 
-  .timeline-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
+      .el-table__header {
+        th {
+          background: #fafafa;
+          color: #262626;
+          font-weight: 600;
+          border-bottom: 1px solid #e8e8e8;
+        }
+      }
 
-    .offline-dot {
-      width: 8px;
-      height: 8px;
-      background: #ff4d4f;
-      border-radius: 50%;
-      margin-right: 8px;
-    }
-
-    .time-label {
-      font-size: 13px;
-      color: #262626;
-      margin-right: 16px;
-    }
-
-    .timeline-dates {
-      display: flex;
-      gap: 40px;
-
-      .event-time {
-        font-size: 12px;
-        color: #8c8c8c;
-        position: relative;
-
-        &::before {
-          content: "";
-          position: absolute;
-          top: -12px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 8px;
-          height: 8px;
-          background: #ff4d4f;
-          border-radius: 50%;
+      .el-table__body {
+        tr:hover > td {
+          background: #f6f9fc;
         }
       }
     }
   }
 }
 
-.events-filter {
-  margin-bottom: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+.reading-records {
+  padding: 40px 20px;
 
-.events-table {
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid #e8e8e8;
+  .records-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fafafa;
+    border-radius: 6px;
+    border: 1px dashed #d9d9d9;
 
-    th,
-    td {
-      border: 1px solid #e8e8e8;
-      padding: 8px 12px;
-      text-align: left;
-      font-size: 12px;
-    }
-
-    th {
-      background: #fafafa;
-      font-weight: 500;
-      color: #262626;
-    }
-
-    td {
-      color: #595959;
-    }
-
-    .event-type {
-      position: relative;
-
-      &::before {
-        content: "";
-        position: absolute;
-        left: -8px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 4px;
-        height: 4px;
-        background: #faad14;
-        border-radius: 50%;
-      }
-    }
-  }
-}
-
-.custom-report {
-  padding: 60px 20px;
-  text-align: center;
-
-  .report-placeholder {
-    color: #bfbfbf;
-
-    i {
+    .placeholder-icon {
       font-size: 48px;
+      color: #d9d9d9;
       margin-bottom: 16px;
-      display: block;
+
+      i {
+        font-size: inherit;
+      }
     }
 
     p {
       margin: 0;
       font-size: 14px;
+      color: #8c8c8c;
+      font-weight: 500;
     }
   }
 }
 
-.settings-content,
-.maintenance-content {
-  padding: 20px 0;
-}
+// 弹窗样式优化
+::v-deep .el-dialog {
+  border-radius: 8px;
+  overflow: hidden;
 
-.maintenance-content {
-  .el-checkbox {
-    margin-top: 16px;
+  .el-dialog__header {
+    background: #fafafa;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e8e8e8;
+
+    .el-dialog__title {
+      color: #262626;
+      font-size: 16px;
+      font-weight: 600;
+    }
+  }
+
+  .el-dialog__body {
+    padding: 20px;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 20px;
+    background: #fafafa;
+    border-top: 1px solid #e8e8e8;
+  }
+
+  .el-form-item__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #595959;
+  }
+
+  .el-input__inner,
+  .el-textarea__inner {
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #d9d9d9;
+
+    &:focus {
+      border-color: #1890ff;
+    }
+  }
+
+  .el-button {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 15px;
+    height: 32px;
+    border-radius: 4px;
+
+    &.el-button--primary {
+      background: #1890ff;
+      border-color: #1890ff;
+    }
+
+    &.el-button--warning {
+      background: #faad14;
+      border-color: #faad14;
+    }
   }
 }
 
-// 响应式适配
+.maintenance-content {
+  ::v-deep .el-alert {
+    border-radius: 6px;
+    border: 1px solid #91d5ff;
+    background: #e6f7ff;
+
+    .el-alert__title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .el-alert__description {
+      font-size: 13px;
+      margin-top: 8px;
+    }
+  }
+
+  .el-checkbox {
+    margin-top: 20px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+}
+
+// 响应式布局
 @media (max-width: 1200px) {
   .page-content {
     flex-direction: column;
@@ -1808,8 +1846,8 @@ export default {
     width: 100%;
   }
 
-  .data-overview {
-    grid-template-columns: repeat(2, 1fr);
+  .params-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 
@@ -1818,84 +1856,38 @@ export default {
     padding: 12px;
   }
 
-  .chart-controls {
+  .page-content {
+    gap: 12px;
+  }
+
+  .device-basic {
     flex-direction: column;
-    align-items: flex-start !important;
-    gap: 12px !important;
-  }
+    align-items: center;
+    text-align: center;
 
-  .data-overview {
-    grid-template-columns: 1fr;
-    margin: 16px;
-  }
-
-  .device-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .events-filter {
-    .el-button {
-      margin-bottom: 8px;
+    .device-image {
+      margin: 0 0 16px 0;
     }
   }
 
-  .timeline-dates {
+  .status-overview {
     flex-direction: column !important;
-    gap: 8px !important;
-  }
-
-  .detail-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
   }
-}
-// 🔥 新增：页面加载动画样式
-.page-loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(4px);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 
-  .loading-content {
-    text-align: center;
-    padding: 40px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  .params-grid {
+    grid-template-columns: 1fr !important;
+  }
 
-    .loading-spinner {
-      font-size: 32px;
-      color: #1890ff;
-      margin-bottom: 16px;
+  .chart-header {
+    .chart-controls {
+      flex-direction: column;
+      align-items: stretch;
 
-      i {
-        animation: rotate 1s linear infinite;
+      .control-group {
+        width: 100%;
       }
     }
-
-    .loading-text {
-      color: #666;
-      font-size: 14px;
-      font-weight: 500;
-    }
-  }
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
   }
 }
 </style>

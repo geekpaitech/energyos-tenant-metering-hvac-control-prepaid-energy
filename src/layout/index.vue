@@ -2337,8 +2337,8 @@ export default {
       flex: 1;
 
       .submenu-icon {
-        font-size: 16px;
-        margin-right: 8px;
+        font-size: 18px;
+        margin-right: 10px;
         color: var(--primary-color);
       }
     }
@@ -2418,10 +2418,10 @@ export default {
         position: relative;
 
         .submenu-item-icon {
-          font-size: 14px;
-          margin-right: 10px;
+          font-size: 20px;
+          margin-right: 12px;
           color: var(--text-secondary);
-          width: 16px;
+          width: 22px;
           text-align: center;
         }
 
@@ -2430,6 +2430,7 @@ export default {
           font-weight: 400;
           line-height: 1.4;
           flex: 1;
+          vertical-align: middle;
         }
 
         .expand-icon {
@@ -2512,11 +2513,13 @@ export default {
             font-size: 13px;
 
             .submenu-child-icon {
-              font-size: 12px;
-              margin-right: 10px;
-              color: var(--text-secondary);
-              width: 14px;
-              text-align: center;
+              font-size: 18px !important;  // 子项稍小一点，保持层级感
+            margin-right: 10px;
+            color: var(--text-secondary);
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+            line-height: 1;
             }
 
             .submenu-child-title {
@@ -2578,11 +2581,13 @@ export default {
         font-size: 14px;
 
         .submenu-item-icon {
-          font-size: 14px;
-          margin-right: 10px;
+          font-size: 20px !important;  // 统一改为20px
+          margin-right: 12px;
           color: var(--text-secondary);
-          width: 16px;
+          width: 22px;
           text-align: center;
+          flex-shrink: 0;  // 防止图标被压缩
+          line-height: 1;
         }
 
         .submenu-item-title {

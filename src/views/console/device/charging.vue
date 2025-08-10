@@ -3,53 +3,11 @@
     <!-- 顶部操作栏 -->
     <div class="top-bar">
       <div class="page-title">
-        <i class="el-icon-s-grid"></i>
-        <span>充电桩设备管理</span>
       </div>
       <div class="action-buttons">
         <el-button icon="el-icon-download" plain>导出数据</el-button>
         <el-button icon="el-icon-refresh" @click="refreshData">刷新</el-button>
         <el-button type="primary" icon="el-icon-plus" @click="showAddDialog">添加设备</el-button>
-      </div>
-    </div>
-
-    <!-- 统计卡片 -->
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-icon blue">
-          <i class="el-icon-s-data"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ statistics.total }}</div>
-          <div class="stat-label">设备总数</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green">
-          <i class="el-icon-circle-check"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ statistics.online }}</div>
-          <div class="stat-label">在线设备</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon orange">
-          <i class="el-icon-loading"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ statistics.charging }}</div>
-          <div class="stat-label">充电中</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon red">
-          <i class="el-icon-warning"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ statistics.fault }}</div>
-          <div class="stat-label">故障设备</div>
-        </div>
       </div>
     </div>
 
@@ -726,8 +684,7 @@ export default {
 <style scoped>
 .charging-station-page {
   min-height: 100vh;
-  background: #f0f2f5;
-  padding: 24px;
+  padding: 16px;
 }
 
 /* 顶部操作栏 */

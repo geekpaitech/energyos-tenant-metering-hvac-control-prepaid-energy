@@ -365,8 +365,8 @@ export default {
     transition: all 0.2s ease;
 
     .menu-icon {
-      font-size: 20px;
-      margin-bottom: 6px;
+      font-size: 22px;
+      margin-bottom: 8px;
       color: inherit;
       transition: all 0.2s ease;
     }
@@ -481,8 +481,8 @@ export default {
       min-height: 60px;
 
       .menu-icon {
-        font-size: 18px;
-        margin-bottom: 4px;
+        font-size: 20px;
+        margin-bottom: 6px;
       }
 
       .menu-title {

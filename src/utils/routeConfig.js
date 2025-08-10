@@ -26,13 +26,13 @@ export const consoleRoutes = [
         path: 'test',
         name: 'ConsoleTest',
         component: () => import('@/views/console/test/index'),
-        meta: { title: '区域配置', icon: 'el-icon-cpu' }
+        meta: { title: '区域配置', icon: 'icon-shezhipeizhi' }
       },
       {
         path: 'visualization',
         name: 'ConsoleVisualization',
         component: () => import('@/views/console/test/visualization'),
-        meta: { title: '区域可视化', icon: 'el-icon-cpu' }
+        meta: { title: '区域可视化', icon: 'icon-keshihua' }
       }
     ]
   },
@@ -47,7 +47,7 @@ export const consoleRoutes = [
         path: 'electricity',
         name: 'DeviceElectricity',
         component: () => import('@/views/console/device/electricity'),
-        meta: { title: '电表', icon: 'icon-dianbiao' }
+        meta: { title: '电表', icon: 'icon-dianbiao1' }
       },
       {
         path: 'electricity/detail/:id',
@@ -56,7 +56,7 @@ export const consoleRoutes = [
         hidden: true, // 在路由根级别也设置
         meta: { 
           title: '电表详情', 
-          icon: 'el-icon-monitor',
+          icon: 'icon-dianbiao1',
           hidden: true, // 在菜单中隐藏
           activeMenu: '/device/electricity' // 激活父级菜单
         }
@@ -65,7 +65,7 @@ export const consoleRoutes = [
         path: 'conditioning',
         name: 'DeviceConditioning',
         component: () => import('@/views/console/device/conditioning'),
-        meta: { title: '空调', icon: 'el-icon-wind-power' }
+        meta: { title: '空调', icon: 'icon-kongtiao' }
       },
       {
         path: 'conditioning/detail/:id',
@@ -74,7 +74,7 @@ export const consoleRoutes = [
         hidden: true, // 在路由根级别也设置
         meta: { 
           title: '空调详情', 
-          icon: 'el-icon-monitor',
+          icon: 'icon-kongtiao',
           hidden: true, // 在菜单中隐藏
           activeMenu: '/device/conditioning' // 激活父级菜单
         }
@@ -83,7 +83,7 @@ export const consoleRoutes = [
         path: 'charging',
         name: 'DeviceCharging',
         component: () => import('@/views/console/device/charging'),
-        meta: { title: '充电桩', icon: 'el-icon-data-analysis' }
+        meta: { title: '充电桩', icon: 'icon-chongdianzhuang1' }
       },
       {
         path: 'charging/detail/:id',
@@ -92,34 +92,17 @@ export const consoleRoutes = [
         hidden: true, // 在路由根级别也设置
         meta: { 
           title: '充电桩详情', 
-          icon: 'el-icon-monitor',
+          icon: 'icon-chongdianzhuang1',
           hidden: true, // 在菜单中隐藏
           activeMenu: '/device/charging' // 激活父级菜单
         }
       },
-      {
-        path: 'lighting',
-        name: 'DeviceLighting',
-        component: () => import('@/views/console/device/lighting'),
-        meta: { title: '照明', icon: 'el-icon-sunny' }
-      },
-      {
-        path: 'lighting/detail/:id',
-        name: 'DeviceLightingDetail',
-        component: () => import('@/views/console/device/lighting/detail'),
-        hidden: true, // 在路由根级别也设置
-        meta: { 
-          title: '照明详情', 
-          icon: 'el-icon-monitor',
-          hidden: true, // 在菜单中隐藏
-          activeMenu: '/device/lighting' // 激活父级菜单
-        }
-      },
+
       {
         path: 'watermeter',
         name: 'DeviceWatermeter',
         component: () => import('@/views/console/device/watermeter'),
-        meta: { title: '水表', icon: 'el-icon-coffee-cup' }
+        meta: { title: '水表', icon: 'icon-shuibiao' }
       },
       {
         path: 'watermeter/detail/:id',
@@ -128,16 +111,16 @@ export const consoleRoutes = [
         hidden: true, // 在路由根级别也设置
         meta: { 
           title: '水表详情', 
-          icon: 'el-icon-monitor',
+          icon: 'icon-dianbiao1',
           hidden: true, // 在菜单中隐藏
-          activeMenu: '/device/watermeter' // 激活父级菜单
+          activeMenu: 'icon-shuibiao' // 激活父级菜单
         }
       },
       {
         path: 'parking',
         name: 'DeviceParking',
         component: () => import('@/views/console/device/parking'),
-        meta: { title: '车位', icon: 'el-icon-place' }
+        meta: { title: '车位', icon: 'icon-peizhitubiaosvg-' }
       },
       {
         path: 'parking/detail/:id',
@@ -146,16 +129,34 @@ export const consoleRoutes = [
         hidden: true, // 在路由根级别也设置
         meta: { 
           title: '车位详情', 
-          icon: 'el-icon-monitor',
+          icon: 'icon-peizhitubiaosvg-',
           hidden: true, // 在菜单中隐藏
           activeMenu: '/device/parking' // 激活父级菜单
+        }
+      },
+      {
+        path: 'lighting',
+        name: 'DeviceLighting',
+        component: () => import('@/views/console/device/lighting'),
+        meta: { title: '照明', icon: 'icon-zhaoming1' }
+      },
+      {
+        path: 'lighting/detail/:id',
+        name: 'DeviceLightingDetail',
+        component: () => import('@/views/console/device/lighting/detail'),
+        hidden: true, // 在路由根级别也设置
+        meta: { 
+          title: '照明详情', 
+          icon: 'icon-zhaoming1',
+          hidden: true, // 在菜单中隐藏
+          activeMenu: '/device/lighting' // 激活父级菜单
         }
       },
       {
         path: 'doorlock',
         name: 'DeviceDoorlock',
         component: () => import('@/views/console/device/doorlock'),
-        meta: { title: '门锁', icon: 'el-icon-lock' }
+        meta: { title: '门锁', icon: 'icon-fangjian' }
       },
       
       // 带标签的分隔线
@@ -173,19 +174,19 @@ export const consoleRoutes = [
         path: 'electricitySharing',
         name: 'ElectricitySharing',
         component: () => import('@/views/console/device/publicshare/electricitySharing'),
-        meta: { title: '电表公摊', icon: 'el-icon-share' }
+        meta: { title: '电表公摊', icon: 'icon-dianbiao' }
       },
       {
         path: 'watermeterSharing',
         name: 'WatermeterSharing',
         component: () => import('@/views/console/device/publicshare/watermeterSharing'),
-        meta: { title: '水表公摊', icon: 'el-icon-share' }
+        meta: { title: '水表公摊', icon: 'icon-shuibiao' }
       },
       {
         path: 'conditioningSharing',
         name: 'ConditioningSharing',
         component: () => import('@/views/console/device/publicshare/conditioningSharing'),
-        meta: { title: '空调公摊', icon: 'el-icon-share' }
+        meta: { title: '空调公摊', icon: 'icon-kongtiaokaifang' }
       }
     ]
   },
