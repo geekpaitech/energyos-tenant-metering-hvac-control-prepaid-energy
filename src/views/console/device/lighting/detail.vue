@@ -1,12 +1,15 @@
 <template>
   <div class="lighting-dashboard">
+    <!-- 🔥 页面顶部锚点 -->
+    <div ref="pageTop" class="page-top-anchor"></div>
+    
     <!-- 页面加载动画 -->
     <div v-if="pageLoading" class="page-loading-overlay">
       <div class="loading-content">
         <div class="loading-spinner">
           <i class="el-icon-loading"></i>
         </div>
-        <div class="loading-text">正在加载设备详情...</div>
+        <div class="loading-text">正在加载{{ areaInfo.name }}详情...</div>
       </div>
     </div>
 
@@ -19,17 +22,17 @@
           </svg>
         </button>
         <div class="title-content">
-          <h1 class="dashboard-title">{{ deviceInfo.name }}</h1>
-          <div class="device-meta">{{ deviceInfo.location }} · {{ deviceInfo.id }}</div>
+          <h1 class="dashboard-title">{{ areaInfo.name }}</h1>
+          <div class="device-meta">{{ areaInfo.floor }} · {{ areaInfo.total }}台设备 · 区域ID: {{ areaInfo.id }}</div>
         </div>
       </div>
       <div class="header-right">
-        <div class="status-indicator" :class="{ 'online': deviceInfo.status }">
+        <div class="status-indicator" :class="{ 'online': areaInfo.online > 0 }">
           <div class="status-dot"></div>
-          <span class="status-text">{{ deviceInfo.status ? '在线' : '离线' }}</span>
+          <span class="status-text">{{ areaInfo.online }}/{{ areaInfo.total }} 在线</span>
         </div>
-        <button class="control-btn primary" @click="toggleDevice">
-          {{ deviceInfo.status ? '关闭设备' : '开启设备' }}
+        <button class="control-btn primary" @click="toggleAreaLights">
+          {{ areaInfo.enabled ? '关闭区域' : '开启区域' }}
         </button>
       </div>
     </div>
@@ -39,29 +42,29 @@
       <div class="stat-card">
         <div class="stat-content">
           <div class="stat-label">当前亮度</div>
-          <div class="stat-value">{{ deviceInfo.brightness }}<span class="unit">%</span></div>
+          <div class="stat-value">{{ areaInfo.brightness }}<span class="unit">%</span></div>
         </div>
       </div>
 
       <div class="stat-card">
         <div class="stat-content">
-          <div class="stat-label">色温</div>
-          <div class="stat-value">{{ deviceInfo.colorTemp }}<span class="unit">K</span></div>
+          <div class="stat-label">设备开启</div>
+          <div class="stat-value">{{ areaInfo.lightsOn }}<span class="unit">/{{ areaInfo.total }}</span></div>
         </div>
       </div>
 
       <div class="stat-card">
         <div class="stat-content">
-          <div class="stat-label">功率</div>
-          <div class="stat-value">{{ deviceInfo.currentPower }}<span class="unit">W</span></div>
+          <div class="stat-label">区域功率</div>
+          <div class="stat-value">{{ currentAreaPower }}<span class="unit">kW</span></div>
         </div>
       </div>
 
       <div class="stat-card">
         <div class="stat-content">
-          <div class="stat-label">设备温度</div>
-          <div class="stat-value" :class="{ 'warning': deviceInfo.temperature > 65 }">
-            {{ deviceInfo.temperature }}<span class="unit">°C</span>
+          <div class="stat-label">平均温度</div>
+          <div class="stat-value" :class="{ 'warning': avgTemperature > 65 }">
+            {{ avgTemperature }}<span class="unit">°C</span>
           </div>
         </div>
       </div>
@@ -74,7 +77,7 @@
         <div class="chart-container">
           <!-- 图表头部 -->
           <div class="chart-header">
-            <h2 class="chart-title">能耗监控</h2>
+            <h2 class="chart-title">{{ areaInfo.name }} - 能耗监控</h2>
             <div class="chart-controls">
               <button 
                 v-for="period in chartPeriods" 
@@ -93,15 +96,15 @@
           <div class="chart-summary">
             <div class="summary-item">
               <span class="summary-label">今日用电</span>
-              <span class="summary-value">0.87 kWh</span>
+              <span class="summary-value">{{ todayUsage }} kWh</span>
             </div>
             <div class="summary-item">
               <span class="summary-label">月度预估</span>
-              <span class="summary-value">26.1 kWh</span>
+              <span class="summary-value">{{ monthlyEstimate }} kWh</span>
             </div>
             <div class="summary-item">
               <span class="summary-label">能效比</span>
-              <span class="summary-value">94.2%</span>
+              <span class="summary-value">{{ energyEfficiency }}%</span>
             </div>
           </div>
         </div>
@@ -109,9 +112,9 @@
         <!-- 设备健康监控 -->
         <div class="monitor-container">
           <div class="monitor-header">
-            <h3 class="monitor-title">设备健康监控</h3>
+            <h3 class="monitor-title">区域健康监控</h3>
             <div class="health-badge">
-              <span class="health-status excellent">优秀</span>
+              <span class="health-status" :class="healthLevel">{{ healthStatusText }}</span>
             </div>
           </div>
           
@@ -119,8 +122,8 @@
           <div class="health-gauge-wrapper">
             <div class="health-gauge" ref="healthGauge"></div>
             <div class="gauge-description">
-              <div class="health-score">85分</div>
-              <div class="health-text">设备运行良好</div>
+              <div class="health-score">{{ healthScore }}分</div>
+              <div class="health-text">{{ healthDescription }}</div>
             </div>
           </div>
           
@@ -133,8 +136,8 @@
                 </svg>
               </div>
               <div class="stat-content">
-                <span class="stat-name">运行时长</span>
-                <span class="stat-value">2,847 小时</span>
+                <span class="stat-name">平均运行</span>
+                <span class="stat-value">{{ avgRuntime }} 小时</span>
               </div>
             </div>
             
@@ -145,8 +148,8 @@
                 </svg>
               </div>
               <div class="stat-content">
-                <span class="stat-name">启动次数</span>
-                <span class="stat-value">1,423 次</span>
+                <span class="stat-name">设备在线</span>
+                <span class="stat-value">{{ areaInfo.online }}/{{ areaInfo.total }} 台</span>
               </div>
             </div>
             
@@ -157,8 +160,8 @@
                 </svg>
               </div>
               <div class="stat-content">
-                <span class="stat-name">故障次数</span>
-                <span class="stat-value">0 次</span>
+                <span class="stat-name">故障设备</span>
+                <span class="stat-value">{{ faultDevices }} 台</span>
               </div>
             </div>
             
@@ -170,7 +173,7 @@
               </div>
               <div class="stat-content">
                 <span class="stat-name">维护周期</span>
-                <span class="stat-value">30 天后</span>
+                <span class="stat-value">{{ maintenanceDays }} 天后</span>
               </div>
             </div>
           </div>
@@ -180,43 +183,43 @@
       <!-- 控制面板 -->
       <div class="control-section">
         <div class="section-header">
-          <h2 class="section-title">设备控制</h2>
+          <h2 class="section-title">区域控制</h2>
         </div>
 
         <div class="control-panel">
           <div class="control-item">
             <div class="control-info">
-              <span class="control-label">亮度调节</span>
-              <span class="control-desc">当前 {{ deviceInfo.brightness }}%</span>
+              <span class="control-label">区域亮度调节</span>
+              <span class="control-desc">当前 {{ areaInfo.brightness }}% - 影响{{ areaInfo.lightsOn }}台设备</span>
             </div>
             <div class="control-input">
               <input 
                 type="range" 
-                v-model="deviceInfo.brightness" 
+                v-model="areaInfo.brightness" 
                 min="0" 
                 max="100" 
-                :disabled="!deviceInfo.status"
-                @input="adjustBrightness"
+                :disabled="!areaInfo.enabled"
+                @input="adjustAreaBrightness"
                 class="slider-input">
-              <div class="slider-display">{{ deviceInfo.brightness }}%</div>
+              <div class="slider-display">{{ areaInfo.brightness }}%</div>
             </div>
           </div>
 
           <div class="control-item">
             <div class="control-info">
               <span class="control-label">色温调节</span>
-              <span class="control-desc">当前 {{ deviceInfo.colorTemp }}K ({{ getColorTempStatus(deviceInfo.colorTemp) }})</span>
+              <span class="control-desc">当前 {{ currentColorTemp }}K ({{ getColorTempStatus(currentColorTemp) }})</span>
             </div>
             <div class="control-input">
               <input 
                 type="range" 
-                v-model="deviceInfo.colorTemp" 
+                v-model="currentColorTemp" 
                 min="2700" 
                 max="6500" 
-                :disabled="!deviceInfo.status"
+                :disabled="!areaInfo.enabled"
                 @input="adjustColorTemp"
                 class="slider-input">
-              <div class="slider-display">{{ deviceInfo.colorTemp }}K</div>
+              <div class="slider-display">{{ currentColorTemp }}K</div>
             </div>
           </div>
         </div>
@@ -225,12 +228,12 @@
       <!-- 场景模式 -->
       <div class="scene-section">
         <div class="section-header">
-          <h2 class="section-title">场景模式</h2>
+          <h2 class="section-title">{{ areaInfo.name }} 场景模式</h2>
         </div>
 
         <div class="scene-grid">
           <div 
-            v-for="scene in sceneList" 
+            v-for="scene in filteredScenes" 
             :key="scene.id"
             :class="['scene-card', { 'active': activeScene === scene.id }]"
             @click="applyScene(scene)">
@@ -256,50 +259,51 @@
         </div>
       </div>
 
-      <!-- 定时任务 -->
-      <div class="schedule-section">
+      <!-- 设备列表 -->
+      <div class="device-list-section">
         <div class="section-header">
-          <h2 class="section-title">定时任务</h2>
-          <button class="add-btn" @click="addSchedule">
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
-            </svg>
-            添加任务
-          </button>
+          <h2 class="section-title">{{ areaInfo.name }} 设备列表</h2>
+          <span class="device-count">共 {{ areaDevices.length }} 台设备</span>
         </div>
 
-        <div class="schedule-table">
+        <div class="device-table">
           <div class="table-header">
-            <div class="table-cell">时间</div>
-            <div class="table-cell">动作</div>
-            <div class="table-cell">执行日期</div>
+            <div class="table-cell">设备编号</div>
+            <div class="table-cell">设备名称</div>
+            <div class="table-cell">设备类型</div>
             <div class="table-cell">状态</div>
+            <div class="table-cell">亮度</div>
+            <div class="table-cell">功率</div>
             <div class="table-cell">操作</div>
           </div>
 
           <div class="table-body">
-            <div v-for="schedule in scheduleList" :key="schedule.id" class="table-row">
+            <div v-for="device in areaDevices" :key="device.id" class="table-row">
               <div class="table-cell">
-                <span class="schedule-time">{{ schedule.time }}</span>
+                <span class="device-id">{{ device.id }}</span>
               </div>
               <div class="table-cell">
-                <span class="schedule-action">{{ schedule.action }}</span>
+                <span class="device-name">{{ device.name }}</span>
               </div>
               <div class="table-cell">
-                <div class="schedule-days">
-                  <span v-for="day in schedule.activeDays.slice(0, 3)" :key="day" class="day-tag">{{ day.charAt(1) }}</span>
-                  <span v-if="schedule.activeDays.length > 3" class="day-more">+{{ schedule.activeDays.length - 3 }}</span>
-                </div>
+                <span class="device-type">{{ device.type }}</span>
               </div>
               <div class="table-cell">
-                <span :class="['status-tag', schedule.enabled ? 'enabled' : 'disabled']">
-                  {{ schedule.enabled ? '启用' : '禁用' }}
+                <span :class="['status-tag', device.status ? 'online' : 'offline']">
+                  {{ device.status ? '开启' : '关闭' }}
                 </span>
               </div>
               <div class="table-cell">
-                <button class="action-btn" @click="toggleSchedule(schedule)">
-                  {{ schedule.enabled ? '禁用' : '启用' }}
+                <span class="brightness-value">{{ device.brightness }}%</span>
+              </div>
+              <div class="table-cell">
+                <span class="power-value">{{ device.currentPower }}W</span>
+              </div>
+              <div class="table-cell">
+                <button class="action-btn" @click="toggleSingleDevice(device)">
+                  {{ device.status ? '关闭' : '开启' }}
                 </button>
+                <button class="action-btn secondary" @click="viewDeviceDetail(device)">详情</button>
               </div>
             </div>
           </div>
@@ -309,29 +313,29 @@
       <!-- 智能分析 -->
       <div class="analysis-section">
         <div class="section-header">
-          <h2 class="section-title">智能分析</h2>
+          <h2 class="section-title">{{ areaInfo.name }} 智能分析</h2>
         </div>
 
         <div class="analysis-grid">
           <div class="analysis-card">
             <div class="analysis-header">
-              <span class="analysis-type">优化建议</span>
-              <span class="analysis-priority high">高优先级</span>
+              <span class="analysis-type">能耗优化</span>
+              <span class="analysis-priority" :class="optimizationLevel">{{ optimizationText }}</span>
             </div>
             <div class="analysis-content">
-              <div class="analysis-title">能耗优化建议</div>
-              <div class="analysis-desc">检测到工作日8-18点为高频使用时段，建议设置自动调光策略可节省15%电能</div>
+              <div class="analysis-title">{{ optimizationSuggestion.title }}</div>
+              <div class="analysis-desc">{{ optimizationSuggestion.description }}</div>
             </div>
           </div>
 
           <div class="analysis-card">
             <div class="analysis-header">
-              <span class="analysis-type">维护提醒</span>
+              <span class="analysis-type">设备状态</span>
               <span class="analysis-priority normal">正常</span>
             </div>
             <div class="analysis-content">
-              <div class="analysis-title">设备状态良好</div>
-              <div class="analysis-desc">设备运行状态正常，建议30天后进行例行维护检查</div>
+              <div class="analysis-title">区域运行良好</div>
+              <div class="analysis-desc">{{ areaInfo.name }}共{{ areaInfo.total }}台设备，{{ areaInfo.online }}台在线，运行状态{{ healthDescription }}</div>
             </div>
           </div>
         </div>
@@ -342,32 +346,24 @@
 
 <script>
 export default {
-  name: 'LightingDashboard',
+  name: 'LightingAreaDetail',
   data() {
     return {
-      pageLoading: true, // 🔥 新增：页面加载状态
-      resizeTimer: null, // 🔥 新增：防抖定时器
+      pageLoading: true,
       selectedPeriod: '24H',
-      activeScene: 1,
+      activeScene: null,
+      currentColorTemp: 4200,
       
-      // 🔥 新增：路由参数存储
-      routeParams: {
-        deviceId: null,
+      // 区域信息 - 从路由参数动态生成
+      areaInfo: {
         id: null,
-        name: null
-      },
-      
-      deviceInfo: {
-        id: 'LED-A3-008',
-        name: '办公大厅主照明-08',
-        location: 'A栋3层办公大厅东区',
-        type: 'LED面板灯 48W',
-        status: true,
-        brightness: 75,
-        colorTemp: 4200,
-        currentPower: 36.5,
-        ratedPower: 48,
-        temperature: 47.2
+        name: '',
+        floor: '',
+        total: 0,
+        online: 0,
+        lightsOn: 0,
+        brightness: 0,
+        enabled: false
       },
 
       chartPeriods: [
@@ -376,56 +372,201 @@ export default {
         { label: '30D', value: '30D' }
       ],
 
-      sceneList: [
-        { id: 1, name: '工作模式', brightness: 90, colorTemp: 5000 },
-        { id: 2, name: '会议模式', brightness: 100, colorTemp: 4500 },
-        { id: 3, name: '休息模式', brightness: 40, colorTemp: 3000 },
-        { id: 4, name: '夜间模式', brightness: 15, colorTemp: 2700 }
+      // 场景列表 - 根据区域类型动态过滤
+      allScenes: [
+        { id: 1, name: '工作模式', brightness: 90, colorTemp: 5000, areas: ['办公', '前台', '会议'] },
+        { id: 2, name: '会议模式', brightness: 100, colorTemp: 4500, areas: ['会议', '办公'] },
+        { id: 3, name: '休息模式', brightness: 40, colorTemp: 3000, areas: ['休息', '接待'] },
+        { id: 4, name: '夜间模式', brightness: 15, colorTemp: 2700, areas: ['走廊', '洗手间', '储物'] },
+        { id: 5, name: '清洁模式', brightness: 100, colorTemp: 6000, areas: ['洗手间', '储物'] },
+        { id: 6, name: '通道模式', brightness: 60, colorTemp: 4000, areas: ['走廊'] }
       ],
 
-      scheduleList: [
-        { id: 1, time: '08:00', action: '切换工作模式', activeDays: ['周一', '周二', '周三', '周四', '周五'], enabled: true },
-        { id: 2, time: '12:00', action: '降低亮度至50%', activeDays: ['周一', '周二', '周三', '周四', '周五'], enabled: true },
-        { id: 3, time: '18:30', action: '切换夜间模式', activeDays: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'], enabled: true }
-      ],
-
-      peakHourUsage: 12.5,
-      normalHourUsage: 8.3,
-      valleyHourUsage: 5.2,
+      // 区域设备列表 - 动态生成
+      areaDevices: [],
 
       energyChart: null,
-      healthChart: null
+      healthChart: null,
+      updateTimer: null
+    }
+  },
+
+  computed: {
+    // 根据区域类型过滤适用场景
+    filteredScenes() {
+      const areaType = this.getAreaType(this.areaInfo.name)
+      return this.allScenes.filter(scene => 
+        scene.areas.some(area => areaType.includes(area))
+      )
+    },
+
+    // 当前区域功率
+    currentAreaPower() {
+      const totalPower = this.areaDevices.reduce((sum, device) => {
+        return sum + (device.status ? device.currentPower : 0)
+      }, 0)
+      return (totalPower / 1000).toFixed(1)
+    },
+
+    // 平均温度
+    avgTemperature() {
+      if (this.areaDevices.length === 0) return 25
+      const totalTemp = this.areaDevices.reduce((sum, device) => sum + device.temperature, 0)
+      return (totalTemp / this.areaDevices.length).toFixed(1)
+    },
+
+    // 今日用电量
+    todayUsage() {
+      const baseUsage = this.areaInfo.total * 0.5 // 基础用电量
+      const actualUsage = baseUsage * (this.areaInfo.lightsOn / this.areaInfo.total)
+      return actualUsage.toFixed(1)
+    },
+
+    // 月度预估
+    monthlyEstimate() {
+      return (this.todayUsage * 30 * 1.2).toFixed(0)
+    },
+
+    // 能效比
+    energyEfficiency() {
+      const efficiency = 85 + Math.random() * 10
+      return efficiency.toFixed(1)
+    },
+
+    // 健康分数
+    healthScore() {
+      const onlineRate = this.areaInfo.online / this.areaInfo.total
+      const baseScore = onlineRate * 80 + Math.random() * 15
+      return Math.min(100, Math.max(0, baseScore)).toFixed(0)
+    },
+
+    // 健康等级
+    healthLevel() {
+      const score = parseInt(this.healthScore)
+      if (score >= 85) return 'excellent'
+      if (score >= 70) return 'good'
+      return 'poor'
+    },
+
+    // 健康状态文本
+    healthStatusText() {
+      const score = parseInt(this.healthScore)
+      if (score >= 85) return '优秀'
+      if (score >= 70) return '良好'
+      return '需改善'
+    },
+
+    // 健康描述
+    healthDescription() {
+      const score = parseInt(this.healthScore)
+      if (score >= 85) return '运行状态优秀'
+      if (score >= 70) return '运行状态良好'
+      return '需要关注'
+    },
+
+    // 平均运行时长
+    avgRuntime() {
+      return Math.floor(Math.random() * 1000 + 2000)
+    },
+
+    // 故障设备数
+    faultDevices() {
+      return this.areaInfo.total - this.areaInfo.online
+    },
+
+    // 维护天数
+    maintenanceDays() {
+      return Math.floor(Math.random() * 60 + 15)
+    },
+
+    // 优化建议等级
+    optimizationLevel() {
+      const efficiency = parseFloat(this.energyEfficiency)
+      if (efficiency >= 90) return 'normal'
+      if (efficiency >= 80) return 'medium'
+      return 'high'
+    },
+
+    // 优化建议文本
+    optimizationText() {
+      const efficiency = parseFloat(this.energyEfficiency)
+      if (efficiency >= 90) return '正常'
+      if (efficiency >= 80) return '中等'
+      return '高优先级'
+    },
+
+    // 优化建议内容
+    optimizationSuggestion() {
+      const areaType = this.getAreaType(this.areaInfo.name)
+      const suggestions = {
+        '办公': {
+          title: '工作时段优化建议',
+          description: `检测到${this.areaInfo.name}在工作时段使用频率较高，建议设置自动调光策略可节省15%电能`
+        },
+        '会议': {
+          title: '会议室智能控制',
+          description: `建议为${this.areaInfo.name}配置人体感应和会议日程联动，预计可节能25%`
+        },
+        '走廊': {
+          title: '通道感应优化',
+          description: `${this.areaInfo.name}适合安装人体感应器，实现按需照明，预计节能40%`
+        },
+        '洗手间': {
+          title: '卫生间智能控制',
+          description: `建议${this.areaInfo.name}安装感应开关和定时关闭功能，可有效节约用电`
+        },
+        '休息': {
+          title: '休息区照明优化',
+          description: `${this.areaInfo.name}可采用暖色调低亮度设置，营造舒适环境的同时降低能耗`
+        },
+        '储物': {
+          title: '储物区域控制',
+          description: `${this.areaInfo.name}建议设置感应照明，平时保持关闭状态，仅在有人时开启`
+        },
+        'default': {
+          title: '区域能耗优化',
+          description: `根据${this.areaInfo.name}的使用模式，建议优化照明控制策略以提升能效`
+        }
+      }
+      
+      for (let key in suggestions) {
+        if (areaType.includes(key)) {
+          return suggestions[key]
+        }
+      }
+      return suggestions.default
     }
   },
 
   async mounted() {
-    console.log('照明设备详情页组件已挂载')
-
-    // 🔥 步骤1：提取路由参数
-    this.extractRouteParams()
-
-    // 🔥 步骤2：模拟加载数据
-    await this.loadDeviceData()
-
-    // 🔥 步骤3：加载echarts并初始化图表
+    console.log('照明区域详情页组件已挂载')
+    
+    // 🔥 立即滚动到页面顶部
+    this.scrollToPageTop()
+    
+    await this.loadAreaData()
+    
     if (typeof echarts === 'undefined') {
       await this.loadEcharts()
     }
     this.initCharts()
-
-    // 🔥 步骤4：启动实时更新和事件监听
     this.startRealtimeUpdate()
-    this.$nextTick(() => {
-      this.handleLayoutChange()
-    })
+  },
+
+  // 🔥 处理keep-alive缓存的情况
+  activated() {
+    this.scrollToPageTop()
+  },
+
+  // 🔥 监听路由变化
+  watch: {
+    '$route'() {
+      this.scrollToPageTop()
+    }
   },
 
   beforeDestroy() {
-    // 清理定时器和事件监听
     this.stopRealtimeUpdate()
-    clearTimeout(this.resizeTimer)
-    window.removeEventListener('resize', this.handleResize)
-    
     if (this.energyChart) {
       this.energyChart.dispose()
     }
@@ -435,87 +576,176 @@ export default {
   },
 
   methods: {
-    // 🔥 新增：提取路由参数
-    extractRouteParams() {
-      this.routeParams.deviceId = this.$route.params.id || this.$route.query.deviceId || null
-      this.routeParams.id = this.$route.query.id || null
-      this.routeParams.name = this.$route.query.name || null
-      
-      console.log('提取到的路由参数:', this.routeParams)
-    },
-
-    // 🔥 新增：加载设备数据
-    async loadDeviceData() {
+    // 加载区域数据
+    async loadAreaData() {
       this.pageLoading = true
       
       try {
         await new Promise(resolve => setTimeout(resolve, 1500))
         
-        if (this.routeParams.deviceId) {
-          this.simulateDataByDeviceId(this.routeParams.deviceId)
-        } else {
-          this.loadDefaultData()
-        }
+        // 从路由参数获取区域信息
+        const areaId = this.$route.params.id || this.$route.query.deviceId
+        const areaName = this.$route.query.name || this.getAreaNameById(areaId)
+        
+        // 根据区域ID和名称生成对应数据
+        this.generateAreaData(areaId, areaName)
+        this.generateAreaDevices()
+        
       } catch (error) {
-        this.$message.error('加载设备数据失败')
+        this.$message.error('加载区域数据失败')
       } finally {
         this.pageLoading = false
+        // 🔥 加载完成后确保页面在顶部
+        this.$nextTick(() => {
+          this.scrollToPageTop()
+        })
       }
     },
 
-    // 🔥 新增：根据设备ID模拟数据
-    simulateDataByDeviceId(deviceId) {
-      const deviceDataMap = {
-        'LED-A3-008': {
-          id: 'LED-A3-008',
-          name: '办公大厅主照明-08',
-          location: 'A栋3层办公大厅东区',
-          type: 'LED面板灯 48W',
-          status: true,
-          brightness: 75,
-          colorTemp: 4200,
-          currentPower: 36.5,
-          ratedPower: 48,
-          temperature: 47.2
-        },
-        'LED-B2-015': {
-          id: 'LED-B2-015',
-          name: '会议室灯具-15',
-          location: 'B栋2层会议室',
-          type: 'LED筒灯 24W',
-          status: false,
-          brightness: 0,
-          colorTemp: 4000,
-          currentPower: 0,
-          ratedPower: 24,
-          temperature: 25.0
-        },
-        default: {
-          id: this.routeParams.id || 'UNKNOWN',
-          name: this.routeParams.name || '未知设备',
-          location: '未知位置',
-          type: 'LED灯具',
-          status: true,
-          brightness: 50,
-          colorTemp: 4000,
-          currentPower: 20,
-          ratedPower: 40,
-          temperature: 35.0
-        }
+    // 根据区域ID获取区域名称
+    getAreaNameById(areaId) {
+      const areaMap = {
+        '1': '办公大厅',
+        '2': '会议室A', 
+        '3': '会议室B',
+        '4': '走廊过道',
+        '5': '休息区',
+        '6': '洗手间',
+        '7': '储物间',
+        '8': '前台接待'
+      }
+      return areaMap[areaId] || '未知区域'
+    },
+
+    // 生成区域数据
+    generateAreaData(areaId, areaName) {
+      // 根据区域类型设置不同的基础参数
+      const areaConfigs = {
+        '办公大厅': { total: 48, onlineRate: 0.94, lightsOnRate: 0.88, brightness: 85, floor: 'A栋3层' },
+        '会议室A': { total: 24, onlineRate: 1.0, lightsOnRate: 0.0, brightness: 0, floor: 'B栋2层' },
+        '会议室B': { total: 24, onlineRate: 0.96, lightsOnRate: 0.75, brightness: 70, floor: 'B栋2层' },
+        '走廊过道': { total: 36, onlineRate: 1.0, lightsOnRate: 1.0, brightness: 60, floor: '各楼层' },
+        '休息区': { total: 18, onlineRate: 1.0, lightsOnRate: 0.67, brightness: 40, floor: 'A栋1层' },
+        '洗手间': { total: 12, onlineRate: 1.0, lightsOnRate: 0.67, brightness: 100, floor: '各楼层' },
+        '储物间': { total: 8, onlineRate: 1.0, lightsOnRate: 0.0, brightness: 0, floor: 'B栋1层' },
+        '前台接待': { total: 16, onlineRate: 1.0, lightsOnRate: 0.5, brightness: 90, floor: 'A栋1层' }
       }
 
-      const deviceData = deviceDataMap[deviceId] || deviceDataMap['default']
-      Object.assign(this.deviceInfo, deviceData)
-      console.log('加载的设备数据:', this.deviceInfo)
+      const config = areaConfigs[areaName] || { total: 20, onlineRate: 0.9, lightsOnRate: 0.6, brightness: 60, floor: '未知楼层' }
+      
+      this.areaInfo = {
+        id: areaId,
+        name: areaName,
+        floor: config.floor,
+        total: config.total,
+        online: Math.floor(config.total * config.onlineRate),
+        lightsOn: Math.floor(config.total * config.lightsOnRate),
+        brightness: config.brightness,
+        enabled: config.brightness > 0
+      }
+
+      // 根据区域设置色温
+      this.currentColorTemp = this.getDefaultColorTemp(areaName)
     },
 
-    // 🔥 新增：加载默认数据
-    loadDefaultData() {
-      // 保持原有的默认数据
-      console.log('使用默认设备数据')
+    // 生成区域设备列表
+    generateAreaDevices() {
+      const devices = []
+      const deviceTypes = this.getDeviceTypes(this.areaInfo.name)
+      
+      for (let i = 1; i <= this.areaInfo.total; i++) {
+        const deviceType = deviceTypes[Math.floor(Math.random() * deviceTypes.length)]
+        const isOnline = i <= this.areaInfo.online
+        const isOn = i <= this.areaInfo.lightsOn
+        
+        devices.push({
+          id: `${this.areaInfo.name.charAt(0)}${String(i).padStart(3, '0')}`,
+          name: `${this.areaInfo.name}${deviceType.name}-${String(i).padStart(2, '0')}`,
+          type: deviceType.name,
+          status: isOnline && isOn,
+          brightness: isOnline && isOn ? this.areaInfo.brightness : 0,
+          ratedPower: deviceType.power,
+          currentPower: isOnline && isOn ? Math.floor(deviceType.power * (this.areaInfo.brightness / 100)) : 0,
+          temperature: isOnline ? (25 + Math.random() * 20 + (isOn ? 10 : 0)) : 25,
+          online: isOnline
+        })
+      }
+      
+      this.areaDevices = devices
     },
 
-    // 🔥 新增：动态加载echarts
+    // 获取区域类型
+    getAreaType(areaName) {
+      const typeMap = {
+        '办公大厅': ['办公'],
+        '会议室A': ['会议'],
+        '会议室B': ['会议'], 
+        '走廊过道': ['走廊'],
+        '休息区': ['休息'],
+        '洗手间': ['洗手间'],
+        '储物间': ['储物'],
+        '前台接待': ['前台', '接待']
+      }
+      return typeMap[areaName] || ['通用']
+    },
+
+    // 获取设备类型
+    getDeviceTypes(areaName) {
+      const deviceMap = {
+        '办公大厅': [
+          { name: 'LED面板灯', power: 48 },
+          { name: 'LED筒灯', power: 24 },
+          { name: '装饰射灯', power: 18 }
+        ],
+        '会议室A': [
+          { name: 'LED筒灯', power: 24 },
+          { name: '会议灯', power: 36 }
+        ],
+        '会议室B': [
+          { name: 'LED筒灯', power: 24 },
+          { name: '会议灯', power: 36 }
+        ],
+        '走廊过道': [
+          { name: 'LED灯带', power: 18 },
+          { name: '导光灯', power: 12 }
+        ],
+        '休息区': [
+          { name: '暖光射灯', power: 15 },
+          { name: '氛围灯', power: 8 }
+        ],
+        '洗手间': [
+          { name: '防水LED灯', power: 20 },
+          { name: '镜前灯', power: 15 }
+        ],
+        '储物间': [
+          { name: '工业LED灯', power: 30 },
+          { name: '感应灯', power: 18 }
+        ],
+        '前台接待': [
+          { name: '装饰吊灯', power: 60 },
+          { name: 'LED筒灯', power: 24 },
+          { name: '背景灯', power: 12 }
+        ]
+      }
+      return deviceMap[areaName] || [{ name: 'LED灯', power: 24 }]
+    },
+
+    // 获取默认色温
+    getDefaultColorTemp(areaName) {
+      const colorTempMap = {
+        '办公大厅': 5000,
+        '会议室A': 4500,
+        '会议室B': 4500,
+        '走廊过道': 4000,
+        '休息区': 3000,
+        '洗手间': 4200,
+        '储物间': 4000,
+        '前台接待': 4500
+      }
+      return colorTempMap[areaName] || 4200
+    },
+
+    // 动态加载echarts
     loadEcharts() {
       return new Promise((resolve, reject) => {
         if (typeof echarts !== 'undefined') {
@@ -525,56 +755,27 @@ export default {
 
         const script = document.createElement('script')
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js'
-        script.onload = () => {
-          console.log('ECharts加载成功')
-          resolve()
-        }
-        script.onerror = () => {
-          console.error('ECharts加载失败')
-          reject(new Error('ECharts loading failed'))
-        }
+        script.onload = () => resolve()
+        script.onerror = () => reject(new Error('ECharts loading failed'))
         document.head.appendChild(script)
       })
-    },
-
-    // 🔥 新增：处理布局变化
-    handleLayoutChange() {
-      this.resizeTimer = setTimeout(() => {
-        if (this.energyChart) {
-          console.log('照明设备详情页：执行图表重绘')
-          this.energyChart.resize()
-        }
-        if (this.healthChart) {
-          this.healthChart.resize()
-        }
-      }, 350)
-    },
-
-    // 🔥 新增：防抖的resize处理
-    handleResize() {
-      clearTimeout(this.resizeTimer)
-      this.resizeTimer = setTimeout(() => {
-        if (this.energyChart) {
-          this.energyChart.resize()
-        }
-        if (this.healthChart) {
-          this.healthChart.resize()
-        }
-      }, 100)
     },
 
     initCharts() {
       this.$nextTick(() => {
         this.initEnergyChart()
         this.initHealthChart()
-        // 🔥 新增：监听窗口大小变化
-        window.addEventListener('resize', this.handleResize)
       })
     },
 
     initEnergyChart() {
       if (!this.$refs.energyChart || typeof echarts === 'undefined') return
       this.energyChart = echarts.init(this.$refs.energyChart)
+      
+      // 根据区域生成不同的能耗数据
+      const timeLabels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00']
+      const powerData = this.generatePowerData()
+      const energyData = this.generateEnergyData(powerData)
       
       const option = {
         color: ['#3b82f6', '#10b981'],
@@ -605,7 +806,7 @@ export default {
         },
         xAxis: {
           type: 'category',
-          data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+          data: timeLabels,
           axisTick: { show: false },
           axisLine: { lineStyle: { color: '#e8e8e8' } },
           axisLabel: { color: '#666' }
@@ -613,7 +814,7 @@ export default {
         yAxis: [
           {
             type: 'value',
-            name: '功率(W)',
+            name: '功率(kW)',
             nameTextStyle: { color: '#666' },
             splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
             axisLine: { show: false },
@@ -634,7 +835,7 @@ export default {
           {
             name: '功率',
             type: 'line',
-            data: [25, 28, 35, 42, 38, 30, 25],
+            data: powerData,
             smooth: true,
             lineStyle: { width: 2 },
             areaStyle: {
@@ -653,7 +854,7 @@ export default {
             name: '能耗',
             type: 'line',
             yAxisIndex: 1,
-            data: [0.6, 1.2, 2.1, 3.5, 2.8, 1.8, 0.8],
+            data: energyData,
             smooth: true,
             lineStyle: { width: 2 },
             areaStyle: {
@@ -674,16 +875,44 @@ export default {
       this.energyChart.setOption(option)
     },
 
+    // 生成功率数据
+    generatePowerData() {
+      const areaType = this.getAreaType(this.areaInfo.name)[0]
+      const basePower = parseFloat(this.currentAreaPower)
+      
+      // 不同区域的用电模式
+      const patterns = {
+        '办公': [0.2, 0.1, 0.8, 1.0, 0.9, 0.6, 0.3],
+        '会议': [0.0, 0.0, 0.3, 0.8, 0.9, 0.2, 0.0],
+        '走廊': [0.3, 0.2, 0.6, 0.8, 0.8, 0.9, 0.5],
+        '洗手间': [0.2, 0.1, 0.7, 0.9, 0.8, 0.6, 0.3],
+        '休息': [0.1, 0.0, 0.4, 0.8, 0.9, 0.7, 0.2],
+        '储物': [0.0, 0.0, 0.2, 0.1, 0.1, 0.0, 0.0],
+        '前台': [0.1, 0.0, 0.9, 1.0, 0.9, 0.3, 0.1]
+      }
+      
+      const pattern = patterns[areaType] || patterns['办公']
+      return pattern.map(ratio => (basePower * ratio * (1 + Math.random() * 0.2)).toFixed(1))
+    },
+
+    // 生成能耗数据
+    generateEnergyData(powerData) {
+      return powerData.map((power, index) => {
+        const hours = index === 0 ? 4 : 4 // 每个时段4小时
+        return (parseFloat(power) * hours).toFixed(1)
+      })
+    },
+
     initHealthChart() {
       if (!this.$refs.healthGauge || typeof echarts === 'undefined') return
       this.healthChart = echarts.init(this.$refs.healthGauge)
       
-      const healthScore = 85 // 设备健康分数
+      const healthScore = parseInt(this.healthScore)
       
       const option = {
         series: [
           {
-            name: '设备健康度',
+            name: '区域健康度',
             type: 'gauge',
             center: ['50%', '45%'],
             radius: '75%',
@@ -694,9 +923,9 @@ export default {
               lineStyle: {
                 width: 10,
                 color: [
-                  [0.3, '#ef4444'],   // 0-30% 红色
-                  [0.7, '#f59e0b'],   // 30-70% 橙色
-                  [1, '#10b981']      // 70-100% 绿色
+                  [0.3, '#ef4444'],
+                  [0.7, '#f59e0b'],
+                  [1, '#10b981']
                 ]
               }
             },
@@ -730,13 +959,9 @@ export default {
               fontSize: 10,
               distance: -40,
               formatter: function (value) {
-                if (value === 30) {
-                  return '差'
-                } else if (value === 70) {
-                  return '良好'
-                } else if (value === 100) {
-                  return '优秀'
-                }
+                if (value === 30) return '差'
+                if (value === 70) return '良好'
+                if (value === 100) return '优秀'
                 return ''
               }
             },
@@ -781,46 +1006,104 @@ export default {
     },
 
     updateRealtimeData() {
-      if (this.deviceInfo.status) {
-        const basePower = (this.deviceInfo.brightness / 100) * this.deviceInfo.ratedPower
-        this.deviceInfo.currentPower = Number((basePower + (Math.random() - 0.5) * 2).toFixed(1))
-        
-        const baseTemp = 35 + (this.deviceInfo.currentPower / this.deviceInfo.ratedPower) * 20
-        this.deviceInfo.temperature = Number((baseTemp + (Math.random() - 0.5) * 3).toFixed(1))
-      }
+      // 更新设备实时数据
+      this.areaDevices.forEach(device => {
+        if (device.online && device.status) {
+          const basePower = (device.brightness / 100) * device.ratedPower
+          device.currentPower = Math.floor(basePower + (Math.random() - 0.5) * 4)
+          
+          const baseTemp = 25 + (device.currentPower / device.ratedPower) * 20
+          device.temperature = Number((baseTemp + (Math.random() - 0.5) * 3).toFixed(1))
+        }
+      })
     },
 
-    toggleDevice() {
-      this.deviceInfo.status = !this.deviceInfo.status
-      if (!this.deviceInfo.status) {
-        this.deviceInfo.currentPower = 0
+    toggleAreaLights() {
+      this.areaInfo.enabled = !this.areaInfo.enabled
+      
+      if (this.areaInfo.enabled) {
+        this.areaInfo.lightsOn = this.areaInfo.online
+        this.areaInfo.brightness = this.areaInfo.brightness || 80
+        this.$message.success(`已开启${this.areaInfo.name}所有照明`)
+      } else {
+        this.areaInfo.lightsOn = 0
+        this.areaInfo.brightness = 0
+        this.$message.info(`已关闭${this.areaInfo.name}所有照明`)
       }
+      
+      // 同步更新设备状态
+      this.areaDevices.forEach(device => {
+        if (device.online) {
+          device.status = this.areaInfo.enabled
+          device.brightness = this.areaInfo.brightness
+          device.currentPower = device.status ? Math.floor(device.ratedPower * (device.brightness / 100)) : 0
+        }
+      })
     },
 
-    adjustBrightness() {
-      if (this.deviceInfo.status) {
-        this.deviceInfo.currentPower = (this.deviceInfo.brightness / 100) * this.deviceInfo.ratedPower
+    adjustAreaBrightness() {
+      if (this.areaInfo.enabled) {
+        // 同步所有设备亮度
+        this.areaDevices.forEach(device => {
+          if (device.online && device.status) {
+            device.brightness = this.areaInfo.brightness
+            device.currentPower = Math.floor(device.ratedPower * (device.brightness / 100))
+          }
+        })
       }
     },
 
     adjustColorTemp() {
-      console.log(`色温调整为: ${this.deviceInfo.colorTemp}K`)
+      console.log(`${this.areaInfo.name}色温调整为: ${this.currentColorTemp}K`)
     },
 
     applyScene(scene) {
-      if (!this.deviceInfo.status) return
+      if (!this.areaInfo.enabled) {
+        this.$message.warning('请先开启区域照明')
+        return
+      }
       
       this.activeScene = scene.id
-      this.deviceInfo.brightness = scene.brightness
-      this.deviceInfo.colorTemp = scene.colorTemp
+      this.areaInfo.brightness = scene.brightness
+      this.currentColorTemp = scene.colorTemp
+      
+      // 同步所有设备
+      this.adjustAreaBrightness()
+      
+      this.$message.success(`已应用${scene.name}场景`)
     },
 
-    toggleSchedule(schedule) {
-      schedule.enabled = !schedule.enabled
+    toggleSingleDevice(device) {
+      if (!device.online) {
+        this.$message.warning('设备离线，无法操作')
+        return
+      }
+      
+      device.status = !device.status
+      if (device.status) {
+        device.brightness = this.areaInfo.brightness
+        device.currentPower = Math.floor(device.ratedPower * (device.brightness / 100))
+      } else {
+        device.brightness = 0
+        device.currentPower = 0
+      }
+      
+      // 更新区域统计
+      this.areaInfo.lightsOn = this.areaDevices.filter(d => d.status).length
+      
+      this.$message.success(`${device.name} 已${device.status ? '开启' : '关闭'}`)
     },
 
-    addSchedule() {
-      console.log('添加定时任务')
+    viewDeviceDetail(device) {
+      // 跳转到单个设备详情页
+      this.$router.push({
+        path: `/device/lighting/device/${device.id}`,
+        query: { 
+          name: device.name,
+          area: this.areaInfo.name,
+          type: device.type
+        }
+      })
     },
 
     getColorTempStatus(temp) {
@@ -829,8 +1112,27 @@ export default {
       return '冷白光'
     },
 
-    formatNumber(num) {
-      return Number(num).toFixed(1)
+    // 🔥 滚动到页面顶部 - 使用锚点定位
+    scrollToPageTop() {
+      // 方法1：使用ref定位到顶部锚点
+      if (this.$refs.pageTop) {
+        this.$refs.pageTop.scrollIntoView({ 
+          behavior: 'instant', 
+          block: 'start' 
+        })
+      }
+      
+      // 方法2：兜底方案
+      setTimeout(() => {
+        if (this.$refs.pageTop) {
+          this.$refs.pageTop.scrollIntoView({ 
+            behavior: 'instant', 
+            block: 'start' 
+          })
+        }
+        // 额外确保
+        window.scrollTo(0, 0)
+      }, 100)
     },
 
     goBack() {
@@ -841,13 +1143,142 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// 保持原有样式，新增以下内容
+
+.device-list-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.device-count {
+  font-size: 14px;
+  color: #909399;
+}
+
+.device-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 100px 1fr 100px 80px 80px 80px 140px;
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.table-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 100px 80px 80px 80px 140px;
+  border-top: 1px solid #f3f4f6;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #f9fafb;
+  }
+}
+
+.table-cell {
+  padding: 16px 12px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.device-id {
+  font-family: 'SF Mono', monospace;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.device-name {
+  color: #374151;
+  font-weight: 500;
+}
+
+.device-type {
+  color: #606266;
+  font-size: 13px;
+}
+
+.status-tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.online {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &.offline {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+.brightness-value, .power-value {
+  font-weight: 500;
+  color: #374151;
+}
+
+.action-btn {
+  padding: 4px 8px;
+  margin-right: 8px;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  &.secondary {
+    background: #ecf5ff;
+    color: #409eff;
+    
+    &:hover {
+      background: #d9ecff;
+    }
+  }
+}
+
+// 其他保持原有样式...
 .lighting-dashboard {
   min-height: 100vh;
   padding: 16px;
   background: #f8fafb;
 }
 
-// 🔥 新增：页面加载动画样式
+/* 🔥 页面顶部锚点 - 不可见但可定位 */
+.page-top-anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .page-loading-overlay {
   position: fixed;
   top: 0;
@@ -887,15 +1318,10 @@ export default {
 }
 
 @keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-// 顶部操作栏
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -1008,7 +1434,6 @@ export default {
   }
 }
 
-// 统计卡片
 .stats-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -1057,14 +1482,12 @@ export default {
   }
 }
 
-// 主内容区
 .main-content {
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
 }
 
-// 图表区域
 .chart-section {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -1156,7 +1579,6 @@ export default {
   color: #1f2937;
 }
 
-// 设备健康监控
 .monitor-container {
   padding: 24px;
   background: white;
@@ -1311,10 +1733,8 @@ export default {
   color: #1f2937;
 }
 
-// 各个区块
 .control-section,
 .scene-section,
-.schedule-section,
 .analysis-section {
   background: white;
   border-radius: 12px;
@@ -1336,31 +1756,6 @@ export default {
   margin: 0;
 }
 
-.add-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  &:hover {
-    background: #2563eb;
-  }
-}
-
-// 控制面板
 .control-panel {
   display: flex;
   flex-direction: column;
@@ -1446,7 +1841,6 @@ export default {
   text-align: right;
 }
 
-// 场景模式
 .scene-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1507,115 +1901,6 @@ export default {
   color: #6b7280;
 }
 
-// 定时任务表格
-.schedule-table {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.table-header {
-  display: grid;
-  grid-template-columns: 100px 1fr 150px 80px 100px;
-  background: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-  font-size: 14px;
-}
-
-.table-body {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.table-row {
-  display: grid;
-  grid-template-columns: 100px 1fr 150px 80px 100px;
-  border-top: 1px solid #f3f4f6;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #f9fafb;
-  }
-}
-
-.table-cell {
-  padding: 16px 12px;
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-}
-
-.schedule-time {
-  font-family: 'SF Mono', monospace;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.schedule-action {
-  color: #374151;
-}
-
-.schedule-days {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.day-tag {
-  width: 20px;
-  height: 20px;
-  background: #e5e7eb;
-  color: #6b7280;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 500;
-}
-
-.day-more {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.status-tag {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-
-  &.enabled {
-    background: #d1fae5;
-    color: #065f46;
-  }
-
-  &.disabled {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-}
-
-.action-btn {
-  padding: 6px 12px;
-  background: #f3f4f6;
-  color: #6b7280;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #e5e7eb;
-    color: #374151;
-  }
-}
-
-// 智能分析
 .analysis-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1660,6 +1945,11 @@ export default {
   &.high {
     background: #fee2e2;
     color: #991b1b;
+  }
+
+  &.medium {
+    background: #fef3c7;
+    color: #92400e;
   }
 
   &.normal {
@@ -1737,7 +2027,7 @@ export default {
 
   .table-header,
   .table-row {
-    grid-template-columns: 80px 1fr 120px 60px 80px;
+    grid-template-columns: 80px 1fr 80px 60px 60px 60px 100px;
     font-size: 12px;
   }
 

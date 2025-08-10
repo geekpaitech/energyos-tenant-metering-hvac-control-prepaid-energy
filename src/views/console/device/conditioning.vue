@@ -201,7 +201,7 @@
               </button>
               <div v-if="activeMenu === device.id" class="menu-dropdown">
                 <button @click="editDevice(device)">编辑</button>
-                <button @click="viewDetails(device)">详情</button>
+                <button @click="viewDetails(device)" class="detail-link">详情</button>
                 <button @click="duplicateDevice(device)">复制</button>
                 <button class="danger" @click="confirmDelete(device)">
                   删除
@@ -212,8 +212,11 @@
 
           <!-- 设备信息 -->
           <div class="card-body">
-            <div class="device-id">{{ device.id }}</div>
-            <div class="device-name">{{ device.name }}</div>
+            <div class="device-header">
+              <div class="device-id">{{ device.id }}</div>
+              <div class="device-name">{{ device.name }}</div>
+            </div>
+            
             <div class="device-location">
               <svg
                 width="12"
@@ -228,37 +231,42 @@
               {{ device.location }}
             </div>
 
-            <!-- 实时数据 -->
-            <div class="realtime-data">
-              <div class="data-row">
-                <span class="data-label">室温</span>
-                <span class="data-value">{{ device.currentTemp }}°C</span>
+            <!-- 核心数据 -->
+            <div class="temp-display">
+              <div class="current-temp">
+                <span class="temp-label">室温</span>
+                <span class="temp-value">{{ device.currentTemp }}°</span>
               </div>
-              <div class="data-row">
-                <span class="data-label">设定</span>
-                <span class="data-value primary">{{ device.setTemp }}°C</span>
+              <div class="target-temp" v-if="device.power">
+                <span class="temp-label">目标</span>
+                <span class="temp-value target">{{ device.setTemp }}°</span>
               </div>
-              <div class="data-row">
-                <span class="data-label">模式</span>
-                <span class="data-value">{{ modeMap[device.mode] }}</span>
+            </div>
+
+            <!-- 运行信息 -->
+            <div class="device-info">
+              <div class="info-item">
+                <span class="info-label">模式</span>
+                <span class="info-value">{{ modeMap[device.mode] }}</span>
               </div>
-              <div class="data-row">
-                <span class="data-label">功率</span>
-                <span class="data-value">{{ device.powerUsage }}kW</span>
+              <div class="info-item">
+                <span class="info-label">功率</span>
+                <span class="info-value">{{ device.powerUsage }}kW</span>
               </div>
             </div>
           </div>
 
           <!-- 快速控制 -->
-          <div class="card-footer">
+          <div class="card-controls">
             <button
               :class="['power-btn', { active: device.power }]"
               @click="togglePower(device)"
               :disabled="!device.online"
+              :title="device.power ? '关闭' : '开启'"
             >
               <svg
-                width="15"
-                height="15"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -273,10 +281,11 @@
                 :disabled="
                   !device.online || !device.power || device.setTemp <= 16
                 "
+                class="temp-adjust"
               >
                 <svg
-                  width="16"
-                  height="16"
+                  width="12"
+                  height="12"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -284,16 +293,17 @@
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
               </button>
-              <span class="temp-display">{{ device.setTemp }}°</span>
+              <span class="temp-display-mini">{{ device.setTemp }}°</span>
               <button
                 @click="adjustTemp(device, 1)"
                 :disabled="
                   !device.online || !device.power || device.setTemp >= 30
                 "
+                class="temp-adjust"
               >
                 <svg
-                  width="16"
-                  height="16"
+                  width="12"
+                  height="12"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -409,6 +419,12 @@
                 编辑
               </button>
               <button
+                class="btn-text-small btn-link"
+                @click="viewDetails(device)"
+              >
+                详情
+              </button>
+              <button
                 class="btn-text-small danger"
                 @click="confirmDelete(device)"
               >
@@ -468,7 +484,7 @@
       <div class="page-size">
         <span>每页</span>
         <select v-model.number="pageSize" @change="currentPage = 1">
-          <option value="8">8</option>
+          <option value="12">12</option>
           <option value="24">24</option>
           <option value="36">36</option>
         </select>
@@ -517,18 +533,18 @@
               <input
                 type="text"
                 v-model="deviceForm.name"
-                placeholder="如：13-24-1318-2"
+                placeholder="如：中央空调-01"
                 required
               />
             </div>
 
-            <!-- 绑定租户折叠框（包含区域、楼层、房间号） -->
+            <!-- 绑定租户折叠框 -->
             <div class="tenant-collapse">
               <div
                 class="collapse-header"
                 @click="tenantCollapseOpen = !tenantCollapseOpen"
               >
-                <span>绑定租户</span>
+                <span>绑定区域</span>
                 <svg
                   width="16"
                   height="16"
@@ -544,37 +560,35 @@
               <div class="collapse-content" v-show="tenantCollapseOpen">
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="required">所属区域</label>
-                    <select v-model="deviceForm.area" required>
+                    <label class="required">楼栋</label>
+                    <select v-model="deviceForm.building" required @change="onBuildingChange">
                       <option value="">请选择</option>
-                      <option
-                        v-for="area in areas"
-                        :key="area.id"
+                      <option value="A">中心大厦A栋</option>
+                      <option value="B">创新大厦B栋</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="required">楼层区域</label>
+                    <select v-model="deviceForm.floorArea" required>
+                      <option value="">请选择</option>
+                      <option 
+                        v-for="area in availableFloorAreas" 
+                        :key="area.id" 
                         :value="area.id"
                       >
                         {{ area.name }}
                       </option>
                     </select>
                   </div>
-
-                  <div class="form-group">
-                    <label class="required">楼层</label>
-                    <input
-                      type="number"
-                      v-model.number="deviceForm.floor"
-                      placeholder="楼层号"
-                      required
-                    />
-                  </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="required">房间号</label>
+                  <label>房间号</label>
                   <input
                     type="text"
                     v-model="deviceForm.room"
-                    placeholder="如：1318室"
-                    required
+                    placeholder="如：1318室（可选）"
                   />
                 </div>
               </div>
@@ -638,6 +652,7 @@
         </div>
       </div>
     </div>
+
     <!-- 批量控制弹窗 -->
     <div
       v-if="showBatchControl"
@@ -663,7 +678,6 @@
 
         <div class="modal-body">
           <!-- 快速操作 -->
-          <!-- 修改批量控制弹窗中的快速操作部分 -->
           <div class="batch-section">
             <h4>快速操作</h4>
             <div class="quick-actions-grid">
@@ -828,14 +842,6 @@
             </div>
           </div>
 
-          <!-- 同时修改关闭按钮 -->
-          <div class="modal-footer">
-            <button class="btn-default" @click="closeBatchControl">取消</button>
-            <button class="btn-primary" @click="applyBatchControl">
-              应用设置
-            </button>
-          </div>
-
           <!-- 参数设置 -->
           <div class="batch-section">
             <h4>参数设置</h4>
@@ -930,9 +936,7 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn-default" @click="showBatchControl = false">
-            取消
-          </button>
+          <button class="btn-default" @click="closeBatchControl">取消</button>
           <button class="btn-primary" @click="applyBatchControl">
             应用设置
           </button>
@@ -965,12 +969,6 @@
       </div>
     </div>
 
-    <!-- 消息提示 -->
-    <transition name="toast">
-      <div v-if="toast.show" :class="['toast', toast.type]">
-        {{ toast.message }}
-      </div>
-    </transition>
     <!-- 设备详情控制弹窗 -->
     <div
       v-if="showDeviceDetail"
@@ -1275,17 +1273,26 @@
         </div>
       </div>
     </div>
+
+    <!-- 消息提示 -->
+    <transition name="toast">
+      <div v-if="toast.show" :class="['toast', toast.type]">
+        {{ toast.message }}
+      </div>
+    </transition>
   </div>
 </template>
+
 <script>
 export default {
   name: "HvacManagement",
 
   data() {
     return {
-      tenantCollapseOpen: false, // 默认展开绑定租户区域
-      quickActionSelected: null, // 记录当前选中的快速操作
+      tenantCollapseOpen: true,
+      quickActionSelected: null,
       showDeviceDetail: false,
+      
       // 设备详情表单
       deviceDetailForm: {
         power: false,
@@ -1299,14 +1306,15 @@ export default {
         timerOnTime: "08:00",
         timerOffTime: "22:00",
       },
+      
       // 时间相关
       lastUpdateTime: "",
       updateTimer: null,
 
       // 视图控制
-      viewMode: "card", // card | table
+      viewMode: "card",
       currentPage: 1,
-      pageSize: 8,
+      pageSize: 12,
 
       // 搜索和筛选
       searchQuery: "",
@@ -1324,7 +1332,6 @@ export default {
       showEditDevice: false,
       showBatchControl: false,
       showDeleteConfirm: false,
-      showDeviceDetail: false,
 
       // 当前操作的设备
       currentDevice: null,
@@ -1334,8 +1341,8 @@ export default {
       deviceForm: {
         id: "",
         name: "",
-        area: "",
-        floor: "",
+        building: "",
+        floorArea: "",
         room: "",
         brand: "格力",
         model: "",
@@ -1363,206 +1370,43 @@ export default {
       toast: {
         show: false,
         message: "",
-        type: "success", // success | error | warning
+        type: "success",
       },
 
       // 统计数据
       stats: {
-        total: 48,
-        online: 45,
-        running: 32,
-        avgTemp: 24.5,
-        totalPower: 89.6,
+        total: 52,
+        online: 48,
+        running: 35,
+        avgTemp: 24.8,
+        totalPower: 126.4,
       },
 
-      // 区域数据
+      // 区域数据 - 基于您的层级结构
       areas: [
-        { id: "A", name: "A栋", floors: 20 },
-        { id: "B", name: "B栋", floors: 18 },
-        { id: "C", name: "C栋", floors: 22 },
-        { id: "D", name: "D栋", floors: 16 },
-        { id: "E", name: "E栋", floors: 15 },
+        { id: "A", name: "中心大厦A栋" },
+        { id: "B", name: "创新大厦B栋" }
       ],
 
-      // 设备列表
-      devices: [
-        {
-          id: "AC001",
-          name: "13-24-1318-2",
-          area: "A",
-          floor: 13,
-          room: "1318",
-          location: "A栋-13层-1318室",
-          online: true,
-          power: true,
-          status: "running",
-          currentTemp: 26,
-          setTemp: 24,
-          mode: "cool",
-          fanSpeed: "mid",
-          swingH: false,
-          swingV: false,
-          powerUsage: 2.8,
-          brand: "格力",
-          model: "KFR-35GW",
-          installDate: "2023-03-15",
-          lastUpdate: "10:23:45",
-        },
-        {
-          id: "AC002",
-          name: "13-24-1319-1",
-          area: "A",
-          floor: 13,
-          room: "1319",
-          location: "A栋-13层-1319室",
-          online: true,
-          power: true,
-          status: "running",
-          currentTemp: 25,
-          setTemp: 23,
-          mode: "cool",
-          fanSpeed: "high",
-          swingH: true,
-          swingV: false,
-          powerUsage: 3.2,
-          brand: "美的",
-          model: "KFR-35GW",
-          installDate: "2023-03-15",
-          lastUpdate: "10:22:12",
-        },
-        {
-          id: "AC003",
-          name: "14-10-1410-1",
-          area: "A",
-          floor: 14,
-          room: "1410",
-          location: "A栋-14层-1410室",
-          online: true,
-          power: false,
-          status: "standby",
-          currentTemp: 28,
-          setTemp: 26,
-          mode: "cool",
-          fanSpeed: "auto",
-          swingH: false,
-          swingV: false,
-          powerUsage: 0,
-          brand: "大金",
-          model: "FTXS35",
-          installDate: "2023-04-20",
-          lastUpdate: "10:21:33",
-        },
-        {
-          id: "AC004",
-          name: "14-15-1415-2",
-          area: "A",
-          floor: 14,
-          room: "1415",
-          location: "A栋-14层-1415室",
-          online: false,
-          power: false,
-          status: "offline",
-          currentTemp: 27,
-          setTemp: 25,
-          mode: "cool",
-          fanSpeed: "mid",
-          swingH: false,
-          swingV: false,
-          powerUsage: 0,
-          brand: "格力",
-          model: "KFR-26GW",
-          installDate: "2023-03-15",
-          lastUpdate: "09:45:21",
-        },
-        {
-          id: "AC005",
-          name: "15-08-1508-1",
-          area: "B",
-          floor: 15,
-          room: "1508",
-          location: "B栋-15层-1508室",
-          online: true,
-          power: true,
-          status: "running",
-          currentTemp: 24,
-          setTemp: 24,
-          mode: "dry",
-          fanSpeed: "low",
-          swingH: false,
-          swingV: true,
-          powerUsage: 1.5,
-          brand: "海尔",
-          model: "KFR-35GW",
-          installDate: "2023-05-10",
-          lastUpdate: "10:24:01",
-        },
-        {
-          id: "AC006",
-          name: "16-12-1612-1",
-          area: "B",
-          floor: 16,
-          room: "1612",
-          location: "B栋-16层-1612室",
-          online: true,
-          power: true,
-          status: "fault",
-          currentTemp: 30,
-          setTemp: 22,
-          mode: "cool",
-          fanSpeed: "high",
-          swingH: true,
-          swingV: true,
-          powerUsage: 0,
-          brand: "美的",
-          model: "KFR-26GW",
-          installDate: "2023-05-10",
-          lastUpdate: "10:20:15",
-        },
-        {
-          id: "AC007",
-          name: "17-05-1705-2",
-          area: "C",
-          floor: 17,
-          room: "1705",
-          location: "C栋-17层-1705室",
-          online: true,
-          power: true,
-          status: "running",
-          currentTemp: 23,
-          setTemp: 23,
-          mode: "cool",
-          fanSpeed: "auto",
-          swingH: false,
-          swingV: false,
-          powerUsage: 2.6,
-          brand: "格力",
-          model: "KFR-35GW",
-          installDate: "2023-06-01",
-          lastUpdate: "10:23:58",
-        },
-        {
-          id: "AC008",
-          name: "18-03-1803-1",
-          area: "C",
-          floor: 18,
-          room: "1803",
-          location: "C栋-18层-1803室",
-          online: true,
-          power: true,
-          status: "running",
-          currentTemp: 25,
-          setTemp: 24,
-          mode: "cool",
-          fanSpeed: "mid",
-          swingH: false,
-          swingV: true,
-          powerUsage: 2.9,
-          brand: "大金",
-          model: "FTXS50",
-          installDate: "2023-06-01",
-          lastUpdate: "10:24:12",
-        },
-      ],
+      // 楼层区域映射
+      floorAreaMap: {
+        A: [
+          { id: "A1F", name: "1F展销大厅" },
+          { id: "A2F", name: "2F会议接待厅" },
+          { id: "A3F", name: "3F市场营销部" },
+          { id: "A4F", name: "4F技术研发部" },
+          { id: "A5F", name: "5F行政办公室" }
+        ],
+        B: [
+          { id: "BB1", name: "B1地下停车库" },
+          { id: "B1F", name: "1F接待大厅" },
+          { id: "B2F", name: "2F餐厅食堂" },
+          { id: "B3F", name: "3F技术研发" }
+        ]
+      },
+
+      // 设备列表 - 基于真实区域层级
+      devices: [],
 
       // 映射表
       modeMap: {
@@ -1609,6 +1453,11 @@ export default {
   },
 
   computed: {
+    // 可用的楼层区域
+    availableFloorAreas() {
+      return this.floorAreaMap[this.deviceForm.building] || []
+    },
+
     // 过滤后的设备列表
     filteredDevices() {
       let result = [...this.devices];
@@ -1646,7 +1495,7 @@ export default {
 
       // 区域过滤
       if (this.filterArea) {
-        result = result.filter((device) => device.area === this.filterArea);
+        result = result.filter((device) => device.building === this.filterArea);
       }
 
       // 排序
@@ -1749,53 +1598,103 @@ export default {
     // 初始化数据
     initializeData() {
       this.updateTime();
+      this.generateDevicesData();
       this.updateStats();
-
-      // 模拟生成更多设备数据
-      this.generateMoreDevices();
     },
 
-    // 生成更多设备数据
-    generateMoreDevices() {
+    // 根据区域层级生成设备数据
+    generateDevicesData() {
       const brands = ["格力", "美的", "大金", "海尔", "三菱"];
       const models = ["KFR-26GW", "KFR-35GW", "KFR-50GW", "FTXS35", "FTXS50"];
+      
+      let deviceCounter = 1;
+      const devices = [];
 
-      for (let i = 9; i <= 48; i++) {
-        const areaIndex = Math.floor(Math.random() * this.areas.length);
-        const area = this.areas[areaIndex];
-        const floor = Math.floor(Math.random() * area.floors) + 1;
-        const room = Math.floor(Math.random() * 20) + 1;
+      // 中心大厦A栋设备
+      const aFloorAreas = [
+        { id: "A1F", name: "1F展销大厅", count: 8, prefix: "展销" },
+        { id: "A2F", name: "2F会议接待厅", count: 6, prefix: "会议" },
+        { id: "A3F", name: "3F市场营销部", count: 10, prefix: "营销" },
+        { id: "A4F", name: "4F技术研发部", count: 12, prefix: "研发" },
+        { id: "A5F", name: "5F行政办公室", count: 8, prefix: "行政" }
+      ];
 
-        this.devices.push({
-          id: `AC${String(i).padStart(3, "0")}`,
-          name: `${floor}-${String(room).padStart(2, "0")}-${floor}${String(
-            room
-          ).padStart(2, "0")}-${Math.floor(Math.random() * 2) + 1}`,
-          area: area.id,
-          floor: floor,
-          room: `${floor}${String(room).padStart(2, "0")}`,
-          location: `${area.name}-${floor}层-${floor}${String(room).padStart(
-            2,
-            "0"
-          )}室`,
-          online: Math.random() > 0.1,
-          power: Math.random() > 0.3,
-          status: this.getRandomStatus(),
-          currentTemp: Math.floor(Math.random() * 8) + 22,
-          setTemp: Math.floor(Math.random() * 6) + 22,
-          mode: this.modes[Math.floor(Math.random() * this.modes.length)].value,
-          fanSpeed:
-            this.fanSpeeds[Math.floor(Math.random() * this.fanSpeeds.length)]
-              .value,
-          swingH: Math.random() > 0.5,
-          swingV: Math.random() > 0.5,
-          powerUsage: (Math.random() * 3 + 1).toFixed(1),
-          brand: brands[Math.floor(Math.random() * brands.length)],
-          model: models[Math.floor(Math.random() * models.length)],
-          installDate: this.getRandomDate(),
-          lastUpdate: this.getRandomTime(),
-        });
-      }
+      aFloorAreas.forEach(area => {
+        for (let i = 1; i <= area.count; i++) {
+          const device = {
+            id: `AC${String(deviceCounter).padStart(3, "0")}`,
+            name: `${area.prefix}空调-${String(i).padStart(2, "0")}`,
+            building: "A",
+            floorArea: area.id,
+            floorAreaName: area.name,
+            room: i <= 4 ? `${area.id.charAt(1)}0${i}` : "",
+            location: `中心大厦A栋-${area.name}${i <= 4 ? `-${area.id.charAt(1)}0${i}室` : ''}`,
+            online: Math.random() > 0.08,
+            power: Math.random() > 0.35,
+            status: this.getRandomStatus(),
+            currentTemp: Math.floor(Math.random() * 8) + 22,
+            setTemp: Math.floor(Math.random() * 6) + 22,
+            mode: this.modes[Math.floor(Math.random() * this.modes.length)].value,
+            fanSpeed: this.fanSpeeds[Math.floor(Math.random() * this.fanSpeeds.length)].value,
+            swingH: Math.random() > 0.5,
+            swingV: Math.random() > 0.5,
+            powerUsage: (Math.random() * 3.5 + 0.5).toFixed(1),
+            brand: brands[Math.floor(Math.random() * brands.length)],
+            model: models[Math.floor(Math.random() * models.length)],
+            installDate: this.getRandomDate(),
+            lastUpdate: this.getRandomTime(),
+          };
+          
+          devices.push(device);
+          deviceCounter++;
+        }
+      });
+
+      // 创新大厦B栋设备
+      const bFloorAreas = [
+        { id: "BB1", name: "B1地下停车库", count: 4, prefix: "停车" },
+        { id: "B1F", name: "1F接待大厅", count: 3, prefix: "接待" },
+        { id: "B2F", name: "2F餐厅食堂", count: 5, prefix: "餐厅" },
+        { id: "B3F", name: "3F技术研发", count: 6, prefix: "研发" }
+      ];
+
+      bFloorAreas.forEach(area => {
+        for (let i = 1; i <= area.count; i++) {
+          const device = {
+            id: `AC${String(deviceCounter).padStart(3, "0")}`,
+            name: `${area.prefix}空调-${String(i).padStart(2, "0")}`,
+            building: "B",
+            floorArea: area.id,
+            floorAreaName: area.name,
+            room: i <= 3 ? `${area.id}${String(i).padStart(2, "0")}` : "",
+            location: `创新大厦B栋-${area.name}${i <= 3 ? `-${area.id}${String(i).padStart(2, "0")}室` : ''}`,
+            online: Math.random() > 0.08,
+            power: Math.random() > 0.35,
+            status: this.getRandomStatus(),
+            currentTemp: Math.floor(Math.random() * 8) + 22,
+            setTemp: Math.floor(Math.random() * 6) + 22,
+            mode: this.modes[Math.floor(Math.random() * this.modes.length)].value,
+            fanSpeed: this.fanSpeeds[Math.floor(Math.random() * this.fanSpeeds.length)].value,
+            swingH: Math.random() > 0.5,
+            swingV: Math.random() > 0.5,
+            powerUsage: (Math.random() * 3.5 + 0.5).toFixed(1),
+            brand: brands[Math.floor(Math.random() * brands.length)],
+            model: models[Math.floor(Math.random() * models.length)],
+            installDate: this.getRandomDate(),
+            lastUpdate: this.getRandomTime(),
+          };
+          
+          devices.push(device);
+          deviceCounter++;
+        }
+      });
+
+      this.devices = devices;
+    },
+
+    // 楼栋选择变化处理
+    onBuildingChange() {
+      this.deviceForm.floorArea = "";
     },
 
     // 获取随机状态
@@ -1948,15 +1847,18 @@ export default {
         this.sortOrder = "asc";
       }
     },
-    viewDetails(row){
+
+    // 查看详情
+    viewDetails(device) {
       this.$router.push({
-      path: `/device/conditioning/detail/${row.id}`,
-      query: { 
-        name: row.meterName,
-        serial: row.serial,
-        deviceId: row.id
-      }
-    });
+        path: `/device/conditioning/detail/${device.id}`,
+        query: { 
+          name: device.name,
+          building: device.building,
+          floorArea: device.floorAreaName,
+          deviceId: device.id
+        }
+      });
     },
 
     // 设备选择
@@ -2084,10 +1986,12 @@ export default {
       };
       this.showDeviceDetail = true;
     },
+
     closeDeviceDetail() {
       this.showDeviceDetail = false;
       this.currentDevice = null;
     },
+
     applyDeviceDetail() {
       if (this.currentDevice) {
         this.currentDevice.power = this.deviceDetailForm.power;
@@ -2097,7 +2001,6 @@ export default {
         this.currentDevice.swingH = this.deviceDetailForm.swingH;
         this.currentDevice.swingV = this.deviceDetailForm.swingV;
 
-        // 更新功率和状态
         if (this.currentDevice.power) {
           this.currentDevice.powerUsage = this.calculatePower(
             this.currentDevice
@@ -2120,8 +2023,8 @@ export default {
       this.deviceForm = {
         id: device.id,
         name: device.name,
-        area: device.area,
-        floor: device.floor,
+        building: device.building,
+        floorArea: device.floorArea,
         room: device.room,
         brand: device.brand || "格力",
         model: device.model || "",
@@ -2145,13 +2048,6 @@ export default {
       this.devices.push(newDevice);
       this.updateStats();
       this.showToast("设备复制成功", "success");
-      this.activeMenu = null;
-    },
-
-    // 查看历史记录
-    viewHistory(device) {
-      console.log("查看历史记录", device);
-      this.showToast("历史记录功能开发中", "warning");
       this.activeMenu = null;
     },
 
@@ -2183,10 +2079,15 @@ export default {
         const device = this.devices.find((d) => d.id === this.deviceForm.id);
         if (device) {
           device.name = this.deviceForm.name;
-          device.area = this.deviceForm.area;
-          device.floor = this.deviceForm.floor;
+          device.building = this.deviceForm.building;
+          device.floorArea = this.deviceForm.floorArea;
+          device.floorAreaName = this.availableFloorAreas.find(a => a.id === this.deviceForm.floorArea)?.name || '';
           device.room = this.deviceForm.room;
-          device.location = `${this.deviceForm.area}栋-${this.deviceForm.floor}层-${this.deviceForm.room}室`;
+          
+          // 更新位置信息
+          const buildingName = device.building === 'A' ? '中心大厦A栋' : '创新大厦B栋';
+          device.location = `${buildingName}-${device.floorAreaName}${device.room ? `-${device.room}室` : ''}`;
+          
           device.brand = this.deviceForm.brand;
           device.model = this.deviceForm.model;
           device.installDate = this.deviceForm.installDate;
@@ -2195,13 +2096,17 @@ export default {
         }
       } else {
         // 添加设备
+        const floorAreaName = this.availableFloorAreas.find(a => a.id === this.deviceForm.floorArea)?.name || '';
+        const buildingName = this.deviceForm.building === 'A' ? '中心大厦A栋' : '创新大厦B栋';
+        
         const newDevice = {
           id: this.deviceForm.id,
           name: this.deviceForm.name,
-          area: this.deviceForm.area,
-          floor: this.deviceForm.floor,
+          building: this.deviceForm.building,
+          floorArea: this.deviceForm.floorArea,
+          floorAreaName: floorAreaName,
           room: this.deviceForm.room,
-          location: `${this.deviceForm.area}栋-${this.deviceForm.floor}层-${this.deviceForm.room}室`,
+          location: `${buildingName}-${floorAreaName}${this.deviceForm.room ? `-${this.deviceForm.room}室` : ''}`,
           online: true,
           power: false,
           status: "standby",
@@ -2234,8 +2139,8 @@ export default {
       this.deviceForm = {
         id: "",
         name: "",
-        area: "",
-        floor: "",
+        building: "",
+        floorArea: "",
         room: "",
         brand: "格力",
         model: "",
@@ -2247,7 +2152,6 @@ export default {
 
     // 批量操作
     batchAction(action, value) {
-      // 设置选中状态
       this.quickActionSelected = action + (value ? "_" + value : "");
 
       const selectedDeviceObjects = this.devices.filter((d) =>
@@ -2286,18 +2190,17 @@ export default {
         "success"
       );
 
-      // 3秒后清除选中状态
       setTimeout(() => {
         this.quickActionSelected = null;
       }, 3000);
     },
 
-    // 重置快速操作选中状态（在关闭弹窗时调用）
+    // 重置快速操作选中状态
     resetQuickActionSelection() {
       this.quickActionSelected = null;
     },
 
-    // 修改关闭批量控制弹窗的方法
+    // 关闭批量控制弹窗
     closeBatchControl() {
       this.showBatchControl = false;
       this.resetQuickActionSelection();
@@ -2336,7 +2239,6 @@ export default {
 
     // 导出数据
     exportData() {
-      // 准备导出数据
       const exportData = this.filteredDevices.map((device) => ({
         设备编号: device.id,
         设备名称: device.name,
@@ -2353,7 +2255,6 @@ export default {
         最后更新: device.lastUpdate,
       }));
 
-      // 转换为CSV格式
       const headers = Object.keys(exportData[0]);
       const csvContent = [
         headers.join(","),
@@ -2362,7 +2263,6 @@ export default {
         ),
       ].join("\n");
 
-      // 创建下载
       const blob = new Blob(["\ufeff" + csvContent], {
         type: "text/csv;charset=utf-8;",
       });
@@ -2389,6 +2289,7 @@ export default {
   },
 };
 </script>
+
 <style scoped>
 * {
   box-sizing: border-box;
@@ -2649,7 +2550,7 @@ export default {
 .btn-text-small {
   background: none;
   border: none;
-  color: #3370ff;
+  color: #646a73;
   font-size: 13px;
   cursor: pointer;
   padding: 4px 8px;
@@ -2659,10 +2560,20 @@ export default {
 
 .btn-text-small:hover {
   background: #f2f3f5;
+  color: #1f2329;
 }
 
 .btn-text-small.danger {
   color: #f54a45;
+}
+
+.btn-text-small.btn-link {
+  color: #3370ff;
+}
+
+.btn-text-small.btn-link:hover {
+  background: #f0f7ff;
+  color: #2860e1;
 }
 
 /* 视图切换 */
@@ -2717,18 +2628,21 @@ export default {
 
 .devices-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
 }
 
-/* 设备卡片 */
+/* 优化后的设备卡片 */
 .device-card {
   background: #fff;
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px;
   border: 1px solid #e5e6eb;
   position: relative;
   transition: all 0.2s;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
 }
 
 .device-card:hover {
@@ -2752,29 +2666,30 @@ export default {
 
 .card-selector {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
 }
 
 .card-selector input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   cursor: pointer;
 }
 
 .card-status {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  height: 20px;
 }
 
 .status-badge {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
   font-weight: 500;
-  margin-left: auto;
 }
 
 .status-badge.running {
@@ -2799,11 +2714,12 @@ export default {
 
 .card-menu {
   position: relative;
+  margin-left: 8px;
 }
 
 .menu-trigger {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border: none;
   background: transparent;
   border-radius: 4px;
@@ -2823,22 +2739,22 @@ export default {
 .menu-dropdown {
   position: absolute;
   right: 0;
-  top: 28px;
+  top: 24px;
   background: #fff;
   border: 1px solid #e5e6eb;
   border-radius: 6px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  min-width: 120px;
+  min-width: 100px;
   z-index: 100;
 }
 
 .menu-dropdown button {
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: none;
   border: none;
   text-align: left;
-  font-size: 13px;
+  font-size: 12px;
   color: #1f2329;
   cursor: pointer;
   transition: all 0.2s;
@@ -2852,74 +2768,117 @@ export default {
   color: #f54a45;
 }
 
-.card-body {
-  padding: 0 24px;
-}
-
-.device-id {
-  font-size: 11px;
-  color: #8f959e;
-  margin-bottom: 4px;
-}
-
-.device-name {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1f2329;
-  margin-bottom: 8px;
-}
-
-.device-location {
-  font-size: 12px;
-  color: #646a73;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 16px;
-}
-
-.realtime-data {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 12px;
-  background: #f7f8fa;
-  border-radius: 6px;
-  margin-bottom: 16px;
-}
-
-.data-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.data-label {
-  font-size: 12px;
-  color: #8f959e;
-}
-
-.data-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2329;
-}
-
-.data-value.primary {
+.menu-dropdown button.detail-link {
   color: #3370ff;
 }
 
-.card-footer {
+.card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.device-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.device-id {
+  font-size: 10px;
+  color: #8f959e;
+  font-weight: 500;
+}
+
+.device-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2329;
+  line-height: 1.2;
+}
+
+.device-location {
+  font-size: 11px;
+  color: #646a73;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #e5e6eb;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.temp-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.current-temp,
+.target-temp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.temp-label {
+  font-size: 10px;
+  color: #8f959e;
+  font-weight: 500;
+}
+
+.temp-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.temp-value.target {
+  color: #3370ff;
+}
+
+.device-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.info-label {
+  font-size: 10px;
+  color: #8f959e;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1f2329;
+}
+
+.card-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f1f3;
+  margin-top: auto;
 }
 
 .power-btn {
-  width: 25px;
-  height: 25px;
+  width: 24px;
+  height: 24px;
   border: 1px solid #dee0e3;
   background: #fff;
   border-radius: 50%;
@@ -2929,6 +2888,7 @@ export default {
   cursor: pointer;
   color: #8f959e;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .power-btn:hover:not(:disabled) {
@@ -2948,19 +2908,19 @@ export default {
 }
 
 .temp-control {
-  flex: 1;
   display: flex;
   align-items: center;
+  gap: 6px;
+  flex: 1;
   justify-content: center;
-  gap: 8px;
 }
 
-.temp-control button {
-  width: 24px;
-  height: 24px;
+.temp-adjust {
+  width: 20px;
+  height: 20px;
   border: 1px solid #dee0e3;
   background: #fff;
-  border-radius: 4px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2969,33 +2929,34 @@ export default {
   transition: all 0.2s;
 }
 
-.temp-control button:hover:not(:disabled) {
+.temp-adjust:hover:not(:disabled) {
   border-color: #3370ff;
   color: #3370ff;
 }
 
-.temp-control button:disabled {
+.temp-adjust:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.temp-display {
-  font-size: 16px;
-  font-weight: 500;
+.temp-display-mini {
+  font-size: 13px;
+  font-weight: 600;
   color: #1f2329;
-  min-width: 40px;
+  min-width: 28px;
   text-align: center;
 }
 
 .detail-btn {
-  padding: 6px 12px;
+  padding: 4px 8px;
   background: #fff;
   border: 1px solid #dee0e3;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   color: #1f2329;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .detail-btn:hover:not(:disabled) {
@@ -3073,10 +3034,6 @@ export default {
 
 .device-id-col {
   font-weight: 500;
-}
-
-.action-col {
-  /* text-align: right; */
 }
 
 .inline-input,
@@ -3183,7 +3140,7 @@ export default {
   font-size: 13px;
 }
 
-/* 弹窗 */
+/* 弹窗样式 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -3321,7 +3278,59 @@ export default {
   gap: 16px;
 }
 
-/* 批量控制 */
+/* 租户折叠框样式 */
+.tenant-collapse {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.collapse-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.collapse-header:hover {
+  background-color: #f1f3f5;
+}
+
+.collapse-header svg {
+  transition: transform 0.3s ease;
+}
+
+.collapse-header .rotate-90 {
+  transform: rotate(90deg);
+}
+
+.collapse-content {
+  padding: 16px;
+  background-color: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+
+.collapse-content .form-group {
+  margin-bottom: 12px;
+}
+
+.collapse-content .form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.collapse-content .form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* 批量控制样式 */
 .batch-section {
   margin-bottom: 32px;
 }
@@ -3343,7 +3352,6 @@ export default {
   gap: 12px;
 }
 
-/* 修改快速操作按钮样式 */
 .quick-action {
   position: relative;
   padding: 20px 16px;
@@ -3463,83 +3471,6 @@ export default {
   }
 }
 
-/* 修复批量操作表单输入框的选中状态 */
-.batch-form .form-group input:focus,
-.batch-form .form-group select:focus {
-  border-color: #3370ff;
-  box-shadow: 0 0 0 2px rgba(51, 112, 255, 0.15);
-  background: #fff;
-}
-
-.batch-form .form-group input:not(:placeholder-shown):not([value=""]),
-.batch-form .form-group select:not([value=""]) {
-  background: #f7f9ff;
-  border-color: #3370ff;
-}
-
-.schedule-settings .form-group input:focus,
-.schedule-settings .form-group select:focus {
-  border-color: #3370ff;
-  box-shadow: 0 0 0 2px rgba(51, 112, 255, 0.15);
-}
-
-.weekday-checkbox input:checked + span {
-  color: #3370ff;
-  font-weight: 600;
-}
-
-.weekday-checkbox:has(input:checked) {
-  background: #e8f0ff;
-  border-color: #3370ff;
-  box-shadow: 0 2px 4px rgba(51, 112, 255, 0.1);
-}
-
-/* 为批量操作网格添加动画效果 */
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  animation: fadeInUp 0.5s ease;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .quick-actions-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .quick-action {
-    padding: 16px 12px;
-    gap: 8px;
-  }
-
-  .quick-action-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .quick-action span {
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 480px) {
-  .quick-actions-grid {
-    grid-template-columns: 1fr;
-  }
-}
 .batch-form {
   background: #f7f8fa;
   padding: 16px;
@@ -3588,7 +3519,8 @@ export default {
 .weekday-checkbox input:checked + span {
   color: #3370ff;
 }
-/* 设备详情弹窗 */
+
+/* 设备详情弹窗样式 */
 .modal-device-detail {
   max-width: 520px;
   width: 90%;
@@ -3618,7 +3550,6 @@ export default {
   overflow-y: auto;
 }
 
-/* 状态卡片 */
 .status-card {
   background: linear-gradient(135deg, #f7f9ff 0%, #e8f0ff 100%);
   border: 1px solid #e0e9ff;
@@ -3699,7 +3630,6 @@ export default {
   color: #1f2329;
 }
 
-/* 控制卡片 */
 .control-card {
   background: #fff;
   border: 1px solid #e5e6eb;
@@ -3757,7 +3687,6 @@ export default {
   margin-left: 20px;
 }
 
-/* 电源开关 */
 .power-switch {
   position: relative;
   display: inline-block;
@@ -3810,7 +3739,6 @@ export default {
   cursor: not-allowed;
 }
 
-/* 温度调节器 */
 .temp-adjuster {
   display: flex;
   align-items: center;
@@ -3858,7 +3786,6 @@ export default {
   text-align: center;
 }
 
-/* 模式选择器 */
 .mode-selector {
   display: flex;
   gap: 6px;
@@ -3889,7 +3816,6 @@ export default {
   font-weight: 500;
 }
 
-/* 风速选择器 */
 .fan-selector {
   display: flex;
   gap: 6px;
@@ -3920,7 +3846,6 @@ export default {
   font-weight: 500;
 }
 
-/* 摆风选项 */
 .swing-options {
   display: flex;
   gap: 16px;
@@ -3970,7 +3895,6 @@ export default {
   font-weight: 500;
 }
 
-/* 定时设置 */
 .timer-settings {
   display: flex;
   flex-direction: column;
@@ -4028,8 +3952,78 @@ export default {
   cursor: not-allowed;
 }
 
-/* 响应式调整 */
+/* 消息提示 */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 2000;
+  max-width: 300px;
+}
+
+.toast.success {
+  background: #00b365;
+}
+
+.toast.error {
+  background: #f54a45;
+}
+
+.toast.warning {
+  background: #ff9500;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.text-muted {
+  color: #8f959e;
+  font-size: 13px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .devices-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
+  .hvac-management {
+    padding: 12px;
+  }
+
+  .action-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .devices-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+
   .modal-device-detail {
     width: 95%;
     max-width: none;
@@ -4063,57 +4057,5 @@ export default {
     align-items: stretch;
     gap: 8px;
   }
-}
-/* 租户折叠框样式 */
-.tenant-collapse {
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  margin-bottom: 16px;
-  overflow: hidden;
-}
-
-.collapse-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background-color: #f8f9fa;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.collapse-header:hover {
-  background-color: #f1f3f5;
-}
-
-.collapse-header svg {
-  transition: transform 0.3s ease;
-}
-
-.collapse-header .rotate-90 {
-  transform: rotate(90deg);
-}
-
-.collapse-content {
-  padding: 16px;
-  background-color: #fff;
-  border-top: 1px solid #e0e0e0;
-}
-
-/* 折叠框内的表单布局优化 */
-.collapse-content .form-group {
-  margin-bottom: 12px;
-}
-
-.collapse-content .form-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.collapse-content .form-row .form-group {
-  flex: 1;
-  margin-bottom: 0;
 }
 </style>

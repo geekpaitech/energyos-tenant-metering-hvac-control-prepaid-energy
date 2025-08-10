@@ -273,10 +273,17 @@
             :show-overflow-tooltip="true"
           >
             <template slot-scope="scope">
-              <!-- 设备名称 -->
-              <template v-if="col.key === 'meterName'">
+              <!-- 序列号 - 添加图标和跳转链接 -->
+              <template v-if="col.key === 'serial'">
                 <el-link type="primary" @click="handleMonitor(scope.row)">
-                  <i class="el-icon-monitor"></i>
+                  <i class="el-icon-postcard" style="margin-right: 4px;"></i>
+                  {{ scope.row.serial || "-" }}
+                </el-link>
+              </template>
+
+              <!-- 设备名称 - 取消图标，保持蓝色链接 -->
+              <template v-else-if="col.key === 'meterName'">
+                <el-link type="primary" @click="handleMonitor(scope.row)">
                   {{ scope.row.meterName || "-" }}
                 </el-link>
               </template>
@@ -310,12 +317,11 @@
                 <span v-else>-</span>
               </template>
 
-              <!-- 归属项目 -->
+              <!-- 归属项目 - 黑色文字，去掉图标 -->
               <template v-else-if="col.key === 'managerName'">
-                <el-link type="primary" @click="handleProjectClick(scope.row)">
-                  <i class="el-icon-office-building"></i>
+                <span style="color: #000; cursor: pointer;" @click="handleProjectClick(scope.row)">
                   {{ scope.row.managerName || "-" }}
-                </el-link>
+                </span>
               </template>
 
               <!-- 已绑租户 -->
