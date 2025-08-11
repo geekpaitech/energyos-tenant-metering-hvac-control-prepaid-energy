@@ -560,6 +560,7 @@ export default {
         "/application/invoice/quota-flow",
         "/device/parking",
         "/device/charging",
+        "/console/visualization"
         // 可以根据需要添加更多路由
       ],
 
