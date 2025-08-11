@@ -864,15 +864,15 @@ export default {
     // 处理绑定信息点击
     handleBindClick(meterInfo) {
       console.log("点击绑定信息:", meterInfo);
-      if (meterInfo.bindId) {
-        this.$router.push({
-          path: "/project-tenement-detail",
-          query: { 
-            id: meterInfo.bindId, 
-            managerId: meterInfo.managerId 
-          }
-        });
-      }
+      // if (meterInfo.bindId) {
+      //   this.$router.push({
+      //     path: "/project-tenement-detail",
+      //     query: { 
+      //       id: meterInfo.bindId, 
+      //       managerId: meterInfo.managerId 
+      //     }
+      //   });
+      // }
     },
 
     // 分合闸控制

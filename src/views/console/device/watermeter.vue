@@ -212,19 +212,19 @@
             :show-overflow-tooltip="true"
           >
             <template slot-scope="scope">
-              <!-- 水表编号 - 添加icon -->
-              <template v-if="col.key === 'id'">
+              <!-- 设备号 - 添加水表icon和跳转功能 -->
+              <template v-if="col.key === 'serial'">
                 <el-link type="primary" @click="handleMonitor(scope.row)">
-                  <i class="el-icon-view"></i>
-                  {{ scope.row.id || "-" }}
+                  <i class="iconfont icon-shuibiao" style="margin-right: 4px;"></i>
+                  {{ scope.row.serial || "-" }}
                 </el-link>
               </template>
 
-              <!-- 水表名称 - 去掉icon -->
+              <!-- 水表名称 - 黑色文字，不可点击 -->
               <template v-else-if="col.key === 'waterName'">
-                <el-link type="primary" @click="handleMonitor(scope.row)">
+                <span style="color: #000;">
                   {{ scope.row.waterName || "-" }}
-                </el-link>
+                </span>
               </template>
 
               <!-- 水表类型 -->
@@ -365,48 +365,47 @@
           <!-- 操作列 -->
           <el-table-column
             label="操作"
-            width="200"
+            width="240"
             fixed="right"
             align="center"
           >
             <template slot-scope="scope">
-              <div class="table-actions-group">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 2px; white-space: nowrap;">
                 <el-button
                   type="text"
-                  size="small"
+                  size="mini"
                   icon="el-icon-setting"
                   @click="handleEdit(scope.row)"
+                  style="padding: 1px 2px; font-size: 11px; min-width: auto;"
                 >
                   设置
                 </el-button>
-                <el-divider direction="vertical"></el-divider>
-                <el-dropdown
-                  trigger="click"
-                  @command="handleTableCommand($event, scope.row)"
+                <span style="color: #DCDFE6; font-size: 10px;">|</span>
+                <el-button
+                  v-if="scope.row.withSwitch"
+                  type="text"
+                  size="mini"
+                  :icon="scope.row.switchStatus == 1 ? 'el-icon-turn-off' : 'el-icon-open'"
+                  @click="handleSwitch(scope.row, scope.row.switchStatus == 1 ? 0 : 1)"
+                  :style="{
+                    color: scope.row.switchStatus == 1 ? '#F56C6C' : '#67C23A',
+                    padding: '1px 2px',
+                    fontSize: '11px',
+                    minWidth: 'auto'
+                  }"
                 >
-                  <el-button type="text" size="small">
-                    更多
-                    <i class="el-icon-arrow-down el-icon--right"></i>
-                  </el-button>
-                  <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item
-                      v-if="scope.row.withSwitch"
-                      :command="
-                        scope.row.switchStatus == 1 ? 'switch-off' : 'switch-on'
-                      "
-                      :icon="
-                        scope.row.switchStatus == 1
-                          ? 'el-icon-turn-off'
-                          : 'el-icon-open'
-                      "
-                    >
-                      {{ scope.row.switchStatus == 1 ? "关阀" : "开阀" }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="record" icon="el-icon-document">
-                      抄表记录
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </el-dropdown>
+                  {{ scope.row.switchStatus == 1 ? "关阀" : "开阀" }}
+                </el-button>
+                <span v-if="scope.row.withSwitch" style="color: #DCDFE6; font-size: 10px;">|</span>
+                <el-button
+                  type="text"
+                  size="mini"
+                  icon="el-icon-document"
+                  @click="handleRecord(scope.row)"
+                  style="padding: 1px 2px; font-size: 11px; min-width: auto;"
+                >
+                  记录
+                </el-button>
               </div>
             </template>
           </el-table-column>
@@ -465,11 +464,6 @@
                   :value="item.value"
                 />
               </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-else>
-            <el-form-item label="水表编号">
-              <el-input v-model="editForm.id" disabled placeholder="水表编号" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -643,10 +637,8 @@ export default {
       queryData: {
         bindId: "",
         bindType: "",
-        id: "",
         waterName: "",
         serial: "",
-        mfrsNo: "",
         managerId: "",
         switchStatus: "",
       },
@@ -655,10 +647,9 @@ export default {
         basic: [
           { prop: "serial", label: "设备号", type: "input" },
           { prop: "waterName", label: "水表名称", type: "input" },
-          { prop: "id", label: "水表编号", type: "input" },
           { prop: "bindType", label: "水表类型", type: "select" },
         ],
-        advanced: [{ prop: "mfrsNo", label: "厂家号", type: "input" }],
+        advanced: [],
       },
       // 租户列表数据
       tenantList: [],
@@ -726,14 +717,8 @@ export default {
       isWaterModel: false,
       // 路由权限
       routerAuth: false,
-      // 表格列配置
+      // 表格列配置 - 去除水表编号、厂家号、设备型号列
       tableKey: [
-        {
-          label: "水表编号",
-          key: "id",
-          width: "120",
-          checked: true,
-        },
         {
           label: "设备号",
           key: "serial",
@@ -746,7 +731,6 @@ export default {
           key: "waterName",
           width: "200",
           checked: true,
-          click: true,
           disabled: true,
         },
         {
@@ -784,16 +768,6 @@ export default {
           checked: true,
           key: "switchStatusLabel",
           width: "140",
-        },
-        {
-          label: "厂家号",
-          key: "mfrsNo",
-          width: "120",
-        },
-        {
-          label: "设备型号",
-          key: "waterModel",
-          width: "150",
         },
         {
           label: "创建时间",
@@ -874,11 +848,9 @@ export default {
         const params = {
           bindId: this.queryData.bindId,
           bindType: this.queryData.bindType,
-          id: this.queryData.id,
           waterName: this.queryData.waterName,
           serial: this.queryData.serial,
           managerId: this.queryData.managerId,
-          mfrsNo: this.queryData.mfrsNo,
           switchStatus: this.queryData.switchStatus,
           page: {
             size: this.pageData.size,
@@ -969,11 +941,9 @@ export default {
         const params = {
           bindId: this.queryData.bindId,
           bindType: this.queryData.bindType,
-          id: this.queryData.id,
           waterName: this.queryData.waterName,
           serial: this.queryData.serial,
           managerId: this.queryData.managerId,
-          mfrsNo: this.queryData.mfrsNo,
           switchStatus: this.queryData.switchStatus,
           page: {
             size: this.pageData.size,
@@ -1009,10 +979,8 @@ export default {
       this.queryData = {
         bindId: "",
         bindType: "",
-        id: "",
         waterName: "",
         serial: "",
-        mfrsNo: "",
         managerId: this.currentManagerId || "",
         switchStatus: "",
       };
@@ -1193,16 +1161,16 @@ export default {
 
     // 绑定信息点击
     handleBindClick(row) {
-      if (row.waterBindDtoList && row.waterBindDtoList.length > 0) {
-        const bindInfo = row.waterBindDtoList[0];
-        this.$router.push({
-          path: "/tenant-detail",
-          query: {
-            id: bindInfo.bindId,
-            managerId: row.managerId,
-          },
-        });
-      }
+      // if (row.waterBindDtoList && row.waterBindDtoList.length > 0) {
+      //   const bindInfo = row.waterBindDtoList[0];
+      //   this.$router.push({
+      //     path: "/tenant-detail",
+      //     query: {
+      //       id: bindInfo.bindId,
+      //       managerId: row.managerId,
+      //     },
+      //   });
+      // }
     },
 
     // 导出数据

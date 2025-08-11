@@ -254,7 +254,7 @@
               <!-- 车位编号 -->
               <template v-if="col.key === 'parkingCode'">
                 <el-link type="primary" @click="handleMonitor(scope.row)">
-                  <i class="el-icon-monitor"></i>
+                  <i class="iconfont icon-peizhitubiaosvg-"></i>
                   {{ scope.row.parkingCode || "-" }}
                 </el-link>
               </template>

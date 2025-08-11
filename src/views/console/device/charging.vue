@@ -125,7 +125,7 @@
             show-overflow-tooltip>
             <template slot-scope="scope">
               <el-link type="primary" @click="handleDetail(scope.row)" class="code-text">
-                <i class="el-icon-view"></i>
+                <i class="iconfont icon-chongdianzhuang1"></i>
                 {{ scope.row.deviceCode }}
               </el-link>
             </template>

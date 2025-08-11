@@ -33,6 +33,8 @@ import '@/mock'
 
 // 引入权限控制
 import '@/permission'
+
+import './assets/iconfont/iconfont.css'
 // 开发环境启用mock
 // if (process.env.NODE_ENV === 'development') {
 //   require('./mock')

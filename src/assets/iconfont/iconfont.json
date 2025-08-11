@@ -6,6 +6,48 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "4103057",
+      "name": "电表",
+      "font_class": "dianbiao3",
+      "unicode": "e695",
+      "unicode_decimal": 59029
+    },
+    {
+      "icon_id": "5387794",
+      "name": "水表_o",
+      "font_class": "shuibiao_o",
+      "unicode": "eb59",
+      "unicode_decimal": 60249
+    },
+    {
+      "icon_id": "11521799",
+      "name": "电表",
+      "font_class": "dianbiao4",
+      "unicode": "e608",
+      "unicode_decimal": 58888
+    },
+    {
+      "icon_id": "39482157",
+      "name": "车位-01",
+      "font_class": "chewei-01",
+      "unicode": "ec95",
+      "unicode_decimal": 60565
+    },
+    {
+      "icon_id": "3833397",
+      "name": "电表",
+      "font_class": "dianbiao2",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "10203079",
+      "name": "充电桩",
+      "font_class": "chongdianzhuang",
+      "unicode": "e65d",
+      "unicode_decimal": 58973
+    },
+    {
       "icon_id": "13638717",
       "name": "照明",
       "font_class": "zhaoming1",
@@ -95,6 +137,13 @@
       "font_class": "shezhipeizhi",
       "unicode": "e613",
       "unicode_decimal": 58899
+    },
+    {
+      "icon_id": "13637009",
+      "name": "水表",
+      "font_class": "shuibiao1",
+      "unicode": "e64f",
+      "unicode_decimal": 58959
     },
     {
       "icon_id": "11148808",

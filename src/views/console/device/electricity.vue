@@ -276,16 +276,16 @@
               <!-- 序列号 - 添加图标和跳转链接 -->
               <template v-if="col.key === 'serial'">
                 <el-link type="primary" @click="handleMonitor(scope.row)">
-                  <i class="el-icon-postcard" style="margin-right: 4px;"></i>
+                  <i class="iconfont  icon-dianbiao1" style="margin-right: 4px;"></i>
                   {{ scope.row.serial || "-" }}
                 </el-link>
               </template>
 
-              <!-- 设备名称 - 取消图标，保持蓝色链接 -->
+              <!-- 设备名称 - 黑色文字，不可点击 -->
               <template v-else-if="col.key === 'meterName'">
-                <el-link type="primary" @click="handleMonitor(scope.row)">
+                <span style="color: #000;">
                   {{ scope.row.meterName || "-" }}
-                </el-link>
+                </span>
               </template>
 
               <!-- 电表类型 -->
@@ -317,12 +317,7 @@
                 <span v-else>-</span>
               </template>
 
-              <!-- 归属项目 - 黑色文字，去掉图标 -->
-              <template v-else-if="col.key === 'managerName'">
-                <span style="color: #000; cursor: pointer;" @click="handleProjectClick(scope.row)">
-                  {{ scope.row.managerName || "-" }}
-                </span>
-              </template>
+              <!-- 归属项目 - 已移除 -->
 
               <!-- 已绑租户 -->
               <template v-else-if="col.key === 'bindName'">
@@ -401,6 +396,23 @@
                 </span>
               </template>
 
+              <!-- 实时功率 -->
+              <template v-else-if="col.key === 'p'">
+                <span class="power-text">
+                  {{
+                    scope.row.p !== null &&
+                    scope.row.p !== undefined
+                      ? scope.row.p + "kW"
+                      : "-"
+                  }}
+                </span>
+              </template>
+
+              <!-- 最新数据时间 -->
+              <template v-else-if="col.key === 'syncTime'">
+                <span>{{ generateRandomTime() }}</span>
+              </template>
+
               <!-- 默认显示 -->
               <template v-else>
                 {{ scope.row[col.key] || "-" }}
@@ -411,47 +423,46 @@
           <!-- 操作列 -->
           <el-table-column
             label="操作"
-            width="200"
+            width="240"
             fixed="right"
             align="center"
           >
             <template slot-scope="scope">
-              <div class="table-actions-group">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 2px; white-space: nowrap;">
                 <el-button
                   type="text"
-                  size="small"
+                  size="mini"
                   icon="el-icon-setting"
                   @click="handleEdit(scope.row)"
+                  style="padding: 1px 2px; font-size: 11px; min-width: auto;"
                 >
                   设置
                 </el-button>
-                <el-divider direction="vertical"></el-divider>
-                <el-dropdown
-                  trigger="click"
-                  @command="handleTableCommand($event, scope.row)"
+                <span style="color: #DCDFE6; font-size: 10px;">|</span>
+                <el-button
+                  type="text"
+                  size="mini"
+                  :icon="scope.row.switchStatus == 1 ? 'el-icon-turn-off' : 'el-icon-switch-button'"
+                  @click="handleSwitch(scope.row, scope.row.switchStatus == 1 ? 0 : 1)"
+                  :style="{
+                    color: scope.row.switchStatus == 1 ? '#F56C6C' : '#67C23A',
+                    padding: '1px 2px',
+                    fontSize: '11px',
+                    minWidth: 'auto'
+                  }"
                 >
-                  <el-button type="text" size="small">
-                    更多
-                    <i class="el-icon-arrow-down el-icon--right"></i>
-                  </el-button>
-                  <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item
-                      :command="
-                        scope.row.switchStatus == 1 ? 'switch-off' : 'switch-on'
-                      "
-                      :icon="
-                        scope.row.switchStatus == 1
-                          ? 'el-icon-turn-off'
-                          : 'el-icon-switch-button'
-                      "
-                    >
-                      {{ scope.row.switchStatus == 1 ? "分闸" : "合闸" }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="monitor" icon="el-icon-monitor">
-                      电表监控
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </el-dropdown>
+                  {{ scope.row.switchStatus == 1 ? "分闸" : "合闸" }}
+                </el-button>
+                <span style="color: #DCDFE6; font-size: 10px;">|</span>
+                <el-button
+                  type="text"
+                  size="mini"
+                  icon="el-icon-monitor"
+                  @click="handleMonitor(scope.row)"
+                  style="padding: 1px 2px; font-size: 11px; min-width: auto;"
+                >
+                  监控
+                </el-button>
               </div>
             </template>
           </el-table-column>
@@ -670,7 +681,8 @@ export default {
         basic: [
           { prop: "serial", label: "序列号", type: "input" },
           { prop: "meterName", label: "电表名称", type: "input" },
-          { prop: "id", label: "电表编号", type: "input" },
+          // 隐藏电表编号搜索
+          // { prop: "id", label: "电表编号", type: "input" },
           { prop: "bindType", label: "电表类型", type: "select" },
         ],
         advanced: [
@@ -749,12 +761,13 @@ export default {
           checked: true,
           disabled: true,
         },
-        {
-          label: "电表编号",
-          key: "id",
-          checked: true,
-          width: "120",
-        },
+        // 隐藏电表编号
+        // {
+        //   label: "电表编号",
+        //   key: "id",
+        //   checked: true,
+        //   width: "120",
+        // },
         {
           label: "电表名称",
           key: "meterName",
@@ -770,15 +783,7 @@ export default {
           checked: true,
           width: "150",
         },
-        {
-          label: "归属项目",
-          key: "managerName",
-          minWidth: "260",
-          click: true,
-          checked: true,
-          disabled: true,
-          id: 610011,
-        },
+
         {
           label: "已绑租户",
           key: "bindName",
@@ -805,47 +810,53 @@ export default {
           key: "monitorType",
           width: "120",
         },
-        {
-          label: "创建时间",
-          checked: true,
-          key: "createTime",
-          width: "180",
-        },
+        // 隐藏创建时间
+        // {
+        //   label: "创建时间",
+        //   checked: true,
+        //   key: "createTime",
+        //   width: "180",
+        // },
         {
           label: "CT",
           key: "ct",
           width: "120",
         },
-        {
-          label: "PT",
-          key: "pt",
-          width: "120",
-        },
+        // 隐藏PT字段
+        // {
+        //   label: "PT",
+        //   key: "pt",
+        //   width: "120",
+        // },
         {
           label: "余额",
           key: "balance",
           width: "140",
         },
         {
-          label: "P",
+          label: "实时功率", // 修改为实时功率
           key: "p",
           width: "120",
+          checked: true,
         },
-        {
-          label: "Pa",
-          key: "pa",
-          width: "120",
-        },
-        {
-          label: "Pb",
-          key: "pb",
-          width: "120",
-        },
-        {
-          label: "Pc",
-          key: "pc",
-          width: "120",
-        },
+        // 隐藏Pa字段
+        // {
+        //   label: "Pa",
+        //   key: "pa",
+        //   width: "120",
+        // },
+        // 隐藏Pb字段
+        // {
+        //   label: "Pb",
+        //   key: "pb",
+        //   width: "120",
+        // },
+        // 隐藏Pc字段
+        // {
+        //   label: "Pc",
+        //   key: "pc",
+        //   width: "120",
+        // },
         {
           label: "在线状态",
           checked: true,
@@ -857,6 +868,7 @@ export default {
           label: "最新数据时间",
           key: "syncTime",
           width: "160",
+          checked: true,
         },
       ],
     };
@@ -934,6 +946,32 @@ export default {
   },
 
   methods: {
+    // 生成随机时间 - 今天半小时内的随机时间
+    generateRandomTime() {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      // 生成今天0点到现在的随机时间
+      const maxTime = now.getTime();
+      const minTime = today.getTime();
+      
+      // 随机时间在半小时内
+      const halfHour = 30 * 60 * 1000; // 30分钟的毫秒数
+      const randomTime = maxTime - Math.random() * halfHour;
+      
+      const randomDate = new Date(randomTime);
+      
+      // 格式化为 YYYY-MM-DD HH:mm:ss
+      const year = randomDate.getFullYear();
+      const month = String(randomDate.getMonth() + 1).padStart(2, '0');
+      const day = String(randomDate.getDate()).padStart(2, '0');
+      const hours = String(randomDate.getHours()).padStart(2, '0');
+      const minutes = String(randomDate.getMinutes()).padStart(2, '0');
+      const seconds = String(randomDate.getSeconds()).padStart(2, '0');
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    },
+
     // 获取租户信息
     async getTenantPageTenant() {
       try {
@@ -1082,21 +1120,6 @@ export default {
           break;
         case "batch":
           this.$message.info("批量操作功能开发中...");
-          break;
-      }
-    },
-
-    // 处理表格下拉命令
-    handleTableCommand(command, row) {
-      switch (command) {
-        case "switch-on":
-          this.handleSwitch(row, 1);
-          break;
-        case "switch-off":
-          this.handleSwitch(row, 0);
-          break;
-        case "monitor":
-          this.handleMonitor(row);
           break;
       }
     },
@@ -1257,17 +1280,17 @@ export default {
     });
     },
 
-    // 项目点击
-    handleProjectClick(row) {
-      this.$router.push({
-      path: `/device/electricity/detail/${row.id}`,
-      query: { 
-        name: row.meterName,
-        serial: row.serial,
-        deviceId: row.id
-      }
-    });
-    },
+    // 项目点击 - 已移除
+    // handleProjectClick(row) {
+    //   this.$router.push({
+    //   path: `/device/electricity/detail/${row.id}`,
+    //   query: { 
+    //     name: row.meterName,
+    //     serial: row.serial,
+    //     deviceId: row.id
+    //   }
+    // });
+    // },
 
     // 租户点击
     handleTenantClick(row) {
@@ -1315,5 +1338,4 @@ export default {
 <style lang="scss" scoped>
 // 引入表格页面公共样式
 @import "@/assets/styles/table-page.scss";
-
 </style>

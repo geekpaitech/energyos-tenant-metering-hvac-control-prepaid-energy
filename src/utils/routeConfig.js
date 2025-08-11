@@ -32,7 +32,7 @@ export const consoleRoutes = [
         path: 'visualization',
         name: 'ConsoleVisualization',
         component: () => import('@/views/console/test/visualization'),
-        meta: { title: '区域可视化', icon: 'icon-keshihua' }
+        meta: { title: '区域可视化', icon: 'icon-cengji' }
       }
     ]
   },
