@@ -284,21 +284,12 @@ export default {
     },
     currentPlatform: {
       handler(newPlatform, oldPlatform) {
-        console.log("TagsView: 平台变化检测", {
-          oldPlatform,
-          newPlatform,
-          cache: this.currentPlatformCache,
-          isInitialized: this.isInitialized,
-          timestamp: new Date().toISOString(),
-        });
-
         if (
           this.isInitialized &&
           this.currentPlatformCache &&
           this.currentPlatformCache !== newPlatform &&
           this.isPlatformSwitch(this.currentPlatformCache, newPlatform)
         ) {
-          console.log("TagsView: 检测到真正的平台切换，执行清空操作");
           this.handlePlatformSwitch(newPlatform);
         }
 
@@ -308,13 +299,6 @@ export default {
     },
     currentManagerId: {
       handler(newManagerId, oldManagerId) {
-        console.log("TagsView: 管理方ID变化检测", {
-          oldManagerId,
-          newManagerId,
-          isInitialized: this.isInitialized,
-          timestamp: new Date().toISOString(),
-        });
-
         if (
           this.isInitialized &&
           oldManagerId &&
@@ -322,7 +306,6 @@ export default {
           oldManagerId !== newManagerId &&
           this.isManagerSwitch(oldManagerId, newManagerId, this.currentPlatform)
         ) {
-          console.log("TagsView: 检测到企业切换，但保留TagsView内容");
           this.handleManagerSwitch();
         }
       },
@@ -346,11 +329,8 @@ export default {
     },
   },
   mounted() {
-    console.log("TagsView: 组件挂载");
-
     this.currentPlatformCache =
       this.$store.getters["permission/currentPlatform"];
-    console.log("TagsView: 初始平台缓存", this.currentPlatformCache);
 
     this.initTags();
     this.addTags();
@@ -365,7 +345,6 @@ export default {
 
     this.$nextTick(() => {
       this.isInitialized = true;
-      console.log("TagsView: 初始化完成");
 
       this.filterHiddenTags();
     });
@@ -387,12 +366,6 @@ export default {
         "未命名页面";
 
       if (tag.path && tag.path.includes("dashboard")) {
-        console.log("首页标签title计算:", {
-          tagTitle: tag.title,
-          metaTitle: tag.meta?.title,
-          tagName: tag.name,
-          finalTitle: title,
-        });
       }
 
       return title;
@@ -585,9 +558,6 @@ export default {
 
     // 处理平台切换事件
     handlePlatformSwitchEvent(eventData) {
-      console.log("=== TagsView: 接收到平台切换事件 ===");
-      console.log("事件数据:", eventData);
-
       if (eventData.type !== "platform-switch" || !eventData.clearTagsView) {
         console.warn("TagsView: 接收到的不是平台切换事件或不需要清空TagsView");
         return;
@@ -598,9 +568,6 @@ export default {
 
     // 处理企业切换事件
     handleManagerSwitchEvent(eventData) {
-      console.log("=== TagsView: 接收到企业切换事件 ===");
-      console.log("事件数据:", eventData);
-
       if (
         eventData.type !== "manager-switch" ||
         eventData.clearTagsView !== false
@@ -614,10 +581,6 @@ export default {
 
     // 处理平台切换的具体逻辑
     handlePlatformSwitch(newPlatform, eventData = {}) {
-      console.log("=== TagsView: 开始处理平台切换 ===");
-      console.log("目标平台:", newPlatform);
-      console.log("事件数据:", eventData);
-
       if (!this.$store.hasModule("tagsView")) {
         console.error("TagsView: store模块不存在");
         return;
@@ -628,13 +591,10 @@ export default {
         cachedViews: this.$store.state.tagsView.cachedViews.length,
         currentPlatformCache: this.currentPlatformCache,
       };
-      console.log("切换前状态:", beforeState);
 
       this.$store
         .dispatch("tagsView/clearAllForPlatformSwitch")
         .then(() => {
-          console.log("TagsView: 平台切换 - 完全清空完成");
-
           this.currentPlatformCache = newPlatform;
 
           const afterState = {
@@ -642,12 +602,9 @@ export default {
             cachedViews: this.$store.state.tagsView.cachedViews.length,
             currentPlatformCache: this.currentPlatformCache,
           };
-          console.log("切换后状态:", afterState);
 
           if (afterState.visitedViews === 0 && afterState.cachedViews === 0) {
-            console.log("✅ TagsView: 平台切换清空成功");
           } else {
-            console.error("❌ TagsView: 平台切换清空失败", afterState);
           }
 
           this.$nextTick(() => {
@@ -663,22 +620,13 @@ export default {
 
     // 为新平台重新初始化TagsView
     reinitializeForNewPlatform(platform) {
-      console.log("=== TagsView: 为新平台重新初始化 ===");
-      console.log("新平台:", platform);
-      console.log("当前路由:", this.$route);
-
       try {
         this.$store
           .dispatch("tagsView/ensureHomeTagFirst")
           .then(() => {
-            console.log("首页标签已确保在第一位");
-
             if (this.$route.name && this.shouldAddToTagsView(this.$route)) {
               this.addTags();
             }
-
-            console.log("新平台重新初始化完成");
-            console.log("当前访问的视图:", this.visitedViews);
           })
           .catch((error) => {
             console.error("确保首页标签失败:", error);
@@ -690,9 +638,6 @@ export default {
 
     // 处理企业切换的具体逻辑
     handleManagerSwitch(eventData = {}) {
-      console.log("=== TagsView: 开始处理企业切换 ===");
-      console.log("事件数据:", eventData);
-
       if (!this.$store.hasModule("tagsView")) {
         console.error("TagsView: store模块不存在");
         return;
@@ -702,26 +647,19 @@ export default {
         visitedViews: this.visitedViews.length,
         cachedViews: this.$store.state.tagsView.cachedViews.length,
       };
-      console.log("企业切换前状态:", beforeState);
 
       this.$store
         .dispatch("tagsView/clearCacheForManagerSwitch")
         .then(() => {
-          console.log("TagsView: 企业切换 - 缓存已清空，TagsView保留");
-
           const afterState = {
             visitedViews: this.visitedViews.length,
             cachedViews: this.$store.state.tagsView.cachedViews.length,
           };
-          console.log("企业切换后状态:", afterState);
 
           if (
             afterState.visitedViews === beforeState.visitedViews &&
             afterState.cachedViews === 0
           ) {
-            console.log(
-              "✅ TagsView: 企业切换处理成功 - TagsView保留，缓存已清空"
-            );
           } else {
             console.warn("⚠️ TagsView: 企业切换处理异常", {
               beforeState,
@@ -739,8 +677,6 @@ export default {
 
     // 刷新当前页面内容
     refreshCurrentPageContent() {
-      console.log("TagsView: 刷新当前页面内容");
-
       if (
         this.$route.meta &&
         this.$route.meta.refreshOnManagerSwitch !== false
@@ -766,11 +702,6 @@ export default {
 
     // 重新初始化
     reinitialize() {
-      console.log("TagsView: 重新初始化开始");
-      console.log("TagsView: 当前路由", this.$route);
-      console.log("TagsView: 当前平台", this.currentPlatform);
-      console.log("TagsView: 当前管理方ID", this.currentManagerId);
-
       try {
         this.initTags();
 
@@ -779,9 +710,6 @@ export default {
         }
 
         this.ensureHomeTagFirst();
-
-        console.log("TagsView: 重新初始化完成");
-        console.log("TagsView: 当前访问的视图", this.visitedViews);
       } catch (error) {
         console.error("TagsView: 重新初始化失败", error);
       }
@@ -789,13 +717,9 @@ export default {
 
     // 确保首页标签始终在第一位
     ensureHomeTagFirst() {
-      console.log("TagsView: 确保首页标签在第一位");
-
       this.$store
         .dispatch("tagsView/ensureHomeTagFirst")
-        .then(() => {
-          console.log("TagsView: 首页标签位置已确保");
-        })
+        .then(() => {})
         .catch((error) => {
           console.error("TagsView: 确保首页标签位置失败", error);
         });
@@ -813,11 +737,6 @@ export default {
         platformMap[fromPlatform] &&
         platformMap[toPlatform];
 
-      console.log("isPlatformSwitch检查:", {
-        fromPlatform,
-        toPlatform,
-        isValid,
-      });
       return isValid;
     },
 
@@ -829,12 +748,6 @@ export default {
         fromManagerId &&
         toManagerId;
 
-      console.log("isManagerSwitch检查:", {
-        fromManagerId,
-        toManagerId,
-        currentPlatform,
-        isValid,
-      });
       return isValid;
     },
 
@@ -987,15 +900,6 @@ export default {
     // 获取当前平台的首页信息
     getCurrentPlatformHome() {
       const currentPlatform = this.$store.getters["permission/currentPlatform"];
-
-      console.log(
-        "TagsView: getCurrentPlatformHome - 当前平台",
-        currentPlatform
-      );
-      console.log(
-        "TagsView: getCurrentPlatformHome - 当前路由",
-        this.$route.path
-      );
 
       switch (currentPlatform) {
         case "console":

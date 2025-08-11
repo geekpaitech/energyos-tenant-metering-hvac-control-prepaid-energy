@@ -650,7 +650,6 @@ export default {
         userPermissions.includes(platform.key)
       );
 
-      console.log("用户可用平台列表:", platforms);
       return platforms;
     },
 
@@ -732,13 +731,11 @@ export default {
         if (this.shouldShowTreeByRoute && !this.showTreePanel) {
           this.showTreePanel = true;
           this.forceHideTreePanel = false; // 重置强制隐藏状态
-          console.log("自动显示树形面板");
         }
 
         // 如果新路由不需要显示树形面板，则自动隐藏
         if (!this.shouldShowTreeByRoute && this.showTreePanel) {
           this.showTreePanel = false;
-          console.log("自动隐藏树形面板");
         }
 
         // 更新选中状态
@@ -792,8 +789,6 @@ export default {
     // 监听树形面板显示状态变化
     finalShowTreePanel: {
       handler(newVal, oldVal) {
-        console.log("树形面板显示状态变化:", oldVal, "->", newVal);
-
         // 保存状态到localStorage（只有在路由支持时才保存）
         if (this.shouldShowTreeByRoute) {
           this.saveTreePanelState();
@@ -803,16 +798,9 @@ export default {
   },
 
   async mounted() {
-    console.log("Layout组件已挂载");
-    console.log("当前路由:", this.$route.path);
-    console.log("权限路由:", this.permission_routes);
-    console.log("用户角色:", this.roles);
-    console.log("侧边栏状态:", this.sidebar);
-
     try {
       const { tierSelectTenantTierList } = await import("@/api/tier");
       this.tierSelectTenantTierListApi = tierSelectTenantTierList;
-      console.log("动态导入 tier API 成功:", tierSelectTenantTierList);
     } catch (error) {
       console.warn("动态导入 tier API 失败:", error);
     }
@@ -975,12 +963,10 @@ export default {
       if (this.finalShowTreePanel) {
         // 如果当前显示，则手动隐藏
         this.forceHideTreePanel = true;
-        console.log("用户手动隐藏树形面板");
       } else {
         // 如果当前隐藏，则显示
         this.forceHideTreePanel = false;
         this.showTreePanel = true;
-        console.log("用户手动显示树形面板");
       }
 
       this.saveTreePanelState();
@@ -996,7 +982,6 @@ export default {
       };
 
       localStorage.setItem("tree-panel-state", JSON.stringify(state));
-      console.log("树形面板状态已保存:", state);
     },
 
     // 恢复树形面板状态 - 修复：正确恢复状态
@@ -1008,7 +993,6 @@ export default {
       if (saved) {
         try {
           const state = JSON.parse(saved);
-          console.log("树形面板状态已在created中恢复:", state);
         } catch (e) {
           console.error("恢复树形面板状态失败:", e);
         }
@@ -1073,8 +1057,6 @@ export default {
 
     // 处理节点点击
     handleNodeClick(data, node) {
-      console.log("节点点击:", data);
-
       // 如果是租户节点
       if (data.tenantId) {
         this.$message.info(`租户: ${data.name || data.tenantName}`);
@@ -1102,8 +1084,6 @@ export default {
 
       // 存到 Vuex
       this.$store.commit("treeSelection/SET_SELECTED_IDS", checkedKeys);
-
-      console.log("已选中ID:", checkedKeys);
     },
 
     // 刷新树形数据
@@ -1166,7 +1146,6 @@ export default {
     addTreeVisibleRoute(route) {
       if (!this.treeVisibleRoutes.includes(route)) {
         this.treeVisibleRoutes.push(route);
-        console.log("添加树形面板路由:", route);
       }
     },
 
@@ -1175,14 +1154,12 @@ export default {
       const index = this.treeVisibleRoutes.indexOf(route);
       if (index > -1) {
         this.treeVisibleRoutes.splice(index, 1);
-        console.log("移除树形面板路由:", route);
       }
     },
 
     // 批量设置树形面板路由
     setTreeVisibleRoutes(routes) {
       this.treeVisibleRoutes = [...routes];
-      console.log("批量设置树形面板路由:", routes);
 
       // 重新检查当前路由
       if (!this.shouldShowTreeByRoute && this.showTreePanel) {
@@ -1195,7 +1172,6 @@ export default {
       this.showTreePanel = true;
       this.forceHideTreePanel = false;
       localStorage.removeItem("tree-panel-state");
-      console.log("树形面板状态已重置");
     },
 
     // ========== 调试辅助方法 ==========
@@ -1278,18 +1254,11 @@ export default {
     },
 
     toggleSideBar() {
-      console.log("=== toggleSideBar 被调用 ===");
-      console.log("调用前 - expandedItem:", this.expandedItem);
-
       // 只关闭子菜单，不改变侧边栏展开/收缩状态
       if (this.expandedItem) {
         this.handleCollapseSubmenu();
-        console.log("子菜单已关闭");
       } else {
-        console.log("没有展开的子菜单需要关闭");
       }
-
-      console.log("=== toggleSideBar 结束 ===");
     },
 
     handleAvatarError(e) {
@@ -1312,24 +1281,20 @@ export default {
         // 步骤1: 重置管理方状态
         if (this.$store.hasModule("manager")) {
           await this.$store.dispatch("manager/resetManager");
-          console.log("管理方状态已重置");
         }
 
         // 步骤2: 清空 TagsView
         if (this.$store.hasModule("tagsView")) {
           await this.$store.dispatch("tagsView/clearAllForPlatformSwitch");
-          console.log("TagsView 已清空");
         }
 
         // 步骤3: 调用用户退出（这会自动重置路由）
         await this.$store.dispatch("user/logout");
-        console.log("用户退出成功，路由已重置");
 
         // 步骤4: 清除本地存储的额外数据
         localStorage.removeItem("selectedPlatform");
         localStorage.removeItem("tree-panel-state");
         localStorage.removeItem("submenu-collapsed-groups");
-        console.log("本地存储已清理");
 
         loading.close();
 
@@ -1342,7 +1307,6 @@ export default {
 
         // 步骤6: 强制跳转到登录页（避免路由问题）
         setTimeout(() => {
-          console.log("强制跳转到登录页");
           window.location.href = "/login";
         }, 1000);
       } catch (error) {
@@ -1371,13 +1335,6 @@ export default {
 
     // 处理子菜单关闭
     handleCollapseSubmenu() {
-      console.log("=== 手动收起子菜单 ===");
-      console.log("收起前状态 - expandedItem:", this.expandedItem);
-      console.log(
-        "收起前状态 - originalSelectedItem:",
-        this.originalSelectedItem
-      );
-
       // 恢复到基于当前路由的选中状态
       if (this.originalSelectedItem) {
         this.selectedItem = this.originalSelectedItem;
@@ -1396,9 +1353,6 @@ export default {
 
       // 清空分组折叠状态
       this.collapsedGroups = {};
-
-      console.log("收起后状态 - selectedItem:", this.selectedItem);
-      console.log("=== 收起子菜单完成 ===");
     },
 
     // 切换子菜单项的展开状态
@@ -1462,9 +1416,7 @@ export default {
     // 加载管理方列表
     async loadManagerList() {
       try {
-        console.log("开始加载管理方列表...");
         await this.getManagerList();
-        console.log("管理方列表加载完成:", this.managerList);
       } catch (error) {
         console.error("加载管理方列表失败:", error);
         this.$message.error("获取管理方列表失败");
@@ -1500,20 +1452,13 @@ export default {
           fullPath: this.$route.fullPath,
         };
 
-        console.log("=== 企业切换开始（控制台内切换，保留TagsView）===");
-        console.log("当前企业ID:", this.currentManagerId);
-        console.log("目标企业ID:", managerId);
-        console.log("当前路由信息:", currentRoute);
-
         // 重要：企业切换时只清空页面缓存，保留TagsView标签页
         if (this.$store.hasModule("tagsView")) {
-          console.log("企业切换 - 只清空页面缓存，保留TagsView标签");
           await this.$store.dispatch("tagsView/clearCacheForManagerSwitch");
         }
 
         // 调用store中的切换方法
         await this.switchManager(managerId);
-        console.log("企业切换完成");
 
         // 触发企业切换事件，通知TagsView组件
         this.$bus &&
@@ -1537,8 +1482,6 @@ export default {
 
         // 企业切换使用温和的页面更新方式
         this.$nextTick(() => {
-          console.log("企业切换完成，温和刷新当前页面内容");
-
           const newQuery = {
             ...currentRoute.query,
             _t: Date.now(),
@@ -1550,15 +1493,9 @@ export default {
               path: currentRoute.path,
               query: newQuery,
             })
-            .then(() => {
-              console.log("企业切换 - 路由查询参数已更新");
-            })
-            .catch((err) => {
-              console.log("企业切换 - 路由更新完成或无需更新");
-            });
+            .then(() => {})
+            .catch((err) => {});
         });
-
-        console.log("=== 企业切换流程完成 ===");
       } catch (error) {
         console.error("企业切换失败:", error);
         this.$message.error(`企业切换失败：${error.message || "请稍后重试"}`);
@@ -1579,22 +1516,16 @@ export default {
 
       this.previousSelectedItem = this.selectedItem;
       this.selectedItem = path;
-      console.log("设置选中项:", path);
     },
 
     // 根据路由更新选中状态 - 增强版
     updateSelectionFromRoute(routePath) {
-      console.log("=== updateSelectionFromRoute 开始 ===");
-      console.log("目标路由:", routePath);
-      console.log("当前展开的子菜单:", this.currentSubmenu);
-
       // 检查是否为首页路由（不显示子菜单的路由）
       const isHomePage = this.isHomePageRoute(routePath);
-      console.log("是否为首页路由:", isHomePage);
 
       if (isHomePage) {
         // 如果是首页路由，直接关闭所有子菜单
-        console.log("检测到首页路由，关闭所有子菜单");
+
         this.handleCollapseSubmenu();
 
         // 查找匹配的菜单项并设置选中状态
@@ -1607,7 +1538,6 @@ export default {
           this.setSelectedItem(matchingResult.path);
         }
 
-        console.log("=== updateSelectionFromRoute 结束（首页路由） ===");
         return;
       }
 
@@ -1616,7 +1546,6 @@ export default {
         this.permission_routes,
         routePath
       );
-      console.log("匹配结果:", matchingResult);
 
       if (matchingResult) {
         // 记录当前路由对应的菜单项
@@ -1624,15 +1553,11 @@ export default {
 
         // 如果是子路由，需要展开对应的父菜单
         if (matchingResult.isChildRoute && matchingResult.parentItem) {
-          console.log("检测到子路由，父菜单:", matchingResult.parentItem);
-
           // 如果当前没有展开任何子菜单，或者展开的不是正确的父菜单
           if (
             !this.expandedItem ||
             this.expandedItem !== matchingResult.parentItem.path
           ) {
-            console.log("需要展开父菜单:", matchingResult.parentItem.path);
-
             // 记录原始选中项（如果还没有记录的话）
             if (!this.expandedItem) {
               this.originalSelectedItem = this.selectedItem;
@@ -1645,10 +1570,6 @@ export default {
 
             // 设置父菜单为选中状态
             this.selectedItem = matchingResult.parentItem.path;
-
-            console.log("父菜单已展开，设置状态:");
-            console.log("expandedItem:", this.expandedItem);
-            console.log("selectedItem:", this.selectedItem);
           }
 
           // 无论如何都要更新当前路由项
@@ -1656,9 +1577,6 @@ export default {
 
           // 处理深层嵌套的情况
           if (matchingResult.isDeepChild) {
-            console.log("检测到深层嵌套路由");
-            console.log("需要展开的中间层:", matchingResult.expandablePath);
-
             // 确保中间层也展开
             this.$nextTick(() => {
               if (
@@ -1670,7 +1588,6 @@ export default {
                   matchingResult.expandablePath
                 );
                 this.$set(this.expandedSubmenuItems, expandPath, true);
-                console.log("自动展开中间层:", expandPath);
               }
             });
           } else {
@@ -1691,7 +1608,6 @@ export default {
                     if (hasActiveChild) {
                       const childPath = this.resolvePath(child.path);
                       this.$set(this.expandedSubmenuItems, childPath, true);
-                      console.log("自动展开子菜单:", childPath);
                     }
                   }
                 });
@@ -1701,33 +1617,20 @@ export default {
         } else {
           // 如果不是子路由，检查是否需要关闭当前展开的子菜单
           if (this.expandedItem) {
-            console.log("当前路由不是子路由，检查是否需要关闭子菜单");
-
             // 检查当前路由是否就是展开的父菜单本身
             if (matchingResult.path === this.expandedItem) {
-              console.log("当前路由就是展开的父菜单，保持子菜单展开");
               this.selectedItem = matchingResult.path;
             } else {
-              console.log("当前路由不属于展开的子菜单，关闭子菜单");
               this.handleCollapseSubmenu();
               this.setSelectedItem(matchingResult.path);
             }
           } else {
             // 没有展开的子菜单，正常设置选中项
-            console.log("没有展开的子菜单，正常设置选中项");
+
             this.setSelectedItem(matchingResult.path);
           }
         }
       }
-
-      console.log("=== updateSelectionFromRoute 结束 ===");
-      console.log("最终状态 - selectedItem:", this.selectedItem);
-      console.log("最终状态 - expandedItem:", this.expandedItem);
-      console.log("最终状态 - currentRouteItem:", this.currentRouteItem);
-      console.log(
-        "最终状态 - expandedSubmenuItems:",
-        this.expandedSubmenuItems
-      );
     },
 
     // 判断是否为首页路由的方法
@@ -1826,17 +1729,12 @@ export default {
 
     // 切换子菜单显示
     toggleSubmenu(item) {
-      console.log("=== toggleSubmenu 被调用 ===");
-      console.log("点击的菜单项:", item);
-      console.log("当前展开项:", this.expandedItem);
-
       if (this.expandedItem === item.path) {
         // 如果点击的是当前展开的菜单，不做任何操作（需要手动收起）
-        console.log("点击已展开的菜单，不执行收起操作");
+
         return;
       } else {
         // 展开新的子菜单
-        console.log("展开新的子菜单");
 
         // 记录展开前的原始选中项（基于当前路由）
         if (!this.expandedItem) {
@@ -1850,13 +1748,7 @@ export default {
 
         // 立即高亮父菜单
         this.selectedItem = item.path;
-
-        console.log("设置后的状态:");
-        console.log("expandedItem:", this.expandedItem);
-        console.log("selectedItem:", this.selectedItem);
-        console.log("originalSelectedItem:", this.originalSelectedItem);
       }
-      console.log("=== toggleSubmenu 结束 ===");
     },
 
     // 关闭子菜单
@@ -1881,7 +1773,6 @@ export default {
       this.setSelectedItem(fullPath);
       // 更新当前路由项
       this.currentRouteItem = fullPath;
-      console.log("子菜单项被点击:", fullPath);
     },
 
     // 全屏切换功能
@@ -2003,7 +1894,6 @@ export default {
       }
 
       const permissions = getAvailablePlatforms(userRole);
-      console.log("Layout: 用户平台权限:", permissions);
 
       return permissions;
     },
@@ -2022,16 +1912,13 @@ export default {
       const currentStorePlatform =
         this.$store.getters["permission/currentPlatform"];
 
-      console.log("Store中的当前平台:", currentStorePlatform);
-      console.log("用户可用平台:", userPermissions);
-
       // 如果store中有平台信息且用户有权限，使用store中的
       if (
         currentStorePlatform &&
         userPermissions.includes(currentStorePlatform)
       ) {
         this.currentPlatformKey = currentStorePlatform;
-        console.log("使用Store中的平台设置:", currentStorePlatform);
+
         return;
       }
 
@@ -2041,15 +1928,10 @@ export default {
       // 如果localStorage中的平台有效且用户有权限
       if (savedPlatform && userPermissions.includes(savedPlatform)) {
         this.currentPlatformKey = savedPlatform;
-        console.log("使用localStorage中的平台:", savedPlatform);
       } else {
         // 使用用户有权限的第一个平台
         this.currentPlatformKey = userPermissions[0];
-        console.log("使用默认平台:", userPermissions[0]);
       }
-
-      console.log("最终初始化平台:", this.currentPlatform.name);
-      console.log("是否可以切换平台:", this.canSwitchPlatform);
     },
 
     // 平台切换（管理系统 ↔ 控制台）
@@ -2072,9 +1954,6 @@ export default {
             this.$store.state.tagsView?.cachedViews?.length || 0,
         };
 
-        console.log("=== 平台切换开始 ===");
-        console.log("切换信息:", beforeSwitchInfo);
-
         // 先跳转到切换页面，避免在当前页面显示404
         if (this.$route.path !== "/switching") {
           await this.$router.push("/switching").catch(() => {});
@@ -2088,50 +1967,42 @@ export default {
         });
 
         // 步骤1: 完全清空TagsView
-        console.log("步骤1: 完全清空TagsView");
+
         if (this.$store.hasModule("tagsView")) {
           await this.$store.dispatch("tagsView/clearAllForPlatformSwitch");
-          console.log("TagsView已完全清空");
         } else {
           console.warn("TagsView模块不存在");
         }
 
         // 步骤2: 重置权限路由
-        console.log("步骤2: 重置权限路由");
+
         await this.$store.dispatch("permission/resetRoutes");
-        console.log("权限路由已重置");
 
         // 步骤3: 处理企业状态
-        console.log("步骤3: 处理企业状态");
+
         if (platformKey === "admin") {
           // 切换到管理系统时重置企业状态
           await this.$store.dispatch("manager/resetManager");
-          console.log("已重置企业状态（切换到管理系统）");
         } else if (platformKey === "console") {
           // 切换到控制台时重置企业状态，后续会重新加载
           await this.$store.dispatch("manager/resetManager");
-          console.log("已重置企业状态（准备切换到控制台）");
         }
 
         // 步骤4: 等待状态稳定
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         // 步骤5: 切换平台路由
-        console.log("步骤5: 切换平台路由");
+
         await this.$store.dispatch("permission/switchPlatform", platformKey);
-        console.log("平台路由切换完成");
 
         // 步骤6: 如果切换到控制台，重新加载企业列表
         if (platformKey === "console") {
-          console.log("步骤6: 重新加载企业列表");
           await this.loadManagerList();
-          console.log("企业列表已重新加载");
         }
 
         // 步骤7: 更新当前平台状态
         this.currentPlatformKey = platformKey;
         localStorage.setItem("selectedPlatform", platformKey);
-        console.log("平台状态已更新:", platformKey);
 
         // 步骤8: 等待所有状态更新完成
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -2139,7 +2010,7 @@ export default {
         loading.close();
 
         // 步骤9: 触发平台切换事件通知TagsView组件
-        console.log("步骤9: 触发平台切换事件");
+
         this.$bus &&
           this.$bus.$emit("platform-switched", {
             from: beforeSwitchInfo.fromPlatform,
@@ -2163,8 +2034,6 @@ export default {
           redirectPath = "/admin/dashboard";
         }
 
-        console.log("步骤10: 跳转到新平台首页:", redirectPath);
-
         // 使用replace跳转到新平台首页
         await this.$router.replace(redirectPath).catch((err) => {
           console.error("路由跳转失败，使用强制跳转:", err);
@@ -2172,7 +2041,7 @@ export default {
         });
 
         // 步骤11: 验证切换结果
-        console.log("步骤11: 验证切换结果");
+
         this.$nextTick(() => {
           const afterSwitchInfo = {
             currentPlatform: this.currentPlatformKey,
@@ -2182,14 +2051,12 @@ export default {
             cachedViewsCount:
               this.$store.state.tagsView?.cachedViews?.length || 0,
           };
-          console.log("切换后状态:", afterSwitchInfo);
 
           // 验证TagsView是否确实被清空
           if (
             afterSwitchInfo.visitedViewsCount === 0 &&
             afterSwitchInfo.cachedViewsCount === 0
           ) {
-            console.log("✅ 平台切换成功：TagsView已完全清空");
           } else {
             console.warn(
               "⚠️ 平台切换警告：TagsView未完全清空",
@@ -2197,8 +2064,6 @@ export default {
             );
           }
         });
-
-        console.log("=== 平台切换完成 ===");
       } catch (error) {
         console.error("平台切换失败:", error);
         this.$message.error(`平台切换失败: ${error.message || "请稍后重试"}`);
@@ -2221,16 +2086,13 @@ export default {
       this.showSettingsPanel = !this.showSettingsPanel;
 
       if (this.showSettingsPanel) {
-        console.log("个性设置面板已打开");
       } else {
-        console.log("个性设置面板已关闭");
       }
     },
 
     // 处理设置面板关闭
     handleSettingsPanelClose() {
       this.showSettingsPanel = false;
-      console.log("设置面板通过事件关闭");
     },
 
     // 判断当前操作是否为平台切换

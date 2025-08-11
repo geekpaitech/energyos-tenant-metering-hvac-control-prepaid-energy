@@ -20,18 +20,12 @@ router.beforeEach(async (to, from, next) => {
 
   // 设置页面标题
   document.title =
-    to.meta && to.meta.title
-      ? `${to.meta.title} -  物联中台`
-      : " 物联中台";
+    to.meta && to.meta.title ? `${to.meta.title} -  物联中台` : " 物联中台";
 
   const hasToken = getToken();
-  console.log("=== 路由守卫 ===");
-  console.log("从:", from.path, "到:", to.path);
-  console.log("Token:", hasToken ? "存在" : "不存在");
 
   if (hasToken) {
     if (to.path === "/login") {
-      console.log("已登录，跳转首页");
       // 已登录用户访问登录页，重定向到首页
       const redirectPath = await getRedirectPath();
       next({ path: redirectPath, replace: true });
@@ -40,58 +34,54 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // 检查是否有用户信息和路由
-    const hasUserInfo = store.getters.name && store.getters.roles && store.getters.roles.length > 0;
-    const hasRoutes = store.getters.permission_routes && store.getters.permission_routes.length > 0;
-    
-    console.log("是否有用户信息:", hasUserInfo);
-    console.log("是否有权限路由:", hasRoutes);
+    const hasUserInfo =
+      store.getters.name &&
+      store.getters.roles &&
+      store.getters.roles.length > 0;
+    const hasRoutes =
+      store.getters.permission_routes &&
+      store.getters.permission_routes.length > 0;
 
     if (hasUserInfo && hasRoutes) {
       // 已有用户信息和路由，直接通过
-      console.log("用户信息和路由都存在，直接通过");
+
       next();
     } else {
       try {
         // 获取用户信息（如果还没有）
         let role = store.getters.roles?.[0];
         if (!hasUserInfo) {
-          console.log("获取用户信息...");
           const userInfo = await store.dispatch("user/getUserInfo");
           role = userInfo.role;
-          console.log("用户信息获取成功，角色:", role);
         }
 
         // 生成路由（如果还没有）
         if (!hasRoutes) {
-          console.log("生成路由...");
-          
           // 确定目标平台
           const targetPlatform = await determinePlatform(role);
-          console.log("确定目标平台:", targetPlatform);
 
           // 生成和添加路由
-          const accessRoutes = await store.dispatch("permission/generateRoutes", {
-            role,
-            platform: targetPlatform,
-          });
-          
-          console.log("生成的权限路由数量:", accessRoutes?.length || 0);
+          const accessRoutes = await store.dispatch(
+            "permission/generateRoutes",
+            {
+              role,
+              platform: targetPlatform,
+            }
+          );
 
           if (accessRoutes && accessRoutes.length > 0) {
             // 添加路由
             router.addRoutes(accessRoutes);
-            console.log("动态路由添加完成");
-            
+
             // 处理根路径重定向
             if (to.path === "/" || to.path === "") {
               const redirectPath = await getRedirectPath();
-              console.log("根路径重定向到:", redirectPath);
               next({ path: redirectPath, replace: true });
               return;
             }
 
             // 重新导航到目标路由，让新添加的路由生效
-            console.log("重新导航到目标路由:", to.path);
+
             next({ ...to, replace: true });
             return;
           } else {
@@ -101,29 +91,30 @@ router.beforeEach(async (to, from, next) => {
             return;
           }
         }
-        
+
         // 如果用户信息和路由都已存在，直接通过
         next();
-        
       } catch (error) {
         console.error("初始化失败:", error);
         await handleAuthError(error, to.path);
-        next({ path: "/login?redirect=" + encodeURIComponent(to.path), replace: true });
+        next({
+          path: "/login?redirect=" + encodeURIComponent(to.path),
+          replace: true,
+        });
         NProgress.done();
       }
     }
   } else {
-    console.log("无Token");
     if (whiteList.indexOf(to.path) !== -1) {
-      console.log("在白名单中，直接通过");
       next();
     } else {
-      console.log("不在白名单，跳转登录页");
-      next({ path: "/login?redirect=" + encodeURIComponent(to.path), replace: true });
+      next({
+        path: "/login?redirect=" + encodeURIComponent(to.path),
+        replace: true,
+      });
       NProgress.done();
     }
   }
-  console.log("===============");
 });
 
 router.afterEach(() => {
@@ -142,12 +133,13 @@ router.onError((error) => {
 async function determinePlatform(role) {
   // 首先尝试从localStorage读取上次选择的平台
   const savedPlatform = localStorage.getItem("selectedPlatform");
-  console.log("localStorage中保存的平台:", savedPlatform);
 
   // 获取用户可用平台列表
-  const { getAvailablePlatforms, getDefaultPlatform } = require("@/utils/routeConfig");
+  const {
+    getAvailablePlatforms,
+    getDefaultPlatform,
+  } = require("@/utils/routeConfig");
   const availablePlatforms = getAvailablePlatforms(role);
-  console.log("用户可用平台:", availablePlatforms);
 
   // 验证保存的平台是否有效
   if (savedPlatform && availablePlatforms.includes(savedPlatform)) {
@@ -164,7 +156,6 @@ async function determinePlatform(role) {
 async function getRedirectPath() {
   // 获取当前平台信息
   const currentPlatform = store.getters["permission/currentPlatform"];
-  console.log("当前平台:", currentPlatform);
 
   // 根据当前平台确定重定向路径
   if (currentPlatform === "console") {
@@ -206,9 +197,10 @@ function findFirstAccessibleRoute(routes) {
       for (const child of route.children) {
         if (!child.hidden) {
           // 构建完整路径
-          const fullPath = route.path === "/" 
-            ? child.path 
-            : `${route.path}/${child.path}`.replace(/\/+/g, "/");
+          const fullPath =
+            route.path === "/"
+              ? child.path
+              : `${route.path}/${child.path}`.replace(/\/+/g, "/");
           return fullPath;
         }
       }
@@ -228,10 +220,10 @@ function findFirstAccessibleRoute(routes) {
  */
 async function handleAuthError(error, targetPath) {
   console.error("认证错误:", error);
-  
+
   // 清理用户状态和路由
   await store.dispatch("user/resetToken");
-  
+
   Message({
     message: error.message || "登录状态已过期，请重新登录",
     type: "warning",
