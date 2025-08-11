@@ -32,9 +32,11 @@
       <div v-if="currentSubmenu && sidebar.opened" class="submenu-panel">
         <div class="submenu-header">
           <div class="submenu-title">
-            <i v-if="currentSubmenu.meta && currentSubmenu.meta.icon"
-   :class="['iconfont', currentSubmenu.meta.icon]"
-   class="submenu-icon" />
+            <i
+              v-if="currentSubmenu.meta && currentSubmenu.meta.icon"
+              :class="['iconfont', currentSubmenu.meta.icon]"
+              class="submenu-icon"
+            />
             <span>{{
               currentSubmenu.meta ? currentSubmenu.meta.title : ""
             }}</span>
@@ -107,9 +109,11 @@
                   }"
                   @click="toggleSubmenuItem(child.path)"
                 >
-                <i v-if="child.meta && child.meta.icon"
-   :class="['iconfont', child.meta.icon]"
-   class="submenu-item-icon" />
+                  <i
+                    v-if="child.meta && child.meta.icon"
+                    :class="['iconfont', child.meta.icon]"
+                    class="submenu-item-icon"
+                  />
                   <span class="submenu-item-title">{{
                     child.meta ? child.meta.title : ""
                   }}</span>
@@ -159,11 +163,11 @@
                             ),
                           }"
                         >
-                        <i
-  v-if="subChild.meta && subChild.meta.icon"
-  :class="['iconfont', subChild.meta.icon]"
-  class="submenu-child-icon"
-/>
+                          <i
+                            v-if="subChild.meta && subChild.meta.icon"
+                            :class="['iconfont', subChild.meta.icon]"
+                            class="submenu-child-icon"
+                          />
                           <span class="submenu-child-title">{{
                             subChild.meta ? subChild.meta.title : ""
                           }}</span>
@@ -186,9 +190,11 @@
                   class="submenu-item"
                   :class="{ 'is-active': isSubmenuItemActive(child.path) }"
                 >
-                <i v-if="child.meta && child.meta.icon"
-   :class="['iconfont', child.meta.icon]"
-   class="submenu-item-icon" />
+                  <i
+                    v-if="child.meta && child.meta.icon"
+                    :class="['iconfont', child.meta.icon]"
+                    class="submenu-item-icon"
+                  />
                   <span class="submenu-item-title">{{
                     child.meta ? child.meta.title : ""
                   }}</span>
@@ -269,21 +275,16 @@
 
         <!-- 右侧用户区域 -->
         <div class="navbar-right">
-          <!-- 角色显示 -->
-          <div class="role-container">
-            <el-tag
-              v-for="role in roles"
-              :key="role"
-              size="small"
-              type="info"
-              style="margin-right: 8px"
-            >
-              {{ role }}
-            </el-tag>
+          <!-- OpenAPI 链接 -->
+          <div class="openapi-container">
+            <router-link to="/api-docs" target="_blank" class="openapi-link">
+              <i class="el-icon-document"></i>
+              <span>OpenAPI</span>
+            </router-link>
           </div>
 
-          <!-- 平台切换器 - 只有多个平台权限时显示 -->
-          <div class="platform-switcher" v-if="canSwitchPlatform">
+          <!-- 平台切换器 - 只有多个平台权限时显示/单一平台显示 - 只有一个平台权限时显示 -->
+          <!-- <div class="platform-switcher" v-if="canSwitchPlatform">
             <div class="switcher-label">切换至</div>
             <el-dropdown @command="handlePlatformSwitch" trigger="click">
               <div class="current-platform">
@@ -311,14 +312,13 @@
             </el-dropdown>
           </div>
 
-          <!-- 单一平台显示 - 只有一个平台权限时显示 -->
           <div v-else-if="hasSinglePlatform" class="single-platform">
             <div class="platform-label">当前平台</div>
             <div class="platform-info">
               <i :class="currentPlatform.icon" class="platform-icon"></i>
               <span class="platform-name">{{ currentPlatform.name }}</span>
             </div>
-          </div>
+          </div> -->
 
           <!-- 全屏切换按钮 -->
           <div
@@ -333,14 +333,22 @@
             ></i>
           </div>
 
+          <!-- 个性设置按钮 -->
+          <div
+            class="settings-container"
+            :class="{ 'is-active': showSettingsPanel }"
+            @click="toggleSettingsPanel"
+            title="个性设置"
+          >
+            <i class="el-icon-setting"></i>
+          </div>
+
           <!-- 用户下拉菜单 -->
           <el-dropdown class="avatar-container" trigger="click">
             <div class="avatar-wrapper">
-              <img
-                :src="userAvatar"
-                class="user-avatar"
-                @error="handleAvatarError"
-              />
+              <div class="user-avatar-static">
+                <i class="el-icon-user"></i>
+              </div>
               <span class="user-name">{{ userName }}</span>
               <i class="el-icon-caret-bottom" />
             </div>
@@ -460,7 +468,11 @@
         </div>
       </div>
     </div>
-    <SettingsPanel />
+    <!-- 个性设置面板 - 通过props控制显示 -->
+    <SettingsPanel
+      :visible="showSettingsPanel"
+      @close="handleSettingsPanelClose"
+    />
   </div>
 </template>
 
@@ -547,7 +559,7 @@ export default {
         "/application/invoice/invoice-quota",
         "/application/invoice/quota-flow",
         "/device/parking",
-        "/device/charging"
+        "/device/charging",
         // 可以根据需要添加更多路由
       ],
 
@@ -565,6 +577,9 @@ export default {
 
       // 动态导入的API
       tierSelectTenantTierListApi: null,
+
+      // 个性设置面板显示状态
+      showSettingsPanel: false,
     };
   },
 
@@ -671,11 +686,11 @@ export default {
     // 判断当前路由是否应该显示树形面板
     shouldShowTreeByRoute() {
       const currentPath = this.$route.path;
-        // ========== 新增：排除所有详情页 ==========
-    // 如果路径包含 /detail/ 或以 /detail 结尾，不显示树形面板
-    if (currentPath.includes('/detail/') || currentPath.endsWith('/detail')) {
-      return false;
-    }
+      // ========== 新增：排除所有详情页 ==========
+      // 如果路径包含 /detail/ 或以 /detail 结尾，不显示树形面板
+      if (currentPath.includes("/detail/") || currentPath.endsWith("/detail")) {
+        return false;
+      }
 
       // 精确匹配
       if (this.treeVisibleRoutes.includes(currentPath)) {
@@ -2201,6 +2216,23 @@ export default {
       }
     },
 
+    // 切换个性设置面板
+    toggleSettingsPanel() {
+      this.showSettingsPanel = !this.showSettingsPanel;
+
+      if (this.showSettingsPanel) {
+        console.log("个性设置面板已打开");
+      } else {
+        console.log("个性设置面板已关闭");
+      }
+    },
+
+    // 处理设置面板关闭
+    handleSettingsPanelClose() {
+      this.showSettingsPanel = false;
+      console.log("设置面板通过事件关闭");
+    },
+
     // 判断当前操作是否为平台切换
     isPlatformSwitch(fromPlatform, toPlatform) {
       // 判断是否为不同平台之间的切换
@@ -2513,13 +2545,13 @@ export default {
             font-size: 13px;
 
             .submenu-child-icon {
-              font-size: 18px !important;  // 子项稍小一点，保持层级感
-            margin-right: 10px;
-            color: var(--text-secondary);
-            width: 20px;
-            text-align: center;
-            flex-shrink: 0;
-            line-height: 1;
+              font-size: 18px !important; // 子项稍小一点，保持层级感
+              margin-right: 10px;
+              color: var(--text-secondary);
+              width: 20px;
+              text-align: center;
+              flex-shrink: 0;
+              line-height: 1;
             }
 
             .submenu-child-title {
@@ -2581,12 +2613,12 @@ export default {
         font-size: 14px;
 
         .submenu-item-icon {
-          font-size: 20px !important;  // 统一改为20px
+          font-size: 20px !important; // 统一改为20px
           margin-right: 12px;
           color: var(--text-secondary);
           width: 22px;
           text-align: center;
-          flex-shrink: 0;  // 防止图标被压缩
+          flex-shrink: 0; // 防止图标被压缩
           line-height: 1;
         }
 
@@ -2726,7 +2758,7 @@ export default {
     align-items: center;
     gap: 16px;
 
-    /* 管理方切换器样式 */
+    /* 管理方切换器样式 - 完全移除边框 */
     .manager-switcher {
       display: flex;
       align-items: center;
@@ -2737,9 +2769,28 @@ export default {
       transition: all 0.3s ease;
       min-width: 280px;
       max-height: 70vh !important;
+
+      /* 完全移除边框 */
+      border: none !important;
+
       &:hover {
-        border-color: var(--primary-color);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        /* 移除hover时的边框和阴影效果 */
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      /* 确保下拉组件本身也没有边框 */
+      .el-dropdown {
+        border: none !important;
+        outline: none !important;
+
+        &:hover,
+        &:focus,
+        &:active {
+          border: none !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
       }
 
       .switcher-label {
@@ -2759,8 +2810,13 @@ export default {
         transition: all 0.3s ease;
         flex: 1;
 
+        /* 移除管理方hover时的边框效果 */
+        border: none !important;
+
         &:hover {
           background: var(--hover-bg);
+          /* 移除hover时的边框 */
+          border: none !important;
         }
 
         .manager-avatar {
@@ -2821,6 +2877,57 @@ export default {
     display: flex;
     align-items: center;
     gap: 20px;
+
+    /* OpenAPI链接样式 - 去除边框 */
+    .openapi-container {
+      display: flex;
+      align-items: center;
+
+      .openapi-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--card-bg);
+        border-radius: 10px;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none !important; /* 完全去除边框 */
+        outline: none !important; /* 去除轮廓线 */
+
+        &:hover {
+          background: var(--primary-color);
+          color: #fff;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          border: none !important; /* hover时也不要边框 */
+          outline: none !important; /* hover时也不要轮廓线 */
+        }
+
+        &:focus {
+          border: none !important; /* focus时也不要边框 */
+          outline: none !important; /* focus时也不要轮廓线 */
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        &:active {
+          border: none !important; /* active时也不要边框 */
+          outline: none !important; /* active时也不要轮廓线 */
+        }
+
+        i {
+          font-size: 16px;
+          transition: color 0.3s ease;
+        }
+
+        span {
+          font-weight: 600;
+        }
+      }
+    }
 
     /* 平台切换器样式 */
     .platform-switcher {
@@ -2928,21 +3035,6 @@ export default {
       }
     }
 
-    /* 角色显示样式 */
-    .role-container {
-      .el-tag {
-        background: var(--hover-bg);
-        color: var(--text-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        font-weight: 500;
-        font-size: 12px;
-        padding: 4px 8px;
-        height: auto;
-        line-height: 1.2;
-      }
-    }
-
     /* 全屏按钮样式 */
     .fullscreen-container {
       width: 36px;
@@ -2978,6 +3070,57 @@ export default {
       }
     }
 
+    /* 个性设置按钮样式 */
+    .settings-container {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 8px;
+      background: var(--hover-bg);
+      border: 1px solid var(--border-color);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+
+        i {
+          color: #fff;
+        }
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      /* 激活状态 - 设置面板打开时 */
+      &.is-active {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+
+        i {
+          color: #fff;
+          transform: rotate(45deg); /* 激活时旋转图标 */
+        }
+
+        &:hover {
+          transform: translateY(-1px); /* 激活时hover效果减弱 */
+        }
+      }
+
+      i {
+        font-size: 16px;
+        color: var(--text-secondary);
+        transition: all 0.3s ease;
+      }
+    }
+
     .avatar-container {
       .avatar-wrapper {
         display: flex;
@@ -2996,13 +3139,23 @@ export default {
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
         }
 
-        .user-avatar {
+        /* 静态用户头像样式 */
+        .user-avatar-static {
           width: 28px;
           height: 28px;
           border-radius: 6px;
           margin-right: 10px;
           border: 1px solid var(--border-color);
           transition: all 0.3s ease;
+          background: #6c7b88; /* 固定的灰色背景 */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          i {
+            font-size: 16px;
+            color: #fff;
+          }
         }
 
         .user-name {
@@ -3442,6 +3595,26 @@ export default {
         padding: 6px 12px;
         gap: 8px;
         min-width: unset;
+        border: none !important; /* 移动端也确保没有边框 */
+
+        &:hover {
+          border: none !important;
+          box-shadow: none !important;
+        }
+
+        /* 移动端下拉组件样式 */
+        .el-dropdown {
+          border: none !important;
+          outline: none !important;
+
+          &:hover,
+          &:focus,
+          &:active {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+          }
+        }
 
         .manager-name {
           font-size: 13px;
@@ -3461,6 +3634,27 @@ export default {
 
     .navbar-right {
       gap: 12px;
+
+      .openapi-container {
+        .openapi-link {
+          padding: 6px 12px;
+          gap: 6px;
+          font-size: 13px;
+          border: none !important; /* 移动端也去除边框 */
+          outline: none !important; /* 移动端也去除轮廓线 */
+
+          &:hover,
+          &:focus,
+          &:active {
+            border: none !important;
+            outline: none !important;
+          }
+
+          i {
+            font-size: 14px;
+          }
+        }
+      }
 
       .platform-switcher {
         padding: 6px 12px;
@@ -3499,12 +3693,31 @@ export default {
         }
       }
 
+      .settings-container {
+        width: 32px;
+        height: 32px;
+
+        &.is-active {
+          i {
+            transform: rotate(45deg);
+          }
+        }
+
+        i {
+          font-size: 14px;
+        }
+      }
+
       .avatar-container .avatar-wrapper {
         padding: 6px 12px;
 
-        .user-avatar {
+        .user-avatar-static {
           width: 24px;
           height: 24px;
+
+          i {
+            font-size: 14px;
+          }
         }
 
         .user-name {

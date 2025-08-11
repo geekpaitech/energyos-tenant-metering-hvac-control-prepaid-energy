@@ -944,7 +944,6 @@ export default {
         basic: [
           { prop: "parkingCode", label: "车位编号", type: "input", placeholder: "请输入车位编号" },
           { prop: "meterName", label: "车位名称", type: "input", placeholder: "请输入车位名称" },
-          { prop: "floor", label: "楼层", type: "select" },
           { prop: "area", label: "区域", type: "select" },
           { prop: "parkingType", label: "车位类型", type: "select" },
         ],

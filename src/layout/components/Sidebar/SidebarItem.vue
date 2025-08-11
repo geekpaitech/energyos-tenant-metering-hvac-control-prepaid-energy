@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!item.hidden" class="sidebar-item-wrapper">
+<div v-if="!item.hidden && !isApiDocsRoute(item)" class="sidebar-item-wrapper">
     <!-- 如果是分隔线 -->
     <div 
       v-if="item.meta && item.meta.isDivider" 
@@ -124,6 +124,10 @@ export default {
   },
   
   methods: {
+      // 新增：检查是否是API文档路由
+  isApiDocsRoute(item) {
+    return item.name === 'ApiDocs' || item.path === '/api-docs'
+  },
     hasOneShowingChild(children = [], parent) {
       const showingChildren = children.filter(item => {
         if (item.hidden) {

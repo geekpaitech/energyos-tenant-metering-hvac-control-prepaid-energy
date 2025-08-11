@@ -1,15 +1,8 @@
 <template>
   <div class="settings-panel">
-    <!-- 设置按钮 -->
-    <div class="settings-trigger" @click="visible = true">
-      <div class="trigger-icon">
-        <i class="el-icon-setting"></i>
-      </div>
-    </div>
-
     <!-- 设置弹窗 -->
     <el-dialog
-      :visible.sync="visible"
+      :visible.sync="dialogVisible"
       width="420px"
       :before-close="handleClose"
       :show-close="false"
@@ -27,7 +20,7 @@
               <p class="dialog-subtitle">自定义您的使用体验</p>
             </div>
           </div>
-          <button class="close-btn" @click="visible = false">
+          <button class="close-btn" @click="closePanel">
             <i class="el-icon-close"></i>
           </button>
         </div>
@@ -106,7 +99,7 @@
             重置默认
           </button>
           <div class="main-actions">
-            <button class="action-btn cancel-btn" @click="visible = false">
+            <button class="action-btn cancel-btn" @click="closePanel">
               取消
             </button>
             <button class="action-btn apply-btn" @click="applyChanges">
@@ -123,10 +116,17 @@
 <script>
 export default {
   name: 'ModernSettingsPanel',
+  
+  // 添加props来接收外部控制
+  props: {
+    visible: {
+      type: Boolean,
+      default: false
+    }
+  },
+  
   data() {
     return {
-      visible: false,
-      
       // 当前设置 - 默认改为商务灰白主题
       currentFontSize: localStorage.getItem('app_font_size') || 'medium',
       currentTheme: localStorage.getItem('app_theme') || 'white',
@@ -162,7 +162,31 @@ export default {
     }
   },
   
+  computed: {
+    // 使用计算属性来同步外部visible和内部状态
+    dialogVisible: {
+      get() {
+        return this.visible;
+      },
+      set(value) {
+        if (!value) {
+          this.closePanel();
+        }
+      }
+    }
+  },
+  
   methods: {
+    // 关闭面板
+    closePanel() {
+      // 如果有未应用的更改，先取消
+      if (this.previewFontSize !== this.currentFontSize || this.previewTheme !== this.currentTheme) {
+        this.cancelChanges();
+      }
+      // 通知父组件关闭
+      this.$emit('close');
+    },
+    
     // 选择字体大小
     selectFontSize(size) {
       this.previewFontSize = size
@@ -206,7 +230,7 @@ export default {
       const themeName = this.themes.find(t => t.value === this.currentTheme).name
       
       this.$message.success(`已应用 ${themeName} 主题设置`)
-      this.visible = false
+      this.closePanel()
     },
     
     // 取消更改
@@ -253,55 +277,7 @@ export default {
 </script>
 
 <style scoped>
-/* 设置触发按钮 */
-.settings-trigger {
-  position: fixed;
-  right: 24px;
-  bottom: 100px;
-  z-index: 1000;
-  cursor: pointer;
-}
-
-.trigger-icon {
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.trigger-icon::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.settings-trigger:hover .trigger-icon {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
-}
-
-.settings-trigger:hover .trigger-icon::before {
-  opacity: 1;
-}
-
-.trigger-icon i {
-  font-size: 20px;
-  color: white;
-  z-index: 1;
-}
+/* 移除了原来的右下角触发按钮样式 */
 
 /* 对话框包装器 */
 .dialog-wrapper {

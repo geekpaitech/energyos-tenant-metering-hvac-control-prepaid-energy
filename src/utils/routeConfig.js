@@ -483,6 +483,15 @@ export const consoleRoutes = [
         ]
       }
     ]
+  },
+  {
+    path: '/api-docs',
+    name: 'ApiDocs',
+    component: () => import('@/views/ApiDocs.vue'),
+    meta: {
+      title: '物联中台API文档',
+      hidden: true
+    }
   }
 ]
 
