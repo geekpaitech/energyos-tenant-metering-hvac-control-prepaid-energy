@@ -1,11 +1,12 @@
 <template>
   <div class="charging-station-page">
-    <!-- 顶部操作栏 -->
-    <div class="top-bar">
+    <!-- 页面头部 -->
+    <div class="page-header">
       <div class="page-title">
+        <!-- <i class="iconfont icon-chongdianzhuang1"></i> -->
+        充电桩设备管理
       </div>
-      <div class="action-buttons">
-        <el-button icon="el-icon-download" plain>导出数据</el-button>
+      <div class="page-actions">
         <el-button icon="el-icon-refresh" @click="refreshData">刷新</el-button>
         <el-button type="primary" icon="el-icon-plus" @click="showAddDialog">添加设备</el-button>
       </div>
@@ -15,7 +16,9 @@
     <div class="main-content">
       <!-- 筛选区域 -->
       <div class="filter-bar">
+        
         <div class="filter-left">
+          
           <el-input
             v-model="searchForm.keyword"
             placeholder="搜索设备编号、名称"
@@ -39,6 +42,7 @@
           <el-button icon="el-icon-refresh-left" @click="resetSearch">重置</el-button>
         </div>
         <div class="filter-right">
+          
           <el-radio-group v-model="viewMode" size="small">
             <el-radio-button label="card">
               <i class="el-icon-s-grid"></i> 卡片
@@ -257,7 +261,7 @@
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
             :current-page="pagination.currentPage"
-            :page-sizes="[10, 20, 30, 50]"
+            :page-sizes="[8, 20, 30, 50]"
             :page-size="pagination.pageSize"
             layout="total, sizes, prev, pager, next, jumper"
             :total="pagination.total">
@@ -351,7 +355,7 @@ export default {
   data() {
     return {
       // 视图模式
-      viewMode: 'table', // 默认改为表格视图以便查看效果
+      viewMode: 'table',
       // 搜索表单
       searchForm: {
         keyword: '',
@@ -395,16 +399,7 @@ export default {
           { required: true, message: '请输入设备位置', trigger: 'blur' }
         ]
       },
-      // 统计数据
-      statistics: {
-        total: 45,
-        online: 28,
-        charging: 12,
-        fault: 3
-      },
-      // 设备列表
-      deviceList: [],
-      // 站点列表 - 对应您的层级结构
+      // 站点列表 - 保持原有结构用于显示
       stationList: [
         { id: 1, name: '中心大厦栋-1F展览大厅' },
         { id: 2, name: '中心大厦栋-2F会议接待厅' },
@@ -416,10 +411,12 @@ export default {
         { id: 8, name: '创新大厦栋-2F餐厅食堂' },
         { id: 9, name: '创新大厦栋-3F技术研发' }
       ],
+      // 设备列表
+      deviceList: [],
       // 分页
       pagination: {
         currentPage: 1,
-        pageSize: 10,
+        pageSize: 8,
         total: 0
       },
       loading: false,
@@ -432,6 +429,35 @@ export default {
     this.loadData()
   },
   methods: {
+    // 生成设备编号
+    generateDeviceCode() {
+      const typePrefix = {
+        'ac_slow': 'AC',
+        'dc_fast': 'DC', 
+        'super_fast': 'SF'
+      }
+      const prefix = typePrefix[this.deviceForm.type] || 'DEV'
+      const timestamp = Date.now().toString().slice(-6)
+      const random = Math.floor(Math.random() * 100).toString().padStart(2, '0')
+      this.deviceForm.deviceCode = `${prefix}${timestamp}${random}`
+    },
+    
+    // 设备类型改变时的处理
+    onTypeChange(type) {
+      // 清空功率选择
+      this.deviceForm.power = null
+      // 如果有设备编号，重新生成
+      if (this.deviceForm.deviceCode) {
+        this.generateDeviceCode()
+      }
+    },
+    
+    // 厂商改变时的处理
+    onManufacturerChange() {
+      // 清空型号选择
+      this.deviceForm.model = ''
+    },
+
     // 加载数据
     loadData() {
       this.loading = true
@@ -533,33 +559,9 @@ export default {
             todayCharge: 2,
             totalCharge: 456,
             createTime: '2024-03-08 15:30:00'
-          },
-          {
-            id: 9,
-            deviceCode: 'DC009',
-            deviceName: '蔚来Power Swap 90kW',
-            type: 'dc_fast',
-            power: 90,
-            stationName: '中心大厦栋-5F行政办公室',
-            status: 'online',
-            todayCharge: 4,
-            totalCharge: 1156,
-            createTime: '2024-03-09 08:45:00'
-          },
-          {
-            id: 10,
-            deviceCode: 'SF010',
-            deviceName: '理想汽车400kW液冷超充',
-            type: 'super_fast',
-            power: 400,
-            stationName: '创新大厦栋-3F技术研发',
-            status: 'charging',
-            todayCharge: 18,
-            totalCharge: 2876,
-            createTime: '2024-03-10 16:20:00'
           }
         ]
-        this.pagination.total = 45
+        this.pagination.total = 48
         this.loading = false
       }, 800)
     },
@@ -568,21 +570,12 @@ export default {
       this.pagination.currentPage = 1
       this.loadData()
     },
-    // 重置搜索
-    resetSearch() {
-      this.searchForm = {
-        keyword: '',
-        status: '',
-        type: ''
-      }
-      this.handleSearch()
-    },
     // 刷新数据
     refreshData() {
       this.$message.success('数据已刷新')
       this.loadData()
     },
-    // 显示添加对话框
+    // 显示添加对话框 - 重新设计
     showAddDialog() {
       this.dialogTitle = '添加设备'
       this.editingId = null
@@ -590,10 +583,18 @@ export default {
         deviceCode: '',
         deviceName: '',
         type: '',
-        power: 60,
-        stationId: '',
-        ipAddress: '',
+        power: null,
+        manufacturer: '',
+        model: '',
+        serialNumber: '',
+        productionDate: '',
+        stationId: [],
+        installDate: new Date().toISOString().slice(0, 10), // 默认今天
         location: '',
+        ipAddress: '',
+        port: 8080,
+        protocol: 'ocpp16',
+        status: 'offline',
         remark: ''
       }
       this.dialogVisible = true
@@ -620,13 +621,13 @@ export default {
     // 查看详情
     handleDetail(row) {
       this.$router.push({
-      path: `/device/charging/detail/${row.id}`,
-      query: { 
-        name: row.deviceName,
-        code: row.deviceCode,
-        deviceId: row.id
-      }
-    });
+        path: `/device/charging/detail/${row.id}`,
+        query: { 
+          name: row.deviceName,
+          code: row.deviceCode,
+          deviceId: row.id
+        }
+      });
     },
     // 删除
     handleDelete(row) {
@@ -719,103 +720,45 @@ export default {
 .charging-station-page {
   min-height: 100vh;
   padding: 16px;
+  background: #f5f7fa;
 }
 
-/* 顶部操作栏 */
-.top-bar {
+/* 页面头部 */
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  background: white;
+  padding: 20px 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03);
 }
 
 .page-title {
   display: flex;
   align-items: center;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   color: #1f2329;
 }
 
 .page-title i {
-  margin-right: 10px;
-  color: #4e5969;
+  margin-right: 12px;
+  color: #1890ff;
+  font-size: 28px;
 }
 
-.action-buttons {
+.page-actions {
   display: flex;
   gap: 12px;
-}
-
-/* 统计卡片 */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  display: flex;
   align-items: center;
-  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03);
-  transition: all 0.3s;
 }
 
-.stat-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
-}
-
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-right: 16px;
-}
-
-.stat-icon.blue {
-  background: #e6f4ff;
-  color: #1890ff;
-}
-
-.stat-icon.green {
-  background: #f6ffed;
-  color: #52c41a;
-}
-
-.stat-icon.orange {
-  background: #fff7e6;
-  color: #fa8c16;
-}
-
-.stat-icon.red {
-  background: #fff1f0;
-  color: #ff4d4f;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 600;
-  color: #1f2329;
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #86909c;
-  margin-top: 4px;
+/* 设备对话框样式 */
+.el-dialog .el-dialog__body {
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 /* 主内容区 */
@@ -1211,10 +1154,6 @@ export default {
 
 /* 平板横屏 (992px - 1200px) */
 @media (max-width: 1200px) and (min-width: 993px) {
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
   /* 表格操作按钮紧凑模式 */
   .operation-buttons {
     gap: 4px;
@@ -1251,22 +1190,37 @@ export default {
     width: 80px !important;
     min-width: 80px !important;
   }
+  
+  /* 对话框适配 */
+  .device-dialog {
+    width: 90% !important;
+  }
 }
 
 /* 手机端 (<768px) */
 @media (max-width: 768px) {
   .charging-station-page {
-    padding: 16px;
+    padding: 12px;
   }
   
-  .top-bar {
+  .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    padding: 16px;
   }
   
-  .stats-cards {
-    grid-template-columns: 1fr;
+  .page-title {
+    font-size: 20px;
+  }
+  
+  .page-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .page-actions .el-button {
+    flex: none;
   }
   
   .filter-bar {
@@ -1287,16 +1241,6 @@ export default {
   
   .card-view {
     grid-template-columns: 1fr;
-  }
-  
-  .action-buttons {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-  
-  .action-buttons .el-button {
-    flex: 1;
-    min-width: 80px;
   }
   
   /* 表格在移动端使用下拉菜单 */
@@ -1330,28 +1274,15 @@ export default {
   .el-pagination {
     white-space: nowrap;
   }
-}
-
-/* 超小屏幕 (<480px) */
-@media (max-width: 480px) {
-  .page-title {
-    font-size: 18px;
-  }
   
-  .action-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-  
-  .action-buttons .el-button {
-    width: 100%;
-    margin: 0 0 8px 0 !important;
-  }
-  
-  /* 对话框适配 */
+  /* 对话框移动端适配 */
   .el-dialog {
     width: 95% !important;
     margin: 10px auto !important;
+  }
+  
+  .el-dialog .el-dialog__body {
+    max-height: 60vh;
   }
   
   .el-dialog .el-row {
@@ -1361,6 +1292,43 @@ export default {
   .el-dialog .el-col {
     width: 100%;
     margin-bottom: 16px;
+  }
+}
+
+/* 超小屏幕 (<480px) */
+@media (max-width: 480px) {
+  .page-header {
+    padding: 12px;
+  }
+  
+  .page-title {
+    font-size: 18px;
+  }
+  
+  .page-title i {
+    font-size: 22px;
+    margin-right: 8px;
+  }
+  
+  .page-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+  
+  .page-actions .el-button {
+    width: 100%;
+  }
+  
+  /* 对话框适配 */
+  .device-dialog {
+    width: 98% !important;
+    margin: 5px auto !important;
+  }
+  
+  .device-dialog .el-dialog__body {
+    padding: 16px;
+    max-height: 55vh;
   }
 }
 

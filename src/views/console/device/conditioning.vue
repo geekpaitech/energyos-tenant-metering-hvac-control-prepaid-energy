@@ -971,308 +971,336 @@
 
     <!-- 设备详情控制弹窗 -->
     <div
-      v-if="showDeviceDetail"
-      class="modal-overlay"
-      @click.self="closeDeviceDetail"
-    >
-      <div class="modal-content modal-device-detail">
-        <div class="modal-header">
-          <div class="device-header-info">
-            <h3>{{ currentDevice?.name }}</h3>
-            <div class="device-meta">
-              <span
-                :class="['status-dot', getStatusClass(currentDevice)]"
-              ></span>
-              <span class="device-location-text">{{
-                currentDevice?.location
-              }}</span>
+  v-if="showDeviceDetail"
+  class="modal-overlay"
+  @click.self="closeDeviceDetail"
+>
+  <div class="modal-content modal-device-detail">
+    <div class="modal-header">
+      <div class="device-header-info">
+        <h3>{{ currentDevice?.name }}</h3>
+        <div class="device-meta">
+          <span
+            :class="['status-dot', getStatusClass(currentDevice)]"
+          ></span>
+          <span class="device-location-text">{{
+            currentDevice?.location
+          }}</span>
+        </div>
+      </div>
+      <button class="modal-close" @click="closeDeviceDetail">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body device-detail-body">
+      <!-- 实时状态卡片 -->
+      <div class="status-card">
+        <h4>实时状态</h4>
+        <div class="status-items">
+          <div class="status-item">
+            <div class="status-icon temp-icon">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"
+                />
+              </svg>
+            </div>
+            <div class="status-info">
+              <span class="status-label">室内温度</span>
+              <span class="status-value"
+                >{{ currentDevice?.currentTemp }}°C</span
+              >
             </div>
           </div>
-          <button class="modal-close" @click="closeDeviceDetail">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+
+          <div class="status-item">
+            <div class="status-icon power-icon">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path d="M22 11h-4l-3 9L9 2l-3 9H2" />
+              </svg>
+            </div>
+            <div class="status-info">
+              <span class="status-label">功率</span>
+              <span class="status-value"
+                >{{ currentDevice?.powerUsage }}kW</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 基础控制 -->
+      <div class="control-card">
+        <h4>基础控制</h4>
+
+        <!-- 电源开关 -->
+        <div class="control-row">
+          <div class="control-info">
+            <span class="control-title">电源</span>
+            <span class="control-desc">设备开关控制</span>
+          </div>
+          <div class="control-action">
+            <label class="power-switch">
+              <input
+                type="checkbox"
+                v-model="deviceDetailForm.power"
+                :disabled="!currentDevice?.online"
+              />
+              <span class="power-slider"></span>
+            </label>
+          </div>
         </div>
 
-        <div class="modal-body device-detail-body">
-          <!-- 实时状态卡片 -->
-          <div class="status-card">
-            <h4>实时状态</h4>
-            <div class="status-items">
-              <div class="status-item">
-                <div class="status-icon temp-icon">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                  >
-                    <path
-                      d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"
-                    />
-                  </svg>
-                </div>
-                <div class="status-info">
-                  <span class="status-label">室内温度</span>
-                  <span class="status-value"
-                    >{{ currentDevice?.currentTemp }}°C</span
-                  >
-                </div>
+        <!-- 温度设置 - 始终显示，关闭时置灰 -->
+        <div class="control-row">
+          <div class="control-info">
+            <span class="control-title">目标温度</span>
+            <span class="control-desc"
+              >当前设定 {{ deviceDetailForm.setTemp }}°C</span
+            >
+          </div>
+          <div class="control-action">
+            <div class="temp-adjuster">
+              <button
+                class="temp-btn minus"
+                @click="
+                  deviceDetailForm.setTemp = Math.max(
+                    16,
+                    deviceDetailForm.setTemp - 1
+                  )
+                "
+                :disabled="!currentDevice?.online || !deviceDetailForm.power || deviceDetailForm.setTemp <= 16"
+                :class="{ 'disabled-style': !deviceDetailForm.power }"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+              <div class="temp-value" :class="{ 'disabled-text': !deviceDetailForm.power }">
+                {{ deviceDetailForm.setTemp }}°
               </div>
-
-              <div class="status-item">
-                <div class="status-icon power-icon">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                  >
-                    <path d="M22 11h-4l-3 9L9 2l-3 9H2" />
-                  </svg>
-                </div>
-                <div class="status-info">
-                  <span class="status-label">功率</span>
-                  <span class="status-value"
-                    >{{ currentDevice?.powerUsage }}kW</span
-                  >
-                </div>
-              </div>
+              <button
+                class="temp-btn plus"
+                @click="
+                  deviceDetailForm.setTemp = Math.min(
+                    30,
+                    deviceDetailForm.setTemp + 1
+                  )
+                "
+                :disabled="!currentDevice?.online || !deviceDetailForm.power || deviceDetailForm.setTemp >= 30"
+                :class="{ 'disabled-style': !deviceDetailForm.power }"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
             </div>
           </div>
+        </div>
 
-          <!-- 基础控制 -->
-          <div class="control-card">
-            <h4>基础控制</h4>
+        <!-- 模式选择 - 始终显示，关闭时置灰 -->
+        <div class="control-row">
+          <div class="control-info">
+            <span class="control-title">运行模式</span>
+            <span class="control-desc" :class="{ 'disabled-text': !deviceDetailForm.power }">
+              {{ modeMap[deviceDetailForm.mode] }}
+            </span>
+          </div>
+          <div class="control-action">
+            <div class="mode-selector">
+              <button
+                v-for="mode in modes"
+                :key="mode.value"
+                :class="[
+                  'mode-option',
+                  { 
+                    active: deviceDetailForm.mode === mode.value,
+                    'disabled-style': !deviceDetailForm.power
+                  },
+                ]"
+                @click="deviceDetailForm.mode = mode.value"
+                :disabled="!currentDevice?.online || !deviceDetailForm.power"
+              >
+                {{ mode.label }}
+              </button>
+            </div>
+          </div>
+        </div>
 
-            <!-- 电源开关 -->
-            <div class="control-row">
-              <div class="control-info">
-                <span class="control-title">电源</span>
-                <span class="control-desc">设备开关控制</span>
-              </div>
-              <div class="control-action">
-                <label class="power-switch">
+        <!-- 风速设置 - 始终显示，关闭时置灰 -->
+        <div class="control-row">
+          <div class="control-info">
+            <span class="control-title">风速</span>
+            <span class="control-desc" :class="{ 'disabled-text': !deviceDetailForm.power }">
+              {{ windMap[deviceDetailForm.fanSpeed] }}
+            </span>
+          </div>
+          <div class="control-action">
+            <div class="fan-selector">
+              <button
+                v-for="speed in fanSpeeds"
+                :key="speed.value"
+                :class="[
+                  'fan-option',
+                  { 
+                    active: deviceDetailForm.fanSpeed === speed.value,
+                    'disabled-style': !deviceDetailForm.power
+                  },
+                ]"
+                @click="deviceDetailForm.fanSpeed = speed.value"
+                :disabled="!currentDevice?.online || !deviceDetailForm.power"
+              >
+                {{ speed.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 高级设置 - 始终显示，关闭时置灰 -->
+      <div class="control-card">
+        <h4>高级设置</h4>
+
+        <!-- 摆风设置 -->
+        <div class="control-row">
+          <div class="control-info">
+            <span class="control-title">摆风设置</span>
+            <span class="control-desc" :class="{ 'disabled-text': !deviceDetailForm.power }">
+              自动调节出风方向
+            </span>
+          </div>
+          <div class="control-action">
+            <div class="swing-options">
+              <label class="swing-checkbox" :class="{ 'disabled-style': !deviceDetailForm.power }">
+                <input 
+                  type="checkbox" 
+                  v-model="deviceDetailForm.swingH" 
+                  :disabled="!currentDevice?.online || !deviceDetailForm.power"
+                />
+                <span class="checkmark" :class="{ 'disabled-style': !deviceDetailForm.power }"></span>
+                <span class="swing-label" :class="{ 'disabled-text': !deviceDetailForm.power }">水平</span>
+              </label>
+              <label class="swing-checkbox" :class="{ 'disabled-style': !deviceDetailForm.power }">
+                <input 
+                  type="checkbox" 
+                  v-model="deviceDetailForm.swingV" 
+                  :disabled="!currentDevice?.online || !deviceDetailForm.power"
+                />
+                <span class="checkmark" :class="{ 'disabled-style': !deviceDetailForm.power }"></span>
+                <span class="swing-label" :class="{ 'disabled-text': !deviceDetailForm.power }">垂直</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 定时设置 -->
+        <div class="control-row">
+          <div class="control-info">
+            <span class="control-title">定时功能</span>
+            <span class="control-desc" :class="{ 'disabled-text': !deviceDetailForm.power }">
+              自动开关机设置
+            </span>
+          </div>
+          <div class="control-action">
+            <div class="timer-settings">
+              <div class="timer-group" :class="{ 'disabled-style': !deviceDetailForm.power }">
+                <label class="timer-checkbox">
                   <input
                     type="checkbox"
-                    v-model="deviceDetailForm.power"
-                    :disabled="!currentDevice?.online"
+                    v-model="deviceDetailForm.timerOn"
+                    :disabled="!currentDevice?.online || !deviceDetailForm.power"
                   />
-                  <span class="power-slider"></span>
+                  <span class="checkmark" :class="{ 'disabled-style': !deviceDetailForm.power }"></span>
+                  <span class="timer-label" :class="{ 'disabled-text': !deviceDetailForm.power }">定时开启</span>
                 </label>
+                <input
+                  type="time"
+                  v-model="deviceDetailForm.timerOnTime"
+                  :disabled="!currentDevice?.online || !deviceDetailForm.power || !deviceDetailForm.timerOn"
+                  class="timer-input"
+                  :class="{ 'disabled-style': !deviceDetailForm.power }"
+                />
               </div>
-            </div>
-
-            <!-- 温度设置 -->
-            <div class="control-row" v-if="deviceDetailForm.power">
-              <div class="control-info">
-                <span class="control-title">目标温度</span>
-                <span class="control-desc"
-                  >当前设定 {{ deviceDetailForm.setTemp }}°C</span
-                >
-              </div>
-              <div class="control-action">
-                <div class="temp-adjuster">
-                  <button
-                    class="temp-btn minus"
-                    @click="
-                      deviceDetailForm.setTemp = Math.max(
-                        16,
-                        deviceDetailForm.setTemp - 1
-                      )
-                    "
-                    :disabled="deviceDetailForm.setTemp <= 16"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                  </button>
-                  <div class="temp-value">{{ deviceDetailForm.setTemp }}°</div>
-                  <button
-                    class="temp-btn plus"
-                    @click="
-                      deviceDetailForm.setTemp = Math.min(
-                        30,
-                        deviceDetailForm.setTemp + 1
-                      )
-                    "
-                    :disabled="deviceDetailForm.setTemp >= 30"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 模式选择 -->
-            <div class="control-row" v-if="deviceDetailForm.power">
-              <div class="control-info">
-                <span class="control-title">运行模式</span>
-                <span class="control-desc">{{
-                  modeMap[deviceDetailForm.mode]
-                }}</span>
-              </div>
-              <div class="control-action">
-                <div class="mode-selector">
-                  <button
-                    v-for="mode in modes"
-                    :key="mode.value"
-                    :class="[
-                      'mode-option',
-                      { active: deviceDetailForm.mode === mode.value },
-                    ]"
-                    @click="deviceDetailForm.mode = mode.value"
-                  >
-                    {{ mode.label }}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 风速设置 -->
-            <div class="control-row" v-if="deviceDetailForm.power">
-              <div class="control-info">
-                <span class="control-title">风速</span>
-                <span class="control-desc">{{
-                  windMap[deviceDetailForm.fanSpeed]
-                }}</span>
-              </div>
-              <div class="control-action">
-                <div class="fan-selector">
-                  <button
-                    v-for="speed in fanSpeeds"
-                    :key="speed.value"
-                    :class="[
-                      'fan-option',
-                      { active: deviceDetailForm.fanSpeed === speed.value },
-                    ]"
-                    @click="deviceDetailForm.fanSpeed = speed.value"
-                  >
-                    {{ speed.label }}
-                  </button>
-                </div>
+              <div class="timer-group" :class="{ 'disabled-style': !deviceDetailForm.power }">
+                <label class="timer-checkbox">
+                  <input
+                    type="checkbox"
+                    v-model="deviceDetailForm.timerOff"
+                    :disabled="!currentDevice?.online || !deviceDetailForm.power"
+                  />
+                  <span class="checkmark" :class="{ 'disabled-style': !deviceDetailForm.power }"></span>
+                  <span class="timer-label" :class="{ 'disabled-text': !deviceDetailForm.power }">定时关闭</span>
+                </label>
+                <input
+                  type="time"
+                  v-model="deviceDetailForm.timerOffTime"
+                  :disabled="!currentDevice?.online || !deviceDetailForm.power || !deviceDetailForm.timerOff"
+                  class="timer-input"
+                  :class="{ 'disabled-style': !deviceDetailForm.power }"
+                />
               </div>
             </div>
           </div>
-
-          <!-- 高级设置 -->
-          <div class="control-card" v-if="deviceDetailForm.power">
-            <h4>高级设置</h4>
-
-            <!-- 摆风设置 -->
-            <div class="control-row">
-              <div class="control-info">
-                <span class="control-title">摆风设置</span>
-                <span class="control-desc">自动调节出风方向</span>
-              </div>
-              <div class="control-action">
-                <div class="swing-options">
-                  <label class="swing-checkbox">
-                    <input type="checkbox" v-model="deviceDetailForm.swingH" />
-                    <span class="checkmark"></span>
-                    <span class="swing-label">水平</span>
-                  </label>
-                  <label class="swing-checkbox">
-                    <input type="checkbox" v-model="deviceDetailForm.swingV" />
-                    <span class="checkmark"></span>
-                    <span class="swing-label">垂直</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- 定时设置 -->
-            <div class="control-row">
-              <div class="control-info">
-                <span class="control-title">定时功能</span>
-                <span class="control-desc">自动开关机设置</span>
-              </div>
-              <div class="control-action">
-                <div class="timer-settings">
-                  <div class="timer-group">
-                    <label class="timer-checkbox">
-                      <input
-                        type="checkbox"
-                        v-model="deviceDetailForm.timerOn"
-                      />
-                      <span class="checkmark"></span>
-                      <span class="timer-label">定时开启</span>
-                    </label>
-                    <input
-                      type="time"
-                      v-model="deviceDetailForm.timerOnTime"
-                      :disabled="!deviceDetailForm.timerOn"
-                      class="timer-input"
-                    />
-                  </div>
-                  <div class="timer-group">
-                    <label class="timer-checkbox">
-                      <input
-                        type="checkbox"
-                        v-model="deviceDetailForm.timerOff"
-                      />
-                      <span class="checkmark"></span>
-                      <span class="timer-label">定时关闭</span>
-                    </label>
-                    <input
-                      type="time"
-                      v-model="deviceDetailForm.timerOffTime"
-                      :disabled="!deviceDetailForm.timerOff"
-                      class="timer-input"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn-default" @click="closeDeviceDetail">取消</button>
-          <button
-            class="btn-primary"
-            @click="applyDeviceDetail"
-            :disabled="!currentDevice?.online"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-            >
-              <polyline points="20,6 9,17 4,12" />
-            </svg>
-            应用设置
-          </button>
         </div>
       </div>
     </div>
+
+    <div class="modal-footer">
+      <button class="btn-default" @click="closeDeviceDetail">取消</button>
+      <button
+        class="btn-primary"
+        @click="applyDeviceDetail"
+        :disabled="!currentDevice?.online"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <polyline points="20,6 9,17 4,12" />
+        </svg>
+        应用设置
+      </button>
+    </div>
+  </div>
+</div>
 
     <!-- 消息提示 -->
     <transition name="toast">
@@ -2492,6 +2520,11 @@ export default {
 
 .btn-primary:active {
   background: #1e4fc9;
+}
+
+.btn-primary:disabled {
+  background: #bbbfc4;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -3950,6 +3983,91 @@ export default {
   background: #f7f8fa;
   color: #8f959e;
   cursor: not-allowed;
+}
+
+/* 新增的禁用样式 */
+.disabled-style {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+.disabled-text {
+  color: #bbb !important;
+}
+
+/* 温度调节器禁用样式 */
+.temp-adjuster .temp-btn.disabled-style {
+  background: #f5f5f5 !important;
+  color: #ccc !important;
+  border-color: #e0e0e0 !important;
+}
+
+.temp-adjuster .temp-btn.disabled-style:hover {
+  background: #f5f5f5 !important;
+  color: #ccc !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 模式选择器禁用样式 */
+.mode-option.disabled-style {
+  background: #f5f5f5 !important;
+  color: #ccc !important;
+  border-color: #e0e0e0 !important;
+}
+
+.mode-option.disabled-style:hover {
+  background: #f5f5f5 !important;
+  color: #ccc !important;
+  border-color: #e0e0e0 !important;
+}
+
+.mode-option.disabled-style.active {
+  background: #e0e0e0 !important;
+  color: #999 !important;
+  border-color: #d0d0d0 !important;
+}
+
+/* 风速选择器禁用样式 */
+.fan-option.disabled-style {
+  background: #f5f5f5 !important;
+  color: #ccc !important;
+  border-color: #e0e0e0 !important;
+}
+
+.fan-option.disabled-style:hover {
+  background: #f5f5f5 !important;
+  color: #ccc !important;
+  border-color: #e0e0e0 !important;
+}
+
+.fan-option.disabled-style.active {
+  background: #e0e0e0 !important;
+  color: #999 !important;
+  border-color: #d0d0d0 !important;
+}
+
+/* 复选框禁用样式 */
+.checkmark.disabled-style {
+  background: #f5f5f5 !important;
+  border-color: #e0e0e0 !important;
+}
+
+.swing-checkbox.disabled-style .checkmark:after {
+  color: #999 !important;
+}
+
+/* 定时器组禁用样式 */
+.timer-group.disabled-style {
+  background: #f8f8f8 !important;
+  border-color: #e0e0e0 !important;
+}
+
+.timer-input.disabled-style {
+  background: #f5f5f5 !important;
+  color: #ccc !important;
+  border-color: #e0e0e0 !important;
 }
 
 /* 消息提示 */

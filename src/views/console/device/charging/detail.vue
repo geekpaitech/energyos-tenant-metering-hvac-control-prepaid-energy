@@ -116,10 +116,10 @@
                   <span class="session-label">开始时间</span>
                   <span class="session-value">{{ currentSession.startTime }}</span>
                 </div>
-                <div class="session-row">
+                <!-- <div class="session-row">
                   <span class="session-label">已充时长</span>
                   <span class="session-value highlight">{{ currentSession.duration }} 分钟</span>
-                </div>
+                </div> -->
                 <div class="session-row">
                   <span class="session-label">已充电量</span>
                   <span class="session-value highlight">{{ currentSession.chargedEnergy }} kWh</span>
@@ -803,7 +803,7 @@ export default {
       this.updateTimer = setInterval(() => {
         this.updateRealtimeData()
         this.updateCharts()
-      }, 3000)
+      }, 1500)
     },
     
     // 停止实时更新

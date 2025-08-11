@@ -331,13 +331,38 @@
           </div>
 
           <!-- 抄表记录 -->
-          <div v-show="activeTab === '抄表记录'" class="reading-records">
-            <div class="records-placeholder">
-              <div class="placeholder-icon">
-                <i class="el-icon-document"></i>
-              </div>
-              <p>抄表记录功能开发中...</p>
-            </div>
+          <div v-show="activeTab === '抄表记录'"  class="events-container">
+            <el-table
+      :data="readingRecords"
+      style="width: 100%"
+      stripe
+      size="small"
+    >
+      <el-table-column prop="time" label="抄表时间" width="160"/>
+      <el-table-column prop="type" label="抄表类型" width="100">
+        <template slot-scope="scope">
+          <el-tag size="mini" :type="getReadingTagType(scope.row.type)">
+            {{ scope.row.type }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="currentReading" label="本次读数(L)" width="120"/>
+      <el-table-column prop="lastReading" label="上次读数(L)" width="120"/>
+      <el-table-column prop="consumption" label="用水量(L)" width="100">
+        <template slot-scope="scope">
+          <span style="color: #1890ff; font-weight: 500;">{{ scope.row.consumption }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="readingMethod" label="抄表方式" width="100"/>
+      <el-table-column prop="operator" label="抄表人" width="100">
+        <template slot-scope="scope">
+          <span :style="scope.row.operator === '系统自动' ? 'color: #67C23A' : 'color: #409EFF'">
+            {{ scope.row.operator }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="remark" label="备注" min-width="120"/>
+    </el-table>
           </div>
         </div>
       </div>
@@ -537,6 +562,41 @@ export default {
           remark: "定时数据上报",
         },
       ],
+      readingRecords: [
+      {
+        id: 1,
+        time: "2025-08-08 09:00:00",
+        type: "系统抄表",
+        currentReading: "1,245.85",
+        lastReading: "1,187.32",
+        consumption: "58.53",
+        readingMethod: "远程自动",
+        operator: "系统自动",
+        remark: "定时自动抄表"
+      },
+      {
+        id: 2,
+        time: "2025-08-07 09:00:00", 
+        type: "系统抄表",
+        currentReading: "1,187.32",
+        lastReading: "1,132.78",
+        consumption: "54.54",
+        readingMethod: "远程自动",
+        operator: "系统自动",
+        remark: "定时自动抄表"
+      },
+      {
+        id: 3,
+        time: "2025-08-06 14:30:00",
+        type: "人工抄表",
+        currentReading: "1,132.78",
+        lastReading: "1,089.45",
+        consumption: "43.33",
+        readingMethod: "现场读取",
+        operator: "张师傅",
+        remark: "月度现场核验抄表"
+      }
+    ],
 
       // 控制状态
       valveLoading: false,
@@ -597,6 +657,16 @@ export default {
   },
 
   methods: {
+      // 获取抄表类型标签样式
+  getReadingTagType(readingType) {
+    const typeMap = {
+      "系统抄表": "success",
+      "人工抄表": "primary",
+      "补录抄表": "warning",
+      "异常抄表": "danger"
+    };
+    return typeMap[readingType] || "";
+  },
     // 提取路由参数
     extractRouteParams() {
       this.routeParams.deviceId = this.$route.params.id || this.$route.query.deviceId;
