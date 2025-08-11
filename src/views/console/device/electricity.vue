@@ -817,11 +817,11 @@ export default {
         //   key: "createTime",
         //   width: "180",
         // },
-        {
-          label: "CT",
-          key: "ct",
-          width: "120",
-        },
+        // {
+        //   label: "CT",
+        //   key: "ct",
+        //   width: "120",
+        // },
         // 隐藏PT字段
         // {
         //   label: "PT",
@@ -1294,10 +1294,10 @@ export default {
 
     // 租户点击
     handleTenantClick(row) {
-      this.$router.push({
-        path: "/project-tenement-detail",
-        query: { id: row.bindId, managerId: row.managerId },
-      });
+      // this.$router.push({
+      //   path: "/project-tenement-detail",
+      //   query: { id: row.bindId, managerId: row.managerId },
+      // });
     },
 
     // 导出数据

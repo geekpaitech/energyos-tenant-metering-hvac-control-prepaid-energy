@@ -3071,7 +3071,7 @@ export default {
 
 .inline-input,
 .inline-select {
-  width: 60px;
+  width: 66px;
   padding: 4px 8px;
   border: 1px solid #dee0e3;
   border-radius: 4px;
