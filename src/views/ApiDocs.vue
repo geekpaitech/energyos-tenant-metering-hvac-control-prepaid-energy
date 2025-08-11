@@ -27,7 +27,7 @@ export default {
 
           try {
               const res = await fetch(
-                  'https://ebc-cloud.oss-cn-shanghai.aliyuncs.com/doc/%E4%BA%91%E8%83%BD%E4%BB%98EBC%E5%B9%B3%E5%8F%B0%E5%85%AC%E5%85%B1%E5%BC%80%E5%8F%91API%E6%96%87%E6%A1%A3.html',
+                  'https://ebc-cloud.oss-cn-shanghai.aliyuncs.com/doc/api_iot_console.html',
               )
 
               htmlContent.value = await res.text()

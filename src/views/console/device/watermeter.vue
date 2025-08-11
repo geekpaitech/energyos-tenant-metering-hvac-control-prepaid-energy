@@ -183,7 +183,7 @@
 
         <!-- 数据表格 -->
         <el-table
-        :max-height="tableMaxHeight"
+          :max-height="tableMaxHeight"
           v-loading="loading"
           :data="tableData"
           stripe
@@ -191,11 +191,9 @@
           class="custom-table"
           @selection-change="handleSelectionChange"
           :header-cell-style="{
-              background: 'linear-gradient(180deg, #f8f9fc 0%, #f0f2f5 100%)',
-              color: '#1f2329',
+              background: '#f5f7fa',
+              color: '#606266',
               fontWeight: '600',
-              fontSize: '13px',
-              borderBottom: '2px solid #e8e8e8'
             }"
         >
           <el-table-column type="selection" width="55" align="center" />
@@ -353,6 +351,11 @@
                   ></i>
                   {{ scope.row.switchStatus == 1 ? "开阀" : "关阀" }}
                 </div>
+              </template>
+
+              <!-- 最新数据时间 -->
+              <template v-else-if="col.key === 'lastDataTime'">
+                <span>{{ generateRandomTime() }}</span>
               </template>
 
               <!-- 默认显示 -->
@@ -717,7 +720,7 @@ export default {
       isWaterModel: false,
       // 路由权限
       routerAuth: false,
-      // 表格列配置 - 去除水表编号、厂家号、设备型号列
+      // 表格列配置 - 修改创建时间为最新数据时间
       tableKey: [
         {
           label: "设备号",
@@ -770,9 +773,10 @@ export default {
           width: "140",
         },
         {
-          label: "创建时间",
-          key: "createTime",
-          width: "180",
+          label: "最新数据时间",
+          key: "lastDataTime",
+          width: "160",
+          checked: true,
         },
       ],
     };
@@ -838,6 +842,30 @@ export default {
     // 移除了对 treeSelectedIds 的监听，不再自动调用接口
   },
   methods: {
+    // 生成随机时间 - 最近10分钟内的随机时间
+    generateRandomTime() {
+      const now = new Date();
+      
+      // 生成0-10分钟内的随机毫秒数
+      const tenMinutes = 10 * 60 * 1000; // 10分钟的毫秒数
+      const randomOffset = Math.random() * tenMinutes;
+      
+      // 当前时间减去随机偏移量
+      const randomTime = now.getTime() - randomOffset;
+      
+      const randomDate = new Date(randomTime);
+      
+      // 格式化为 YYYY-MM-DD HH:mm:ss
+      const year = randomDate.getFullYear();
+      const month = String(randomDate.getMonth() + 1).padStart(2, '0');
+      const day = String(randomDate.getDate()).padStart(2, '0');
+      const hours = String(randomDate.getHours()).padStart(2, '0');
+      const minutes = String(randomDate.getMinutes()).padStart(2, '0');
+      const seconds = String(randomDate.getSeconds()).padStart(2, '0');
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    },
+
     // 获取水表列表数据
     async fetchTableData() {
       this.loading = true;
@@ -1138,25 +1166,25 @@ export default {
     // 查看抄表记录
     handleRecord(row) {
       this.$router.push({
-      path: `/device/watermeter/detail/${row.id}`,
-      query: { 
-        name: row.waterName,
-        serial: row.serial,
-        deviceId: row.id
-      }
-    });
+        path: `/device/watermeter/detail/${row.id}`,
+        query: { 
+          name: row.waterName,
+          serial: row.serial,
+          deviceId: row.id
+        }
+      });
     },
 
     // 水表监控
     handleMonitor(row) {
       this.$router.push({
-      path: `/device/watermeter/detail/${row.id}`,
-      query: { 
-        name: row.waterName,
-        serial: row.serial,
-        deviceId: row.id
-      }
-    });
+        path: `/device/watermeter/detail/${row.id}`,
+        query: { 
+          name: row.waterName,
+          serial: row.serial,
+          deviceId: row.id
+        }
+      });
     },
 
     // 绑定信息点击

@@ -58,12 +58,12 @@
               <span class="value primary">{{ parkingInfo.currentVehicle || '--' }}</span>
             </div>
             <div class="info-col">
-              <label>入场时间</label>
-              <span class="value">{{ parkingInfo.entryTime || '--' }}</span>
-            </div>
-            <div class="info-col">
               <label>停放时长</label>
               <span class="value warning">{{ parkingDurationText }}</span>
+            </div>
+            <div class="info-col">
+              <label>费用计算</label>
+              <span class="value">¥{{ currentFee }}</span>
             </div>
           </div>
         </div>
@@ -92,8 +92,8 @@
                   <span class="value">{{ deviceInfo.sensorId }}</span>
                 </div>
                 <div class="info-col">
-                  <label>最后通信</label>
-                  <span class="value">{{ deviceInfo.lastCommunication }}</span>
+                  <label>当前时间</label>
+                  <span class="value">{{ currentTime }}</span>
                 </div>
                 <div class="info-col">
                   <label>设备型号</label>
@@ -341,8 +341,7 @@ export default {
         area: 'B2层A区',
         type: '标准车位',
         status: 'occupied',
-        currentVehicle: '浙A88888',
-        entryTime: '2024-01-15 08:30:45',
+        currentVehicle: '苏E12345',  // 修改为苏E车牌
         duration: 375 // 分钟
       },
       
@@ -351,7 +350,6 @@ export default {
         lockId: 'LK-2024-0815',
         sensorId: 'PS-2024-0815',
         online: true,
-        lastCommunication: '2024-01-15 14:25:30',
         model: 'PL-X100',
         firmware: 'v2.3.1',
         signal: 85
@@ -374,25 +372,25 @@ export default {
       // 使用记录
       usageRecords: [
         {
-          vehicleNo: '浙A88888',
-          entryTime: '2024-01-15 08:30:45',
+          vehicleNo: '苏E12345',
+          entryTime: '2024-08-11 08:30:45',
           exitTime: '',
           duration: '6小时15分',
           fee: '30.00',
           status: '使用中'
         },
         {
-          vehicleNo: '浙B12345',
-          entryTime: '2024-01-14 14:20:10',
-          exitTime: '2024-01-14 18:45:30',
+          vehicleNo: '苏E67890',
+          entryTime: '2024-08-10 14:20:10',
+          exitTime: '2024-08-10 18:45:30',
           duration: '4小时25分',
           fee: '22.00',
           status: '已完成'
         },
         {
-          vehicleNo: '浙A66666',
-          entryTime: '2024-01-14 09:15:20',
-          exitTime: '2024-01-14 12:30:45',
+          vehicleNo: '苏E98765',
+          entryTime: '2024-08-10 09:15:20',
+          exitTime: '2024-08-10 12:30:45',
           duration: '3小时15分',
           fee: '16.00',
           status: '已完成'
@@ -430,7 +428,9 @@ export default {
       alerts: [],
       
       // 定时器
-      timer: null
+      timer: null,
+      timeTimer: null,
+      currentTime: ''
     }
   },
   
@@ -470,10 +470,13 @@ export default {
   mounted() {
     this.initData()
     this.startTimer()
+    this.updateCurrentTime()
+    this.startTimeTimer()
   },
   
   beforeDestroy() {
     this.clearTimer()
+    this.clearTimeTimer()
   },
   
   methods: {
@@ -507,6 +510,34 @@ export default {
       if (this.timer) {
         clearInterval(this.timer)
         this.timer = null
+      }
+    },
+    
+    // 更新当前时间
+    updateCurrentTime() {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const hours = String(now.getHours()).padStart(2, '0')
+      const minutes = String(now.getMinutes()).padStart(2, '0')
+      const seconds = String(now.getSeconds()).padStart(2, '0')
+      
+      this.currentTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    },
+    
+    // 启动时间更新定时器
+    startTimeTimer() {
+      this.timeTimer = setInterval(() => {
+        this.updateCurrentTime()
+      }, 1000)
+    },
+    
+    // 清除时间定时器
+    clearTimeTimer() {
+      if (this.timeTimer) {
+        clearInterval(this.timeTimer)
+        this.timeTimer = null
       }
     },
     
