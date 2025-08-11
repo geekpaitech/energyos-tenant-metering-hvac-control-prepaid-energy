@@ -186,7 +186,7 @@ export const consoleRoutes = [
         path: 'conditioningSharing',
         name: 'ConditioningSharing',
         component: () => import('@/views/console/device/publicshare/conditioningSharing'),
-        meta: { title: '空调公摊', icon: 'icon-kongtiaokaifang' }
+        meta: { title: '空调公摊', icon: 'icon-kongtiao' }
       }
     ]
   },

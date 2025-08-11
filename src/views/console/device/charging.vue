@@ -82,7 +82,7 @@
               <span class="info-value">{{ device.power }} kW</span>
             </div>
             <div class="info-row">
-              <span class="info-label">所属站点</span>
+              <span class="info-label">所属区域</span>
               <span class="info-value">{{ device.stationName }}</span>
             </div>
             <div class="info-row">
@@ -121,23 +121,26 @@
           <el-table-column 
             label="设备编号" 
             prop="deviceCode" 
-            min-width="120"
+            width="120"
             show-overflow-tooltip>
             <template slot-scope="scope">
-              <span class="code-text">{{ scope.row.deviceCode }}</span>
+              <el-link type="primary" @click="handleDetail(scope.row)" class="code-text">
+                <i class="el-icon-view"></i>
+                {{ scope.row.deviceCode }}
+              </el-link>
             </template>
           </el-table-column>
           
           <el-table-column 
             label="设备名称" 
             prop="deviceName" 
-            min-width="160"
+            width="180"
             show-overflow-tooltip>
           </el-table-column>
           
           <el-table-column 
             label="设备类型" 
-            min-width="110"
+            width="110"
             align="center">
             <template slot-scope="scope">
               <el-tag :type="getTypeTag(scope.row.type)" size="mini" effect="plain">
@@ -149,7 +152,7 @@
           <el-table-column 
             label="功率" 
             prop="power" 
-            min-width="90" 
+            width="90" 
             align="center">
             <template slot-scope="scope">
               <span class="power-text">{{ scope.row.power }}kW</span>
@@ -157,15 +160,18 @@
           </el-table-column>
           
           <el-table-column 
-            label="所属站点" 
+            label="所属区域" 
             prop="stationName" 
-            min-width="130"
+            min-width="140"
             show-overflow-tooltip>
+            <template slot-scope="scope">
+              <span class="station-name">{{ scope.row.stationName }}</span>
+            </template>
           </el-table-column>
           
           <el-table-column 
             label="状态" 
-            min-width="100" 
+            width="100" 
             align="center">
             <template slot-scope="scope">
               <el-badge :is-dot="scope.row.status === 'charging'" class="status-badge">
@@ -179,7 +185,7 @@
           <el-table-column 
             label="今日充电" 
             prop="todayCharge" 
-            min-width="90" 
+            width="90" 
             align="center">
             <template slot-scope="scope">
               <span class="number-text">{{ scope.row.todayCharge || 0 }}</span>
@@ -189,7 +195,7 @@
           <el-table-column 
             label="累计次数" 
             prop="totalCharge" 
-            min-width="90" 
+            width="90" 
             align="center">
             <template slot-scope="scope">
               <span class="number-text">{{ scope.row.totalCharge || 0 }}</span>
@@ -199,14 +205,14 @@
           <el-table-column 
             label="添加时间" 
             prop="createTime" 
-            min-width="160"
+            width="160"
             show-overflow-tooltip>
           </el-table-column>
           
           <!-- 操作列优化：自适应宽度 -->
           <el-table-column 
             label="操作" 
-            min-width="200" 
+            width="180" 
             fixed="right"
             class-name="table-operation-column">
             <template slot-scope="scope">
@@ -299,7 +305,7 @@
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="所属站点" prop="stationId">
+            <el-form-item label="所属区域" prop="stationId">
               <el-select v-model="deviceForm.stationId" placeholder="请选择" style="width: 100%">
                 <el-option
                   v-for="station in stationList"
@@ -379,7 +385,7 @@ export default {
           { required: true, message: '请输入功率', trigger: 'blur' }
         ],
         stationId: [
-          { required: true, message: '请选择所属站点', trigger: 'change' }
+          { required: true, message: '请选择所属区域', trigger: 'change' }
         ],
         ipAddress: [
           { required: true, message: '请输入设备IP地址', trigger: 'blur' },
@@ -398,13 +404,17 @@ export default {
       },
       // 设备列表
       deviceList: [],
-      // 站点列表
+      // 站点列表 - 对应您的层级结构
       stationList: [
-        { id: 1, name: '东城充电站' },
-        { id: 2, name: '西城充电站' },
-        { id: 3, name: '南城充电站' },
-        { id: 4, name: '北城充电站' },
-        { id: 5, name: '中心充电站' }
+        { id: 1, name: '中心大厦栋-1F展览大厅' },
+        { id: 2, name: '中心大厦栋-2F会议接待厅' },
+        { id: 3, name: '中心大厦栋-3F市场营销部' },
+        { id: 4, name: '中心大厦栋-4F技术研发部' },
+        { id: 5, name: '中心大厦栋-5F行政办公室' },
+        { id: 6, name: '创新大厦栋-B1地下停车库' },
+        { id: 7, name: '创新大厦栋-1F接待大厅' },
+        { id: 8, name: '创新大厦栋-2F餐厅食堂' },
+        { id: 9, name: '创新大厦栋-3F技术研发' }
       ],
       // 分页
       pagination: {
@@ -426,15 +436,15 @@ export default {
     loadData() {
       this.loading = true
       setTimeout(() => {
-        // 生成更多测试数据以便查看表格效果
+        // 生成更多测试数据，使用对应的层级结构
         this.deviceList = [
           {
             id: 1,
             deviceCode: 'DC001',
-            deviceName: '1号直流充电桩',
+            deviceName: '120kW直流快充桩A1',
             type: 'dc_fast',
             power: 120,
-            stationName: '东城充电站',
+            stationName: '中心大厦栋-B1地下停车库',
             status: 'charging',
             todayCharge: 8,
             totalCharge: 1247,
@@ -443,10 +453,10 @@ export default {
           {
             id: 2,
             deviceCode: 'AC002',
-            deviceName: '2号交流充电桩',
+            deviceName: '7kW交流慢充桩B2',
             type: 'ac_slow',
             power: 7,
-            stationName: '西城充电站',
+            stationName: '创新大厦栋-B1地下停车库',
             status: 'online',
             todayCharge: 3,
             totalCharge: 856,
@@ -455,10 +465,10 @@ export default {
           {
             id: 3,
             deviceCode: 'SF003',
-            deviceName: '3号超级快充桩',
+            deviceName: '特来电250kW超充桩',
             type: 'super_fast',
             power: 250,
-            stationName: '中心充电站',
+            stationName: '中心大厦栋-1F展览大厅',
             status: 'online',
             todayCharge: 12,
             totalCharge: 2103,
@@ -467,10 +477,10 @@ export default {
           {
             id: 4,
             deviceCode: 'AC004',
-            deviceName: '4号交流充电桩',
+            deviceName: '星星充电11kW交流桩',
             type: 'ac_slow',
             power: 11,
-            stationName: '北城充电站',
+            stationName: '创新大厦栋-1F接待大厅',
             status: 'fault',
             todayCharge: 0,
             totalCharge: 643,
@@ -479,10 +489,10 @@ export default {
           {
             id: 5,
             deviceCode: 'DC005',
-            deviceName: '5号直流充电桩',
+            deviceName: '国家电网60kW直流桩',
             type: 'dc_fast',
             power: 60,
-            stationName: '南城充电站',
+            stationName: '中心大厦栋-2F会议接待厅',
             status: 'offline',
             todayCharge: 0,
             totalCharge: 1892,
@@ -491,10 +501,10 @@ export default {
           {
             id: 6,
             deviceCode: 'SF006',
-            deviceName: '6号超级快充桩',
+            deviceName: '小鹏汽车480kW超充站',
             type: 'super_fast',
             power: 350,
-            stationName: '东城充电站',
+            stationName: '中心大厦栋-4F技术研发部',
             status: 'charging',
             todayCharge: 15,
             totalCharge: 3421,
@@ -503,10 +513,10 @@ export default {
           {
             id: 7,
             deviceCode: 'DC007',
-            deviceName: '7号直流充电桩设备名称较长测试',
+            deviceName: 'ABB Terra HP 80kW高功率直流充电桩设备',
             type: 'dc_fast',
             power: 80,
-            stationName: '东城充电站南区',
+            stationName: '中心大厦栋-3F市场营销部办公区域',
             status: 'online',
             todayCharge: 5,
             totalCharge: 987,
@@ -515,14 +525,38 @@ export default {
           {
             id: 8,
             deviceCode: 'AC008',
-            deviceName: '8号交流充电桩',
+            deviceName: '依威能源22kW交流桩',
             type: 'ac_slow',
             power: 22,
-            stationName: '西城充电站',
+            stationName: '创新大厦栋-2F餐厅食堂',
             status: 'charging',
             todayCharge: 2,
             totalCharge: 456,
             createTime: '2024-03-08 15:30:00'
+          },
+          {
+            id: 9,
+            deviceCode: 'DC009',
+            deviceName: '蔚来Power Swap 90kW',
+            type: 'dc_fast',
+            power: 90,
+            stationName: '中心大厦栋-5F行政办公室',
+            status: 'online',
+            todayCharge: 4,
+            totalCharge: 1156,
+            createTime: '2024-03-09 08:45:00'
+          },
+          {
+            id: 10,
+            deviceCode: 'SF010',
+            deviceName: '理想汽车400kW液冷超充',
+            type: 'super_fast',
+            power: 400,
+            stationName: '创新大厦栋-3F技术研发',
+            status: 'charging',
+            todayCharge: 18,
+            totalCharge: 2876,
+            createTime: '2024-03-10 16:20:00'
           }
         ]
         this.pagination.total = 45
@@ -588,8 +622,8 @@ export default {
       this.$router.push({
       path: `/device/charging/detail/${row.id}`,
       query: { 
-        name: row.meterName,
-        serial: row.serial,
+        name: row.deviceName,
+        code: row.deviceCode,
         deviceId: row.id
       }
     });
@@ -980,11 +1014,13 @@ export default {
 /* 自适应表格容器 */
 .device-table {
   min-width: 100%;
+  table-layout: auto;
 }
 
 /* 表格操作列样式优化 */
 .table-operation-column {
-  min-width: 200px !important;
+  width: 180px !important;
+  min-width: 180px !important;
 }
 
 /* 操作按钮容器 - 默认显示按钮组 */
@@ -1015,6 +1051,16 @@ export default {
   font-family: 'Monaco', monospace;
   color: #1890ff;
   font-weight: 500;
+  text-decoration: none;
+}
+
+.code-text:hover {
+  color: #40a9ff;
+}
+
+.code-text i {
+  margin-right: 4px;
+  font-size: 14px;
 }
 
 .power-text {
@@ -1025,6 +1071,11 @@ export default {
 .number-text {
   font-weight: 500;
   color: #1f2329;
+}
+
+.station-name {
+  color: #1f2329;
+  font-weight: 500;
 }
 
 .status-badge .el-badge__content {
@@ -1197,6 +1248,7 @@ export default {
   
   /* 调整表格列最小宽度 */
   .table-operation-column {
+    width: 80px !important;
     min-width: 80px !important;
   }
 }
@@ -1257,6 +1309,7 @@ export default {
   }
   
   .table-operation-column {
+    width: 60px !important;
     min-width: 60px !important;
   }
   

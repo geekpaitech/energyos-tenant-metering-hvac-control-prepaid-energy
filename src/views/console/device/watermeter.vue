@@ -212,10 +212,17 @@
             :show-overflow-tooltip="true"
           >
             <template slot-scope="scope">
-              <!-- 水表名称 -->
-              <template v-if="col.key === 'waterName'">
+              <!-- 水表编号 - 添加icon -->
+              <template v-if="col.key === 'id'">
                 <el-link type="primary" @click="handleMonitor(scope.row)">
                   <i class="el-icon-view"></i>
+                  {{ scope.row.id || "-" }}
+                </el-link>
+              </template>
+
+              <!-- 水表名称 - 去掉icon -->
+              <template v-else-if="col.key === 'waterName'">
+                <el-link type="primary" @click="handleMonitor(scope.row)">
                   {{ scope.row.waterName || "-" }}
                 </el-link>
               </template>
@@ -1177,7 +1184,7 @@ export default {
       this.$router.push({
       path: `/device/watermeter/detail/${row.id}`,
       query: { 
-        name: row.meterName,
+        name: row.waterName,
         serial: row.serial,
         deviceId: row.id
       }
