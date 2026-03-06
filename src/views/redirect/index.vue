@@ -33,7 +33,7 @@
         }).catch(err => {
           console.error('Redirect跳转失败:', err);
           // 如果跳转失败，尝试跳转到首页
-          this.$router.replace('/');
+          this.$router.replace('/metering/dashboard');
         });
       });
     },

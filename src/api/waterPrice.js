@@ -79,3 +79,15 @@ export function waterPriceQueryWaterPriceBind(params) {
     params
   })
 }
+
+export function waterQueryWaterRecord(data) {
+  return request({
+    url: '/api/ebc-content/water/queryWaterRecord',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}

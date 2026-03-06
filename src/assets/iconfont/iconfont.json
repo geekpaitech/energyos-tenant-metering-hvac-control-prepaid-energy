@@ -6,6 +6,62 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "5653146",
+      "name": "报表",
+      "font_class": "baobiao",
+      "unicode": "e61c",
+      "unicode_decimal": 58908
+    },
+    {
+      "icon_id": "1191739",
+      "name": "yly_待开票",
+      "font_class": "daikaipiao",
+      "unicode": "e609",
+      "unicode_decimal": 58889
+    },
+    {
+      "icon_id": "5878218",
+      "name": "财务",
+      "font_class": "caiwu",
+      "unicode": "e75f",
+      "unicode_decimal": 59231
+    },
+    {
+      "icon_id": "6302552",
+      "name": "账单",
+      "font_class": "zhangdan",
+      "unicode": "e682",
+      "unicode_decimal": 59010
+    },
+    {
+      "icon_id": "7338875",
+      "name": "分项用能",
+      "font_class": "fenxiangyongneng",
+      "unicode": "e696",
+      "unicode_decimal": 59030
+    },
+    {
+      "icon_id": "10283812",
+      "name": "计费",
+      "font_class": "changyongtubiao_jifei",
+      "unicode": "e60a",
+      "unicode_decimal": 58890
+    },
+    {
+      "icon_id": "38418585",
+      "name": "停车位",
+      "font_class": "tingchewei",
+      "unicode": "e65b",
+      "unicode_decimal": 58971
+    },
+    {
+      "icon_id": "42624578",
+      "name": "租户配置",
+      "font_class": "zuhupeizhi",
+      "unicode": "e637",
+      "unicode_decimal": 58935
+    },
+    {
       "icon_id": "4103057",
       "name": "电表",
       "font_class": "dianbiao3",

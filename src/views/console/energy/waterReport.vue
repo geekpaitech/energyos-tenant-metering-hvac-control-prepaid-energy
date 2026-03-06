@@ -4,25 +4,25 @@
     <div class="dashboard-header">
       <div class="header-left">
         <h1 class="dashboard-title">用水报表</h1>
+
+        <!-- Tab切换 -->
+        <div class="tab-switcher">
+          <button :class="['tab-btn', { active: reportType === 'statistics' }]" @click="switchReportType('statistics')">
+            租户用水统计
+          </button>
+          <button :class="['tab-btn', { active: reportType === 'detail' }]" @click="switchReportType('detail')">
+            租户用水明细
+          </button>
+        </div>
       </div>
 
       <div class="header-right">
-        <button
-          class="export-btn"
-          @click="handleExport"
-          v-if="!switchDeviceDetail"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path
-              d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
-            />
+        <button class="export-btn" @click="handleExport" :disabled="exportLoading">
+          <svg v-if="!exportLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
           </svg>
-          导出报表
+          <span v-if="exportLoading">导出中...</span>
+          <span v-else>导出报表</span>
         </button>
       </div>
     </div>
@@ -31,266 +31,228 @@
     <div class="filter-container">
       <div class="filter-item date-filter">
         <label class="filter-label">统计时间</label>
-        <el-date-picker
-          v-model="queryParams.dateRange"
-          type="daterange"
-          format="yyyy-MM-dd"
-          value-format="yyyy-MM-dd"
-          range-separator="-"
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
-          :picker-options="pickerOptions"
-          class="custom-date-picker"
-          @change="handleDateRangeChange"
-        />
+        <el-date-picker v-model="queryParams.dateRange" type="daterange" format="yyyy-MM-dd" value-format="yyyy-MM-dd"
+          range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" :picker-options="currentPickerOptions"
+          class="custom-date-picker" popper-class="elegant-date-picker" @change="handleDateRangeChange" />
       </div>
 
+      <!-- 租户选择 -->
       <div class="filter-item tenant-filter">
         <label class="filter-label">选择租户</label>
-        <el-select
-          v-model="queryParams.tenantIds"
-          multiple
-          collapse-tags
-          filterable
-          placeholder="请选择租户"
-          class="custom-select"
-          :loading="tenantLoading"
-        >
-          <el-option
-            v-for="tenant in tenantList"
-            :key="tenant.tenantId"
-            :label="tenant.name"
-            :value="tenant.tenantId"
-          />
+        <!-- 单选 - 租户用水统计 -->
+        <el-select v-show="reportType === 'statistics'" v-model="queryParams.tenantId" filterable clearable
+          placeholder="请选择租户" class="custom-select" :loading="tenantLoading" @change="handleTenantChange">
+          <el-option v-for="tenant in tenantList" :key="tenant.tenantId" :label="tenant.name"
+            :value="tenant.tenantId" />
+        </el-select>
+        <!-- 多选 - 租户用水明细 -->
+        <el-select v-show="reportType === 'detail'" v-model="queryParams.tenantIds" multiple collapse-tags filterable
+          placeholder="请选择租户" class="custom-select" :loading="tenantLoading" @change="handleTenantChange">
+          <el-option v-for="tenant in tenantList" :key="tenant.tenantId" :label="tenant.name"
+            :value="tenant.tenantId" />
         </el-select>
       </div>
 
       <div class="filter-actions">
-        <button class="search-btn" @click="handleSearch">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-          </svg>
-          查询
-        </button>
-        <button class="reset-btn" @click="handleReset">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path
-              d="M1 4v6h6M23 20v-6h-6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
-            />
-          </svg>
-          重置
-        </button>
-        <button
-          class="reset-btn"
-          @click="toggleSelectAll"
-          :disabled="tenantLoading || tenantList.length === 0"
-        >
+        <!-- <button class="search-btn" @click="handleSearch">查询</button> -->
+        <button class="reset-btn" @click="handleReset">重置</button>
+
+        <!-- 第一个tab的设备明细 -->
+        <el-tooltip v-if="reportType === 'statistics'" effect="dark" content="设备明细仅支持单一租户查询" placement="top"
+          :disabled="!!queryParams.tenantId">
+          <div class="detail-switch">
+            <span class="switch-text">设备明细</span>
+            <label class="toggle-switch">
+              <input type="checkbox" v-model="switchDeviceDetail" @change="handleSwitchChange"
+                :disabled="!queryParams.tenantId" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </el-tooltip>
+
+        <!-- 第二个tab的全选按钮 -->
+        <button v-if="reportType === 'detail'" class="reset-btn" @click="toggleSelectAll"
+          :disabled="tenantLoading || tenantList.length === 0">
           {{ isAllSelected ? "取消全选" : "全选" }}
         </button>
-
-        <div class="detail-switch" v-if="queryParams.tenantIds.length === 1">
-          <span class="switch-text">设备明细</span>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              v-model="switchDeviceDetail"
-              @change="handleSwitchChange"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
       </div>
     </div>
-
-    <!-- 数据统计卡片 -->
-    <div class="stats-cards" v-if="!switchDeviceDetail && tableData.length > 0">
-      <div class="stat-card">
-        <div class="stat-content">
-          <div class="stat-label">总水费</div>
-          <div class="stat-value">¥{{ formatNumber(totalStats.amount) }}</div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-content">
-          <div class="stat-label">总用水量</div>
-          <div class="stat-value">
-            {{ formatNumber(totalStats.water) }} <span class="unit">吨</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-content">
-          <div class="stat-label">日均水费</div>
-          <div class="stat-value">¥{{ formatNumber(avgDailyAmount) }}</div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-content">
-          <div class="stat-label">日均用水量</div>
-          <div class="stat-value">
-            {{ formatNumber(avgDailyWater) }} <span class="unit">吨</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 主内容区 -->
-    <div
-      class="main-content"
-      v-loading="loading"
-      :element-loading-text="loadingText"
-    >
-      <!-- 统计表格 -->
-      <div class="table-section" v-if="!switchDeviceDetail">
+    <div class="main-content" v-loading="loading" :element-loading-text="loadingText">
+      <!-- 租户用水统计 - 图表区域 -->
+      <div class="chart-section" v-if="reportType === 'statistics' && chartData.length > 0">
+        <div class="chart-container-full">
+          <div class="chart-header">
+            <h2 class="chart-title">用水趋势分析</h2>
+            <div class="chart-date-range">{{ formatDateRange }}</div>
+          </div>
+          <div class="chart-info">
+            <div class="chart-legends">
+              <div class="legend-item active" @click="toggleSeries('总水费')">
+                <span class="legend-dot" style="background: #52c41a"></span>
+                <span class="legend-text">总水费</span>
+              </div>
+              <div class="legend-item active" @click="toggleSeries('总水量')">
+                <span class="legend-dot" style="background: #5b9bd5"></span>
+                <span class="legend-text">总水量</span>
+              </div>
+            </div>
+            <div class="chart-summary">
+              <div class="summary-item">
+                <span class="summary-label">总水费</span>
+                <span class="summary-value">¥{{ formatNumber(totalStats.amount) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">总水量</span>
+                <span class="summary-value">{{ formatNumber(totalStats.water) }} m³</span>
+              </div>
+            </div>
+          </div>
+          <div ref="mainChartContainer" class="main-chart"></div>
+        </div>
+      </div>
+
+      <!-- 租户用水统计 - 详细数据表格区域 -->
+      <div class="table-section" v-if="reportType === 'statistics'">
         <div class="section-header">
           <h2 class="section-title">详细数据</h2>
         </div>
 
-        <div class="modern-table" v-if="tableData.length > 0">
-          <div class="table-header">
-            <div class="table-cell">日期</div>
-            <div class="table-cell numeric">水费(元)</div>
-            <div class="table-cell numeric">用水量(吨)</div>
-            <div class="table-cell numeric">单价(元/吨)</div>
-          </div>
+        <!-- 普通统计表格 -->
+        <el-table v-show="!switchDeviceDetail" v-if="tableData.length > 0" ref="statisticsTable" :data="tableData"
+          show-summary :summary-method="getStatisticsSummaries" height="70vh" :highlight-current-row="true">
+          <el-table-column min-width="140" label="日期">
+            <template slot-scope="scope">
+              {{ scope.row.occurDate ? scope.row.occurDate : "总计" }}
+            </template>
+          </el-table-column>
+          <el-table-column min-width="140" label="水费（元）" prop="useAmount" align="right" />
+          <el-table-column min-width="140" label="水量（m³）" prop="waterUse" align="right" />
+        </el-table>
 
-          <div class="table-body">
-            <div
-              v-for="(row, index) in tableData"
-              :key="index"
-              class="table-row"
-            >
-              <div class="table-cell">{{ row.occurDate }}</div>
-              <div class="table-cell numeric amount">
-                ¥{{ formatNumber(row.useAmount) }}
-              </div>
-              <div class="table-cell numeric">
-                {{ formatNumber(row.useWater) }}
-              </div>
-              <div class="table-cell numeric">
-                {{ calculateUnitPrice(row) }}
-              </div>
-            </div>
-          </div>
+        <!-- 设备明细表格 -->
+        <el-table v-show="switchDeviceDetail" v-if="deviceDetailData.length > 0" ref="deviceDetailTable"
+          :data="deviceDetailData" :span-method="deviceDetailSpanMethod" :summary-method="getDeviceDetailSummaries"
+          show-summary height="70vh" :highlight-current-row="true" style="width: 100%">
+          <el-table-column min-width="140" label="日期">
+            <template slot-scope="scope">{{ scope.row.occurDate }}</template>
+          </el-table-column>
+          <el-table-column min-width="120" label="水费（元）" prop="useAmount" align="right" />
+          <el-table-column min-width="120" label="水量（m³）" prop="waterUse" align="right" />
+          <el-table-column label="设备" width="160">
+            <template slot-scope="scope">{{
+              scope.row.deviceUseDtoList.waterName || "-"
+            }}</template>
+          </el-table-column>
+          <el-table-column label="结算方式" width="120">
+            <template slot-scope="scope">{{
+              getSettleWayLabel(scope.row.deviceUseDtoList.settleWay)
+            }}</template>
+          </el-table-column>
+          <el-table-column label="费用" width="120" align="right">
+            <template slot-scope="scope">{{
+              scope.row.deviceUseDtoList.balance !== undefined
+                ? scope.row.deviceUseDtoList.balance
+                : "-"
+            }}</template>
+          </el-table-column>
+          <el-table-column label="水量（m³）" width="120" align="right">
+            <template slot-scope="scope">{{
+              scope.row.deviceUseDtoList.consumption !== undefined
+                ? scope.row.deviceUseDtoList.consumption
+                : "-"
+            }}</template>
+          </el-table-column>
+          <el-table-column label="起始读数" align="center">
+            <el-table-column label="时间" width="160">
+              <template slot-scope="scope">{{
+                scope.row.deviceUseDtoList.startTime || "-"
+              }}</template>
+            </el-table-column>
+            <el-table-column label="累计读数" width="120" align="right">
+              <template slot-scope="scope">{{
+                scope.row.deviceUseDtoList.startRead !== undefined
+                  ? scope.row.deviceUseDtoList.startRead
+                  : "-"
+              }}</template>
+            </el-table-column>
+          </el-table-column>
+          <el-table-column label="截止读数" align="center">
+            <el-table-column label="时间" width="160">
+              <template slot-scope="scope">{{
+                scope.row.deviceUseDtoList.endTime || "-"
+              }}</template>
+            </el-table-column>
+            <el-table-column label="累计读数" width="120" align="right">
+              <template slot-scope="scope">{{
+                scope.row.deviceUseDtoList.endRead !== undefined
+                  ? scope.row.deviceUseDtoList.endRead
+                  : "-"
+              }}</template>
+            </el-table-column>
+          </el-table-column>
+        </el-table>
 
-          <div class="table-footer">
-            <div class="table-cell">合计</div>
-            <div class="table-cell numeric amount">
-              ¥{{ formatNumber(totalStats.amount) }}
-            </div>
-            <div class="table-cell numeric">
-              {{ formatNumber(totalStats.water) }}
-            </div>
-            <div class="table-cell numeric">{{ avgUnitPrice }}</div>
-          </div>
-        </div>
-
-        <div class="empty-state" v-else-if="!loading">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
+        <div class="empty-state" v-if="!loading && tableData.length === 0 && !switchDeviceDetail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M9 17V7m0 10l-3-3m3 3l3-3m5-1V7m0 10l-3-3m3 3l3-3" />
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
           <p>暂无数据</p>
         </div>
-      </div>
-
-      <!-- 设备明细表格 -->
-      <div class="table-section" v-if="switchDeviceDetail">
-        <div class="section-header">
-          <h2 class="section-title">设备用水明细</h2>
-        </div>
-
-        <div class="device-detail-table" v-if="deviceDetailData.length > 0">
-          <div class="detail-header">
-            <div class="header-group date-group">日期汇总</div>
-            <div class="header-group device-group">设备信息</div>
-            <div class="header-group water-group">用水详情</div>
-          </div>
-
-          <div class="detail-subheader">
-            <div class="cell">日期</div>
-            <div class="cell numeric">水费</div>
-            <div class="cell numeric">总用水量</div>
-            <div class="cell">设备名称</div>
-            <div class="cell">结算方式</div>
-            <div class="cell numeric">费用</div>
-            <div class="cell numeric">用水量</div>
-            <div class="cell numeric">单价</div>
-          </div>
-
-          <div class="detail-body">
-            <template v-for="(row, index) in deviceDetailData">
-              <div :key="index" class="detail-row">
-                <div class="cell" v-if="row.col > 0">{{ row.occurDate }}</div>
-                <div class="cell numeric amount" v-if="row.col > 0">
-                  ¥{{ formatNumber(row.useAmount) }}
-                </div>
-                <div class="cell numeric" v-if="row.col > 0">
-                  {{ formatNumber(row.useWater) }}
-                </div>
-                <div class="cell" v-if="row.col === 0"></div>
-                <div class="cell" v-if="row.col === 0"></div>
-                <div class="cell" v-if="row.col === 0"></div>
-
-                <div class="cell device-name">
-                  {{ row.deviceUseDtoList.meterName || "-" }}
-                </div>
-                <div class="cell">
-                  <span
-                    v-if="row.deviceUseDtoList.settleWay"
-                    :class="[
-                      'settle-tag',
-                      getSettleWayClass(row.deviceUseDtoList.settleWay),
-                    ]"
-                  >
-                    {{ getSettleWayLabel(row.deviceUseDtoList.settleWay) }}
-                  </span>
-                  <span v-else>-</span>
-                </div>
-                <div class="cell numeric amount">
-                  ¥{{ formatNumber(row.deviceUseDtoList.useAmount) || "-" }}
-                </div>
-                <div class="cell numeric">
-                  {{ formatNumber(row.deviceUseDtoList.useWater) || "-" }}
-                </div>
-                <div class="cell numeric">
-                  {{ calculateDeviceUnitPrice(row.deviceUseDtoList) }}
-                </div>
-              </div>
-            </template>
-          </div>
-        </div>
-
-        <div class="empty-state" v-else-if="!loading">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
+        <div class="empty-state" v-if="!loading && deviceDetailData.length === 0 && switchDeviceDetail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="7" width="18" height="14" rx="2" />
             <path d="M8 3v4m8-4v4M3 11h18" />
           </svg>
           <p>暂无设备明细数据</p>
+        </div>
+      </div>
+
+      <!-- 租户用水明细 - 租户列表表格 -->
+      <div class="table-section" v-if="reportType === 'detail'">
+        <div class="section-header">
+          <h2 class="section-title">租户用水明细</h2>
+        </div>
+        <el-table v-if="tenantDetailData.length > 0" :data="tenantDetailData" height="calc(100vh - 400px)"
+          :highlight-current-row="true" :row-class-name="tableRowClassName">
+          <el-table-column label="租户编号" width="120">
+            <template slot-scope="scope">{{
+              scope.row.tenantId !== -1 ? scope.row.tenantId : "总计"
+            }}</template>
+          </el-table-column>
+          <el-table-column label="租户名称" min-width="200">
+            <template slot-scope="scope">{{
+              scope.row.tenantName || "-"
+            }}</template>
+          </el-table-column>
+          <!-- <el-table-column label="区域标签" width="180">
+            <template slot-scope="scope">
+              <div v-if="scope.row.labelNames && scope.row.labelNames.length">
+                <div class="label-tags">
+                  <span class="label-tag">{{ scope.row.labelNames[0] }}</span>
+                </div>
+              </div>
+              <div v-else>-</div>
+            </template>
+          </el-table-column> -->
+          <el-table-column label="水费(元)" width="140" align="right">
+            <template slot-scope="scope">{{
+              formatNumber(scope.row.useAmount)
+            }}</template>
+          </el-table-column>
+          <el-table-column label="水量(m³)" width="140" align="right">
+            <template slot-scope="scope">{{
+              formatNumber(scope.row.waterUse)
+            }}</template>
+          </el-table-column>
+        </el-table>
+        <div class="empty-state" v-else-if="!loading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+            <path d="M8 14s.5 2 4 2 4-2 4-2" />
+          </svg>
+          <p>暂无数据</p>
         </div>
       </div>
     </div>
@@ -298,77 +260,171 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
-import {
-  getSimpleTenantList,
-  queryTenantWaterUseStatis,
-} from "@/api/useReport";
-import moment from "moment";
+import { mapGetters } from 'vuex';
+import { getSimpleTenantList, queryTenantWaterUseStatis, queryTenantWaterUse } from '@/api/useReport';
+import moment from 'moment';
+import * as XLSX from 'xlsx';
 
 export default {
-  name: "WaterReport",
+  name: 'WaterReport',
   data() {
     return {
+      reportType: 'statistics',
       queryParams: {
         dateRange: [],
-        tenantIds: [],
+        tenantId: null,
+        tenantIds: []
       },
       tenantList: [],
       tenantLoading: false,
       loading: false,
-      loadingText: "数据加载中...",
+      loadingText: '数据加载中...',
+      exportLoading: false,
+      chartData: [],
       tableData: [],
       deviceDetailData: [],
+      tenantDetailData: [],
       switchDeviceDetail: false,
+      mainChartInstance: null,
+      settleWayMap: {
+        0: '普通结算',
+        1: '手动扣款',
+        2: '系统补单',
+        3: '浮动电价',
+        4: '分摊结算',
+        5: '设备扣款'
+      },
       pickerOptions: {
-        shortcuts: [
-          {
-            text: "最近一周",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-        ],
         disabledDate(time) {
           return time.getTime() > Date.now();
-        },
+        }
       },
+      resizeObserver: null
     };
   },
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
-    totalStats() {
-      const stats = {
-        amount: 0,
-        water: 0,
+    ...mapGetters('manager', ['currentManagerId']),
+    currentPickerOptions() {
+      const shortcuts = [
+        {
+          text: '昨天',
+          onClick(picker) {
+            const start = new Date();
+            start.setTime(start.getTime() - 3600 * 1000 * 24);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date();
+            end.setTime(end.getTime() - 3600 * 1000 * 24);
+            end.setHours(23, 59, 59, 999);
+            picker.$emit('pick', [start, end]);
+          }
+        },
+        {
+          text: '本周',
+          onClick(picker) {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const start = new Date(now);
+            const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            start.setDate(now.getDate() + diff);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date();
+            end.setHours(23, 59, 59, 999);
+            picker.$emit('pick', [start, end]);
+          }
+        },
+        {
+          text: '上周',
+          onClick(picker) {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const start = new Date(now);
+            const diff = dayOfWeek === 0 ? -13 : -6 - dayOfWeek;
+            start.setDate(now.getDate() + diff);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            end.setHours(23, 59, 59, 999);
+            picker.$emit('pick', [start, end]);
+          }
+        },
+        {
+          text: '本月',
+          onClick(picker) {
+            const start = new Date();
+            start.setDate(1);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date();
+            end.setHours(23, 59, 59, 999);
+            picker.$emit('pick', [start, end]);
+          }
+        },
+        {
+          text: '上月',
+          onClick(picker) {
+            const start = new Date();
+            start.setMonth(start.getMonth() - 1);
+            start.setDate(1);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date();
+            end.setDate(0);
+            end.setHours(23, 59, 59, 999);
+            picker.$emit('pick', [start, end]);
+          }
+        },
+        {
+          text: '近三个月',
+          onClick(picker) {
+            const end = new Date();
+            end.setHours(23, 59, 59, 999);
+            const start = new Date();
+            start.setMonth(start.getMonth() - 3);
+            start.setHours(0, 0, 0, 0);
+            picker.$emit('pick', [start, end]);
+          }
+        }
+      ];
+
+      // 如果不是统计模式（即租户明细模式），添加“近一年”选项
+      if (this.reportType !== 'statistics') {
+        shortcuts.push({
+          text: '近一年',
+          onClick(picker) {
+            const end = new Date();
+            end.setHours(23, 59, 59, 999);
+            const start = new Date();
+            start.setFullYear(start.getFullYear() - 1);
+            start.setHours(0, 0, 0, 0);
+            picker.$emit('pick', [start, end]);
+          }
+        });
+      }
+
+      return {
+        shortcuts,
+        disabledDate: this.pickerOptions.disabledDate
       };
-
-      this.tableData.forEach((item) => {
+    },
+    formatDateRange() {
+      if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) {
+        return '';
+      }
+      const [start, end] = this.queryParams.dateRange;
+      return `${start} - ${end}`;
+    },
+    totalStats() {
+      const stats = { amount: 0, water: 0 };
+      this.tableData.forEach(item => {
         stats.amount += Number(item.useAmount) || 0;
-        stats.water += Number(item.useWater) || 0;
+        stats.water += Number(item.waterUse) || 0;
       });
-
+      return stats;
+    },
+    detailTotalStats() {
+      const stats = { totalWater: 0, totalAmount: 0 };
+      this.tenantDetailData.forEach(item => {
+        stats.totalWater += Number(item.waterUse) || 0;
+        stats.totalAmount += Number(item.useAmount) || 0;
+      });
       return stats;
     },
     avgDailyAmount() {
@@ -380,15 +436,12 @@ export default {
       return (this.totalStats.water / this.tableData.length).toFixed(2);
     },
     avgUnitPrice() {
-      if (this.totalStats.water === 0) return "-";
-      return (this.totalStats.amount / this.totalStats.water).toFixed(2);
+      if (this.detailTotalStats.totalWater === 0) return '0.00';
+      return (this.detailTotalStats.totalAmount / this.detailTotalStats.totalWater).toFixed(2);
     },
     isAllSelected() {
-      return (
-        this.tenantList.length > 0 &&
-        this.queryParams.tenantIds.length === this.tenantList.length
-      );
-    },
+      return this.tenantList.length > 0 && this.queryParams.tenantIds.length === this.tenantList.length;
+    }
   },
   watch: {
     currentManagerId: {
@@ -397,36 +450,75 @@ export default {
           this.initializeData();
         }
       },
-      immediate: true,
-    },
+      immediate: true
+    }
+  },
+  mounted() {
+    window.addEventListener('resize', this.handleResize);
+    this.$nextTick(() => {
+      if (window.ResizeObserver) {
+        this.resizeObserver = new ResizeObserver(this.handleResize);
+        const mainContent = this.$el.querySelector('.main-content');
+        if (mainContent) {
+          this.resizeObserver.observe(mainContent);
+        }
+      }
+    });
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+    if (this.mainChartInstance) {
+      this.mainChartInstance.dispose();
+    }
   },
   methods: {
-    toggleSelectAll() {
-      if (this.tenantLoading || this.tenantList.length === 0) return;
-
-      if (this.isAllSelected) {
-        this.queryParams.tenantIds = [];
-      } else {
-        this.queryParams.tenantIds = this.tenantList.map(
-          (item) => item.tenantId
-        );
-      }
-    },
     async initializeData() {
       this.setDefaultDateRange();
-      await this.getTenantList();
-      if (this.tenantList.length > 0) {
-        this.queryParams.tenantIds = this.tenantList.map(
-          (item) => item.tenantId
-        );
+
+      // 从 URL 获取参数
+      const { tenantId, startDate, endDate, showDetail } = this.$route.query;
+
+      // 如果有日期参数，使用传入的日期
+      if (startDate && endDate) {
+        this.queryParams.dateRange = [startDate, endDate];
       }
+
+      await this.getTenantList();
+
+      // 如果有租户参数，使用传入的租户ID
+      if (tenantId) {
+        const targetTenantId = Number(tenantId) || tenantId;
+        const tenant = this.tenantList.find(t => t.tenantId == targetTenantId);
+        if (tenant) {
+          this.queryParams.tenantId = tenant.tenantId;
+        } else {
+          if (this.tenantList.length > 0) {
+            this.queryParams.tenantId = this.tenantList[0].tenantId;
+          }
+        }
+      } else if (this.tenantList.length > 0) {
+        this.queryParams.tenantId = this.tenantList[0].tenantId;
+      }
+
+      // 如果有显示明细参数，打开设备明细
+      if (showDetail === '1') {
+        this.switchDeviceDetail = true;
+      }
+
+      // 初始化明细tab的租户选择
+      this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId);
+
       this.handleSearch();
     },
 
     setDefaultDateRange() {
       this.queryParams.dateRange = [
-        moment().subtract(30, "days").format("YYYY-MM-DD"),
-        moment().format("YYYY-MM-DD"),
+        moment().subtract(30, 'days').format('YYYY-MM-DD'),
+        moment().format('YYYY-MM-DD')
       ];
     },
 
@@ -435,182 +527,753 @@ export default {
       try {
         const { data } = await getSimpleTenantList({
           managerId: this.currentManagerId,
-          tenantStatus: 0,
+          tenantStatus: 0
         });
         this.tenantList = data || [];
       } catch (error) {
-        this.$message.error("获取租户列表失败");
-        console.error("获取租户列表失败:", error);
+        this.$message.error('获取租户列表失败');
+        console.error('获取租户列表失败:', error);
       } finally {
         this.tenantLoading = false;
       }
     },
 
+    handleDateRangeChange(val) {
+      if (val && val.length === 2 && val[0] && val[1]) {
+        const [start, end] = val;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000));
+
+        // 租户用水统计模式(Tab 1)下限制100天
+        // 租户用水明细模式(Tab 2)下限制1年(366天)
+        const limitDays = this.reportType === 'statistics' ? 100 : 366;
+        const limitText = this.reportType === 'statistics' ? '100天' : '1年';
+
+        if (diffDays > limitDays) {
+          this.$message.warning(`最多只能选择${limitText}的数据`);
+          const newEndDate = new Date(startDate.getTime() + limitDays * 24 * 3600 * 1000);
+          this.queryParams.dateRange = [start, moment(newEndDate).format('YYYY-MM-DD')];
+          return;
+        }
+        this.handleSearch();
+      }
+    },
+
+    toggleSelectAll() {
+      if (this.isAllSelected) {
+        this.queryParams.tenantIds = [];
+      } else {
+        this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId);
+      }
+    },
+
+    switchReportType(type) {
+      if (this.reportType === type) return;
+      this.reportType = type;
+
+      this.switchDeviceDetail = false;
+
+      // 如果切换回统计模式，且当前选择的时间范围超过100天，则重置为默认时间
+      if (type === 'statistics' && this.queryParams.dateRange && this.queryParams.dateRange.length === 2) {
+        const [start, end] = this.queryParams.dateRange;
+        const diffDays = Math.floor((new Date(end) - new Date(start)) / (24 * 3600 * 1000));
+        if (diffDays > 100) {
+          this.setDefaultDateRange();
+        }
+      }
+
+      this.tableData = [];
+      this.chartData = [];
+      this.deviceDetailData = [];
+      this.tenantDetailData = [];
+
+      this.handleSearch();
+    },
+
+    toggleSeries(seriesName) {
+      if (this.mainChartInstance) {
+        this.mainChartInstance.dispatchAction({
+          type: 'legendToggleSelect',
+          name: seriesName
+        });
+      }
+    },
+
     async handleSearch() {
-      if (
-        !this.queryParams.dateRange ||
-        this.queryParams.dateRange.length !== 2
-      ) {
-        this.$message.warning("请选择统计时间");
+      if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) {
+        this.$message.warning('请选择统计时间');
         return;
       }
 
-      if (this.queryParams.tenantIds.length === 0) {
-        this.$message.warning("请选择租户");
-        return;
+      if (this.reportType === 'statistics') {
+        if (!this.queryParams.tenantId) {
+          this.$message.warning('请选择租户');
+          return;
+        }
+      } else {
+        if (this.queryParams.tenantIds.length === 0) {
+          this.$message.warning('请选择租户');
+          return;
+        }
       }
 
       this.loading = true;
       try {
-        if (this.switchDeviceDetail) {
-          await this.getDeviceDetailData();
-        } else {
+        if (this.reportType === 'statistics') {
           await this.getStatisticsData();
+          if (this.switchDeviceDetail) {
+            await this.getDeviceDetailData();
+          }
+        } else {
+          await this.getTenantDetailData();
         }
       } catch (error) {
-        this.$message.error("获取数据失败");
-        console.error("获取数据失败:", error);
+        this.$message.error('获取数据失败');
+        console.error('获取数据失败:', error);
       } finally {
         this.loading = false;
       }
     },
 
     async getStatisticsData() {
-      const startDate = this.queryParams.dateRange[0];
-      const endDate = this.queryParams.dateRange[1];
-
       const params = {
         managerId: this.currentManagerId,
-        startDate,
-        endDate,
+        startDate: this.queryParams.dateRange[0],
+        endDate: this.queryParams.dateRange[1],
         dataType: 2,
         useType: 0,
-        tenantIdList: this.queryParams.tenantIds,
+        tenantIdList: [this.queryParams.tenantId]
       };
-
       const { data } = await queryTenantWaterUseStatis(params);
 
-      this.tableData = data || [];
+      // 原始数据
+      const originalData = data || [];
+
+      // 图表数据: 保持正序(时间从早到晚,用于图表展示)
+      this.chartData = [...originalData].sort((a, b) => {
+        return new Date(a.occurDate) - new Date(b.occurDate);
+      });
+
+      // 表格数据: 倒序(最新日期在前,用于表格展示)
+      this.tableData = [...originalData].sort((a, b) => {
+        return new Date(b.occurDate) - new Date(a.occurDate);
+      });
+
+      this.$nextTick(() => {
+        this.initializeMainChart();
+        this.updateCharts();
+      });
     },
 
     async getDeviceDetailData() {
-      const startDate = this.queryParams.dateRange[0];
-      const endDate = this.queryParams.dateRange[1];
-
       const params = {
         managerId: this.currentManagerId,
-        startDate,
-        endDate,
+        startDate: this.queryParams.dateRange[0],
+        endDate: this.queryParams.dateRange[1],
         dataType: 2,
         useType: 0,
-        tenantIdList: this.queryParams.tenantIds,
+        tenantIdList: [this.queryParams.tenantId]
       };
-
       const { data } = await queryTenantWaterUseStatis(params);
 
-      const detailData = [];
-      if (data && data.length > 0) {
-        data.forEach((item) => {
+      // 先对原始数据按日期倒序排序
+      const sortedData = (data || []).sort((a, b) => {
+        return new Date(b.occurDate) - new Date(a.occurDate);
+      });
+
+      const detailArray = [];
+      if (sortedData && sortedData.length > 0) {
+        sortedData.forEach(item => {
           if (item.deviceUseDtoList && item.deviceUseDtoList.length > 0) {
-            item.deviceUseDtoList.forEach((device, index) => {
-              detailData.push({
-                occurDate: item.occurDate,
-                useAmount: item.useAmount,
-                useWater: item.useWater,
-                col: index === 0 ? item.deviceUseDtoList.length : 0,
-                deviceUseDtoList: device,
+            const baseObj = {
+              occurDate: item.occurDate,
+              useAmount: item.useAmount,
+              waterUse: item.waterUse
+            };
+            item.deviceUseDtoList.forEach((device, idx) => {
+              detailArray.push({
+                ...baseObj,
+                col: idx === 0 ? item.deviceUseDtoList.length : 0,
+                deviceUseDtoList: device
               });
             });
           } else {
-            detailData.push({
-              ...item,
+            detailArray.push({
+              occurDate: item.occurDate,
+              useAmount: item.useAmount,
+              waterUse: item.waterUse,
               col: 1,
-              deviceUseDtoList: {},
+              deviceUseDtoList: {}
             });
           }
         });
       }
+      this.deviceDetailData = detailArray;
+    },
 
-      this.deviceDetailData = detailData;
+    async getTenantDetailData() {
+      const params = {
+        managerId: this.currentManagerId,
+        startDate: this.queryParams.dateRange[0],
+        endDate: this.queryParams.dateRange[1],
+        dataType: 1,
+        useType: 0,
+        tenantIdList: this.queryParams.tenantIds
+      };
+      const { data } = await queryTenantWaterUse(params);
+      this.tenantDetailData = data || [];
+    },
+
+    handleTenantChange() {
+      this.handleSearch();
     },
 
     handleReset() {
       this.setDefaultDateRange();
-      if (this.tenantList.length > 0) {
-        this.queryParams.tenantIds = this.tenantList.map(
-          (item) => item.tenantId
-        );
-      }
       this.switchDeviceDetail = false;
+      if (this.reportType === 'statistics') {
+        if (this.tenantList.length > 0) {
+          this.queryParams.tenantId = this.tenantList[0].tenantId;
+        }
+      } else {
+        this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId);
+      }
       this.handleSearch();
     },
 
     handleExport() {
-      this.$message.info("导出功能开发中...");
+      if (this.reportType === 'statistics') {
+        if (!this.switchDeviceDetail && (!this.tableData || this.tableData.length === 0)) {
+          this.$message.warning('暂无数据可导出');
+          return;
+        }
+        if (this.switchDeviceDetail && (!this.deviceDetailData || this.deviceDetailData.length === 0)) {
+          this.$message.warning('暂无设备明细数据可导出');
+          return;
+        }
+      } else {
+        if (!this.tenantDetailData || this.tenantDetailData.length === 0) {
+          this.$message.warning('暂无数据可导出');
+          return;
+        }
+      }
+
+      this.exportLoading = true;
+
+      setTimeout(() => {
+        try {
+          if (this.reportType === 'statistics') {
+            if (this.switchDeviceDetail) {
+              this.exportStatisticsDeviceDetail();
+            } else {
+              this.exportStatisticsNormal();
+            }
+          } else {
+            this.exportDetailNormal();
+          }
+
+          this.$message.success('导出成功！');
+        } catch (error) {
+          console.error('导出失败:', error);
+          this.$message.error(`导出失败: ${error.message || '请重试'}`);
+        } finally {
+          this.exportLoading = false;
+        }
+      }, 100);
     },
 
-    handleSwitchChange(val) {
-      if (val && this.queryParams.tenantIds.length !== 1) {
-        this.$message.warning("查看设备明细请选择单个租户");
-        this.switchDeviceDetail = false;
-        return;
+    exportStatisticsNormal() {
+      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId);
+      const tenantName = tenant ? tenant.name : this.queryParams.tenantId;
+
+      const filterRow = [
+        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}`,
+        `租户: ${tenantName}`
+      ];
+
+      const headers = ['日期', '水费（元）', '水量（m³）'];
+
+      const dataRows = this.tableData.map(row => [
+        row.occurDate || '',
+        this.formatExportNumber(row.useAmount),
+        this.formatExportNumber(row.waterUse)
+      ]);
+
+      const totalRow = [
+        '总计',
+        this.formatExportNumber(this.totalStats.amount),
+        this.formatExportNumber(this.totalStats.water)
+      ];
+
+      const wsData = [filterRow, [], headers, ...dataRows, totalRow];
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 15 }];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '租户用水统计');
+
+      const fileName = this.generateFileName('租户用水统计');
+      XLSX.writeFile(wb, fileName);
+    },
+
+    exportStatisticsDeviceDetail() {
+      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId);
+      const tenantName = tenant ? tenant.name : this.queryParams.tenantId;
+
+      const filterRow = [
+        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}  |  租户: ${tenantName}  |  设备明细`
+      ];
+
+      const header1 = [
+        '日期', '水费（元）', '水量（m³）',
+        '设备', '结算方式', '费用', '水量（m³）',
+        '起始读数', '',
+        '截止读数', ''
+      ];
+
+      const header2 = [
+        '', '', '',
+        '', '', '', '',
+        '时间', '累计读数',
+        '时间', '累计读数'
+      ];
+
+      if (!this.deviceDetailData || this.deviceDetailData.length === 0) {
+        throw new Error('没有可导出的设备明细数据');
       }
+
+      const dateGroups = {};
+      this.deviceDetailData.forEach(row => {
+        const date = row.occurDate;
+        if (!dateGroups[date]) {
+          dateGroups[date] = {
+            summary: {
+              occurDate: date,
+              useAmount: row.useAmount,
+              waterUse: row.waterUse
+            },
+            devices: []
+          };
+        }
+        if (row.deviceUseDtoList && Object.keys(row.deviceUseDtoList).length > 0) {
+          dateGroups[date].devices.push(row.deviceUseDtoList);
+        }
+      });
+
+      const dataRows = [];
+      Object.keys(dateGroups).sort().forEach(date => {
+        const group = dateGroups[date];
+        const deviceCount = group.devices.length;
+
+        if (deviceCount === 0) {
+          dataRows.push([
+            group.summary.occurDate,
+            this.formatExportNumber(group.summary.useAmount),
+            this.formatExportNumber(group.summary.waterUse),
+            '', '', '', '', '', '', '', ''
+          ]);
+        } else {
+          group.devices.forEach((device, idx) => {
+            if (idx === 0) {
+              dataRows.push([
+                group.summary.occurDate,
+                this.formatExportNumber(group.summary.useAmount),
+                this.formatExportNumber(group.summary.waterUse),
+                device.waterName || '',
+                this.getSettleWayLabel(device.settleWay) || '',
+                this.formatExportNumber(device.balance),
+                this.formatExportNumber(device.consumption),
+                device.startTime || '',
+                this.formatExportNumber(device.startRead),
+                device.endTime || '',
+                this.formatExportNumber(device.endRead)
+              ]);
+            } else {
+              dataRows.push([
+                '', '', '',
+                device.waterName || '',
+                this.getSettleWayLabel(device.settleWay) || '',
+                this.formatExportNumber(device.balance),
+                this.formatExportNumber(device.consumption),
+                device.startTime || '',
+                this.formatExportNumber(device.startRead),
+                device.endTime || '',
+                this.formatExportNumber(device.endRead)
+              ]);
+            }
+          });
+        }
+      });
+
+      const totalRow = [
+        '总计',
+        this.formatExportNumber(this.totalStats.amount),
+        this.formatExportNumber(this.totalStats.water)
+      ];
+      while (totalRow.length < 11) {
+        totalRow.push('');
+      }
+
+      const wsData = [filterRow, [], header1, header2, ...dataRows, totalRow];
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws['!cols'] = [
+        { wch: 15 }, { wch: 12 }, { wch: 12 },
+        { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+        { wch: 18 }, { wch: 12 },
+        { wch: 18 }, { wch: 12 }
+      ];
+
+      const merges = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },
+        { s: { r: 2, c: 0 }, e: { r: 3, c: 0 } },
+        { s: { r: 2, c: 1 }, e: { r: 3, c: 1 } },
+        { s: { r: 2, c: 2 }, e: { r: 3, c: 2 } },
+        { s: { r: 2, c: 3 }, e: { r: 3, c: 3 } },
+        { s: { r: 2, c: 4 }, e: { r: 3, c: 4 } },
+        { s: { r: 2, c: 5 }, e: { r: 3, c: 5 } },
+        { s: { r: 2, c: 6 }, e: { r: 3, c: 6 } },
+        { s: { r: 2, c: 7 }, e: { r: 2, c: 8 } },
+        { s: { r: 2, c: 9 }, e: { r: 2, c: 10 } }
+      ];
+
+      let currentRow = 4;
+      Object.keys(dateGroups).sort().forEach(date => {
+        const group = dateGroups[date];
+        const deviceCount = group.devices.length;
+
+        if (deviceCount > 1) {
+          for (let col = 0; col <= 2; col++) {
+            merges.push({
+              s: { r: currentRow, c: col },
+              e: { r: currentRow + deviceCount - 1, c: col }
+            });
+          }
+        }
+
+        currentRow += deviceCount > 0 ? deviceCount : 1;
+      });
+
+      ws['!merges'] = merges;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '租户用水统计-设备明细');
+
+      const fileName = this.generateFileName('租户用水统计-设备明细');
+      XLSX.writeFile(wb, fileName);
+    },
+
+    exportDetailNormal() {
+      const selectedTenants = this.tenantList
+        .filter(t => this.queryParams.tenantIds.includes(t.tenantId))
+        .map(t => t.name)
+        .join('、');
+
+      const filterRow = [
+        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}`,
+        `租户: ${selectedTenants || '全部'}`
+      ];
+
+      const headers = ['租户编号', '租户名称', '区域标签', '水费(元)', '水量(m³)'];
+
+      const dataRows = this.tenantDetailData.map(row => [
+        row.tenantId !== -1 ? row.tenantId : '总计',
+        row.tenantName || '',
+        row.labelNames && row.labelNames.length ? row.labelNames[0] : '',
+        this.formatExportNumber(row.useAmount),
+        this.formatExportNumber(row.waterUse)
+      ]);
+
+      const wsData = [filterRow, [], headers, ...dataRows];
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws['!cols'] = [
+        { wch: 12 },
+        { wch: 20 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '租户用水明细');
+
+      const fileName = this.generateFileName('租户用水明细');
+      XLSX.writeFile(wb, fileName);
+    },
+
+    generateFileName(prefix) {
+      const now = new Date();
+      const timeStr =
+        now.getFullYear() +
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0') +
+        '_' +
+        String(now.getHours()).padStart(2, '0') +
+        String(now.getMinutes()).padStart(2, '0') +
+        String(now.getSeconds()).padStart(2, '0');
+
+      return `${prefix}_${timeStr}.xlsx`;
+    },
+
+    formatExportNumber(num) {
+      if (num === undefined || num === null || num === '' || num === '-') {
+        return 0;
+      }
+
+      const numValue = typeof num === 'string' ? parseFloat(num) : num;
+
+      if (isNaN(numValue)) {
+        return 0;
+      }
+
+      return numValue;
+    },
+
+    handleSwitchChange() {
       this.handleSearch();
     },
 
-    handleDateRangeChange(val) {
-      if (val && val.length === 2) {
-        const [start, end] = val;
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000));
+    tableRowClassName({ row }) {
+      if (row.tenantId === -1) {
+        return 'total-row';
+      }
+      return '';
+    },
 
-        if (diffDays > 90) {
-          this.$message.warning("最多只能选择3个月的数据");
-          const newEndDate = new Date(
-            startDate.getTime() + 90 * 24 * 3600 * 1000
-          );
-          this.queryParams.dateRange = [
-            start,
-            moment(newEndDate).format("YYYY-MM-DD"),
-          ];
-        }
+    deviceDetailSpanMethod({ row, columnIndex }) {
+      if (columnIndex < 3) {
+        return {
+          rowspan: row.col,
+          colspan: row.col > 0 ? 1 : 0
+        };
       }
     },
 
+    getStatisticsSummaries(param) {
+      const { columns, data } = param;
+      const sums = [];
+      columns.forEach((column, index) => {
+        if (index === 0) {
+          sums[index] = '总计';
+          return;
+        }
+        const values = data.map(item => Number(item[column.property]));
+        if (!values.every(value => isNaN(value))) {
+          sums[index] = values
+            .reduce((prev, curr) => {
+              const value = Number(curr);
+              if (!isNaN(value)) {
+                return prev + curr;
+              }
+              return prev;
+            }, 0)
+            .toFixed(2);
+        } else {
+          sums[index] = '';
+        }
+      });
+      return sums;
+    },
+
+    getDeviceDetailSummaries(param) {
+      const { columns, data } = param;
+      const sums = [];
+      const uniqueData = [];
+      const dateSet = [];
+      data.forEach(item => {
+        if (dateSet.indexOf(item.occurDate) === -1) {
+          uniqueData.push(item);
+          dateSet.push(item.occurDate);
+        }
+      });
+      columns.forEach((column, index) => {
+        if (index === 0) {
+          sums[index] = '总计';
+          return;
+        }
+        const values = uniqueData.map(item => Number(item[column.property]));
+        if (!values.every(value => isNaN(value))) {
+          sums[index] = values
+            .reduce((prev, curr) => {
+              const value = Number(curr);
+              if (!isNaN(value)) {
+                return prev + curr;
+              }
+              return prev;
+            }, 0)
+            .toFixed(2);
+        } else {
+          sums[index] = '';
+        }
+      });
+      return sums;
+    },
+
+    initializeMainChart() {
+      if (!this.$refs.mainChartContainer) return;
+      if (this.mainChartInstance) {
+        this.mainChartInstance.dispose();
+      }
+      this.mainChartInstance = this.$echarts.init(this.$refs.mainChartContainer);
+    },
+
+    updateCharts() {
+      this.updateMainChart();
+    },
+
+    updateMainChart() {
+      if (!this.mainChartInstance || this.chartData.length === 0) return;
+      const xAxisData = this.chartData.map(item => moment(item.occurDate).format('MM-DD'));
+      const option = {
+        color: ['#52c41a', '#5b9bd5'],
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderColor: '#e8e8e8',
+          borderWidth: 1,
+          padding: [12, 16],
+          textStyle: { color: '#333', fontSize: 14 },
+          axisPointer: { type: 'cross', crossStyle: { color: '#999' } },
+          formatter: params => {
+            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`;
+            params.forEach(item => {
+              let suffix = '';
+              if (item.seriesName === '总水费') {
+                suffix = ' 元';
+              } else {
+                suffix = ' m³';
+              }
+              html += `<div style="display: flex; align-items: center; margin-bottom: 4px">
+                <span style="display: inline-block; width: 10px; height: 10px; background: ${item.color
+                }; border-radius: 50%; margin-right: 8px"></span>
+                <span style="flex: 1">${item.seriesName}</span>
+                <span style="font-weight: 500">${this.formatNumber(item.value)}${suffix}</span>
+              </div>`;
+            });
+            return html;
+          }
+        },
+        legend: {
+          data: ['总水费', '总水量'],
+          bottom: 35,
+          itemGap: 20,
+          textStyle: { color: '#666' }
+        },
+        grid: { top: 30, left: 50, right: 50, bottom: 75, containLabel: true },
+        dataZoom: [
+          { type: 'inside', start: 0, end: 100 },  // ← 改为 0-100
+          {
+            type: 'slider',
+            start: 0,                                // ← 改为 0
+            end: 100,
+            height: 8,
+            bottom: 5,
+            borderColor: 'transparent',
+            backgroundColor: '#f0f0f0',
+            handleSize: 14,
+            showDetail: false,
+            showDataShadow: false,
+            fillerColor: 'rgba(24, 144, 255, 0.15)'
+          }
+        ],
+        xAxis: {
+          type: 'category',
+          data: xAxisData,
+          boundaryGap: true,
+          axisTick: { show: false },
+          axisLine: { lineStyle: { color: '#e8e8e8' } },
+          axisLabel: { color: '#666', fontSize: 12 }
+        },
+        yAxis: [
+          {
+            type: 'value',
+            name: '水费 (元)',
+            nameTextStyle: { color: '#666', padding: [0, 0, 0, 20] },
+            splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: {
+              color: '#666',
+              fontSize: 12,
+              formatter: v => (v >= 1000 ? v / 1000 + 'k' : v)
+            }
+          },
+          {
+            type: 'value',
+            name: '水量 (m³)',
+            nameTextStyle: { color: '#666', padding: [0, 20, 0, 0] },
+            splitLine: { show: false },
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: {
+              color: '#666',
+              fontSize: 12,
+              formatter: v => (v >= 1000 ? v / 1000 + 'k' : v)
+            }
+          }
+        ],
+        series: [
+          {
+            name: '总水费',
+            type: 'line',
+            data: this.chartData.map(item => item.useAmount),
+            smooth: true,
+            symbol: 'none',
+            lineStyle: { width: 2 },
+            areaStyle: {
+              opacity: 0.3,
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [
+                  { offset: 0, color: 'rgba(82, 196, 26, 0.3)' },
+                  { offset: 1, color: 'rgba(82, 196, 26, 0.05)' }
+                ]
+              }
+            }
+          },
+          {
+            name: '总水量',
+            type: 'bar',
+            yAxisIndex: 1,
+            data: this.chartData.map(item => item.waterUse),
+            barMaxWidth: 18,
+            itemStyle: {
+              color: 'rgba(135, 206, 235, 0.65)',
+              borderRadius: [2, 2, 0, 0]
+            }
+          }
+        ]
+      };
+      this.mainChartInstance.setOption(option);
+    },
+
+    handleResize() {
+      this.$nextTick(() => {
+        if (this.mainChartInstance) this.mainChartInstance.resize();
+      });
+    },
+
     formatNumber(num) {
-      if (!num && num !== 0) return "0.00";
+      if (num === undefined || num === null) return '-';
+      if (num === 0) return '0.00';
       return Number(num).toFixed(2);
     },
 
-    calculateUnitPrice(row) {
-      if (!row.useWater || row.useWater === 0) return "-";
-      return (row.useAmount / row.useWater).toFixed(2);
-    },
-
-    calculateDeviceUnitPrice(device) {
-      if (!device.useWater || device.useWater === 0) return "-";
-      return (device.useAmount / device.useWater).toFixed(2);
-    },
-
     getSettleWayLabel(settleWay) {
-      const settleWayMap = {
-        1: "预付费",
-        2: "后付费",
-        3: "月结",
-      };
-      return settleWayMap[settleWay] || "-";
-    },
-
-    getSettleWayClass(settleWay) {
-      const classMap = {
-        1: "prepay",
-        2: "postpay",
-        3: "monthly",
-      };
-      return classMap[settleWay] || "";
-    },
-  },
+      if (settleWay === undefined || settleWay === null) return '';
+      return this.settleWayMap[settleWay] || '';
+    }
+  }
 };
 </script>
 
@@ -618,6 +1281,7 @@ export default {
 .water-dashboard {
   min-height: 100vh;
   padding: 16px;
+  background: #f5f7fa;
 }
 
 // 顶部操作栏
@@ -635,6 +1299,7 @@ export default {
 .header-left {
   display: flex;
   align-items: center;
+  gap: 32px;
 }
 
 .dashboard-title {
@@ -642,6 +1307,37 @@ export default {
   font-weight: 600;
   color: #1a1a1a;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tab-switcher {
+  display: flex;
+  gap: 8px;
+  margin: 0 20px;
+}
+
+.tab-btn {
+  padding: 8px 20px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.3s;
+
+  &:hover {
+    color: #1890ff;
+    border-color: #1890ff;
+  }
+
+  &.active {
+    color: #fff;
+    background: #1890ff;
+    border-color: #1890ff;
+  }
 }
 
 .export-btn {
@@ -663,10 +1359,16 @@ export default {
     height: 18px;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #2563eb;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  &:disabled {
+    background: #93c5fd;
+    cursor: not-allowed;
+    opacity: 0.7;
   }
 }
 
@@ -721,9 +1423,9 @@ export default {
   cursor: pointer;
   transition: all 0.2s;
 
-  svg {
-    width: 16px;
-    height: 16px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -731,7 +1433,7 @@ export default {
   background: #3b82f6;
   color: white;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #2563eb;
     transform: translateY(-1px);
   }
@@ -741,7 +1443,7 @@ export default {
   background: #f3f4f6;
   color: #6b7280;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #e5e7eb;
     color: #374151;
   }
@@ -759,6 +1461,7 @@ export default {
   font-size: 14px;
   color: #6b7280;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .toggle-switch {
@@ -772,11 +1475,20 @@ export default {
     width: 0;
     height: 0;
 
-    &:checked + .toggle-slider {
+    &:checked+.toggle-slider {
       background-color: #3b82f6;
 
       &:before {
         transform: translateX(20px);
+      }
+    }
+
+    &:disabled+.toggle-slider {
+      background-color: #e5e7eb;
+      cursor: not-allowed;
+
+      &:before {
+        background-color: #d1d5db;
       }
     }
   }
@@ -795,7 +1507,7 @@ export default {
 
   &:before {
     position: absolute;
-    content: "";
+    content: '';
     height: 18px;
     width: 18px;
     left: 3px;
@@ -857,6 +1569,98 @@ export default {
   overflow: hidden;
 }
 
+// 图表区域
+.chart-section {
+  padding: 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.chart-container-full {
+  padding: 24px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.chart-date-range {
+  font-size: 13px;
+  color: #999;
+}
+
+.chart-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.chart-legends {
+  display: flex;
+  gap: 24px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+
+  &.active {
+    color: #333;
+    font-weight: 500;
+  }
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-text {
+  user-select: none;
+}
+
+.chart-summary {
+  display: flex;
+  gap: 40px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: #999;
+}
+
+.summary-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.main-chart {
+  height: 450px;
+  width: 100%;
+}
+
 // 表格区域
 .table-section {
   padding: 24px;
@@ -876,159 +1680,6 @@ export default {
   margin: 0;
 }
 
-.modern-table {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.table-header {
-  display: grid;
-  grid-template-columns: 150px repeat(3, 1fr);
-  background: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-  font-size: 14px;
-}
-
-.table-body {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.table-row {
-  display: grid;
-  grid-template-columns: 150px repeat(3, 1fr);
-  border-top: 1px solid #f3f4f6;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #f9fafb;
-  }
-}
-
-.table-footer {
-  display: grid;
-  grid-template-columns: 150px repeat(3, 1fr);
-  background: #f3f4f6;
-  font-weight: 600;
-  color: #1a1a1a;
-  border-top: 2px solid #e5e7eb;
-}
-
-.table-cell {
-  padding: 16px;
-  display: flex;
-  align-items: center;
-
-  &.numeric {
-    justify-content: flex-end;
-  }
-
-  &.amount {
-    color: #dc2626;
-    font-weight: 600;
-  }
-}
-
-// 设备明细表格
-.device-detail-table {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.detail-header {
-  display: grid;
-  grid-template-columns: 450px 400px 1fr;
-  background: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-  font-size: 14px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.header-group {
-  padding: 12px 16px;
-  text-align: center;
-
-  &.date-group {
-    border-right: 1px solid #e5e7eb;
-  }
-
-  &.device-group {
-    border-right: 1px solid #e5e7eb;
-  }
-}
-
-.detail-subheader {
-  display: grid;
-  grid-template-columns: 150px 150px 150px 200px 100px 100px repeat(2, 1fr);
-  background: #f3f4f6;
-  font-size: 13px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.detail-body {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.detail-row {
-  display: grid;
-  grid-template-columns: 150px 150px 150px 200px 100px 100px repeat(2, 1fr);
-  border-top: 1px solid #f3f4f6;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #f9fafb;
-  }
-}
-
-.cell {
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-
-  &.numeric {
-    justify-content: flex-end;
-  }
-
-  &.amount {
-    color: #dc2626;
-    font-weight: 600;
-  }
-
-  &.device-name {
-    color: #374151;
-    font-weight: 500;
-  }
-}
-
-.settle-tag {
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-
-  &.prepay {
-    background: #d1fae5;
-    color: #065f46;
-  }
-
-  &.postpay {
-    background: #fed7aa;
-    color: #92400e;
-  }
-
-  &.monthly {
-    background: #dbeafe;
-    color: #1e40af;
-  }
-}
-
 // 空状态
 .empty-state {
   padding: 80px 0;
@@ -1046,6 +1697,22 @@ export default {
     color: #9ca3af;
     margin: 0;
   }
+}
+
+/* 标签样式 */
+.label-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.label-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border-radius: 2px;
+  font-size: 12px;
+  color: #666;
 }
 
 // Element UI 样式覆盖
@@ -1093,6 +1760,31 @@ export default {
   }
 }
 
+/* Element UI 表格样式覆盖 */
+::v-deep .el-table {
+  .total-row {
+    position: sticky;
+    bottom: 0;
+    background: #fafafa;
+    font-weight: 600;
+    z-index: 2;
+
+    td {
+      background: #fafafa !important;
+    }
+  }
+
+  th {
+    background: #fafafa;
+    color: #333;
+    font-weight: 600;
+  }
+
+  .cell {
+    padding: 0 12px;
+  }
+}
+
 // 响应式设计
 @media (max-width: 1280px) {
   .stats-cards {
@@ -1102,7 +1794,7 @@ export default {
 
 @media (max-width: 768px) {
   .water-dashboard {
-    padding: 16px;
+    padding: 12px;
   }
 
   .dashboard-header {
@@ -1118,6 +1810,10 @@ export default {
     width: 100%;
   }
 
+  .tab-switcher {
+    margin: 0;
+  }
+
   .filter-container {
     flex-direction: column;
     gap: 16px;
@@ -1129,18 +1825,169 @@ export default {
 
   .filter-actions {
     width: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .stats-cards {
     grid-template-columns: 1fr;
   }
+}
+</style>
 
-  .table-header,
-  .table-row,
-  .table-footer {
-    grid-template-columns: repeat(4, minmax(100px, 1fr));
-    overflow-x: auto;
+<style lang="scss">
+// 全局样式：自定义日期选择器
+.elegant-date-picker {
+  .el-picker-panel__sidebar {
+    width: 115px !important;
+    padding: 12px 8px !important;
+    background: #fafafa !important;
+    border: none !important;
+    border-right: 1px solid #e8e8e8 !important;
+  }
+
+  .el-picker-panel__shortcut {
+    display: block !important;
+    width: 100% !important;
+    padding: 9px 8px !important;
+    margin-bottom: 6px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #606266 !important;
+    text-align: center !important;
+    line-height: 1.4 !important;
+    background: #ffffff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    outline: none !important;
+
+    &:hover {
+      color: #409eff !important;
+      background: #f0f7ff !important;
+      box-shadow: 0 2px 6px rgba(64, 158, 255, 0.15) !important;
+      transform: translateY(-1px) !important;
+      border: none !important;
+    }
+
+    &:active {
+      transform: translateY(0) !important;
+      box-shadow: 0 1px 3px rgba(64, 158, 255, 0.1) !important;
+      border: none !important;
+    }
+
+    &:focus {
+      border: none !important;
+      outline: none !important;
+    }
+
+    &:last-child {
+      margin-bottom: 0 !important;
+    }
+  }
+
+  .el-picker-panel__body {
+    padding-left: 12px !important;
+  }
+
+  .el-picker-panel__shortcut,
+  button.el-picker-panel__shortcut {
+    border: none !important;
+    border-top: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    box-sizing: border-box !important;
+  }
+
+  .el-date-table {
+    td {
+      padding: 5px 0 !important;
+
+      &.available:hover {
+        color: #409eff !important;
+        background: #f0f7ff !important;
+        border-radius: 4px !important;
+      }
+
+      &.in-range {
+        background: #f5f9ff !important;
+      }
+
+      &.start-date,
+      &.end-date {
+        span {
+          background: #409eff !important;
+          color: #ffffff !important;
+          border-radius: 4px !important;
+        }
+      }
+
+      &.today span {
+        color: #409eff !important;
+        font-weight: 600 !important;
+        position: relative !important;
+
+        &::after {
+          content: '' !important;
+          position: absolute !important;
+          bottom: 2px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          width: 4px !important;
+          height: 4px !important;
+          background: #409eff !important;
+          border-radius: 50% !important;
+        }
+      }
+
+      &.today.start-date span,
+      &.today.end-date span {
+        color: #ffffff !important;
+
+        &::after {
+          background: #ffffff !important;
+        }
+      }
+    }
+  }
+
+  .el-picker-panel__footer {
+    padding: 10px 12px !important;
+    background: #fafafa !important;
+    border-top: 1px solid #e8e8e8 !important;
+
+    .el-button {
+      border-radius: 4px !important;
+      font-weight: 500 !important;
+      padding: 7px 15px !important;
+      transition: all 0.2s !important;
+
+      &.el-button--text {
+        &:hover {
+          background: #f0f7ff !important;
+          color: #409eff !important;
+        }
+      }
+
+      &.el-button--primary {
+        background: #409eff !important;
+
+        &:hover {
+          background: #66b1ff !important;
+        }
+      }
+    }
+  }
+
+  .el-picker-panel__icon-btn {
+    color: #606266 !important;
+    transition: all 0.2s !important;
+
+    &:hover {
+      color: #409eff !important;
+    }
   }
 }
 </style>

@@ -167,7 +167,6 @@
         align-items: center;
         padding: 16px 20px;
         border-bottom: 1px solid #ebeef5;
-        // background-color: #fafbfc;
         
         .toolbar-left {
           .selection-info {
@@ -717,31 +716,124 @@
   }
 }
 
+// ==================== 紧凑型分页容器（全局） ====================
 .pagination-container {
-  padding: 16px 20px;
+  padding: 12px 20px; // 减小padding
   display: flex;
   justify-content: flex-end;
+  background: #fff;
   
-  // 直接重置分页组件的样式
+  // 紧凑分页样式
+  &.compact-pagination {
+    ::v-deep .el-pagination {
+      font-size: 12px;
+      
+      // 总条数
+      .el-pagination__total {
+        font-size: 12px;
+        line-height: 26px;
+        margin-right: 8px;
+      }
+      
+      // 每页条数选择器
+      .el-pagination__sizes {
+        margin-right: 8px;
+        
+        .el-input {
+          width: 90px;
+          
+          .el-input__inner {
+            height: 26px;
+            line-height: 26px;
+            font-size: 12px;
+            padding: 0 8px;
+          }
+          
+          .el-input__suffix {
+            .el-input__suffix-inner {
+              line-height: 26px;
+              
+              .el-select__caret {
+                line-height: 26px;
+              }
+            }
+          }
+        }
+      }
+      
+      // 上一页/下一页按钮
+      .btn-prev,
+      .btn-next {
+        min-width: 26px;
+        height: 26px;
+        line-height: 26px;
+        font-size: 12px;
+        padding: 0;
+        margin: 0 4px;
+        
+        &.disabled {
+          color: #c0c4cc;
+        }
+      }
+      
+      // 页码按钮
+      .el-pager {
+        li {
+          min-width: 26px;
+          height: 26px;
+          line-height: 26px;
+          font-size: 12px;
+          padding: 0 6px;
+          margin: 0 2px;
+          
+          &.active {
+            font-weight: 600;
+          }
+          
+          &.btn-quicknext,
+          &.btn-quickprev {
+            line-height: 26px;
+          }
+        }
+      }
+      
+      // 跳转
+      .el-pagination__jump {
+        margin-left: 8px;
+        font-size: 12px;
+        line-height: 26px;
+        
+        .el-input {
+          width: 40px;
+          
+          .el-input__inner {
+            height: 26px;
+            line-height: 26px;
+            font-size: 12px;
+            padding: 0 4px;
+          }
+        }
+      }
+    }
+  }
+  
+  // 默认分页样式
   ::v-deep .el-pagination {
     display: flex !important;
     align-items: center !important;
     
-    // 重置所有子元素的基线对齐
     & > * {
       display: inline-flex !important;
       align-items: center !important;
       vertical-align: baseline !important;
     }
     
-    // 特别处理文本元素
     .el-pagination__total,
     .el-pagination__jump {
       display: inline-flex !important;
       align-items: center !important;
     }
     
-    // 处理按钮
     .btn-prev, .btn-next, .el-pager li {
       display: inline-flex !important;
       align-items: center !important;
@@ -749,6 +841,7 @@
     }
   }
 }
+
 // 统计卡片区域 - B端高级设计
 .statistics-container {
   margin-bottom: 16px;
@@ -762,13 +855,11 @@
       padding: 0;
     }
     
-    // 统计内容包装器
     .statistics-wrapper {
       display: flex;
       align-items: stretch;
       height: 72px;
       
-      // 统计项
       .stat-item {
         flex: 1;
         display: flex;
@@ -777,7 +868,6 @@
         position: relative;
         transition: all 0.3s ease;
         
-        // 分隔线
         &:not(:last-child)::after {
           content: '';
           position: absolute;
@@ -789,7 +879,6 @@
           background: linear-gradient(180deg, transparent, #e8ecf0, transparent);
         }
         
-        // 悬停效果
         &:hover {
           background: rgba(64, 158, 255, 0.02);
           
@@ -798,7 +887,6 @@
           }
         }
         
-        // 主要费用项样式
         &.primary {
           background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
           
@@ -811,11 +899,11 @@
             justify-content: center;
             margin-right: 16px;
             box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
-            img{
+            
+            img {
               width: 26px;
               height: 26px;
             }
-          
             
             i {
               font-size: 20px;
@@ -861,7 +949,6 @@
           }
         }
         
-        // 次要费用项（设备）
         &.secondary {
           flex: 0.8;
           
@@ -874,7 +961,6 @@
             align-items: center;
             justify-content: center;
             margin-right: 12px;
-            
             
             i {
               font-size: 16px;
@@ -904,7 +990,6 @@
           }
         }
         
-        // 合计样式
         &.total {
           flex: 1.2;
           background: linear-gradient(135deg, #fff5f5 0%, #ffe4e4 100%);

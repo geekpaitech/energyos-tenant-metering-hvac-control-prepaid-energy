@@ -13,6 +13,18 @@ export function payPreOrder(data) {
     data
   })
 }
+// 手动扣款
+export function manualDebit(data) {
+  return request({
+    url: '/api/ebc-settle/pay/manualDebit',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
 
 // 线下充值
 export function payOfflineRechargePreOrder(data) {

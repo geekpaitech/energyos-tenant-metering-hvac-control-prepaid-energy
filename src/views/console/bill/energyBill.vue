@@ -42,6 +42,7 @@
                   size="small"
                   style="width: 100%"
                   :filterable="field.prop === 'name'"
+                  @change="handleSearch"
                 >
                   <!-- 费用类型 -->
                   <template v-if="field.prop === 'billType'">
@@ -53,11 +54,13 @@
                   <!-- 账单类型 -->
                   <template v-else-if="field.prop === 'settleWay'">
                     <el-option label="全部" value="" />
-                    <el-option label="日结" value="0" />
-                    <el-option label="月结" value="1" />
-                    <el-option label="预付费" value="2" />
+                    <el-option label="普通结算" value="0" />
+                    <el-option label="手动扣款" value="1" />
+                    <el-option label="系统补单" value="2" />
                     <el-option label="浮动电价" value="3" />
-                    <el-option label="设备扣款" value="5" />
+                    <el-option label="分摊结算" value="4" />
+                    <!-- <el-option label="设备扣款" value="5" />
+                    <el-option label="租户充值" value="10" /> -->
                   </template>
                   <!-- 租户名称 -->
                   <template v-else-if="field.prop === 'name'">
@@ -74,12 +77,14 @@
                   v-else-if="field.type === 'daterange'"
                   v-model="queryData[field.prop]"
                   type="daterange"
-                  range-separator="至"
+                  range-separator="-"
                   start-placeholder="开始日期"
                   end-placeholder="结束日期"
                   size="small"
                   value-format="yyyy-MM-dd"
                   style="width: 100%"
+                  :picker-options="pickerOptions"
+                  @change="handleSearch"
                 />
               </el-form-item>
             </el-col>
@@ -120,12 +125,12 @@
                   >
                     <!-- 提现状态 -->
                     <template v-if="field.prop === 'withdrawStatus'">
-                        <el-option label="全部" value="" />
-  <el-option label="已结算" value="0" />
-  <el-option label="不可提现" value="1" />
-  <el-option label="可提现" value="2" />
-  <el-option label="审核中" value="3" />
-  <el-option label="已提现" value="4" />
+                      <el-option label="全部" value="" />
+                      <el-option label="已结算" value="0" />
+                      <el-option label="不可提现" value="1" />
+                      <el-option label="可提现" value="2" />
+                      <el-option label="审核中" value="3" />
+                      <el-option label="已提现" value="4" />
                     </template>
                     <!-- 发票状态 -->
                     <template v-else-if="field.prop === 'status'">
@@ -194,10 +199,7 @@
                 </el-button>
                 <el-dropdown-menu slot="dropdown">
                   <el-dropdown-item command="export" icon="el-icon-download">
-                    导出当前页
-                  </el-dropdown-item>
-                  <el-dropdown-item command="exportAll" icon="el-icon-download">
-                    按筛选导出
+                    导出数据
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </el-dropdown>
@@ -209,100 +211,107 @@
 
     <!-- 统计卡片区域 -->
     <div class="statistics-container">
-  <el-card class="statistics-card" shadow="never">
-    <div class="statistics-wrapper">
-      <!-- 电费 -->
-      <div class="stat-item primary">
-        <div class="stat-icon electricity">
-           <img src="../../../assets/images/electricity.png" alt="">
-        </div>
-        <div class="stat-content">
-          <div class="stat-label">电费</div>
-          <div class="stat-value">
-            <span class="currency">¥</span>{{ getStatValue("电费") }}
-          </div>
-        </div>
-      </div>
+      <el-card class="statistics-card" shadow="never">
+        <div class="statistics-wrapper">
+          <!-- 电费 -->
+          <el-tooltip
+            placement="bottom"
+            :disabled="!hasElectricityDetail"
+            popper-class="statistics-tooltip"
+          >
+            <div slot="content">
+              <div class="tooltip-item">
+                <span class="tooltip-label">表计电费：</span>
+                <span class="tooltip-value">¥{{ formatAmount(statisticsData.表计电费) }}</span>
+              </div>
+              <div class="tooltip-item">
+                <span class="tooltip-label">其他电费：</span>
+                <span class="tooltip-value">¥{{ formatAmount(statisticsData.其他电费) }}</span>
+              </div>
+              <div class="tooltip-divider"></div>
+              <div class="tooltip-item tooltip-total">
+                <span class="tooltip-label">合计：</span>
+                <span class="tooltip-value">¥{{ getElectricityTotal }}</span>
+              </div>
+            </div>
+            <div class="stat-item primary">
+              <div class="stat-icon electricity">
+                <img src="../../../assets/images/electricity.png" alt="">
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">电费</div>
+                <div class="stat-value">
+                  <span class="currency">¥</span>{{ getElectricityTotal }}
+                </div>
+              </div>
+            </div>
+          </el-tooltip>
 
-      <!-- 水费 -->
-      <div class="stat-item primary">
-        <div class="stat-icon water">
-          <img src="../../../assets/images/waterate.png" alt="">
-        </div>
-        <div class="stat-content">
-          <div class="stat-label">水费</div>
-          <div class="stat-value">
-            <span class="currency">¥</span>{{ getStatValue("水费") }}
-          </div>
-        </div>
-      </div>
+          <!-- 水费 -->
+          <el-tooltip
+            placement="bottom"
+            :disabled="!hasWaterDetail"
+            popper-class="statistics-tooltip"
+          >
+            <div slot="content">
+              <div class="tooltip-item">
+                <span class="tooltip-label">表计水费：</span>
+                <span class="tooltip-value">¥{{ formatAmount(statisticsData.表计水费) }}</span>
+              </div>
+              <div class="tooltip-item">
+                <span class="tooltip-label">其他水费：</span>
+                <span class="tooltip-value">¥{{ formatAmount(statisticsData.其他水费) }}</span>
+              </div>
+              <div class="tooltip-divider"></div>
+              <div class="tooltip-item tooltip-total">
+                <span class="tooltip-label">合计：</span>
+                <span class="tooltip-value">¥{{ getWaterTotal }}</span>
+              </div>
+            </div>
+            <div class="stat-item primary">
+              <div class="stat-icon water">
+                <img src="../../../assets/images/waterate.png" alt="">
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">水费</div>
+                <div class="stat-value">
+                  <span class="currency">¥</span>{{ getWaterTotal }}
+                </div>
+              </div>
+            </div>
+          </el-tooltip>
 
-      <!-- 其他（替代原来的服务费） -->
-      <div class="stat-item primary">
-        <div class="stat-icon service">
-          <i class="el-icon-s-data"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-label">其他</div>
-          <div class="stat-value">
-            <span class="currency">¥</span>{{ getStatValue("其他") }}
+          <!-- 其他（替代原来的服务费） -->
+          <div class="stat-item primary">
+            <div class="stat-icon service">
+              <i class="el-icon-s-data"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">服务费</div>
+              <div class="stat-value">
+                <span class="currency">¥</span>{{ getServiceFeeTotal }}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- 空调 -->
-      <div class="stat-item secondary">
-        <div class="stat-icon">
-          <i class="el-icon-wind-power"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-label">空调</div>
-          <div class="stat-value">
-            <span class="currency">¥</span>{{ getStatValue("空调") }}
+          <!-- 合计 -->
+          <div class="stat-item total">
+            <div class="stat-icon total-icon">
+              <i class="el-icon-s-finance"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">合计</div>
+              <div class="stat-value">
+                <span class="currency">¥</span>{{ getTotalAmount }}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- 光伏 -->
-      <div class="stat-item secondary">
-        <div class="stat-icon">
-          <i class="el-icon-sunny"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-label">光伏</div>
-          <div class="stat-value">
-            <span class="currency">¥</span>{{ getStatValue("光伏") }}
-          </div>
-        </div>
-      </div>
-
-      <!-- 照明 -->
-      <div class="stat-item secondary">
-        <div class="stat-icon">
-          <i class="el-icon-light"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-label">照明</div>
-          <div class="stat-value">
-            <span class="currency">¥</span>{{ getStatValue("照明") }}
-          </div>
-        </div>
-      </div>
-
-      <!-- 合计 -->
-      <div class="stat-item total">
-        <div class="stat-content">
-          <div class="stat-label">合计</div>
-          <div class="stat-value">
-            <span class="currency">¥</span>{{ getTotalAmount() }}
-          </div>
-        </div>
-      </div>
+      </el-card>
     </div>
-  </el-card>
-</div>
+
     <!-- 数据表格区域 -->
-    <div class="table-container" style="height: 475px;">
+    <div class="table-container">
       <div class="table-card" shadow="never">
         <!-- 表格工具栏 -->
         <div class="table-toolbar" v-if="selectedData.length > 0">
@@ -316,18 +325,17 @@
         <!-- 数据表格 -->
         <el-table
           v-loading="loading"
+          border
           :data="tableData"
           :max-height="tableMaxHeight"
           stripe
           style="width: 100%"
-          class="custom-table"
+          class="custom-table light-border-table"
           @selection-change="handleSelectionChange"
           :header-cell-style="{
-            background: 'linear-gradient(180deg, #f8f9fc 0%, #f0f2f5 100%)',
-            color: '#1f2329',
+            background: '#f5f7fa',
+            color: '#606266',
             fontWeight: '600',
-            fontSize: '13px',
-            borderBottom: '2px solid #e8e8e8',
           }"
         >
           <el-table-column type="selection" width="55" align="center" />
@@ -340,19 +348,19 @@
             :label="col.label"
             :width="col.width"
             :min-width="col.minWidth"
-            :align="col.align || 'center'"
+            :align="getColumnAlign(col.key)"
             :show-overflow-tooltip="true"
           >
             <template slot-scope="scope">
-              <!-- 账单编号 -->
+              <!-- 账单编号 - link形式点击打开详情 -->
               <template v-if="col.key === 'rid'">
-                <el-link type="primary">
+                <el-link type="primary" @click="handleDetail(scope.row)">
                   {{ scope.row.rid || "-" }}
                 </el-link>
               </template>
 
-              <!-- 租户名称 -->
-              <template v-else-if="col.key === 'tenantName'">
+              <!-- 租户信息 -->
+              <template v-else-if="col.key === 'tenantInfo'">
                 <el-link type="primary" @click="handleTenantDetail(scope.row)">
                   <i class="el-icon-user"></i>
                   {{ scope.row.tenantName || "-" }}
@@ -361,9 +369,13 @@
 
               <!-- 费用类型 -->
               <template v-else-if="col.key === 'billType'">
-                <div class="type-with-icon">
-                  --
-                </div>
+                <el-tag
+                  :type="getBillTypeTagType(scope.row.useType)"
+                  size="small"
+                  effect="plain"
+                >
+                  {{ getBillTypeLabel(scope.row.useType) }}
+                </el-tag>
               </template>
 
               <!-- 账单类型 -->
@@ -377,9 +389,9 @@
                 </el-tag>
               </template>
 
-              <!-- 账单金额 -->
+              <!-- 账单金额 - 统一黑色 -->
               <template v-else-if="col.key === 'balance'">
-                <span class="amount-text">￥{{ scope.row.balance || 0 }}</span>
+                <span>{{ formatBalance(scope.row.balance) }}</span>
               </template>
 
               <!-- 缴费状态 -->
@@ -396,25 +408,17 @@
                 </div>
               </template>
 
-              <!-- 提现状态 -->
-              <template v-else-if="col.key === 'withdrawStatus'">
-                <template v-if="scope.row.payStatus == 1">
-                  <div class="status-wrapper">
-                    <span
-                      class="status-dot"
-                      :style="{
-                        backgroundColor: getWithdrawStatusColor(
-                          scope.row.withdrawStatus
-                        ),
-                      }"
-                    ></span>
-                    {{ getWithdrawStatusLabel(scope.row.withdrawStatus) }}
-                  </div>
-                </template>
-                <span v-else>-</span>
+              <!-- 抵扣金支付 -->
+              <template v-else-if="col.key === 'discountAmt'">
+                <span>{{ formatBalance(scope.row.discountAmt) }}</span>
               </template>
 
-              <!-- 发票状态 -->
+              <!-- 现金支付 -->
+              <template v-else-if="col.key === 'realAmt'">
+                <span>{{ formatBalance(scope.row.realAmt) }}</span>
+              </template>
+
+              <!-- 开票状态 -->
               <template v-else-if="col.key === 'status'">
                 <div class="status-wrapper">
                   <span
@@ -427,22 +431,6 @@
                 </div>
               </template>
 
-              <!-- 备注 -->
-              <template v-else-if="col.key === 'remark'">
-                <el-tooltip
-                  v-if="scope.row.remark"
-                  class="item"
-                  effect="dark"
-                  :content="scope.row.remark"
-                  placement="top"
-                >
-                  <div class="ellipsis" style="max-width: 200px">
-                    {{ scope.row.remark }}
-                  </div>
-                </el-tooltip>
-                <span v-else>-</span>
-              </template>
-
               <!-- 默认显示 -->
               <template v-else>
                 {{ scope.row[col.key] || "-" }}
@@ -453,39 +441,38 @@
           <!-- 操作列 -->
           <el-table-column
             label="操作"
-            width="120"
-            fixed="right"
             align="center"
           >
             <template slot-scope="scope">
-              <div class="table-actions-group">
-                <el-button
-                  type="text"
-                  size="small"
-                  icon="el-icon-view"
-                  @click="handleDetail(scope.row)"
-                >
-                  详情
-                </el-button>
-              </div>
+              <el-button
+                type="text"
+                size="small"
+                icon="el-icon-view"
+                @click="handleDetail(scope.row)"
+              >
+                详情
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
+
+        <!-- 分页 -->
+        <div class="pagination-container compact-pagination">
+          <el-pagination
+            :current-page="pageData.current"
+            :page-sizes="[15, 30, 60, 100]"
+            :page-size="pageData.size"
+            :total="pageData.total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
       </div>
     </div>
 
-    <!-- 分页 -->
-    <div class="pagination-container">
-      <el-pagination
-        :current-page="pageData.current"
-        :page-sizes="[15, 30, 60, 100]"
-        :page-size="pageData.size"
-        :total="pageData.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
-    </div>
+    <!-- 详情抽屉 -->
+    <BillDetailDrawer :detailDrawer="detailDrawer" />
   </div>
 </template>
 
@@ -496,17 +483,80 @@ import {
   settleSettleTenantStatistics,
 } from "@/api/settle";
 import { tenantPageTenant } from "@/api/tenant";
+import * as XLSX from "xlsx";
+import BillDetailDrawer from "./components/BillDetailDrawer.vue";
 
 export default {
   name: "EnergyBill",
+  components: {
+    BillDetailDrawer,
+  },
   data() {
     return {
+      pickerOptions: {
+        shortcuts: [
+          {
+            text: "最近7天",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 6);
+              picker.$emit("pick", [start, end]);
+            },
+          },
+          {
+            text: "最近15天",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 14);
+              picker.$emit("pick", [start, end]);
+            },
+          },
+          {
+            text: "最近30天",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 29);
+              picker.$emit("pick", [start, end]);
+            },
+          },
+          {
+            text: "本月",
+            onClick(picker) {
+              const start = new Date();
+              start.setDate(1);
+              start.setHours(0, 0, 0, 0);
+              const end = new Date();
+              end.setHours(23, 59, 59, 999);
+              picker.$emit("pick", [start, end]);
+            },
+          },
+          {
+            text: "上月",
+            onClick(picker) {
+              const start = new Date();
+              start.setMonth(start.getMonth() - 1);
+              start.setDate(1);
+              start.setHours(0, 0, 0, 0);
+              const end = new Date();
+              end.setDate(0);
+              end.setHours(23, 59, 59, 999);
+              picker.$emit("pick", [start, end]);
+            },
+          },
+        ],
+        disabledDate(time) {
+          return time.getTime() > Date.now();
+        },
+      },
       tableHeightConfig: {
-        headerHeight: 48, // 表头高度
-        rowHeight: 47, // 每行高度
-        minHeight: 200, // 最小高度
-        maxRows: 9, // 最大显示行数（超过9行显示滚动条）
-        paginationHeight: 68, // 分页高度
+        headerHeight: 48,
+        rowHeight: 47,
+        minHeight: 200,
+        maxRows: 10,
+        paginationHeight: 68,
       },
       // 查询参数
       queryData: {
@@ -527,13 +577,13 @@ export default {
           { prop: "rid", label: "账单编号", type: "input" },
           { prop: "billType", label: "费用类型", type: "select" },
           { prop: "settleWay", label: "账单类型", type: "select" },
-          { prop: "timeRange", label: "日期", type: "daterange" },
+          { prop: "timeRange", label: "日期范围", type: "daterange" },
         ],
         advanced: [
-          { prop: "tenantId", label: "租户ID", type: "input" },
-          { prop: "withdrawStatus", label: "提现状态", type: "select" },
-          { prop: "status", label: "发票状态", type: "select" },
-          { prop: "payStatus", label: "缴费状态", type: "select" },
+          // { prop: "tenantId", label: "租户ID", type: "input" },
+          // { prop: "withdrawStatus", label: "提现状态", type: "select" },
+          // { prop: "status", label: "发票状态", type: "select" },
+          // { prop: "payStatus", label: "缴费状态", type: "select" },
         ],
       },
       // 租户列表
@@ -541,7 +591,13 @@ export default {
       // 表格数据
       tableData: [],
       // 统计数据
-      limitData: [],
+      statisticsData: {
+        表计电费: 0,
+        其他电费: 0,
+        表计水费: 0,
+        其他水费: 0,
+        服务费: 0,
+      },
       // 加载状态
       loading: false,
       submitting: false,
@@ -555,7 +611,7 @@ export default {
       },
       // 选中的数据
       selectedData: [],
-      // 表格列配置
+      // 表格列配置 - 已移除备注列
       tableKey: [
         {
           label: "账单编号",
@@ -570,20 +626,20 @@ export default {
           checked: true,
         },
         {
-          label: "租户名",
-          key: "tenantName",
+          label: "创建时间",
+          key: "createTime",
+          width: "160",
+          checked: true,
+        },
+        {
+          label: "租户信息",
+          key: "tenantInfo",
           width: "200",
           checked: true,
           disabled: true,
         },
         {
-          label: "租户ID",
-          key: "tenantId",
-          width: "120",
-          checked: true,
-        },
-        {
-          label: "类型",
+          label: "费用类型",
           key: "billType",
           width: "120",
           checked: true,
@@ -607,24 +663,33 @@ export default {
           checked: true,
         },
         {
-          label: "提现状态",
-          key: "withdrawStatus",
-          width: "100",
+          label: "抵扣金支付(元)",
+          key: "discountAmt",
+          width: "120",
           checked: true,
         },
         {
-          label: "发票状态",
+          label: "现金支付(元)",
+          key: "realAmt",
+          width: "120",
+          checked: true,
+        },
+        {
+          label: "开票状态",
           key: "status",
           width: "100",
           checked: true,
         },
-        {
-          label: "备注内容",
-          key: "remark",
-          minWidth: "150",
-          checked: true,
-        },
       ],
+      // 详情抽屉
+      detailDrawer: {
+        show: false,
+        id: "",
+        tenantId: "",
+        settleWay: "",
+        useType: "",
+        floatId: "",
+      },
     };
   },
   computed: {
@@ -660,7 +725,6 @@ export default {
         return this.tableHeightConfig.minHeight;
       }
 
-      // 数据 <= 9条：显示实际行数高度
       if (dataLength <= this.tableHeightConfig.maxRows) {
         return (
           this.tableHeightConfig.headerHeight +
@@ -668,18 +732,51 @@ export default {
         );
       }
 
-      // 数据 > 9条：固定显示9行高度 + 内部滚动
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
       );
     },
     tableMaxHeight() {
-      // 始终返回最大高度（9行 + 表头）
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
       );
+    },
+    // 计算电费合计
+    getElectricityTotal() {
+      const meterElec = parseFloat(this.statisticsData.表计电费) || 0;
+      const otherElec = parseFloat(this.statisticsData.其他电费) || 0;
+      return (meterElec + otherElec).toFixed(2);
+    },
+    // 计算水费合计
+    getWaterTotal() {
+      const meterWater = parseFloat(this.statisticsData.表计水费) || 0;
+      const otherWater = parseFloat(this.statisticsData.其他水费) || 0;
+      return (meterWater + otherWater).toFixed(2);
+    },
+    // 获取服务费
+    getServiceFeeTotal() {
+      return this.formatAmount(this.statisticsData.服务费);
+    },
+    // 计算总合计（电费+水费+其他）
+    getTotalAmount() {
+      const electricity = parseFloat(this.getElectricityTotal) || 0;
+      const water = parseFloat(this.getWaterTotal) || 0;
+      const service = parseFloat(this.statisticsData.服务费) || 0;
+      return (electricity + water + service).toFixed(2);
+    },
+    // 判断是否有电费详细信息
+    hasElectricityDetail() {
+      const meterElec = parseFloat(this.statisticsData.表计电费) || 0;
+      const otherElec = parseFloat(this.statisticsData.其他电费) || 0;
+      return meterElec > 0 || otherElec > 0;
+    },
+    // 判断是否有水费详细信息
+    hasWaterDetail() {
+      const meterWater = parseFloat(this.statisticsData.表计水费) || 0;
+      const otherWater = parseFloat(this.statisticsData.其他水费) || 0;
+      return meterWater > 0 || otherWater > 0;
     },
   },
   watch: {
@@ -687,7 +784,6 @@ export default {
       handler(newVal) {
         if (newVal) {
           this.queryData.managerId = newVal;
-          // 设置默认时间范围
           this.setDefaultTimeRange();
           this.fetchTableData();
           this.getStatisticsData();
@@ -698,7 +794,6 @@ export default {
     },
   },
   created() {
-    // 从路由获取参数
     if (this.$route.query.id) {
       this.queryData.tenantId = this.$route.query.id;
     }
@@ -708,48 +803,35 @@ export default {
       this.queryData.managerId = this.currentManagerId || "";
     }
 
-    // 设置默认时间范围
     this.setDefaultTimeRange();
   },
   methods: {
-  // 修改 getStatValue 方法
-  getStatValue(type) {
-  // 确保 limitData 是数组
-  if (!Array.isArray(this.limitData)) {
-    return "0.00";
-  }
-  
-  const stat = this.limitData.find((item) => item.channel === type);
-  if (stat) {
-    return this.formatAmount(stat.totalAmt);
-  }
-  
-  // 对于没有数据的设备类型（空调、光伏、照明），显示 "0.00"
-  const deviceTypes = ["空调", "光伏", "照明"];
-  if (deviceTypes.includes(type)) {
-    return "0.00";
-  }
-  
-  return "0.00";
-},
-
-// 修改 getTotalAmount 方法 - 计算所有实际返回数据的总和
-getTotalAmount() {
-  let total = 0;
-  // 确保 limitData 是数组且有数据
-  if (Array.isArray(this.limitData) && this.limitData.length > 0) {
-    total = this.limitData.reduce((sum, item) => {
-      return sum + (parseFloat(item.totalAmt) || 0);
-    }, 0);
-  }
-  return this.formatAmount(total);
-},
+    // 获取列对齐方式
+    getColumnAlign(key) {
+      // 金额类字段右对齐
+      if (["balance", "discountAmt", "realAmt"].includes(key)) {
+        return "right";
+      }
+      // 标签类字段居中
+      if (["billType", "settleWay", "payStatus", "status"].includes(key)) {
+        return "center";
+      }
+      // 其他字段左对齐
+      return "left";
+    },
 
     // 格式化金额
     formatAmount(amount) {
       if (!amount || amount === 0) return "0.00";
       return parseFloat(amount).toFixed(2);
     },
+
+    // 格式化余额
+    formatBalance(balance) {
+      if (balance === null || balance === undefined) return "0.00";
+      return Number(balance).toFixed(2);
+    },
+
     // 设置默认时间范围
     setDefaultTimeRange() {
       const endDate = new Date();
@@ -774,13 +856,20 @@ getTotalAmount() {
     async fetchTableData() {
       this.loading = true;
       try {
+        // 处理账单类型参数 - 全部时传逗号分割的所有值
+        let settleWayParam = this.queryData.settleWay;
+        if (!settleWayParam) {
+          // 全部情况传所有值
+          settleWayParam = "0,1,2,3,4,5,10";
+        }
+
         const params = {
           managerId: this.queryData.managerId,
           rid: this.queryData.rid,
           tenantId: this.queryData.tenantId || this.queryData.name,
           payStatus: this.queryData.payStatus,
           withdrawStatus: this.queryData.withdrawStatus,
-          settleWay: this.queryData.settleWay,
+          settleWay: settleWayParam, // 使用处理后的参数
           billType: this.queryData.billType,
           status: this.queryData.status,
           endDate: this.queryData.timeRange ? this.queryData.timeRange[1] : "",
@@ -823,32 +912,59 @@ getTotalAmount() {
 
     // 获取统计数据
     async getStatisticsData() {
-  try {
-    const params = {
-      managerId: this.queryData.managerId,
-      rid: this.queryData.rid,
-      tenantId: this.queryData.tenantId || this.queryData.name,
-      payStatus: this.queryData.payStatus,
-      withdrawStatus: this.queryData.withdrawStatus,
-      status: this.queryData.status,
-      endDate: this.queryData.timeRange ? this.queryData.timeRange[1] : "",
-      startDate: this.queryData.timeRange ? this.queryData.timeRange[0] : "",
-    };
+      try {
+        // 处理账单类型参数 - 全部时传逗号分割的所有值
+        let settleWayParam = this.queryData.settleWay;
+        if (!settleWayParam) {
+          // 全部情况传所有值
+          settleWayParam = "0,1,2,3,4,5,10";
+        }
 
-    const response = await settleSettleTenantStatistics(params);
-    if (response.code === 200 && response.data) {
-      // 确保赋值的是数组
-      this.limitData = Array.isArray(response.data) ? response.data : [];
-    } else {
-      // 如果响应异常，设置为空数组
-      this.limitData = [];
-    }
-  } catch (error) {
-    console.error("获取统计数据失败:", error);
-    // 出错时设置为空数组
-    this.limitData = [];
-  }
-},
+        const params = {
+          managerId: this.queryData.managerId,
+          rid: this.queryData.rid,
+          tenantId: this.queryData.tenantId || this.queryData.name,
+          payStatus: this.queryData.payStatus,
+          withdrawStatus: this.queryData.withdrawStatus,
+          settleWay: settleWayParam,
+          status: this.queryData.status,
+          endDate: this.queryData.timeRange ? this.queryData.timeRange[1] : "",
+          startDate: this.queryData.timeRange
+            ? this.queryData.timeRange[0]
+            : "",
+        };
+
+        const response = await settleSettleTenantStatistics(params);
+        if (response.code === 200 && response.data) {
+          // 直接使用返回的数据对象
+          this.statisticsData = {
+            表计电费: response.data.表计电费 || 0,
+            其他电费: response.data.其他电费 || 0,
+            表计水费: response.data.表计水费 || 0,
+            其他水费: response.data.其他水费 || 0,
+            服务费: response.data.服务费 || 0,
+          };
+        } else {
+          // 重置为默认值
+          this.statisticsData = {
+            表计电费: 0,
+            其他电费: 0,
+            表计水费: 0,
+            其他水费: 0,
+            服务费: 0,
+          };
+        }
+      } catch (error) {
+        console.error("获取统计数据失败:", error);
+        this.statisticsData = {
+          表计电费: 0,
+          其他电费: 0,
+          表计水费: 0,
+          其他水费: 0,
+          服务费: 0,
+        };
+      }
+    },
 
     // 获取租户列表
     async getTenantList() {
@@ -904,51 +1020,189 @@ getTotalAmount() {
         case "export":
           this.handleExport();
           break;
-        case "exportAll":
-          this.handleExportAll();
-          break;
       }
     },
 
-    // 导出当前页
     handleExport() {
       if (this.tableData.length === 0) {
         this.$message.warning("暂无数据可导出");
         return;
       }
-      this.$message.info("导出功能开发中...");
-    },
 
-    // 按筛选条件导出所有
-    async handleExportAll() {
-      this.$message.info("导出功能开发中...");
-    },
+      try {
+        const exportData =
+          this.selectedData.length > 0 ? this.selectedData : this.tableData;
 
-    // 查看详情
-    handleDetail(row) {
-      // 根据不同类型跳转不同详情
-      if (row.settleWay == 3 && row.floatId) {
-        // 浮动电价详情
-        this.$message.info("浮动电价详情功能开发中...");
-      } else if (row.settleWay == 0 && row.useType == 0) {
-        // 水费日结详情
-        this.$message.info("水费日结详情功能开发中...");
-      } else if (row.settleWay == 5) {
-        // 设备扣款详情
-        this.$message.info("设备扣款详情功能开发中...");
-      } else {
-        // 普通电费详情
-        this.$message.info("电费详情功能开发中...");
+        const headers = this.displayColumns.map((col) => col.label);
+        const data = exportData.map((row) => {
+          return this.displayColumns.map((col) => {
+            const value = row[col.key];
+
+            switch (col.key) {
+              case "tenantInfo":
+                return row.tenantName || "";
+              case "billType":
+                return this.getBillTypeLabel(row.useType);
+              case "settleWay":
+                return this.getSettleWayLabel(value);
+              case "balance":
+              case "discountAmt":
+              case "realAmt":
+                return value ? parseFloat(value).toFixed(2) : "0.00";
+              case "payStatus":
+                return value == 1 ? "已缴费" : "未缴费";
+              case "status":
+                return this.getInvoiceStatusLabel(value);
+              default:
+                return value || "";
+            }
+          });
+        });
+
+        const wsData = [headers, ...data];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        const colWidths = this.displayColumns.map((col) => {
+          if (col.width) {
+            return {
+              wch: Math.max(parseInt(col.width) / 8, col.label.length + 2),
+            };
+          } else if (col.minWidth) {
+            return {
+              wch: Math.max(
+                parseInt(col.minWidth) / 8,
+                col.label.length + 2
+              ),
+            };
+          }
+          return { wch: Math.max(15, col.label.length + 2) };
+        });
+        ws["!cols"] = colWidths;
+
+        const headerRange = XLSX.utils.decode_range(ws["!ref"]);
+        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+          if (!ws[cellAddress]) continue;
+
+          ws[cellAddress].s = {
+            font: { bold: true, color: { rgb: "1f2329" } },
+            fill: { fgColor: { rgb: "F8F9FC" } },
+            alignment: { horizontal: "center", vertical: "center" },
+          };
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "能耗账单");
+
+        const fileName = this.generateFileName();
+
+        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([wbout], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        link.style.display = "none";
+
+        document.body.appendChild(link);
+        link.click();
+
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        const exportCount = exportData.length;
+        const isSelectedExport = this.selectedData.length > 0;
+        this.$message.success(
+          `成功导出${exportCount}条${isSelectedExport ? "选中" : ""}数据！`
+        );
+      } catch (error) {
+        console.error("导出失败:", error);
+        this.$message.error("导出失败，请重试");
       }
+    },
+
+    generateFileName() {
+      const now = new Date();
+      const timeStr =
+        now.getFullYear() +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        String(now.getDate()).padStart(2, "0") +
+        "_" +
+        String(now.getHours()).padStart(2, "0") +
+        String(now.getMinutes()).padStart(2, "0") +
+        String(now.getSeconds()).padStart(2, "0");
+
+      if (this.queryData.tenantId || this.queryData.name) {
+        const tenant = this.tenantList.find(
+          (t) => t.id === (this.queryData.tenantId || this.queryData.name)
+        );
+        const tenantName = tenant
+          ? tenant.value
+          : this.queryData.tenantId || this.queryData.name;
+        return `租户账单_${tenantName}_${timeStr}.xlsx`;
+      }
+
+      if (this.queryData.settleWay) {
+        const settleWayName = this.getSettleWayLabel(this.queryData.settleWay);
+        return `租户账单_${settleWayName}_${timeStr}.xlsx`;
+      }
+
+      if (this.queryData.billType) {
+        const billTypeName = this.getBillTypeLabel(this.queryData.billType);
+        return `租户账单_${billTypeName}_${timeStr}.xlsx`;
+      }
+
+      if (this.queryData.timeRange && this.queryData.timeRange.length === 2) {
+        const startDate = this.queryData.timeRange[0].replace(/-/g, "");
+        const endDate = this.queryData.timeRange[1].replace(/-/g, "");
+        return `租户账单_${startDate}-${endDate}_${timeStr}.xlsx`;
+      }
+
+      return `租户账单_${timeStr}.xlsx`;
+    },
+
+    getBillTypeLabel(type) {
+      const labelMap = {
+        0: "水费",
+        2: "电费",
+        7: "服务费",
+      };
+      return labelMap[String(type)] || "服务费";
+    },
+
+    // 获取费用类型标签颜色
+    getBillTypeTagType(type) {
+      const typeMap = {
+        0: "primary", // 水费
+        2: "success", // 电费
+        7: "warning", // 服务费
+      };
+      return typeMap[String(type)] || "info";
+    },
+
+    // 查看详情 - 账单编号点击和详情按钮都触发
+    handleDetail(row) {
+      console.log("点击详情，row数据：", row);
+      this.detailDrawer.id = row.rid;
+      this.detailDrawer.tenantId = row.tenantId;
+      this.detailDrawer.settleWay = row.settleWay;
+      this.detailDrawer.useType = row.useType;
+      this.detailDrawer.floatId = row.floatId;
+      this.detailDrawer.show = true;
+      console.log("打开详情抽屉，detailDrawer数据：", this.detailDrawer);
     },
 
     // 查看租户详情
     handleTenantDetail(row) {
       this.$router.push({
-        path: "/tenant-detail",
+        name: "TenantDetail",
+        params: { id: row.tenantId },
         query: {
-          id: row.tenantId,
-          managerId: row.managerId,
+          name: row.name,
+          from: "list",
         },
       });
     },
@@ -971,21 +1225,16 @@ getTotalAmount() {
       this.fetchTableData();
     },
 
-    // 格式化金额
-    formatAmount(amount) {
-      if (!amount || amount === 0) return "0.00";
-      return parseFloat(amount).toFixed(2);
-    },
-
-
     // 获取账单类型标签
     getSettleWayLabel(way) {
       const labelMap = {
-        0: "日结",
-        1: "月结",
-        2: "预付费",
+        0: "普通结算",
+        1: "手动扣款",
+        2: "系统补单",
         3: "浮动电价",
+        4: "分摊结算",
         5: "设备扣款",
+        10: "租户充值",
       };
       return labelMap[way] || "-";
     },
@@ -997,36 +1246,12 @@ getTotalAmount() {
         1: "success",
         2: "warning",
         3: "danger",
+        4: "info",
         5: "info",
+        10: "success",
       };
       return typeMap[way] || "";
     },
-
-    // 获取提现状态标签
-    getWithdrawStatusLabel(status) {
-  const typeStr = String(status);
-  const labelMap = {
-    "0": "已结算",
-    "1": "不可提现",
-    "2": "可提现",
-    "3": "审核中",
-    "4": "已提现"
-  };
-  return labelMap[typeStr] || "-";
-},
-
-    // 获取提现状态颜色
-    getWithdrawStatusColor(status) {
-  const typeStr = String(status);
-  const colorMap = {
-    "0": "#67C23A", // 已结算 - 绿色
-    "1": "#909399", // 不可提现 - 灰色
-    "2": "#409EFF", // 可提现 - 蓝色
-    "3": "#E6A23C", // 审核中 - 橙色
-    "4": "#67C23A"  // 已提现 - 绿色
-  };
-  return colorMap[typeStr] || "#909399";
-},
 
     // 获取发票状态标签
     getInvoiceStatusLabel(status) {
@@ -1034,7 +1259,7 @@ getTotalAmount() {
         0: "未开票",
         1: "审核中",
         2: "已开票",
-        3:'已拒绝'
+        3: "已拒绝",
       };
       return labelMap[status] || "-";
     },
@@ -1043,15 +1268,265 @@ getTotalAmount() {
     getInvoiceStatusColor(status) {
       const colorMap = {
         0: "#909399",
-        1: "#67C23A",
-        2: "#E6A23C",
+        1: "#E6A23C",
+        2: "#67C23A",
+        3: "#F56C6C",
       };
       return colorMap[status] || "#909399";
     },
   },
 };
 </script>
+
 <style lang="scss" scoped>
 // 引入表格页面公共样式
 @import "@/assets/styles/table-page.scss";
+
+$primary-color: #409eff;
+$success-color: #67c23a;
+$warning-color: #e6a23c;
+$danger-color: #f56c6c;
+$text-primary: #303133;
+$text-regular: #606266;
+$text-secondary: #909399;
+$border-color: #dcdfe6;
+$border-light: #e4e7ed;
+
+// ==================== 弱化表格边框 ====================
+.light-border-table {
+  ::v-deep {
+    border: 1px solid #f0f0f0 !important;
+
+    .el-table__header-wrapper {
+      th {
+        border-right: 1px solid #f0f0f0 !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+      }
+    }
+
+    td {
+      border-right: 1px solid #f5f5f5 !important;
+      border-bottom: 1px solid #f5f5f5 !important;
+    }
+
+    .el-table__fixed,
+    .el-table__fixed-right {
+      &::before {
+        background-color: transparent !important;
+      }
+    }
+
+    .el-table__fixed-right-patch {
+      border-bottom: 1px solid #f0f0f0 !important;
+      background-color: #f5f7fa !important;
+    }
+  }
+}
+
+// ==================== 状态样式 ====================
+.status-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+}
+
+// ==================== 紧凑型分页样式 ====================
+.compact-pagination {
+  ::v-deep .el-pagination {
+    font-size: 12px;
+
+    .el-pagination__total {
+      font-size: 12px;
+      line-height: 24px;
+    }
+
+    .el-pagination__sizes {
+      .el-input {
+        width: 90px;
+
+        .el-input__inner {
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+          padding: 0 8px;
+        }
+      }
+    }
+
+    .btn-prev,
+    .btn-next {
+      min-width: 24px;
+      height: 24px;
+      line-height: 24px;
+      font-size: 12px;
+      padding: 0 6px;
+    }
+
+    .el-pager {
+      li {
+        min-width: 24px;
+        height: 24px;
+        line-height: 24px;
+        font-size: 12px;
+        padding: 0 6px;
+
+        &.active {
+          font-weight: 600;
+        }
+      }
+    }
+
+    .el-pagination__jump {
+      font-size: 12px;
+      line-height: 24px;
+
+      .el-input {
+        width: 40px;
+
+        .el-input__inner {
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+          padding: 0 4px;
+        }
+      }
+    }
+  }
+}
+
+// ==================== Tooltip 自定义样式（全局）====================
+::v-deep .statistics-tooltip {
+  padding: 12px !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+
+  .tooltip-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    color: #fff;
+
+    .tooltip-label {
+      margin-right: 16px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .tooltip-value {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    &.tooltip-total {
+      font-size: 14px;
+      font-weight: 600;
+
+      .tooltip-label,
+      .tooltip-value {
+        color: #fff;
+      }
+    }
+  }
+
+  .tooltip-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 6px 0;
+  }
+}
+
+// ==================== 统计卡片区域 - 新增合计样式 ====================
+.statistics-container {
+  .stat-item.total {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    
+    .stat-icon.total-icon {
+      background: rgba(255, 255, 255, 0.2);
+      
+      i {
+        color: #fff;
+        font-size: 24px;
+      }
+    }
+    
+    .stat-content {
+      .stat-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+      }
+      
+      .stat-value {
+        color: #fff;
+        font-weight: 700;
+        
+        .currency {
+          color: rgba(255, 255, 255, 0.9);
+        }
+      }
+    }
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+  }
+}
 </style>
+<style lang="scss">
+  // ========== 全局样式：自定义日期选择器 ==========
+  .el-picker-panel {
+    .el-picker-panel__sidebar {
+      width: 115px !important;
+      padding: 12px 8px !important;
+      background: #fafafa !important;
+      border: none !important;
+      border-right: 1px solid #e8e8e8 !important;
+    }
+  
+    .el-picker-panel__shortcut {
+      display: block !important;
+      width: 100% !important;
+      padding: 9px 8px !important;
+      margin-bottom: 6px !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      color: #606266 !important;
+      text-align: center !important;
+      line-height: 1.4 !important;
+      background: #ffffff !important;
+      border: none !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+      outline: none !important;
+  
+      &:hover {
+        color: #409eff !important;
+        background: #f0f7ff !important;
+        box-shadow: 0 2px 6px rgba(64, 158, 255, 0.15) !important;
+        transform: translateY(-1px) !important;
+        border: none !important;
+      }
+  
+      &:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 1px 3px rgba(64, 158, 255, 0.1) !important;
+      }
+  
+      &:last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+  }
+  </style>
+  

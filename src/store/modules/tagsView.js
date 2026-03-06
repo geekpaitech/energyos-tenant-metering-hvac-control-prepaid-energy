@@ -1,4 +1,4 @@
-// @/store/modules/tagsView.js - 修复标题显示问题的版本
+// @/store/modules/tagsView.js - 支持详情页的完整版本
 
 const state = {
   visitedViews: [],
@@ -91,6 +91,24 @@ const mutations = {
     // visitedViews 保持不变
   },
 
+  // 🔥 新增：清除所有详情页标签
+  CLEAR_DETAIL_TAGS: (state) => {
+    state.visitedViews = state.visitedViews.filter((view) => {
+      const isDetail = view.path.includes("/detail/") || view.path.endsWith("/detail");
+      
+      // 如果是详情页，同时移除缓存
+      if (isDetail && view.name) {
+        const cacheIndex = state.cachedViews.indexOf(view.name);
+        if (cacheIndex > -1) {
+          state.cachedViews.splice(cacheIndex, 1);
+        }
+      }
+      
+      // 保留非详情页
+      return !isDetail;
+    });
+  },
+
   // 修复：确保首页标签在第一位且title正确
   ENSURE_HOME_TAG_FIRST: (state, homeTag) => {
     if (!homeTag) return;
@@ -105,7 +123,7 @@ const mutations = {
       homeTag.title ||
       (homeTag.meta && homeTag.meta.title) ||
       homeTag.name ||
-      "首页";
+      "看板";
 
     const finalHomeTag = {
       ...homeTag,
@@ -250,7 +268,7 @@ const actions = {
   },
 
   // 平台切换时完全清空TagsView（管理系统 ↔ 控制台）
-  clearAllForPlatformSwitch({ commit, state, rootGetters }) {
+  clearAllForPlatformSwitch({ commit, state }) {
     return new Promise((resolve) => {
       // 执行完全清空
       commit("CLEAR_ALL_FOR_PLATFORM_SWITCH");
@@ -262,16 +280,27 @@ const actions = {
     });
   },
 
-  // 企业切换时只清空缓存，保留TagsView标签页（控制台内企业切换）
+  // 🔥 修改：企业切换时清空缓存并关闭详情页标签（控制台内企业切换）
   clearCacheForManagerSwitch({ commit, state }) {
     return new Promise((resolve) => {
-      // 只清空缓存，保留visitedViews
+      // 清空缓存
       commit("CLEAR_CACHE_FOR_MANAGER_SWITCH");
+      
+      // 🔥 关闭所有详情页标签
+      commit("CLEAR_DETAIL_TAGS");
 
       resolve({
         visitedViews: [...state.visitedViews],
         cachedViews: [...state.cachedViews],
       });
+    });
+  },
+
+  // 🔥 新增：单独清除详情页标签的action（可选，供其他地方调用）
+  clearDetailTags({ commit, state }) {
+    return new Promise((resolve) => {
+      commit("CLEAR_DETAIL_TAGS");
+      resolve([...state.visitedViews]);
     });
   },
 
@@ -286,12 +315,12 @@ const actions = {
       switch (currentPlatform) {
         case "console":
           homeTagInfo = {
-            fullPath: "/console/dashboard",
-            path: "/console/dashboard",
+            fullPath: "/metering/dashboard",
+            path: "/metering/dashboard",
             name: "ConsoleDashboard",
-            title: "首页", // 直接在顶层设置title
+            title: "看板", // 直接在顶层设置title
             meta: {
-              title: "首页",
+              title: "看板",
               affix: true,
               icon: "el-icon-data-analysis",
             },
@@ -326,6 +355,7 @@ const actions = {
         // 验证设置结果
         const firstTag = state.visitedViews[0];
         if (firstTag) {
+          // console.log("✅ 首页标签已确保在第一位:", firstTag.title);
         }
       }
 

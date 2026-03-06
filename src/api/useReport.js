@@ -63,3 +63,29 @@ export function queryTenantWaterUse(data) {
     data
   })
 }
+
+// 获取电表每日结算列表
+export function getMeterDaySettleList(data) {
+  return request({
+    url: '/api/ebc-content/meter/getMeterDaySettleList',
+    method: 'POST',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    params: data
+  })
+}
+
+// 获取电表列表（用于下拉选择）
+export function listMeterInfo(data) {
+  return request({
+    url: '/api/ebc-content/meter/listMeterInfo',
+    method: 'POST',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}

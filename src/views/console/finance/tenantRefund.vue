@@ -616,12 +616,14 @@ export default {
     // 查看租户详情
     handleTenantDetail(row) {
       this.$router.push({
-        path: '/control-tenement-detail',
-        query: { 
-          id: row.tenantId,
-          managerId: row.managerId || this.queryData.managerId
-        }
-      })
+        name: "TenantDetail", // 使用路由名称
+        params: { id: row.tenantId }, // 使用 params 传递动态路由参数
+        query: {
+          // 可选：传递额外的查询参数
+          name: row.name,
+          from: "list",
+        },
+      });
     },
 
     // 权限检查（简化版，实际应根据项目权限系统实现）

@@ -3,23 +3,12 @@
     <div class="tags-view-wrapper">
       <!-- 左侧标签滚动区域 -->
       <div class="tags-view-scroll" ref="scrollContainer">
-        <router-link
-          v-for="tag in visibleTags"
-          ref="tag"
-          :key="tag.path"
-          :class="{ active: isActive(tag) }"
-          :to="{ path: tag.path, query: tag.query, fullPath: tag.fullPath }"
-          tag="span"
-          class="tags-view-item"
+        <router-link v-for="tag in visibleTags" ref="tag" :key="tag.path" :class="{ active: isActive(tag) }"
+          :to="{ path: tag.path, query: tag.query, fullPath: tag.fullPath }" tag="span" class="tags-view-item"
           @click.middle.native="!isAffix(tag) ? closeSelectedTag(tag) : ''"
-          @contextmenu.prevent.native="openMenu(tag, $event)"
-        >
+          @contextmenu.prevent.native="openMenu(tag, $event)">
           <span class="tag-title">{{ getTagTitle(tag) }}</span>
-          <span
-            v-if="!isAffix(tag)"
-            class="tag-close-icon"
-            @click.prevent.stop="closeSelectedTag(tag)"
-          >
+          <span v-if="!isAffix(tag)" class="tag-close-icon" @click.prevent.stop="closeSelectedTag(tag)">
             <i class="el-icon-close"></i>
           </span>
         </router-link>
@@ -70,14 +59,8 @@
 
         <!-- 搜索区域 -->
         <div class="search-section">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="搜索标签名称..."
-            prefix-icon="el-icon-search"
-            size="small"
-            clearable
-            @input="handleSearch"
-          />
+          <el-input v-model="searchKeyword" placeholder="搜索标签名称..." prefix-icon="el-icon-search" size="small" clearable
+            @input="handleSearch" />
         </div>
 
         <!-- 当前显示的标签 -->
@@ -87,18 +70,13 @@
             <span class="section-count">{{ filteredVisibleTags.length }}</span>
           </div>
           <div class="tags-grid">
-            <div
-              v-for="tag in filteredVisibleTags"
-              :key="'visible-' + tag.path"
-              :class="[
-                'tag-card',
-                {
-                  'is-active': isActive(tag),
-                  'is-affix': isAffix(tag),
-                },
-              ]"
-              @click="navigateToTag(tag)"
-            >
+            <div v-for="tag in filteredVisibleTags" :key="'visible-' + tag.path" :class="[
+              'tag-card',
+              {
+                'is-active': isActive(tag),
+                'is-affix': isAffix(tag),
+              },
+            ]" @click="navigateToTag(tag)">
               <div class="tag-content">
                 <div class="tag-icon">
                   <i v-if="isAffix(tag)" class="el-icon-star-on"></i>
@@ -111,11 +89,7 @@
                   </div>
                   <div class="tag-path">{{ tag.path }}</div>
                 </div>
-                <div
-                  v-if="!isAffix(tag)"
-                  class="tag-close"
-                  @click.stop="closeSelectedTag(tag)"
-                >
+                <div v-if="!isAffix(tag)" class="tag-close" @click.stop="closeSelectedTag(tag)">
                   <i class="el-icon-close"></i>
                 </div>
               </div>
@@ -124,27 +98,19 @@
         </div>
 
         <!-- 隐藏的标签 -->
-        <div
-          v-if="filteredHiddenTags.length > 0"
-          class="tags-section hidden-section"
-        >
+        <div v-if="filteredHiddenTags.length > 0" class="tags-section hidden-section">
           <div class="section-header">
             <span class="section-title">更多标签</span>
             <span class="section-count">{{ filteredHiddenTags.length }}</span>
           </div>
           <div class="tags-grid">
-            <div
-              v-for="tag in filteredHiddenTags"
-              :key="'hidden-' + tag.path"
-              :class="[
-                'tag-card',
-                {
-                  'is-active': isActive(tag),
-                  'is-affix': isAffix(tag),
-                },
-              ]"
-              @click="navigateToTag(tag)"
-            >
+            <div v-for="tag in filteredHiddenTags" :key="'hidden-' + tag.path" :class="[
+              'tag-card',
+              {
+                'is-active': isActive(tag),
+                'is-affix': isAffix(tag),
+              },
+            ]" @click="navigateToTag(tag)">
               <div class="tag-content">
                 <div class="tag-icon">
                   <i v-if="isAffix(tag)" class="el-icon-star-on"></i>
@@ -157,11 +123,7 @@
                   </div>
                   <div class="tag-path">{{ tag.path }}</div>
                 </div>
-                <div
-                  v-if="!isAffix(tag)"
-                  class="tag-close"
-                  @click.stop="closeSelectedTag(tag)"
-                >
+                <div v-if="!isAffix(tag)" class="tag-close" @click.stop="closeSelectedTag(tag)">
                   <i class="el-icon-close"></i>
                 </div>
               </div>
@@ -178,26 +140,27 @@ import path from "path";
 
 export default {
   name: "TagsView",
-  data() {
-    return {
-      visible: false,
-      top: 0,
-      left: 0,
-      selectedTag: {},
-      affixTags: [],
-      // 添加平台相关状态
-      currentPlatformCache: null,
-      isInitialized: false,
+ data() {
+  return {
+    visible: false,
+    top: 0,
+    left: 0,
+    selectedTag: {},
+    affixTags: [],
+    // 添加平台相关状态
+    currentPlatformCache: null,
+    isInitialized: false,
 
-      // 标签显示逻辑相关 - 修复配置
-      maxVisibleTags: 10, // 左侧最多显示10个标签
-      maxTotalTags: 10, // 超过10个标签启用右侧功能区（保持一致）
-      searchKeyword: "",
-      filteredHiddenTags: [],
-      filteredVisibleTags: [], // 新增：过滤后的可见标签
-      showMoreTags: false, // 控制更多标签弹窗显示
-    };
-  },
+    // 标签显示逻辑相关 - 修复配置
+    maxVisibleTags: 10, // 左侧最多显示10个标签
+    maxTotalTags: 10, // 超过10个标签启用右侧功能区（保持一致）
+    maxTitleLength: 20, // 🔥 新增：标题最大长度
+    searchKeyword: "",
+    filteredHiddenTags: [],
+    filteredVisibleTags: [], // 新增：过滤后的可见标签
+    showMoreTags: false, // 控制更多标签弹窗显示
+  };
+},
   computed: {
     visitedViews() {
       return this.$store.state.tagsView.visitedViews;
@@ -358,17 +321,38 @@ export default {
   },
   methods: {
     getTagTitle(tag) {
-      const title =
-        tag.title ||
+      let title = tag.title ||
         (tag.meta && tag.meta.title) ||
         tag.name ||
         (tag.path && tag.path.split("/").pop()) ||
         "未命名页面";
 
-      if (tag.path && tag.path.includes("dashboard")) {
+      // 🔥 详情页特殊处理：添加详情数据名称
+      if (this.isDetailPage(tag)) {
+        const detailName = this.getDetailName(tag);
+        if (detailName) {
+          title = `${title}-${detailName}`;
+        }
+      }
+
+      // 🔥 标题长度限制
+      if (title.length > this.maxTitleLength) {
+        title = title.substring(0, this.maxTitleLength) + '...';
       }
 
       return title;
+    },
+    isDetailPage(route) {
+      return route.path.includes("/detail/") || route.path.endsWith("/detail");
+    },
+    getDetailName(route) {
+      // 优先级：query.name > query.title > meta.detailName > route params
+      return route.query?.name ||
+        route.query?.title ||
+        route.meta?.detailName ||
+        route.params?.name ||
+        route.params?.id ||
+        '';
     },
 
     // 处理键盘事件
@@ -468,9 +452,9 @@ export default {
       if (systemPaths.includes(route.path)) {
         return false;
       }
-      if (route.path.includes("/detail/") || route.path.endsWith("/detail")) {
-        return false;
-      }
+      // if (route.path.includes("/detail/") || route.path.endsWith("/detail")) {
+      //   return false;
+      // }
 
       if (route.meta) {
         if (route.meta.noTagsView || route.meta.hidden) {
@@ -513,7 +497,7 @@ export default {
       routes.forEach((route) => {
         if (route.meta && route.meta.affix) {
           const tagPath = path.resolve(basePath, route.path);
-          const title = route.meta.title || route.name || "首页";
+          const title = route.meta.title || route.name || "看板";
           tags.push({
             fullPath: tagPath,
             path: tagPath,
@@ -546,6 +530,11 @@ export default {
     addTags() {
       const { name } = this.$route;
       if (name) {
+        // 🔥 如果是详情页，先移除同类详情页标签
+        if (this.isDetailPage(this.$route)) {
+          this.removeSameTypeDetailTag(this.$route);
+        }
+
         const routeInfo = {
           ...this.$route,
           title: this.$route.meta?.title || this.$route.name,
@@ -555,7 +544,33 @@ export default {
       }
       return false;
     },
+    // 🔥 新增：移除同类详情页标签（同一个详情页类型只保留一个）
+    removeSameTypeDetailTag(currentRoute) {
+      const currentBasePath = this.getDetailBasePath(currentRoute);
 
+      // 查找是否已存在同类详情页标签
+      const existingDetailTag = this.visitedViews.find(view => {
+        if (!this.isDetailPage(view)) return false;
+        const viewBasePath = this.getDetailBasePath(view);
+        return viewBasePath === currentBasePath;
+      });
+
+      // 如果存在，且路径不完全相同，则移除旧的
+      if (existingDetailTag && existingDetailTag.fullPath !== currentRoute.fullPath) {
+        this.$store.dispatch("tagsView/delView", existingDetailTag);
+      }
+    },
+
+    // 🔥 新增：获取详情页基础路径（用于判断是否为同类详情页）
+    getDetailBasePath(route) {
+      // 例如：/device/electricity/detail/123 -> /device/electricity/detail
+      const pathParts = route.path.split('/');
+      const detailIndex = pathParts.indexOf('detail');
+      if (detailIndex !== -1) {
+        return pathParts.slice(0, detailIndex + 1).join('/');
+      }
+      return route.path;
+    },
     // 处理平台切换事件
     handlePlatformSwitchEvent(eventData) {
       if (eventData.type !== "platform-switch" || !eventData.clearTagsView) {
@@ -719,7 +734,7 @@ export default {
     ensureHomeTagFirst() {
       this.$store
         .dispatch("tagsView/ensureHomeTagFirst")
-        .then(() => {})
+        .then(() => { })
         .catch((error) => {
           console.error("TagsView: 确保首页标签位置失败", error);
         });
@@ -904,8 +919,8 @@ export default {
       switch (currentPlatform) {
         case "console":
           return {
-            path: "/console/dashboard",
-            meta: { title: "首页", affix: true },
+            path: "/metering/dashboard",
+            meta: { title: "看板", affix: true },
           };
         case "admin":
           return {
@@ -916,8 +931,8 @@ export default {
           const currentPath = this.$route.path;
           if (currentPath.startsWith("/console")) {
             return {
-              path: "/console/dashboard",
-              meta: { title: "首页", affix: true },
+              path: "/metering/dashboard",
+              meta: { title: "看板", affix: true },
             };
           } else if (currentPath.startsWith("/admin")) {
             return {
@@ -994,10 +1009,12 @@ export default {
         &::-webkit-scrollbar {
           height: 3px;
         }
+
         &::-webkit-scrollbar-thumb {
           background: #dcdfe6;
           border-radius: 2px;
         }
+
         &::-webkit-scrollbar-track {
           background: #f5f5f5;
         }
@@ -1209,9 +1226,11 @@ export default {
       &::-webkit-scrollbar {
         width: 6px;
       }
+
       &::-webkit-scrollbar-track {
         background: #f5f5f5;
       }
+
       &::-webkit-scrollbar-thumb {
         background: #c0c4cc;
         border-radius: 3px;
@@ -1379,6 +1398,7 @@ export default {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1389,6 +1409,7 @@ export default {
     opacity: 0;
     transform: scale(0.9) translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);

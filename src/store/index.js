@@ -4,18 +4,13 @@ import user from './modules/user'
 import permission from './modules/permission'
 import app from './modules/app'
 import manager from './modules/manager'
-import tagsView from './modules/tagsView' // 添加 tagsView 模块
-import treeSelection from './modules/treeSelection'  // 引入树形选择模块
+import tagsView from './modules/tagsView'
+import treeSelection from './modules/treeSelection'
+import enumData from './modules/enumData' // ✅ 添加这一行
 
 Vue.use(Vuex)
 
-console.log('Store modules loaded:', { 
-  user: !!user, 
-  app: !!app, 
-  permission: !!permission, 
-  manager: !!manager,
-  tagsView: !!tagsView  // 添加调试信息
-})
+
 
 const store = new Vuex.Store({
   modules: {
@@ -23,8 +18,9 @@ const store = new Vuex.Store({
     app,
     permission,
     manager,
-    tagsView, // 注册 tagsView 模块
-    treeSelection  
+    tagsView,
+    treeSelection,
+    enumData // ✅ 注册模块
   },
   getters: {
     sidebar: state => state.app.sidebar,
@@ -35,25 +31,24 @@ const store = new Vuex.Store({
     roles: state => state.user.roles,
     role: state => state.user.role,
     phone: state => state.user.phone,
-    permissions: state => state.user.permissions,
     permission_routes: state => state.permission.routes,
+    permissions: state => state.user.permissions,
+    isInitPassword: state => state.user.isInitPassword,
+    userInfoLoaded: state => state.user.userInfoLoaded,
     addRoutes: state => state.permission.addRoutes,
-    // 管理方相关 getters
+    routesInitialized: state => state.permission.routesInitialized,
     managerList: state => state.manager.managerList,
     currentManagerId: state => state.manager.currentManagerId,
     currentManager: state => state.manager.currentManager,
     hasMultipleManagers: state => state.manager.hasMultipleManagers,
     shouldShowManagerSwitcher: state => state.manager.shouldShowManagerSwitcher,
-    // tagsView 相关 getters
     visitedViews: state => state.tagsView.visitedViews,
     cachedViews: state => state.tagsView.cachedViews,
-     // treeSelection 相关 getters - 只获取ID集合
-     treeSelectedIds: state => state.treeSelection ? state.treeSelection.selectedIds : [],
-     treeSelectedCount: state => state.treeSelection ? state.treeSelection.selectedIds.length : 0,
-     hasTreeSelection: state => state.treeSelection ? state.treeSelection.selectedIds.length > 0 : false
+    treeSelectedIds: state => state.treeSelection ? state.treeSelection.selectedIds : [],
+    treeSelectedCount: state => state.treeSelection ? state.treeSelection.selectedIds.length : 0,
+    hasTreeSelection: state => state.treeSelection ? state.treeSelection.selectedIds.length > 0 : false
   }
 })
 
-console.log('Store created:', store)
 
 export default store

@@ -51,7 +51,22 @@ export const constantRoutes = [
         }
       }
     ]
-  }
+  },
+  {
+    path: '/metering/tenant/detail/:id',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',  // 注意这里是空字符串
+        name: 'TenantDetail',
+        component: () => import('@/views/console/tenant/detail'),
+        meta: { 
+          title: '租户详情',
+        }
+      }
+    ]
+  },
 ]
 
 /**

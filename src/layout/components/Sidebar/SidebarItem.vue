@@ -5,11 +5,14 @@
   >
     <!-- 如果是分隔线 -->
     <div
-      v-if="item.meta && item.meta.isDivider"
-      class="menu-divider"
-      :class="{ 'with-label': item.meta.dividerLabel }"
-      :data-label="item.meta.dividerLabel"
-    ></div>
+  v-if="item.meta && item.meta.isDivider"
+  class="menu-divider"
+  :class="[
+    { 'with-label': item.meta.dividerLabel },
+    item.meta.customClass // 🆕 添加自定义class
+  ]"
+  :data-label="item.meta.dividerLabel"
+></div>
 
     <!-- 单一菜单项（无子菜单） -->
     <template
@@ -315,6 +318,19 @@ export default {
       margin-top: 4px;
     }
   }
+    &.large-divider {
+    height: 2px; // 加粗分隔线
+    background: rgba(255, 255, 255, 0.2); // 稍微明显一点
+    margin: 24px 12px; // 上下间距增大到24px
+    
+    // 可选：添加渐变效果让分隔线更明显
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent
+    );
+  }
 }
 
 // 在收缩状态下的分隔线
@@ -324,6 +340,9 @@ export default {
 
     &.with-label::before {
       display: none;
+    }
+     &.large-divider {
+      margin: 20px 6px; // 收缩时也保持较大间距
     }
   }
 }

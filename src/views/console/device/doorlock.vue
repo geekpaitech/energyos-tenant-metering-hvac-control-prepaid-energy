@@ -447,7 +447,7 @@ export default {
     }
   },
   mounted() {
-    this.initData()
+    // this.initData()
   },
   methods: {
     initData() {

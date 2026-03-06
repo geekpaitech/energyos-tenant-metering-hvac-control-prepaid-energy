@@ -1239,9 +1239,9 @@ export default {
   },
 
   created() {
-    this.initData();
-    this.loadAvailableDevices();
-    this.startAutoRefresh();
+    // this.initData();
+    // this.loadAvailableDevices();
+    // this.startAutoRefresh();
   },
 
   beforeDestroy() {

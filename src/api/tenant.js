@@ -78,3 +78,14 @@ export function tenantCancel(params) {
     params
   })
 }
+// 查询租户专用设备数量
+export function queryTenantDeviceCount(params) {
+  return request({
+    url: '/api/ebc-content/meter/queryTenantDeviceCount',
+    method: 'POST',
+    headers: {
+      'userDeviceType': 'PC'
+    },
+    params
+  })
+}

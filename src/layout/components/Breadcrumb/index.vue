@@ -49,7 +49,7 @@ export default {
 
       // 检查是否需要添加首页
       if (!this.isDashboard(first)) {
-        matched = [{ path: '/dashboard', meta: { title: '首页' }, name: 'Dashboard' }].concat(matched)
+        matched = [{ path: '/dashboard', meta: { title: '看板' }, name: 'Dashboard' }].concat(matched)
       }
 
       // 去重处理，避免重复的路径

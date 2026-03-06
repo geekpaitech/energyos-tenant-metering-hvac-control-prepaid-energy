@@ -7,7 +7,8 @@
 export const MeterBindType = {
     1: { value: 1, label: '专用表' },
     2: { value: 2, label: '公摊表' },
-    3: { value: 3, label: '公式表' }
+    3: { value: 3, label: '公式表' },
+    4: { value: 4, label: '空调表' },
   }
   
   // 电表付费模式
@@ -30,9 +31,9 @@ export const MeterBindType = {
   
   // 电表相位
   export const MeterPhase = {
-    5: { value: 5, label: '三相' },
-    6: { value: 6, label: '三相' },
-    7: { value: 7, label: '单相' }
+    5: { value: 5, label: '三相一次' },
+    6: { value: 6, label: '三相二次' },
+    7: { value: 7, label: '单相一次' }
   }
   
   // 电表监测类型

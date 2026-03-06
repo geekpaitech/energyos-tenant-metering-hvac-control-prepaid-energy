@@ -35,7 +35,9 @@
                 />
                 <!-- 选择框 - 租户选择 -->
                 <el-select
-                  v-else-if="field.type === 'select' && field.prop === 'tenantId'"
+                  v-else-if="
+                    field.type === 'select' && field.prop === 'tenantId'
+                  "
                   v-model="queryData[field.prop]"
                   placeholder="请选择租户"
                   clearable
@@ -91,7 +93,10 @@
               >
                 重置
               </el-button>
-              <el-divider direction="vertical" style="margin: 0 8px"></el-divider>
+              <el-divider
+                direction="vertical"
+                style="margin: 0 8px"
+              ></el-divider>
               <el-dropdown trigger="click" @command="handleCommand">
                 <el-button size="small" type="text" style="padding: 7px 12px">
                   更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
@@ -151,7 +156,9 @@
             <template slot-scope="scope">
               <!-- 租户ID -->
               <template v-if="col.key === 'tenantId'">
-                <span class="text-primary">{{ scope.row.tenantId || "-" }}</span>
+                <span class="text-primary">{{
+                  scope.row.tenantId || "-"
+                }}</span>
               </template>
 
               <!-- 租户名称 -->
@@ -164,7 +171,12 @@
 
               <!-- 金额类字段 -->
               <template v-else-if="col.type === 'money'">
-                <span :class="{'amount-text': true, 'text-danger': col.key.includes('NoPay')}">
+                <span
+                  :class="{
+                    'amount-text': true,
+                    'text-danger': col.key.includes('NoPay'),
+                  }"
+                >
                   {{ formatMoney(scope.row[col.key]) }}
                 </span>
               </template>
@@ -181,8 +193,11 @@
 
         <!-- 空数据提示 -->
         <div v-if="!loading && tableData.length === 0" class="empty-data">
-          <i class="el-icon-data-analysis" style="font-size: 48px; color: #909399;"></i>
-          <p style="color: #909399; margin-top: 16px;">暂无数据</p>
+          <i
+            class="el-icon-data-analysis"
+            style="font-size: 48px; color: #909399"
+          ></i>
+          <p style="color: #909399; margin-top: 16px">暂无数据</p>
         </div>
       </div>
     </div>
@@ -203,15 +218,13 @@
 </template>
 <script>
 // 导入API
-import {
-  settleTenantSettleStatistics,
-} from "@/api/settle";
+import { settleTenantSettleStatistics } from "@/api/settle";
 
 import { tenantPageTenant } from "@/api/tenant";
 
 import { mapGetters } from "vuex";
-import moment from 'moment';
-
+import moment from "moment";
+import * as XLSX from 'xlsx';
 export default {
   name: "TenantBillStatistics",
   data() {
@@ -224,16 +237,16 @@ export default {
         maxRows: 10,
         paginationHeight: 68,
       },
-      
+
       // 查询参数
       queryData: {
         tenantId: "",
         timeRange: [
-          moment().subtract(1, 'months').format('YYYY-MM-DD'),
-          moment().format('YYYY-MM-DD')
+          moment().subtract(1, "months").format("YYYY-MM-DD"),
+          moment().format("YYYY-MM-DD"),
         ],
       },
-      
+
       // 搜索字段配置
       searchFields: {
         basic: [
@@ -242,26 +255,26 @@ export default {
         ],
         advanced: [],
       },
-      
+
       // 租户列表
       tenantList: [],
-      
+
       // 表格数据
       tableData: [],
-      
+
       // 加载状态
       loading: false,
-      
+
       // 分页数据
       pageData: {
         current: 1,
         size: 15,
         total: 0,
       },
-      
+
       // 选中的数据
       selectedData: [],
-      
+
       // 表格列配置
       tableKey: [
         {
@@ -344,20 +357,20 @@ export default {
       ],
     };
   },
-  
+
   computed: {
     ...mapGetters("manager", ["currentManagerId"]),
-    
+
     // 数据长度
     dataLength() {
       return this.tableData.length;
     },
-    
+
     // 显示的列
     displayColumns() {
       return this.tableKey.filter((col) => col.checked !== false);
     },
-    
+
     // 显示的基础搜索字段
     displayBasicFields() {
       return this.searchFields.basic;
@@ -370,7 +383,7 @@ export default {
       );
     },
   },
-  
+
   watch: {
     currentManagerId: {
       handler(newVal) {
@@ -382,14 +395,14 @@ export default {
       immediate: true,
     },
   },
-  
+
   created() {
     // 如果路由带有租户ID参数
     if (this.$route.query.id) {
       this.queryData.tenantId = this.$route.query.id;
     }
   },
-  
+
   methods: {
     // 获取租户列表
     async getTenantList() {
@@ -399,8 +412,8 @@ export default {
           managerId: this.currentManagerId,
         };
         const response = await tenantPageTenant(params);
-        console.log(response,'response')
-        
+        console.log(response, "response");
+
         if (response.code === 200 && response.data.dataList) {
           this.tenantList = response.data.dataList || [];
         } else {
@@ -413,7 +426,7 @@ export default {
         this.tenantList = [];
       }
     },
-    
+
     // 获取表格数据
     async fetchTableData() {
       this.loading = true;
@@ -421,16 +434,18 @@ export default {
         const params = {
           managerId: this.currentManagerId,
           tenantId: this.queryData.tenantId,
-          startDate: this.queryData.timeRange ? this.queryData.timeRange[0] : '',
-          endDate: this.queryData.timeRange ? this.queryData.timeRange[1] : '',
+          startDate: this.queryData.timeRange
+            ? this.queryData.timeRange[0]
+            : "",
+          endDate: this.queryData.timeRange ? this.queryData.timeRange[1] : "",
           page: {
             current: this.pageData.current,
             size: this.pageData.size,
-          }
+          },
         };
-        
+
         const response = await settleTenantSettleStatistics(params);
-        
+
         if (response.code === 200 && response.data) {
           this.tableData = response.data.dataList || [];
           this.pageData.total = response.data.total || 0;
@@ -446,33 +461,33 @@ export default {
         this.loading = false;
       }
     },
-    
+
     // 格式化金额
     formatMoney(value) {
-      if (value === null || value === undefined || value === '') {
-        return '-';
+      if (value === null || value === undefined || value === "") {
+        return "-";
       }
       return `¥${parseFloat(value).toFixed(2)}`;
     },
-    
+
     // 查询
     handleSearch() {
       this.pageData.current = 1;
       this.fetchTableData();
     },
-    
+
     // 重置
     handleReset() {
       this.queryData = {
         tenantId: "",
         timeRange: [
-          moment().subtract(1, 'months').format('YYYY-MM-DD'),
-          moment().format('YYYY-MM-DD')
+          moment().subtract(1, "months").format("YYYY-MM-DD"),
+          moment().format("YYYY-MM-DD"),
         ],
       };
       this.handleSearch();
     },
-    
+
     // 处理下拉命令
     handleCommand(command) {
       switch (command) {
@@ -481,60 +496,137 @@ export default {
           break;
       }
     },
-    
+
     // 查看租户详情
     handleTenantDetail(row) {
       this.$router.push({
-        path: '/control-tenement-detail',
-        query: { 
-          id: row.tenantId, 
-          selectType: 4 
-        }
+        name: "TenantDetail", // 使用路由名称
+        params: { id: row.tenantId }, // 使用 params 传递动态路由参数
+        query: {
+          // 可选：传递额外的查询参数
+          name: row.name,
+          from: "list",
+        },
       });
     },
-    
+
     // 查看详情
     handleView(row) {
       this.handleTenantDetail(row);
     },
-    
+
     // 导出数据
     handleExport() {
-      if (this.tableData.length === 0) {
-        this.$message.warning("暂无数据可导出");
-        return;
-      }
-      
-      // 导出功能
-      const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData;
-      
-      // 构建导出数据
-      const params = {
-        ele: this.$el.querySelector('.el-table'),
-        name: '租户账单统计.xlsx',
-        data: exportData
-      };
-      
-      // 调用导出方法
-      if (this.$store && this.$store.dispatch) {
-        this.$store.dispatch('export/export', params);
-      } else {
-        this.$message.info("导出功能开发中...");
-      }
-    },
+  if (this.tableData.length === 0) {
+    this.$message.warning("暂无数据可导出");
+    return;
+  }
+
+  try {
+    // 确定要导出的数据
+    const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData;
     
+    // 构建导出的表头和数据
+    const headers = this.displayColumns.map(col => col.label);
+    const data = exportData.map(row => {
+      return this.displayColumns.map(col => {
+        const value = row[col.key];
+        
+        // 处理金额类型的字段
+        if (col.type === 'money') {
+          if (value === null || value === undefined || value === '') {
+            return '0.00';
+          }
+          return parseFloat(value).toFixed(2);
+        }
+        
+        // 处理其他字段
+        return value || '';
+      });
+    });
+
+    // 创建工作表数据
+    const wsData = [headers, ...data];
+    
+    // 创建工作表
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // 设置列宽
+    const colWidths = this.displayColumns.map(col => {
+      if (col.width) {
+        return { wch: Math.max(parseInt(col.width) / 8, col.label.length + 2) };
+      } else if (col.minWidth) {
+        return { wch: Math.max(parseInt(col.minWidth) / 8, col.label.length + 2) };
+      }
+      return { wch: Math.max(15, col.label.length + 2) };
+    });
+    ws['!cols'] = colWidths;
+
+    // 创建工作簿
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "租户账单统计");
+
+    // 生成文件名
+    const fileName = this.generateFileName();
+    
+    // 导出文件（使用原生方法）
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'none';
+    
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    this.$message.success('导出成功！');
+  } catch (error) {
+    console.error('导出失败:', error);
+    this.$message.error('导出失败，请重试');
+  }
+},
+generateFileName() {
+  const now = moment();
+  const timeStr = now.format('YYYYMMDD_HHmmss');
+  
+  // 如果选择了特定租户，包含租户信息
+  if (this.queryData.tenantId) {
+    const tenant = this.tenantList.find(t => t.id === this.queryData.tenantId);
+    const tenantName = tenant ? tenant.name : this.queryData.tenantId;
+    return `租户账单统计_${tenantName}_${timeStr}.xlsx`;
+  }
+  
+  // 如果选择了时间范围，包含时间信息
+  if (this.queryData.timeRange && this.queryData.timeRange.length === 2) {
+    const startDate = this.queryData.timeRange[0].replace(/-/g, '');
+    const endDate = this.queryData.timeRange[1].replace(/-/g, '');
+    return `租户账单统计_${startDate}-${endDate}_${timeStr}.xlsx`;
+  }
+  
+  return `租户账单统计_${timeStr}.xlsx`;
+},
+
     // 选择变化
     handleSelectionChange(selection) {
       this.selectedData = selection;
     },
-    
+
     // 分页大小变化
     handleSizeChange(val) {
       this.pageData.size = val;
       this.pageData.current = 1;
       this.fetchTableData();
     },
-    
+
     // 当前页变化
     handleCurrentChange(val) {
       this.pageData.current = val;
@@ -551,14 +643,14 @@ export default {
 .amount-text {
   font-weight: 500;
   color: #303133;
-  
+
   &.text-danger {
-    color: #F56C6C;
+    color: #f56c6c;
   }
 }
 
 .text-primary {
-  color: #409EFF;
+  color: #409eff;
 }
 
 .empty-data {

@@ -10,18 +10,23 @@
   },
   "dependencies": {
     "axios": "^1.10.0",
+    "canvg": "^4.0.3",
     "core-js": "^3.6.5",
     "echarts": "^5.4.0",
     "element-ui": "^2.15.14",
     "js-cookie": "^3.0.5",
+    "konva": "^9.3.22",
     "mockjs": "^1.1.0",
     "moment": "^2.30.1",
     "normalize.css": "^8.0.1",
     "nprogress": "^0.2.0",
+    "qrcodejs2": "0.0.2",
     "register-service-worker": "^1.7.1",
     "vue": "^2.6.11",
+    "vue-konva": "^2.1.7",
     "vue-router": "^3.6.5",
-    "vuex": "^3.6.2"
+    "vuex": "^3.6.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.8",
@@ -41,8 +46,11 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.0",
     "eslint-plugin-vue": "^6.2.2",
+    "file-loader": "^6.2.0",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
+    "svgo-loader": "^3.0.3",
+    "vue-svg-loader": "^0.16.0",
     "vue-template-compiler": "^2.6.11"
   }
 }

@@ -1,459 +1,366 @@
 <template>
-  <div class="oa-dashboard">
-    <!-- 统计卡片区域 -->
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-icon alarm">
-          <i class="icon-alarm"></i>
+  <div class="iot-dashboard">
+    <!-- 演示模式标识 -->
+    <div class="demo-badge">
+      <div class="demo-badge-content">
+        <div class="demo-icon">
+          <i class="el-icon-view"></i>
         </div>
-        <div class="stat-content">
-          <h3>设备报警</h3>
-          <p class="stat-number">12</p>
-          <span class="stat-label">待处理报警</span>
+        <div class="demo-text">
+          <div class="demo-title">即将开放</div>
+          <div class="demo-subtitle">COMING SOON</div>
         </div>
+        <div class="demo-pulse"></div>
       </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon offline">
-          <i class="icon-offline"></i>
-        </div>
-        <div class="stat-content">
-          <h3>设备离线</h3>
-          <p class="stat-number">8</p>
-          <span class="stat-label">离线设备数</span>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon finance">
-          <i class="icon-finance"></i>
-        </div>
-        <div class="stat-content">
-          <h3>财务审核</h3>
-          <p class="stat-number">25</p>
-          <span class="stat-label">待审核单据</span>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon tenant">
-          <i class="icon-tenant"></i>
-        </div>
-        <div class="stat-content">
-          <h3>租户管理</h3>
-          <p class="stat-number">156</p>
-          <span class="stat-label">活跃租户</span>
-        </div>
-      </div>
-
-      <div class="revenue-card">
-        <div class="revenue-icon">¥</div>
-        <div class="revenue-content">
-          <h3>本月收费</h3>
-          <div class="revenue-amount">268,580</div>
-          <span class="revenue-growth">+12.5% 较上月</span>
-        </div>
-        <div class="revenue-chart">
-          <svg viewBox="0 0 100 40">
-            <path d="M0,30 Q25,10 50,20 T100,15" stroke="white" stroke-width="2" fill="none" opacity="0.8"/>
-          </svg>
-        </div>
+      <div class="demo-tag">
+        <i class="el-icon-info"></i>
+        当前为模拟数据
       </div>
     </div>
-
-    <!-- 主要内容区域 -->
-    <div class="main-content">
-      <!-- 左侧内容 -->
-      <div class="left-content">
-        <!-- 系统通知 -->
-        <div class="notification-section">
-          <div class="section-header">
-            <h3>
-              <i class="icon-notification"></i>
-              系统通知
-              <span class="count">8项</span>
-            </h3>
-            <i class="icon-arrow-right"></i>
-          </div>
-          
-          <div class="notification-list">
-            <div class="notification-item urgent">
-              <div class="notification-icon">
-                <i class="icon-recharge"></i>
-              </div>
-              <div class="notification-content">
-                <div class="notification-title">租户充值成功通知</div>
-                <div class="notification-desc">A栋201租户充值1000元，余额2580元</div>
-                <div class="notification-time">5分钟前</div>
-              </div>
+    
+    <div class="dashboard-body">
+      <!-- 快捷操作 -->
+      <div class="quick-operations">
+        <div class="operations-grid">
+          <div class="operation-item" v-for="op in quickOperations" :key="op.id" 
+               :class="op.type" @click="executeOperation(op.id)">
+            <div class="operation-icon">
+              <i :class="op.icon"></i>
             </div>
-            
-            <div class="notification-item warning">
-              <div class="notification-icon">
-                <i class="icon-debt"></i>
-              </div>
-              <div class="notification-content">
-                <div class="notification-title">设备月租服务费欠费通知</div>
-                <div class="notification-desc">B栋305电表月租费欠费320元，请及时处理</div>
-                <div class="notification-time">15分钟前</div>
-              </div>
-            </div>
-
-            <div class="notification-item info">
-              <div class="notification-icon">
-                <i class="icon-invoice"></i>
-              </div>
-              <div class="notification-content">
-                <div class="notification-title">发票额度欠费管理方通知</div>
-                <div class="notification-desc">发票额度不足，当前余额850元</div>
-                <div class="notification-time">30分钟前</div>
-              </div>
-            </div>
-
-            <div class="notification-item success">
-              <div class="notification-icon">
-                <i class="icon-audit"></i>
-              </div>
-              <div class="notification-content">
-                <div class="notification-title">汽车充电提现审核通过通知</div>
-                <div class="notification-desc">提现申请1580元已审核通过</div>
-                <div class="notification-time">1小时前</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 设备监控和财务管理 -->
-        <div class="monitor-section">
-          <div class="monitor-column">
-            <div class="section-header">
-              <h3>
-                <i class="icon-monitor"></i>
-                设备监控
-              </h3>
-              <i class="icon-arrow-right"></i>
-            </div>
-            
-            <div class="monitor-list">
-              <div class="monitor-item alarm">
-                <div class="monitor-status"></div>
-                <div class="monitor-content">
-                  <span class="monitor-title">电表功率超限</span>
-                  <span class="monitor-desc">A栋301 - 功率15.2KW</span>
-                </div>
-                <span class="monitor-time">刚刚</span>
-              </div>
-              
-              <div class="monitor-item alarm">
-                <div class="monitor-status"></div>
-                <div class="monitor-content">
-                  <span class="monitor-title">电表分闸告警</span>
-                  <span class="monitor-desc">C栋108 - 自动分闸</span>
-                </div>
-                <span class="monitor-time">2分钟前</span>
-              </div>
-
-              <div class="monitor-item success">
-                <div class="monitor-status"></div>
-                <div class="monitor-content">
-                  <span class="monitor-title">电表合闸通知成功</span>
-                  <span class="monitor-desc">B栋205 - 用户合闸</span>
-                </div>
-                <span class="monitor-time">5分钟前</span>
-              </div>
-
-              <div class="monitor-item warning">
-                <div class="monitor-status"></div>
-                <div class="monitor-content">
-                  <span class="monitor-title">设备离线告警</span>
-                  <span class="monitor-desc">D栋水表012 - 通信异常</span>
-                </div>
-                <span class="monitor-time">10分钟前</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="finance-column">
-            <div class="section-header">
-              <h3>
-                <i class="icon-finance-manage"></i>
-                财务管理
-              </h3>
-              <i class="icon-arrow-right"></i>
-            </div>
-            
-            <div class="finance-list">
-              <div class="finance-item">
-                <div class="finance-type pending">充值审核</div>
-                <div class="finance-content">
-                  <span class="finance-title">管理方充值成功通知</span>
-                  <span class="finance-amount">+50,000元</span>
-                </div>
-              </div>
-              
-              <div class="finance-item">
-                <div class="finance-type processing">提现审核</div>
-                <div class="finance-content">
-                  <span class="finance-title">租户提现申请</span>
-                  <span class="finance-amount">-2,800元</span>
-                </div>
-              </div>
-
-              <div class="finance-item">
-                <div class="finance-type completed">缴费确认</div>
-                <div class="finance-content">
-                  <span class="finance-title">电费批量收取</span>
-                  <span class="finance-amount">+15,680元</span>
-                </div>
-              </div>
-
-              <div class="finance-item">
-                <div class="finance-type pending">发票审核</div>
-                <div class="finance-content">
-                  <span class="finance-title">月度发票申请</span>
-                  <span class="finance-amount">8,950元</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 租户管理 -->
-        <div class="tenant-section">
-          <div class="section-header">
-            <h3>租户管理</h3>
-            <i class="icon-more"></i>
-          </div>
-          
-          <div class="tenant-list">
-            <div class="tenant-item">
-              <div class="tenant-avatar">A301</div>
-              <div class="tenant-info">
-                <h4>张三 - A栋301室</h4>
-                <p>电表：正常 | 水表：正常 | 余额：1,250元</p>
-              </div>
-              <div class="tenant-status normal">正常</div>
-            </div>
-            
-            <div class="tenant-item">
-              <div class="tenant-avatar debt">B205</div>
-              <div class="tenant-info">
-                <h4>李四 - B栋205室</h4>
-                <p>电表：欠费 | 水表：正常 | 余额：-50元</p>
-              </div>
-              <div class="tenant-status debt">欠费</div>
-            </div>
-
-            <div class="tenant-item">
-              <div class="tenant-avatar offline">C108</div>
-              <div class="tenant-info">
-                <h4>王五 - C栋108室</h4>
-                <p>电表：离线 | 水表：正常 | 余额：580元</p>
-              </div>
-              <div class="tenant-status offline">设备异常</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 数据统计 -->
-        <div class="stats-section">
-          <div class="stats-card">
-            <div class="stats-illustration">
-              <i class="icon-chart"></i>
-            </div>
-            <div class="stats-content">
-              <h4>收费统计</h4>
-              <div class="stats-chart">
-                <div class="chart-bar" style="height: 60%"></div>
-                <div class="chart-bar" style="height: 80%"></div>
-                <div class="chart-bar" style="height: 45%"></div>
-                <div class="chart-bar" style="height: 90%"></div>
-                <div class="chart-bar" style="height: 70%"></div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="activity-list">
-            <div class="activity-item">
-              <div class="activity-content">
-                <span class="activity-text">今日电费收取完成，共收取156户，金额32,580元</span>
-                <div class="activity-stats">
-                  <span><i class="icon-view"></i> 查看详情</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="activity-item">
-              <div class="activity-content">
-                <span class="activity-text">水费账单已生成，涉及租户210户，预计收费28,960元</span>
-                <div class="activity-stats">
-                  <span><i class="icon-view"></i> 查看详情</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="activity-item">
-              <div class="activity-content">
-                <span class="activity-text">设备巡检完成，发现异常设备8台，已安排维修</span>
-                <div class="activity-stats">
-                  <span><i class="icon-view"></i> 查看详情</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="activity-item">
-              <div class="activity-content">
-                <span class="activity-text">月度财务报表生成，收费率98.5%，较上月提升2.1%</span>
-                <div class="activity-stats">
-                  <span><i class="icon-view"></i> 查看详情</span>
-                </div>
-              </div>
-            </div>
+            <div class="operation-label">{{ op.label }}</div>
           </div>
         </div>
       </div>
 
-      <!-- 右侧边栏 -->
-      <div class="right-sidebar">
-        <!-- 今日概览 -->
-        <div class="today-overview">
-          <div class="overview-header">
-            <h3>今日概览</h3>
-            <div class="date-info">
-              <span>2024年4月15日</span>
+      <div class="main-layout">
+        <!-- 左侧主要区域 -->
+        <div class="main-section">
+          <!-- 设备监控中心 -->
+          <div class="monitoring-panel">
+            <div class="panel-header">
+              <div class="header-left">
+                <h3>设备监控中心</h3>
+                <div class="data-source-info">
+                  <span class="update-indicator">
+                    <i class="el-icon-refresh"></i>
+                    实时更新
+                  </span>
+                </div>
+              </div>
+              <div class="header-actions">
+                <select v-model="timeRange" class="time-selector">
+                  <option value="realtime">实时</option>
+                  <option value="hour">最近1小时</option>
+                  <option value="day">今日</option>
+                  <option value="week">本周</option>
+                </select>
+                <button class="refresh-btn" @click="refreshData">
+                  <i class="el-icon-refresh-right"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- 核心指标 -->
+            <div class="metrics-overview">
+              <div class="metric-card" v-for="metric in coreMetrics" :key="metric.key">
+                <div class="metric-icon" :class="metric.iconClass">
+                  <i :class="metric.icon"></i>
+                </div>
+                <div class="metric-content">
+                  <div class="metric-header">
+                    <span class="metric-label">{{ metric.label }}</span>
+                    <div class="metric-trend" :class="metric.trend">
+                      <i :class="metric.trendIcon"></i>
+                      <span>{{ metric.change }}</span>
+                    </div>
+                  </div>
+                  <div class="metric-value">{{ metric.value }}</div>
+                  <div class="metric-subtitle">{{ metric.subtitle }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="charts-container">
+              <!-- 设备运行状态 -->
+              <div class="chart-box">
+                <div class="chart-header">
+                  <h4>设备运行状态</h4>
+                  <div class="chart-legend">
+                    <span class="legend-item">
+                      <span class="legend-dot excellent"></span>优秀
+                    </span>
+                    <span class="legend-item">
+                      <span class="legend-dot good"></span>良好
+                    </span>
+                    <span class="legend-item">
+                      <span class="legend-dot warning"></span>预警
+                    </span>
+                    <span class="legend-item">
+                      <span class="legend-dot error"></span>故障
+                    </span>
+                  </div>
+                </div>
+                <div ref="statusChart" class="chart-canvas"></div>
+              </div>
+
+              <!-- 能耗流向分析 -->
+              <div class="chart-box">
+                <div class="chart-header">
+                  <h4>能耗流向分析</h4>
+                  <div class="chart-legend">
+                    <span class="legend-item">
+                      <span class="legend-dot source"></span>总能耗
+                    </span>
+                    <span class="legend-item">
+                      <span class="legend-dot target"></span>设备分类
+                    </span>
+                  </div>
+                </div>
+                <div ref="typeChart" class="chart-canvas"></div>
+              </div>
+            </div>
+
+            <!-- 实时数据趋势 -->
+            <div class="trend-section">
+              <div class="chart-header">
+                <h4>24小时运行趋势</h4>
+                <div class="trend-tabs">
+                  <button 
+                    v-for="tab in trendTabs" 
+                    :key="tab.key"
+                    class="trend-tab"
+                    :class="{ active: activeTrendTab === tab.key }"
+                    @click="switchTrendTab(tab.key)">
+                    {{ tab.label }}
+                  </button>
+                </div>
+              </div>
+              <div ref="trendChart" class="trend-chart"></div>
             </div>
           </div>
-          
-          <div class="overview-stats">
-            <div class="overview-item">
-              <div class="overview-number">1,258</div>
-              <div class="overview-label">在线设备</div>
+
+          <!-- 智能分析平台区域 -->
+          <div class="analytics-section">
+            <div class="analytics-left">
+              <div class="analytics-card">
+                <div class="card-header">
+                  <div class="header-icon">
+                    <i class="el-icon-data-line"></i>
+                  </div>
+                  <div class="header-text">
+                    <h3>设备智能分析平台</h3>
+                    <p>基于大数据的设备状态预测与优化建议</p>
+                  </div>
+                </div>
+                
+                <!-- 数据指标网格 -->
+                <div class="analytics-metrics">
+                  <div class="metric-item">
+                    <div class="metric-icon">
+                      <i class="el-icon-aim"></i>
+                    </div>
+                    <div class="metric-info">
+                      <span class="metric-value">98.5%</span>
+                      <span class="metric-label">预测准确率</span>
+                    </div>
+                  </div>
+                  
+                  <div class="metric-item">
+                    <div class="metric-icon">
+                      <i class="el-icon-top-right"></i>
+                    </div>
+                    <div class="metric-info">
+                      <span class="metric-value">15.3%</span>
+                      <span class="metric-label">能效提升</span>
+                    </div>
+                  </div>
+                  
+                  <div class="metric-item">
+                    <div class="metric-icon">
+                      <i class="el-icon-timer"></i>
+                    </div>
+                    <div class="metric-info">
+                      <span class="metric-value">72h</span>
+                      <span class="metric-label">故障预警期</span>
+                    </div>
+                  </div>
+                  
+                  <div class="metric-item">
+                    <div class="metric-icon">
+                      <i class="el-icon-aim"></i>
+                    </div>
+                    <div class="metric-info">
+                      <span class="metric-value">99.2%</span>
+                      <span class="metric-label">系统可靠性</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 快速洞察 -->
+                <div class="quick-insights">
+                  <div class="insight-title">
+                    <i class="el-icon-light-rain"></i>
+                    智能洞察
+                  </div>
+                  <div class="insight-content">
+                    <div class="insight-item">
+                      <span class="insight-text">检测到空调系统运行效率可提升8%</span>
+                      <span class="insight-action">查看详情</span>
+                    </div>
+                    <div class="insight-item">
+                      <span class="insight-text">预计明日用电高峰在14:00-16:00</span>
+                      <span class="insight-action">优化调度</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 装饰背景 -->
+                <div class="analytics-bg">
+                  <svg class="bg-pattern" viewBox="0 0 100 100">
+                    <defs>
+                      <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(64, 158, 255, 0.1)" stroke-width="0.5"/>
+                      </pattern>
+                    </defs>
+                    <rect width="100" height="100" fill="url(#grid)" />
+                  </svg>
+                  
+                  <div class="floating-elements">
+                    <div class="floating-dot dot-1"></div>
+                    <div class="floating-dot dot-2"></div>
+                    <div class="floating-dot dot-3"></div>
+                    <div class="floating-circuit">
+                      <svg viewBox="0 0 60 60">
+                        <circle cx="30" cy="30" r="25" fill="none" stroke="rgba(103, 194, 58, 0.2)" stroke-width="1" stroke-dasharray="5,5">
+                          <animateTransform attributeName="transform" type="rotate" values="0 30 30;360 30 30" dur="20s" repeatCount="indefinite"/>
+                        </circle>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="overview-item">
-              <div class="overview-number">8</div>
-              <div class="overview-label">离线设备</div>
-            </div>
-            <div class="overview-item">
-              <div class="overview-number">32,580</div>
-              <div class="overview-label">今日收费(元)</div>
-            </div>
-            <div class="overview-item">
-              <div class="overview-number">12</div>
-              <div class="overview-label">待处理报警</div>
+            <div class="analytics-right">
+              <div class="suggestion-card">
+                <div class="suggestion-header">
+                  <h4>优化建议</h4>
+                  <span class="suggestion-count">1,235条</span>
+                </div>
+                <div class="suggestion-list">
+                  <div class="suggestion-item">
+                    <div class="suggestion-icon">
+                      <i class="el-icon-magic-stick"></i>
+                    </div>
+                    <div class="suggestion-text">
+                      <div class="suggestion-title">空调系统优化</div>
+                      <div class="suggestion-desc">建议调整A栋空调运行策略</div>
+                    </div>
+                  </div>
+                  <div class="suggestion-item">
+                    <div class="suggestion-icon">
+                      <i class="el-icon-lightning"></i>
+                    </div>
+                    <div class="suggestion-text">
+                      <div class="suggestion-title">照明节能方案</div>
+                      <div class="suggestion-desc">可节约15%用电成本</div>
+                    </div>
+                  </div>
+                  <div class="suggestion-item">
+                    <div class="suggestion-icon">
+                      <i class="el-icon-magic-stick"></i>
+                    </div>
+                    <div class="suggestion-text">
+                      <div class="suggestion-title">设备维护提醒</div>
+                      <div class="suggestion-desc">建议对B区设备进行检修</div>
+                    </div>
+                  </div>
+                </div>
+                <button class="view-all-suggestions">查看全部建议</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 快速操作 -->
-        <div class="quick-actions">
-          <div class="actions-header">
-            <h3>快速操作</h3>
+        <!-- 右侧信息栏 -->
+        <div class="sidebar">
+          <!-- 设备概览 -->
+          <div class="widget device-overview">
+            <div class="widget-header">
+              <h4>设备概览</h4>
+              <span class="widget-subtitle">实时统计</span>
+            </div>
+            <div class="overview-stats">
+              <div class="stat-card total">
+                <div class="stat-value">15,680</div>
+                <div class="stat-label">设备总数</div>
+                <div class="stat-change up">+256 今日新增</div>
+              </div>
+              <div class="stat-card online">
+                <div class="stat-value">15,392</div>
+                <div class="stat-label">在线设备</div>
+                <div class="stat-change">98.2% 在线率</div>
+              </div>
+            </div>
+            <div class="device-list">
+              <div class="device-item" v-for="item in deviceOverview" :key="item.type">
+                <div class="device-icon" :class="item.type">
+                  <i :class="item.icon"></i>
+                </div>
+                <div class="device-info">
+                  <div class="device-name">{{ item.label }}</div>
+                  <div class="device-count">{{ item.value }}</div>
+                </div>
+                <div class="device-status" :class="item.statusType">
+                  {{ item.status }}
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div class="actions-grid">
-            <div class="action-item">
-              <div class="action-icon recharge">
-                <i class="icon-recharge"></i>
-              </div>
-              <span class="action-name">租户充值</span>
-            </div>
-            
-            <div class="action-item">
-              <div class="action-icon bill">
-                <i class="icon-bill"></i>
-              </div>
-              <span class="action-name">生成账单</span>
-            </div>
-            
-            <div class="action-item">
-              <div class="action-icon device">
-                <i class="icon-device"></i>
-              </div>
-              <span class="action-name">设备管理</span>
-            </div>
-            
-            <div class="action-item">
-              <div class="action-icon report">
-                <i class="icon-report"></i>
-              </div>
-              <span class="action-name">数据报表</span>
-            </div>
 
-            <div class="action-item">
-              <div class="action-icon maintenance">
-                <i class="icon-maintenance"></i>
+          <!-- 待办提醒 -->
+          <div class="widget todo-widget">
+            <div class="widget-header">
+              <h4>待办事项</h4>
+              <div class="todo-summary">
+                <span class="pending-count">{{ pendingTodos }}项待处理</span>
               </div>
-              <span class="action-name">设备维护</span>
             </div>
+            <div class="todo-list">
+              <div class="todo-item" v-for="todo in filteredTodos" :key="todo.id" 
+                   :class="{ completed: todo.completed, urgent: todo.priority === 'urgent' }">
+                <div class="todo-check" @click="toggleTodo(todo.id)">
+                  <i v-if="todo.completed" class="el-icon-check"></i>
+                </div>
+                <div class="todo-content">
+                  <div class="todo-text">{{ todo.text }}</div>
+                  <div class="todo-meta">
+                    <span class="todo-category">{{ todo.category }}</span>
+                    <span class="todo-time">{{ todo.time }}</span>
+                  </div>
+                </div>
+                <div class="todo-priority" :class="todo.priority"></div>
+              </div>
+            </div>
+          </div>
 
-            <div class="action-item">
-              <div class="action-icon audit">
-                <i class="icon-audit"></i>
-              </div>
-              <span class="action-name">财务审核</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 设备状态 -->
-        <div class="device-status">
-          <div class="status-header">
-            <h3>设备状态</h3>
-          </div>
-          
-          <div class="status-list">
-            <div class="status-item">
-              <div class="status-indicator normal"></div>
-              <div class="status-content">
-                <div class="status-title">A栋电表组</div>
-                <div class="status-desc">32台在线 / 2台离线</div>
+          <!-- 系统状态 -->
+          <div class="widget system-status">
+            <div class="widget-header">
+              <h4>系统状态</h4>
+              <div class="status-indicator online">
+                <span class="dot"></span>
+                运行正常
               </div>
             </div>
-            
-            <div class="status-item">
-              <div class="status-indicator warning"></div>
-              <div class="status-content">
-                <div class="status-title">B栋水表组</div>
-                <div class="status-desc">28台在线 / 4台离线</div>
+            <div class="status-grid">
+              <div class="status-item" v-for="service in systemServices" :key="service.id">
+                <div class="service-name">{{ service.name }}</div>
+                <div class="service-status" :class="service.status">
+                  <span class="status-dot"></span>
+                  {{ getServiceStatus(service.status) }}
+                </div>
               </div>
-            </div>
-            
-            <div class="status-item">
-              <div class="status-indicator normal"></div>
-              <div class="status-content">
-                <div class="status-title">C栋电表组</div>
-                <div class="status-desc">45台在线 / 1台离线</div>
-              </div>
-            </div>
-            
-            <div class="status-item">
-              <div class="status-indicator alarm"></div>
-              <div class="status-content">
-                <div class="status-title">D栋综合组</div>
-                <div class="status-desc">30台在线 / 8台异常</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 系统信息 -->
-        <div class="system-info">
-          <div class="info-header">
-            <h3>系统信息</h3>
-          </div>
-          
-          <div class="info-content">
-            <div class="info-item">
-              <span class="info-label">系统版本</span>
-              <span class="info-value">v2.3.1</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">在线用户</span>
-              <span class="info-value">156人</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">数据更新</span>
-              <span class="info-value">2分钟前</span>
             </div>
           </div>
         </div>
@@ -463,142 +370,917 @@
 </template>
 
 <script>
+// 在文件顶部引入 echarts
+import * as echarts from 'echarts'
+
 export default {
-  name: 'MeterOADashboard',
+  name: 'IoTDashboard',
   data() {
     return {
-      currentDate: new Date(),
-      notifications: [
+      timeRange: 'realtime',
+      activeTrendTab: 'online',
+      quickOperations: [
+        { id: 1, label: '设备巡检', icon: 'el-icon-search', type: 'primary' },
+        { id: 2, label: '告警处理', icon: 'el-icon-warning-outline', type: 'warning' },
+        { id: 3, label: '数据分析', icon: 'el-icon-data-analysis', type: 'info' },
+        { id: 4, label: '远程控制', icon: 'el-icon-connection', type: 'success' },
+        { id: 5, label: '运维管理', icon: 'el-icon-setting', type: 'secondary' },
+        { id: 6, label: '报表生成', icon: 'el-icon-document', type: 'info' },
+        { id: 7, label: '系统配置', icon: 'el-icon-setting', type: 'secondary' }
+      ],
+      coreMetrics: [
+        {
+          key: 'total',
+          label: '设备总数',
+          value: '15,680',
+          subtitle: '台设备接入',
+          trend: 'up',
+          trendIcon: 'el-icon-top',
+          change: '+2.5%',
+          icon: 'el-icon-cpu',
+          iconClass: 'blue'
+        },
+        {
+          key: 'online',
+          label: '在线率',
+          value: '98.2%',
+          subtitle: '正常运行中',
+          trend: 'up',
+          trendIcon: 'el-icon-top',
+          change: '+0.3%',
+          icon: 'el-icon-connection',
+          iconClass: 'green'
+        },
+        {
+          key: 'energy',
+          label: '今日能耗',
+          value: '2,456',
+          subtitle: 'kWh',
+          trend: 'down',
+          trendIcon: 'el-icon-bottom',
+          change: '-5.1%',
+          icon: 'el-icon-data-analysis',
+          iconClass: 'orange'
+        },
+        {
+          key: 'alert',
+          label: '活跃告警',
+          value: '23',
+          subtitle: '待处理',
+          trend: 'down',
+          trendIcon: 'el-icon-bottom',
+          change: '-12.5%',
+          icon: 'el-icon-warning',
+          iconClass: 'red'
+        }
+      ],
+      trendTabs: [
+        { key: 'online', label: '在线率' },
+        { key: 'energy', label: '能耗' },
+        { key: 'alert', label: '告警' }
+      ],
+      deviceOverview: [
+        { type: 'electric', label: '智能电表', value: '5,680', status: '98.5%在线', statusType: 'excellent', icon: 'el-icon-lightning' },
+        { type: 'water', label: '智能水表', value: '2,890', status: '97.8%在线', statusType: 'good', icon: 'el-icon-coffee-cup' },
+        { type: 'hvac', label: '空调系统', value: '1,245', status: '96.2%在线', statusType: 'good', icon: 'el-icon-wind-power' },
+        { type: 'lighting', label: '照明设备', value: '3,150', status: '99.1%在线', statusType: 'excellent', icon: 'el-icon-light-rain' },
+        { type: 'security', label: '安防监控', value: '890', status: '94.5%在线', statusType: 'warning', icon: 'el-icon-view' },
+        { type: 'charging', label: '充电桩', value: '456', status: '92.3%在线', statusType: 'warning', icon: 'el-icon-loading' }
+      ],
+      todoItems: [
         {
           id: 1,
-          title: '租户充值成功通知',
-          desc: 'A栋201租户充值1000元，余额2580元',
+          text: 'A栋301电表功率异常，需立即处理',
+          category: '设备故障',
           time: '5分钟前',
-          type: 'urgent'
+          priority: 'urgent',
+          completed: false
         },
         {
           id: 2,
-          title: '设备月租服务费欠费通知',
-          desc: 'B栋305电表月租费欠费320元，请及时处理',
-          time: '15分钟前',
-          type: 'warning'
+          text: '智能照明系统定时策略需要优化',
+          category: '系统优化',
+          time: '1小时前',
+          priority: 'normal',
+          completed: false
+        },
+        {
+          id: 3,
+          text: 'B区水表数据采集异常排查',
+          category: '数据问题',
+          time: '2小时前',
+          priority: 'normal',
+          completed: false
+        },
+        {
+          id: 4,
+          text: '充电桩费率参数更新完成',
+          category: '参数配置',
+          time: '昨天',
+          priority: 'low',
+          completed: true
         }
       ],
-      deviceAlerts: [
-        {
-          id: 1,
-          title: '电表功率超限',
-          location: 'A栋301',
-          value: '功率15.2KW',
-          time: '刚刚',
-          type: 'alarm'
-        },
-        {
-          id: 2,
-          title: '电表分闸告警',
-          location: 'C栋108',
-          value: '自动分闸',
-          time: '2分钟前',
-          type: 'alarm'
-        }
+      systemServices: [
+        { id: 1, name: '数据采集服务', status: 'online' },
+        { id: 2, name: '设备控制服务', status: 'online' },
+        { id: 3, name: '告警处理服务', status: 'online' },
+        { id: 4, name: 'API网关', status: 'maintenance' }
       ],
-      tenants: [
-        {
-          id: 1,
-          name: '张三',
-          room: 'A栋301室',
-          electric: '正常',
-          water: '正常',
-          balance: 1250,
-          status: 'normal'
-        },
-        {
-          id: 2,
-          name: '李四',
-          room: 'B栋205室',
-          electric: '欠费',
-          water: '正常',
-          balance: -50,
-          status: 'debt'
-        }
-      ]
+      resizeObserver: null
     }
   },
-  
+  computed: {
+    pendingTodos() {
+      return this.todoItems.filter(todo => !todo.completed).length
+    },
+    filteredTodos() {
+      return this.todoItems
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.initCharts()
+    })
+    
+    window.addEventListener('resize', this.handleResize)
+    
+    this.$nextTick(() => {
+      if (window.ResizeObserver) {
+        this.resizeObserver = new ResizeObserver(this.handleResize);
+        const mainContent = this.$el.querySelector('.main-layout');
+        if (mainContent) {
+          this.resizeObserver.observe(mainContent);
+        }
+      }
+      
+      this.$bus && this.$bus.$on('menu-collapse', this.handleMenuToggle);
+      this.$root.$on && this.$root.$on('sidebar-collapse', this.handleMenuToggle);
+    });
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize)
+    
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect()
+      this.resizeObserver = null
+    }
+    
+    this.$bus && this.$bus.$off('menu-collapse', this.handleMenuToggle)
+    this.$root.$off && this.$root.$off('sidebar-collapse', this.handleMenuToggle)
+    
+    if (this.statusChartInstance) this.statusChartInstance.dispose()
+    if (this.typeChartInstance) this.typeChartInstance.dispose()
+    if (this.trendChartInstance) this.trendChartInstance.dispose()
+  },
   methods: {
-    handleNotificationClick(notification) {
-      console.log('Notification clicked:', notification);
+    initCharts() {
+      this.initStatusChart()
+      this.initTypeChart()
+      this.initTrendChart()
     },
     
-    handleDeviceClick(device) {
-      console.log('Device clicked:', device);
+    initStatusChart() {
+      if (!this.$refs.statusChart) return
+      
+      const echarts = window.echarts || require('echarts')
+      const chart = echarts.init(this.$refs.statusChart)
+      this.statusChartInstance = chart
+      
+      const option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          trigger: 'item'
+        },
+        radar: {
+          indicator: [
+            { name: '运行效率', max: 100 },
+            { name: '响应速度', max: 100 },
+            { name: '稳定性', max: 100 },
+            { name: '能效比', max: 100 },
+            { name: '安全性', max: 100 }
+          ],
+          center: ['50%', '50%'],
+          radius: '70%',
+          axisName: {
+            color: '#6b7280',
+            fontSize: 11
+          },
+          splitLine: {
+            lineStyle: {
+              color: '#e2e8f0'
+            }
+          },
+          splitArea: {
+            show: true,
+            areaStyle: {
+              color: ['#f8fafc', '#f1f5f9']
+            }
+          },
+          axisLine: {
+            lineStyle: {
+              color: '#d1d5db'
+            }
+          }
+        },
+        series: [{
+          type: 'radar',
+          data: [
+            {
+              value: [92, 88, 95, 85, 96],
+              name: '优秀设备',
+              itemStyle: {
+                color: '#67c23a'
+              },
+              areaStyle: {
+                color: 'rgba(103, 194, 58, 0.2)'
+              }
+            },
+            {
+              value: [78, 75, 80, 72, 85],
+              name: '良好设备',
+              itemStyle: {
+                color: '#409eff'
+              },
+              areaStyle: {
+                color: 'rgba(64, 158, 255, 0.2)'
+              }
+            },
+            {
+              value: [65, 60, 68, 58, 70],
+              name: '预警设备',
+              itemStyle: {
+                color: '#e6a23c'
+              },
+              areaStyle: {
+                color: 'rgba(230, 162, 60, 0.2)'
+              }
+            },
+            {
+              value: [45, 40, 50, 35, 48],
+              name: '故障设备',
+              itemStyle: {
+                color: '#f56c6c'
+              },
+              areaStyle: {
+                color: 'rgba(245, 108, 108, 0.2)'
+              }
+            }
+          ]
+        }]
+      }
+      
+      chart.setOption(option)
     },
     
-    handleTenantClick(tenant) {
-      console.log('Tenant clicked:', tenant);
+    initTypeChart() {
+      if (!this.$refs.typeChart) return
+      
+      const echarts = window.echarts || require('echarts')
+      const chart = echarts.init(this.$refs.typeChart)
+      this.typeChartInstance = chart
+      
+      const option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          trigger: 'item',
+          triggerOn: 'mousemove',
+          formatter: function(params) {
+            if (params.dataType === 'node') {
+              return `${params.name}: ${params.value}kWh`
+            } else {
+              return `${params.sourceName} → ${params.targetName}<br/>能耗: ${params.value}kWh`
+            }
+          }
+        },
+        series: {
+          type: 'sankey',
+          layout: 'none',
+          emphasis: {
+            focus: 'adjacency'
+          },
+          nodeAlign: 'left',
+          nodeGap: 20,
+          nodeWidth: 15,
+          itemStyle: {
+            borderWidth: 1,
+            borderColor: '#fff'
+          },
+          lineStyle: {
+            color: 'gradient',
+            curveness: 0.5
+          },
+          label: {
+            fontSize: 11,
+            color: '#333',
+            fontWeight: 'normal'
+          },
+          data: [
+            { name: '总能耗', value: 2456, itemStyle: { color: '#67c23a' } },
+            { name: '照明系统', value: 856, itemStyle: { color: '#e6a23c' } },
+            { name: '空调系统', value: 742, itemStyle: { color: '#409eff' } },
+            { name: '电力设备', value: 568, itemStyle: { color: '#909399' } },
+            { name: '安防监控', value: 185, itemStyle: { color: '#f56c6c' } },
+            { name: '其他设备', value: 105, itemStyle: { color: '#c0c4cc' } },
+            { name: 'LED灯具', value: 486, itemStyle: { color: '#fad337' } },
+            { name: '应急照明', value: 215, itemStyle: { color: '#f4d03f' } },
+            { name: '景观照明', value: 155, itemStyle: { color: '#f7dc6f' } },
+            { name: '中央空调', value: 456, itemStyle: { color: '#5dade2' } },
+            { name: '分体空调', value: 186, itemStyle: { color: '#85c1e9' } },
+            { name: '新风系统', value: 100, itemStyle: { color: '#aed6f1' } },
+            { name: '电梯系统', value: 268, itemStyle: { color: '#b2babb' } },
+            { name: '充电桩', value: 185, itemStyle: { color: '#d5dbdb' } },
+            { name: '配电设备', value: 115, itemStyle: { color: '#eaeded' } },
+          ],
+          links: [
+            { source: '总能耗', target: '照明系统', value: 856 },
+            { source: '总能耗', target: '空调系统', value: 742 },
+            { source: '总能耗', target: '电力设备', value: 568 },
+            { source: '总能耗', target: '安防监控', value: 185 },
+            { source: '总能耗', target: '其他设备', value: 105 },
+            { source: '照明系统', target: 'LED灯具', value: 486 },
+            { source: '照明系统', target: '应急照明', value: 215 },
+            { source: '照明系统', target: '景观照明', value: 155 },
+            { source: '空调系统', target: '中央空调', value: 456 },
+            { source: '空调系统', target: '分体空调', value: 186 },
+            { source: '空调系统', target: '新风系统', value: 100 },
+            { source: '电力设备', target: '电梯系统', value: 268 },
+            { source: '电力设备', target: '充电桩', value: 185 },
+            { source: '电力设备', target: '配电设备', value: 115 },
+          ]
+        }
+      }
+      
+      chart.setOption(option)
+    },
+    
+    initTrendChart() {
+      if (!this.$refs.trendChart) return
+      
+      const echarts = window.echarts || require('echarts')
+      const chart = echarts.init(this.$refs.trendChart)
+      this.trendChartInstance = chart
+      
+      const hours = []
+      const data = []
+      for (let i = 0; i < 24; i++) {
+        hours.push(`${i}:00`)
+        data.push(Math.floor(Math.random() * 20) + 80)
+      }
+      
+      const option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'line',
+            lineStyle: {
+              color: '#e2e8f0'
+            }
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '3%',
+          bottom: '3%',
+          top: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          boundaryGap: false,
+          data: hours,
+          axisLabel: {
+            color: '#64748b',
+            fontSize: 11,
+            interval: 5
+          },
+          axisLine: {
+            lineStyle: { color: '#e2e8f0' }
+          }
+        },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          max: 100,
+          axisLabel: {
+            color: '#64748b',
+            fontSize: 11,
+            formatter: '{value}%'
+          },
+          splitLine: {
+            lineStyle: { 
+              color: '#f1f5f9',
+              type: 'dashed'
+            }
+          },
+          axisLine: {
+            lineStyle: { color: '#e2e8f0' }
+          }
+        },
+        series: [{
+          type: 'line',
+          data: data,
+          smooth: true,
+          symbol: 'none',
+          lineStyle: {
+            color: '#67c23a',
+            width: 2
+          },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(103, 194, 58, 0.2)' },
+              { offset: 1, color: 'rgba(103, 194, 58, 0.05)' }
+            ])
+          }
+        }]
+      }
+      
+      chart.setOption(option)
+    },
+    
+    handleResize() {
+      this.$nextTick(() => {
+        if (this.statusChartInstance) this.statusChartInstance.resize()
+        if (this.typeChartInstance) this.typeChartInstance.resize()
+        if (this.trendChartInstance) this.trendChartInstance.resize()
+      })
     },
 
-    handleQuickAction(action) {
-      console.log('Quick action:', action);
+    handleMenuToggle() {
+      setTimeout(() => {
+        this.handleResize()
+      }, 300)
+    },
+    
+    switchTrendTab(tab) {
+      this.activeTrendTab = tab
+      this.initTrendChart()
+    },
+    
+    executeOperation(id) {
+      console.log('执行操作:', id)
+    },
+    
+    viewAnalysis() {
+      console.log('查看智能分析')
+    },
+    
+    refreshData() {
+      console.log('刷新数据')
+      this.initCharts()
+    },
+    
+    toggleTodo(id) {
+      const todo = this.todoItems.find(item => item.id === id)
+      if (todo) {
+        todo.completed = !todo.completed
+      }
+    },
+    
+    getStatusText(status) {
+      const statusMap = {
+        completed: '已完成',
+        resolved: '已解决',
+        processing: '处理中',
+        pending: '待处理'
+      }
+      return statusMap[status] || status
+    },
+    
+    getServiceStatus(status) {
+      const statusMap = {
+        online: '运行中',
+        offline: '离线',
+        maintenance: '维护中',
+        error: '异常'
+      }
+      return statusMap[status] || status
     }
   }
 }
 </script>
+
 <style lang="scss" scoped>
-.oa-dashboard {
-  background: #f5f6fa;
+.iot-dashboard {
+  background: #f8fafc;
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-  padding: 24px;
+  position: relative;
+}
+
+// 演示模式标识
+.demo-badge {
+  position: fixed;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: slideInRight 0.5s ease-out;
   
-  // 统计卡片区域
-  .stats-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr) 1.5fr;
-    gap: 20px;
-    margin-bottom: 24px;
+  .demo-badge-content {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    padding: 14px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 
+      0 10px 40px rgba(59, 130, 246, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+      0 0 30px rgba(59, 130, 246, 0.4);
+    position: relative;
+    overflow: hidden;
     
-    .stat-card {
-      background: white;
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 70%
+      );
+      animation: shimmer 3s infinite;
+    }
+    
+    .demo-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 8px;
-      padding: 24px;
       display: flex;
       align-items: center;
-      gap: 16px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      border: 1px solid #e5e7eb;
-      transition: box-shadow 0.2s ease;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
       
-      &:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      i {
+        animation: pulse 2s ease-in-out infinite;
+      }
+    }
+    
+    .demo-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      
+      .demo-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 0.5px;
       }
       
-      .stat-icon {
+      .demo-subtitle {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 600;
+        letter-spacing: 1px;
+      }
+    }
+    
+    .demo-pulse {
+      width: 8px;
+      height: 8px;
+      background: #fbbf24;
+      border-radius: 50%;
+      position: relative;
+      animation: pulse-dot 2s ease-in-out infinite;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        border: 2px solid #fbbf24;
+        border-radius: 50%;
+        animation: pulse-ring 2s ease-in-out infinite;
+      }
+    }
+  }
+  
+  .demo-tag {
+    background: rgba(59, 130, 246, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 8px 14px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #2563eb;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+    
+    i {
+      font-size: 14px;
+    }
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.dashboard-body {
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+// 快捷操作 - 优化图标背景色
+.quick-operations {
+  margin-bottom: 20px;
+  
+  .operations-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+    
+    .operation-item {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border-color: #d1d5db;
+      }
+      
+      .operation-icon {
         width: 48px;
         height: 48px;
-        border-radius: 6px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         
-        &.alarm {
-          background: #fef2f2;
-          color: #dc2626;
+        i {
+          font-size: 20px;
+        }
+      }
+      
+      .operation-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+        text-align: center;
+      }
+      
+      // B端简洁配色方案
+      &.primary .operation-icon {
+        background: #f3f4f6;
+        color: #1f2937;
+        border: 1px solid #e5e7eb;
+      }
+      
+      &.warning .operation-icon {
+        background: #fef3c7;
+        color: #d97706;
+        border: 1px solid #fbbf24;
+      }
+      
+      &.success .operation-icon {
+        background: #d1fae5;
+        color: #059669;
+        border: 1px solid #34d399;
+      }
+      
+      &.info .operation-icon {
+        background: #dbeafe;
+        color: #2563eb;
+        border: 1px solid #60a5fa;
+      }
+      
+      &.secondary .operation-icon {
+        background: #f9fafb;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+    }
+  }
+}
+
+// 主要布局
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  min-height: 0;
+}
+
+// 左侧主要区域
+.main-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// 监控面板
+.monitoring-panel {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      
+      h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+      }
+      
+      .data-source-info {
+        .update-indicator {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #67c23a;
+          font-size: 12px;
+          font-weight: 500;
+          
+          i {
+            animation: spin 2s linear infinite;
+          }
+        }
+      }
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      
+      .time-selector {
+        padding: 8px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: white;
+        font-size: 13px;
+        color: #374151;
+        cursor: pointer;
+        
+        &:hover {
+          border-color: #409eff;
+        }
+      }
+      
+      .refresh-btn {
+        width: 36px;
+        height: 36px;
+        background: #f9fafb;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: #409eff;
+          border-color: #409eff;
+          
+          i {
+            color: white;
+          }
         }
         
-        &.offline {
-          background: #fef3c7;
-          color: #d97706;
+        i {
+          font-size: 16px;
+          color: #6b7280;
         }
+      }
+    }
+  }
+  
+  // 核心指标 - 优化图标背景色
+  .metrics-overview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+    
+    .metric-card {
+      background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+      border: 1px solid #f0f0f0;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+      }
+      
+      .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid;
         
-        &.finance {
-          background: #eff6ff;
+        // B端配色优化
+        &.blue {
+          background: #f8fafc;
           color: #2563eb;
+          border-color: #e2e8f0;
         }
         
-        &.tenant {
-          background: #f0f9ff;
-          color: #0284c7;
+        &.green {
+          background: #f8fafc;
+          color: #059669;
+          border-color: #e2e8f0;
+        }
+        
+        &.orange {
+          background: #f8fafc;
+          color: #d97706;
+          border-color: #e2e8f0;
+        }
+        
+        &.red {
+          background: #f8fafc;
+          color: #dc2626;
+          border-color: #e2e8f0;
         }
         
         i {
@@ -606,898 +1288,897 @@ export default {
         }
       }
       
-      .stat-content {
-        h3 {
-          font-size: 14px;
-          font-weight: 500;
-          color: #6b7280;
-          margin: 0 0 4px 0;
+      .metric-content {
+        flex: 1;
+        
+        .metric-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+          
+          .metric-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+          }
+          
+          .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            
+            &.up {
+              color: #67c23a;
+            }
+            
+            &.down {
+              color: #f56c6c;
+            }
+            
+            i {
+              font-size: 12px;
+            }
+          }
         }
         
-        .stat-number {
-          font-size: 28px;
-          font-weight: 600;
+        .metric-value {
+          font-size: 24px;
+          font-weight: 700;
           color: #111827;
-          margin: 0 0 2px 0;
-          line-height: 1;
+          margin-bottom: 4px;
         }
         
-        .stat-label {
-          font-size: 12px;
+        .metric-subtitle {
+          font-size: 11px;
           color: #9ca3af;
         }
       }
     }
+  }
+  
+  // 图表容器
+  .charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
     
-    .revenue-card {
-      background: #374151;
-      border-radius: 8px;
-      padding: 24px;
-      color: white;
-      position: relative;
-      overflow: hidden;
-      border: 1px solid #4b5563;
-      
-      .revenue-icon {
-        font-size: 24px;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: #e5e7eb;
-      }
-      
-      .revenue-content {
-        h3 {
+    .chart-box {
+      .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        
+        h4 {
           font-size: 14px;
-          margin: 0 0 8px 0;
-          color: #d1d5db;
-          font-weight: 500;
-        }
-        
-        .revenue-amount {
-          font-size: 24px;
           font-weight: 600;
-          margin-bottom: 4px;
-          color: white;
+          color: #111827;
+          margin: 0;
         }
         
-        .revenue-growth {
-          font-size: 12px;
-          color: #10b981;
-          font-weight: 500;
+        .chart-legend {
+          display: flex;
+          gap: 12px;
+          
+          .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #6b7280;
+            
+            .legend-dot {
+              width: 8px;
+              height: 8px;
+              border-radius: 50%;
+              
+              &.excellent {
+                background: #67c23a;
+              }
+              
+              &.good {
+                background: #409eff;
+              }
+              
+              &.warning {
+                background: #e6a23c;
+              }
+              
+              &.error {
+                background: #f56c6c;
+              }
+              
+              &.source {
+                background: #67c23a;
+              }
+              
+              &.target {
+                background: #909399;
+              }
+            }
+          }
         }
       }
       
-      .revenue-chart {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 100px;
-        height: 40px;
-        opacity: 0.2;
+      .chart-canvas {
+        width: 100%;
+        height: 220px;
       }
     }
   }
   
-  // 主要内容区域
-  .main-content {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 24px;
-    
-    .left-content {
+  // 趋势图
+  .trend-section {
+    .chart-header {
       display: flex;
-      flex-direction: column;
-      gap: 24px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
       
-      // 系统通知
-      .notification-section {
-        background: white;
+      h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+      }
+      
+      .trend-tabs {
+        display: flex;
+        gap: 2px;
+        background: #f3f4f6;
+        padding: 3px;
         border-radius: 8px;
-        padding: 24px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        border: 1px solid #e5e7eb;
         
-        .section-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 20px;
+        .trend-tab {
+          padding: 8px 16px;
+          background: transparent;
+          border: none;
+          border-radius: 6px;
+          font-size: 12px;
+          color: #6b7280;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-weight: 500;
           
-          h3 {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 16px;
+          &.active {
+            background: white;
+            color: #409eff;
             font-weight: 600;
-            color: #111827;
-            margin: 0;
-            
-            i {
-              font-size: 16px;
-              color: #6b7280;
-            }
-            
-            .count {
-              background: #374151;
-              color: white;
-              padding: 2px 8px;
-              border-radius: 4px;
-              font-size: 11px;
-              font-weight: 500;
-            }
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           }
           
-          i.icon-arrow-right {
-            color: #9ca3af;
-            cursor: pointer;
-            transition: color 0.2s ease;
-            
-            &:hover {
-              color: #6b7280;
-            }
-          }
-        }
-        
-        .notification-list {
-          .notification-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 16px 0;
-            border-bottom: 1px solid #f3f4f6;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            border-radius: 6px;
-            margin: 0 -12px;
-            padding: 16px 12px;
-            
-            &:hover {
-              background: #f9fafb;
-            }
-            
-            &:last-child {
-              border-bottom: none;
-            }
-            
-            .notification-icon {
-              width: 36px;
-              height: 36px;
-              border-radius: 6px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              flex-shrink: 0;
-              
-              i {
-                font-size: 16px;
-              }
-            }
-            
-            &.urgent .notification-icon {
-              background: #dcfce7;
-              color: #16a34a;
-            }
-            
-            &.warning .notification-icon {
-              background: #fef3c7;
-              color: #d97706;
-            }
-            
-            &.info .notification-icon {
-              background: #eff6ff;
-              color: #2563eb;
-            }
-            
-            &.success .notification-icon {
-              background: #f0f9ff;
-              color: #0284c7;
-            }
-            
-            .notification-content {
-              flex: 1;
-              
-              .notification-title {
-                font-size: 14px;
-                font-weight: 500;
-                color: #111827;
-                margin-bottom: 4px;
-              }
-              
-              .notification-desc {
-                font-size: 13px;
-                color: #6b7280;
-                line-height: 1.4;
-                margin-bottom: 4px;
-              }
-              
-              .notification-time {
-                font-size: 12px;
-                color: #9ca3af;
-              }
-            }
-          }
-        }
-      }
-      
-      // 设备监控和财务管理
-      .monitor-section {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-        
-        .monitor-column, .finance-column {
-          background: white;
-          border-radius: 8px;
-          padding: 24px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-          border: 1px solid #e5e7eb;
-          
-          .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            
-            h3 {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              font-size: 16px;
-              font-weight: 600;
-              color: #111827;
-              margin: 0;
-              
-              i {
-                font-size: 16px;
-                color: #6b7280;
-              }
-            }
-            
-            i.icon-arrow-right {
-              color: #9ca3af;
-              cursor: pointer;
-              transition: color 0.2s ease;
-              
-              &:hover {
-                color: #6b7280;
-              }
-            }
-          }
-          
-          .monitor-list {
-            .monitor-item {
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              padding: 12px 0;
-              border-bottom: 1px solid #f9fafb;
-              cursor: pointer;
-              transition: background-color 0.2s ease;
-              border-radius: 4px;
-              margin: 0 -8px;
-              padding: 12px 8px;
-              
-              &:hover {
-                background: #f9fafb;
-              }
-              
-              &:last-child {
-                border-bottom: none;
-              }
-              
-              .monitor-status {
-                width: 6px;
-                height: 6px;
-                border-radius: 50%;
-                flex-shrink: 0;
-              }
-              
-              &.alarm .monitor-status {
-                background: #dc2626;
-              }
-              
-              &.warning .monitor-status {
-                background: #d97706;
-              }
-              
-              &.success .monitor-status {
-                background: #16a34a;
-              }
-              
-              .monitor-content {
-                flex: 1;
-                
-                .monitor-title {
-                  display: block;
-                  font-size: 13px;
-                  font-weight: 500;
-                  color: #111827;
-                  margin-bottom: 2px;
-                }
-                
-                .monitor-desc {
-                  font-size: 12px;
-                  color: #6b7280;
-                }
-              }
-              
-              .monitor-time {
-                font-size: 11px;
-                color: #9ca3af;
-              }
-            }
-          }
-          
-          .finance-list {
-            .finance-item {
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              padding: 12px 0;
-              border-bottom: 1px solid #f9fafb;
-              cursor: pointer;
-              transition: background-color 0.2s ease;
-              border-radius: 4px;
-              margin: 0 -8px;
-              padding: 12px 8px;
-              
-              &:hover {
-                background: #f9fafb;
-              }
-              
-              &:last-child {
-                border-bottom: none;
-              }
-              
-              .finance-type {
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 11px;
-                font-weight: 500;
-                flex-shrink: 0;
-                border: 1px solid;
-                
-                &.pending {
-                  background: #fffbeb;
-                  color: #d97706;
-                  border-color: #fed7aa;
-                }
-                
-                &.processing {
-                  background: #eff6ff;
-                  color: #2563eb;
-                  border-color: #bfdbfe;
-                }
-                
-                &.completed {
-                  background: #f0fdf4;
-                  color: #16a34a;
-                  border-color: #bbf7d0;
-                }
-              }
-              
-              .finance-content {
-                flex: 1;
-                
-                .finance-title {
-                  display: block;
-                  font-size: 13px;
-                  color: #111827;
-                  margin-bottom: 2px;
-                  font-weight: 500;
-                }
-                
-                .finance-amount {
-                  font-size: 12px;
-                  font-weight: 600;
-                  color: #16a34a;
-                }
-              }
-            }
-          }
-        }
-      }
-      
-      // 租户管理
-      .tenant-section {
-        background: white;
-        border-radius: 8px;
-        padding: 24px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        border: 1px solid #e5e7eb;
-        
-        .section-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 20px;
-          
-          h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #111827;
-            margin: 0;
-          }
-          
-          i {
-            color: #9ca3af;
-            cursor: pointer;
-            transition: color 0.2s ease;
-            
-            &:hover {
-              color: #6b7280;
-            }
-          }
-        }
-        
-        .tenant-list {
-          .tenant-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 0;
-            border-bottom: 1px solid #f3f4f6;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            border-radius: 6px;
-            margin: 0 -12px;
-            padding: 16px 12px;
-            
-            &:hover {
-              background: #f9fafb;
-            }
-            
-            &:last-child {
-              border-bottom: none;
-            }
-            
-            .tenant-avatar {
-              width: 44px;
-              height: 44px;
-              border-radius: 6px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 12px;
-              font-weight: 600;
-              color: white;
-              background: #6b7280;
-              
-              &.debt {
-                background: #dc2626;
-              }
-              
-              &.offline {
-                background: #d97706;
-              }
-            }
-            
-            .tenant-info {
-              flex: 1;
-              
-              h4 {
-                font-size: 14px;
-                font-weight: 500;
-                color: #111827;
-                margin: 0 0 4px 0;
-              }
-              
-              p {
-                font-size: 12px;
-                color: #6b7280;
-                margin: 0;
-              }
-            }
-            
-            .tenant-status {
-              padding: 4px 8px;
-              border-radius: 4px;
-              font-size: 11px;
-              font-weight: 500;
-              border: 1px solid;
-              
-              &.normal {
-                background: #f0fdf4;
-                color: #16a34a;
-                border-color: #bbf7d0;
-              }
-              
-              &.debt {
-                background: #fef2f2;
-                color: #dc2626;
-                border-color: #fecaca;
-              }
-              
-              &.offline {
-                background: #fffbeb;
-                color: #d97706;
-                border-color: #fed7aa;
-              }
-            }
-          }
-        }
-      }
-      
-      // 数据统计
-      .stats-section {
-        display: grid;
-        grid-template-columns: 280px 1fr;
-        gap: 24px;
-        
-        .stats-card {
-          background: white;
-          border-radius: 8px;
-          padding: 24px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-          border: 1px solid #e5e7eb;
-          text-align: center;
-          
-          .stats-illustration {
-            margin-bottom: 16px;
-            
-            i {
-              font-size: 40px;
-              color: #6b7280;
-            }
-          }
-          
-          h4 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #111827;
-            margin: 0 0 16px 0;
-          }
-          
-          .stats-chart {
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            gap: 6px;
-            height: 80px;
-            
-            .chart-bar {
-              width: 12px;
-              background: #6b7280;
-              border-radius: 2px;
-              transition: background-color 0.2s ease;
-              
-              &:hover {
-                background: #374151;
-              }
-            }
-          }
-        }
-        
-        .activity-list {
-          background: white;
-          border-radius: 8px;
-          padding: 24px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-          border: 1px solid #e5e7eb;
-          
-          .activity-item {
-            padding: 16px 0;
-            border-bottom: 1px solid #f3f4f6;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            border-radius: 4px;
-            margin: 0 -12px;
-            padding: 16px 12px;
-            
-            &:hover {
-              background: #f9fafb;
-            }
-            
-            &:last-child {
-              border-bottom: none;
-            }
-            
-            .activity-content {
-              .activity-text {
-                display: block;
-                font-size: 13px;
-                color: #111827;
-                line-height: 1.5;
-                margin-bottom: 8px;
-              }
-              
-              .activity-stats {
-                span {
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                  font-size: 12px;
-                  color: #6b7280;
-                  cursor: pointer;
-                  transition: color 0.2s ease;
-                  
-                  &:hover {
-                    color: #374151;
-                  }
-                  
-                  i {
-                    font-size: 12px;
-                  }
-                }
-              }
-            }
+          &:hover:not(.active) {
+            color: #374151;
           }
         }
       }
     }
     
-    // 右侧边栏
-    .right-sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+    .trend-chart {
+      width: 100%;
+      height: 220px;
+    }
+  }
+}
+
+// 智能分析区域 - 优化图标背景色
+.analytics-section {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  margin-bottom: 0;
+  
+  .analytics-left {
+    .analytics-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 24px;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
       
-      // 今日概览
-      .today-overview {
-        background: white;
-        border-radius: 8px;
-        padding: 24px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        border: 1px solid #e5e7eb;
+      .card-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+        position: relative;
+        z-index: 2;
         
-        .overview-header {
+        .header-icon {
+          width: 52px;
+          height: 52px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          margin-bottom: 20px;
+          justify-content: center;
+          color: #2563eb;
+          
+          i {
+            font-size: 22px;
+          }
+        }
+        
+        .header-text {
+          flex: 1;
           
           h3 {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             color: #111827;
-            margin: 0;
+            margin: 0 0 6px 0;
           }
           
-          .date-info {
-            span {
-              font-size: 12px;
+          p {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+          }
+        }
+      }
+      
+      .analytics-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+        position: relative;
+        z-index: 2;
+        
+        .metric-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 18px;
+          background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+          border-radius: 10px;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            transform: translateY(-2px);
+          }
+          
+          .metric-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            color: #374151;
+            border: 1px solid #e2e8f0;
+            
+            i {
+              font-size: 16px;
+            }
+          }
+          
+          .metric-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            
+            .metric-value {
+              font-size: 18px;
+              font-weight: 700;
+              color: #111827;
+            }
+            
+            .metric-label {
+              font-size: 11px;
               color: #6b7280;
             }
           }
         }
+      }
+      
+      .quick-insights {
+        position: relative;
+        z-index: 2;
         
-        .overview-stats {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
+        .insight-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 16px;
           
-          .overview-item {
-            text-align: center;
-            padding: 16px;
-            background: #f9fafb;
-            border-radius: 6px;
-            border: 1px solid #f3f4f6;
-            transition: border-color 0.2s ease;
+          i {
+            color: #d97706;
+            font-size: 18px;
+          }
+        }
+        
+        .insight-content {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .insight-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          background: rgba(64, 158, 255, 0.05);
+          border-radius: 8px;
+          border-left: 3px solid #409eff;
+          
+          .insight-text {
+            font-size: 12px;
+            color: #374151;
+            flex: 1;
+          }
+          
+          .insight-action {
+            font-size: 11px;
+            color: #409eff;
+            cursor: pointer;
+            font-weight: 600;
             
             &:hover {
-              border-color: #e5e7eb;
+              text-decoration: underline;
+            }
+          }
+        }
+      }
+      
+      // 装饰背景
+      .analytics-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+        
+        .bg-pattern {
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 200px;
+          height: 200px;
+          opacity: 0.3;
+        }
+        
+        .floating-elements {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          
+          .floating-dot {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #409eff, #1d4ed8);
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+            
+            &.dot-1 {
+              width: 8px;
+              height: 8px;
+              top: 20%;
+              right: 15%;
+              animation-delay: 0s;
             }
             
-            .overview-number {
-              font-size: 20px;
+            &.dot-2 {
+              width: 6px;
+              height: 6px;
+              top: 60%;
+              right: 25%;
+              animation-delay: 2s;
+            }
+            
+            &.dot-3 {
+              width: 10px;
+              height: 10px;
+              top: 80%;
+              right: 10%;
+              animation-delay: 4s;
+            }
+          }
+          
+          .floating-circuit {
+            position: absolute;
+            top: 10%;
+            right: 5%;
+            width: 60px;
+            height: 60px;
+            opacity: 0.15;
+          }
+        }
+      }
+    }
+  }
+  
+  .analytics-right {
+    .suggestion-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 20px;
+      height: 100%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      
+      .suggestion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        
+        h4 {
+          font-size: 15px;
+          font-weight: 600;
+          color: #111827;
+          margin: 0;
+        }
+        
+        .suggestion-count {
+          font-size: 12px;
+          color: #059669;
+          background: #d1fae5;
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-weight: 600;
+        }
+      }
+      
+      .suggestion-list {
+        margin-bottom: 16px;
+        
+        .suggestion-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 14px 0;
+          border-bottom: 1px solid #f3f4f6;
+          
+          &:last-child {
+            border-bottom: none;
+          }
+          
+          .suggestion-icon {
+            width: 36px;
+            height: 36px;
+            background: #f8fafc;
+            color: #6b7280;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            
+            i {
+              font-size: 16px;
+            }
+          }
+          
+          .suggestion-text {
+            flex: 1;
+            
+            .suggestion-title {
+              font-size: 13px;
               font-weight: 600;
               color: #111827;
               margin-bottom: 4px;
             }
             
-            .overview-label {
-              font-size: 11px;
-              color: #6b7280;
-              font-weight: 500;
-            }
-          }
-        }
-      }
-      
-      // 快速操作
-      .quick-actions {
-        background: white;
-        border-radius: 8px;
-        padding: 24px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        border: 1px solid #e5e7eb;
-        
-        .actions-header {
-          margin-bottom: 20px;
-          
-          h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #111827;
-            margin: 0;
-          }
-        }
-        
-        .actions-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-          
-          .action-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid #f3f4f6;
-            
-            &:hover {
-              border-color: #e5e7eb;
-              background: #f9fafb;
-            }
-            
-            .action-icon {
-              width: 36px;
-              height: 36px;
-              border-radius: 6px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-bottom: 8px;
-              
-              &.recharge {
-                background: #f0fdf4;
-                color: #16a34a;
-              }
-              
-              &.bill {
-                background: #eff6ff;
-                color: #2563eb;
-              }
-              
-              &.device {
-                background: #fffbeb;
-                color: #d97706;
-              }
-              
-              &.report {
-                background: #f8fafc;
-                color: #64748b;
-              }
-              
-              &.maintenance {
-                background: #fef2f2;
-                color: #dc2626;
-              }
-              
-              &.audit {
-                background: #f0f9ff;
-                color: #0284c7;
-              }
-              
-              i {
-                font-size: 16px;
-              }
-            }
-            
-            .action-name {
+            .suggestion-desc {
               font-size: 12px;
-              color: #111827;
-              text-align: center;
-              font-weight: 500;
+              color: #6b7280;
             }
           }
         }
       }
       
-      // 设备状态
+      .view-all-suggestions {
+        width: 100%;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        color: #374151;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: linear-gradient(135deg, #409eff, #357abd);
+          color: white;
+          border-color: #409eff;
+        }
+      }
+    }
+  }
+}
+
+// 右侧边栏 - 优化图标背景色
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+// 通用组件样式
+.widget {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  
+  .widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #111827;
+      margin: 0;
+    }
+    
+    .widget-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+    }
+  }
+}
+
+// 设备概览 - 优化图标背景色
+.device-overview {
+  .overview-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+    
+    .stat-card {
+      padding: 18px;
+      border-radius: 10px;
+      
+      &.total {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+      
+      &.online {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+      
+      .stat-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 4px;
+      }
+      
+      .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 4px;
+      }
+      
+      .stat-change {
+        font-size: 11px;
+        color: #6b7280;
+        font-weight: 500;
+        
+        &.up {
+          color: #67c23a;
+        }
+      }
+    }
+  }
+  
+  .device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    
+    .device-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: linear-gradient(135deg, #fafafa, #f5f5f5);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background: linear-gradient(135deg, #f5f5f5, #eeeeee);
+        transform: translateX(3px);
+      }
+      
+      .device-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        
+        // B端统一图标颜色
+        &.electric {
+          color: #2563eb;
+        }
+        
+        &.water {
+          color: #0891b2;
+        }
+        
+        &.hvac {
+          color: #059669;
+        }
+        
+        &.lighting {
+          color: #d97706;
+        }
+        
+        &.security {
+          color: #7c3aed;
+        }
+        
+        &.charging {
+          color: #dc2626;
+        }
+        
+        i {
+          font-size: 16px;
+        }
+      }
+      
+      .device-info {
+        flex: 1;
+        
+        .device-name {
+          font-size: 13px;
+          color: #111827;
+          font-weight: 600;
+          margin-bottom: 2px;
+        }
+        
+        .device-count {
+          font-size: 11px;
+          color: #6b7280;
+        }
+      }
+      
       .device-status {
-        background: white;
-        border-radius: 8px;
-        padding: 24px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        border: 1px solid #e5e7eb;
+        font-size: 11px;
+        font-weight: 600;
         
-        .status-header {
-          margin-bottom: 20px;
-          
-          h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #111827;
-            margin: 0;
-          }
+        &.excellent {
+          color: #67c23a;
         }
         
-        .status-list {
-          .status-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid #f3f4f6;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            border-radius: 4px;
-            margin: 0 -8px;
-            padding: 12px 8px;
-            
-            &:hover {
-              background: #f9fafb;
-            }
-            
-            &:last-child {
-              border-bottom: none;
-            }
-            
-            .status-indicator {
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-              
-              &.normal {
-                background: #16a34a;
-              }
-              
-              &.warning {
-                background: #d97706;
-              }
-              
-              &.alarm {
-                background: #dc2626;
-              }
-            }
-            
-            .status-content {
-              .status-title {
-                font-size: 13px;
-                font-weight: 500;
-                color: #111827;
-                margin-bottom: 2px;
-              }
-              
-              .status-desc {
-                font-size: 12px;
-                color: #6b7280;
-              }
-            }
+        &.good {
+          color: #409eff;
+        }
+        
+        &.warning {
+          color: #e6a23c;
+        }
+      }
+    }
+  }
+}
+
+// 待办组件
+.todo-widget {
+  .todo-summary {
+    .pending-count {
+      font-size: 12px;
+      color: #f56c6c;
+      font-weight: 600;
+    }
+  }
+  
+  .todo-list {
+    max-height: 280px;
+    overflow-y: auto;
+    
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f3f4f6;
+      border-radius: 2px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+    
+    .todo-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f3f4f6;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      &.completed {
+        opacity: 0.5;
+        
+        .todo-text {
+          text-decoration: line-through;
+        }
+      }
+      
+      .todo-check {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin-top: 1px;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          border-color: #409eff;
+        }
+        
+        i {
+          font-size: 12px;
+          color: #67c23a;
+        }
+      }
+      
+      .todo-content {
+        flex: 1;
+        
+        .todo-text {
+          font-size: 13px;
+          color: #111827;
+          line-height: 1.4;
+          margin-bottom: 4px;
+          font-weight: 500;
+        }
+        
+        .todo-meta {
+          display: flex;
+          gap: 8px;
+          font-size: 11px;
+          
+          .todo-category {
+            color: #409eff;
+            font-weight: 500;
+          }
+          
+          .todo-time {
+            color: #9ca3af;
           }
         }
       }
       
-      // 系统信息
-      .system-info {
-        background: white;
-        border-radius: 8px;
-        padding: 24px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        border: 1px solid #e5e7eb;
+      .todo-priority {
+        width: 3px;
+        height: 20px;
+        border-radius: 2px;
+        margin-top: 1px;
         
-        .info-header {
-          margin-bottom: 20px;
+        &.urgent {
+          background: #f56c6c;
+          animation: pulse 2s infinite;
+        }
+        
+        &.normal {
+          background: #e6a23c;
+        }
+        
+        &.low {
+          background: #67c23a;
+        }
+      }
+    }
+  }
+}
+
+// 系统状态
+.system-status {
+  .widget-header {
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+      
+      &.online {
+        color: #67c23a;
+        
+        .dot {
+          background: #67c23a;
+        }
+      }
+    }
+  }
+  
+  .status-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: linear-gradient(135deg, #fafafa, #f5f5f5);
+      border-radius: 8px;
+      
+      .service-name {
+        font-size: 13px;
+        color: #111827;
+        font-weight: 600;
+      }
+      
+      .service-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        
+        .status-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+        
+        &.online {
+          color: #67c23a;
           
-          h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #111827;
-            margin: 0;
+          .status-dot {
+            background: #67c23a;
           }
         }
         
-        .info-content {
-          .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            
-            .info-label {
-              font-size: 12px;
-              color: #6b7280;
-            }
-            
-            .info-value {
-              font-size: 12px;
-              color: #111827;
-              font-weight: 500;
-            }
+        &.maintenance {
+          color: #e6a23c;
+          
+          .status-dot {
+            background: #e6a23c;
           }
         }
       }
@@ -1505,482 +2186,115 @@ export default {
   }
 }
 
-// 图标占位 - 预留位置，暂不显示
-.icon-alarm::before,
-.icon-offline::before,
-.icon-finance::before,
-.icon-tenant::before,
-.icon-notification::before,
-.icon-arrow-right::before,
-.icon-recharge::before,
-.icon-debt::before,
-.icon-invoice::before,
-.icon-audit::before,
-.icon-monitor::before,
-.icon-finance-manage::before,
-.icon-more::before,
-.icon-chart::before,
-.icon-view::before,
-.icon-bill::before,
-.icon-device::before,
-.icon-report::before,
-.icon-maintenance::before {
-  content: '';
+// 动画
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // 响应式设计
-@media (max-width: 1200px) {
-  .oa-dashboard {
-    .main-content {
-      grid-template-columns: 1fr;
-      
-      .right-sidebar {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
-        
-        .today-overview {
-          grid-column: 1 / -1;
-        }
-      }
-    }
+@media (max-width: 1400px) {
+  .metrics-overview {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .analytics-section {
+    grid-template-columns: 1fr !important;
     
-    .stats-cards {
-      grid-template-columns: repeat(3, 1fr) 1.5fr;
-      
-      .stat-card:nth-child(4) {
-        display: none;
+    .analytics-right {
+      .suggestion-card {
+        margin-top: 0;
       }
     }
+  }
+}
+
+@media (max-width: 1200px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .operations-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  
+  .sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .oa-dashboard {
+  .dashboard-body {
     padding: 16px;
-    
-    .stats-cards {
-      grid-template-columns: 1fr;
-      gap: 16px;
-      
-      .revenue-card {
-        order: -1;
-      }
-    }
-    
-    .main-content {
-      gap: 20px;
-      
-      .left-content {
-        gap: 20px;
-        
-        .monitor-section {
-          grid-template-columns: 1fr;
-        }
-        
-        .stats-section {
-          grid-template-columns: 1fr;
-        }
-      }
-      
-      .right-sidebar {
-        grid-template-columns: 1fr;
-        gap: 20px;
-        
-        .actions-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .oa-dashboard {
-    padding: 12px;
-    
-    .stats-cards {
-      gap: 12px;
-    }
-    
-    .main-content {
-      gap: 16px;
-      
-      .left-content {
-        gap: 16px;
-      }
-      
-      .right-sidebar {
-        gap: 16px;
-        
-        .actions-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-    }
-  }
-}
-
-// 深色模式适配
-@media (prefers-color-scheme: dark) {
-  .oa-dashboard {
-    background: #0f172a;
-    
-    .stat-card,
-    .notification-section,
-    .monitor-column,
-    .finance-column,
-    .tenant-section,
-    .stats-card,
-    .activity-list,
-    .today-overview,
-    .quick-actions,
-    .device-status,
-    .system-info {
-      background: #1e293b;
-      border-color: #334155;
-      color: #f1f5f9;
-    }
-    
-    .revenue-card {
-      background: #334155;
-      border-color: #475569;
-    }
-    
-    h3, h4,
-    .notification-title,
-    .monitor-title,
-    .finance-title,
-    .status-title,
-    .activity-text,
-    .stat-number,
-    .overview-number {
-      color: #f1f5f9;
-    }
-    
-    .notification-desc,
-    .monitor-desc,
-    .status-desc,
-    .info-label,
-    .stat-label,
-    .overview-label {
-      color: #94a3b8;
-    }
-    
-    .overview-item {
-      background: #334155;
-      border-color: #475569;
-    }
-  }
-}
-
-// 打印样式
-@media print {
-  .oa-dashboard {
-    background: white;
-    padding: 0;
-    
-    .revenue-card .revenue-chart,
-    .stats-chart {
-      display: none;
-    }
-    
-    .main-content {
-      grid-template-columns: 1fr;
-    }
-    
-    .stats-cards {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-}
-
-// 无障碍访问增强
-.oa-dashboard {
-  *:focus {
-    outline: 2px solid #2563eb;
-    outline-offset: 2px;
-    border-radius: 4px;
   }
   
-  .action-item,
-  .notification-item,
-  .tenant-item,
-  .status-item,
-  .monitor-item,
-  .finance-item {
-    min-height: 44px;
-  }
-  
-  // 键盘导航支持
-  .action-item:focus,
-  .notification-item:focus,
-  .tenant-item:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-  }
-}
-
-// 加载状态
-.oa-dashboard {
-  .loading {
-    position: relative;
-    opacity: 0.6;
-    pointer-events: none;
+  .demo-badge {
+    right: 15px;
     
-    &::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 16px;
-      height: 16px;
-      margin: -8px 0 0 -8px;
-      border: 2px solid #e5e7eb;
-      border-top: 2px solid #2563eb;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      z-index: 1000;
-    }
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-}
-
-// 状态消息
-.oa-dashboard {
-  .error-message {
-    background: #fef2f2;
-    color: #991b1b;
-    padding: 12px 16px;
-    border-radius: 6px;
-    border: 1px solid #fecaca;
-    font-size: 14px;
-    margin: 12px 0;
-  }
-
-  .success-message {
-    background: #f0fdf4;
-    color: #166534;
-    padding: 12px 16px;
-    border-radius: 6px;
-    border: 1px solid #bbf7d0;
-    font-size: 14px;
-    margin: 12px 0;
-  }
-  
-  .warning-message {
-    background: #fffbeb;
-    color: #92400e;
-    padding: 12px 16px;
-    border-radius: 6px;
-    border: 1px solid #fed7aa;
-    font-size: 14px;
-    margin: 12px 0;
-  }
-}
-
-// 空状态样式
-.oa-dashboard {
-  .empty-state {
-    text-align: center;
-    padding: 48px 24px;
-    color: #6b7280;
-    
-    .empty-icon {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 16px;
-      background: #f3f4f6;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #9ca3af;
-      font-size: 24px;
-    }
-    
-    .empty-text {
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 16px;
-    }
-    
-    .empty-action {
-      button {
-        background: #2563eb;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 6px;
-        cursor: pointer;
+    .demo-badge-content {
+      padding: 10px 14px;
+      
+      .demo-icon {
+        width: 28px;
+        height: 28px;
         font-size: 14px;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
-        
-        &:hover {
-          background: #1d4ed8;
+      }
+      
+      .demo-text {
+        .demo-title {
+          font-size: 13px;
         }
         
-        &:focus {
-          outline: 2px solid #2563eb;
-          outline-offset: 2px;
+        .demo-subtitle {
+          font-size: 9px;
         }
       }
     }
-  }
-}
-
-// 自定义滚动条
-.oa-dashboard {
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
     
-    &:hover {
-      background: #94a3b8;
-    }
-  }
-}
-
-// 选择文本样式
-.oa-dashboard {
-  ::selection {
-    background: #dbeafe;
-    color: #1e40af;
-  }
-
-  ::-moz-selection {
-    background: #dbeafe;
-    color: #1e40af;
-  }
-}
-
-// 微交互增强
-.oa-dashboard {
-  .stat-card,
-  .notification-item,
-  .tenant-item,
-  .action-item,
-  .status-item,
-  .monitor-item,
-  .finance-item,
-  .activity-item {
-    &:active {
-      transform: translateY(1px);
+    .demo-tag {
+      padding: 6px 10px;
+      font-size: 11px;
     }
   }
   
-  // 数据可视化增强
-  .chart-bar {
-    &:nth-child(1) { background: #64748b; }
-    &:nth-child(2) { background: #475569; }
-    &:nth-child(3) { background: #64748b; }
-    &:nth-child(4) { background: #374151; }
-    &:nth-child(5) { background: #64748b; }
+  .operations-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
-}
-
-// 表格样式增强
-.oa-dashboard {
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    
-    th {
-      background: #f9fafb;
-      font-weight: 600;
-      color: #374151;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    
-    td {
-      font-size: 14px;
-      color: #111827;
-    }
-    
-    tbody tr:hover {
-      background: #f9fafb;
-    }
+  
+  .charts-container {
+    grid-template-columns: 1fr !important;
   }
-}
-
-// 工具提示样式
-.oa-dashboard {
-  [data-tooltip] {
-    position: relative;
-    
-    &:hover::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #111827;
-      color: white;
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      white-space: nowrap;
-      z-index: 1000;
-      margin-bottom: 4px;
-      
-      &::before {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 4px solid transparent;
-        border-top-color: #111827;
-      }
-    }
+  
+  .sidebar {
+    grid-template-columns: 1fr !important;
   }
-}
-
-// 动画减少偏好
-@media (prefers-reduced-motion: reduce) {
-  .oa-dashboard * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-// 高对比度支持
-@media (prefers-contrast: high) {
-  .oa-dashboard {
-    .stat-card,
-    .notification-item,
-    .tenant-item,
-    .action-item {
-      border: 2px solid #000;
-    }
-    
-    .status-indicator {
-      border: 1px solid #000;
-    }
+  
+  .analytics-section {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
   }
 }
 </style>

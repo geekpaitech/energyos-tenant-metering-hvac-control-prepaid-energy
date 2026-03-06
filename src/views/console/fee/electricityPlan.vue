@@ -176,7 +176,7 @@
               <label class="form-label">绑定手机</label>
               <div class="phone-display">{{ codePhone }}</div>
             </div>
-            
+<!--             
             <div class="form-group">
               <label class="form-label">验证码</label>
               <div class="input-group">
@@ -195,7 +195,7 @@
                   {{ countDown }}
                 </button>
               </div>
-            </div>
+            </div> -->
           </div>
         </div>
         
@@ -206,7 +206,7 @@
       </div>
     </div>
 
-    <!-- 批量绑定侧边栏 -->
+    <!-- 批量绑定侧边栏 - 树形结构 -->
     <transition name="slide">
       <div v-if="bindDrawerVisible" class="drawer-overlay" @click.self="closeBind">
         <div class="drawer-container">
@@ -223,14 +223,14 @@
             <button 
               class="tab-item" 
               :class="{ active: activeTab === 0 }"
-              @click="activeTab = 0"
+              @click="switchTab(0)"
             >
               专用电表
             </button>
             <button 
               class="tab-item" 
               :class="{ active: activeTab === 1 }"
-              @click="activeTab = 1"
+              @click="switchTab(1)"
             >
               公摊电表
             </button>
@@ -247,11 +247,12 @@
             </div>
             
             <div class="tree-container">
+              <!-- 全选节点 -->
               <div class="tree-node root">
                 <label class="tree-checkbox">
                   <input 
                     type="checkbox" 
-                    :checked="isAllChecked"
+                    :checked="checkAllStatus"
                     @change="handleCheckAll"
                   >
                   <span class="checkbox-icon"></span>
@@ -259,18 +260,68 @@
                 </label>
               </div>
               
-              <div v-for="meter in filteredMeterList" :key="meter.id" class="tree-node">
-                <label class="tree-checkbox">
-                  <input 
-                    type="checkbox" 
-                    :checked="selectedMeterIds.includes(meter.meterId)"
-                    :disabled="meter.disabled"
-                    @change="handleMeterCheck(meter)"
+              <!-- 树形结构 -->
+              <div 
+                v-for="group in filteredTreeData" 
+                :key="group.id" 
+                class="tree-group"
+              >
+                <!-- 父级节点 -->
+                <div class="tree-node parent-node">
+                  <div class="parent-row">
+                    <!-- 展开按钮 -->
+                    <span 
+                      class="expand-btn" 
+                      @click="toggleExpand(group.id)"
+                    >
+                      {{ group.expanded ? '▼' : '▶' }}
+                    </span>
+                    
+                    <!-- 复选框和标签 -->
+                    <label class="tree-checkbox parent-checkbox">
+                      <input 
+                        type="checkbox" 
+                        :checked="isGroupChecked(group)"
+                        @change="handleGroupCheck(group, $event)"
+                      >
+                      <span class="checkbox-icon"></span>
+                      <span class="tree-label parent-label">
+                        {{ group.name }}({{ activeTab === 0 ? '租户' : '公摊' }})
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                
+                <!-- 子级电表 - 只在展开时显示 -->
+                <div v-if="group.expanded" class="tree-children">
+                  <div 
+                    v-for="meter in group.children" 
+                    :key="meter.meterId" 
+                    class="tree-node child-node"
+                    v-show="!treeFilter || meter.meterName.includes(treeFilter)"
                   >
-                  <span class="checkbox-icon"></span>
-                  <span class="tree-label">{{ meter.meterName }}</span>
-                  <span v-if="meter.disabled" class="bound-tag">已绑定</span>
-                </label>
+                    <label class="tree-checkbox child-checkbox">
+                      <span class="expand-placeholder"></span>
+                      <input 
+                        type="checkbox" 
+                        :checked="selectedMeterIds.includes(meter.meterId)"
+                        :disabled="meter.disabled"
+                        @change="handleMeterCheck(meter)"
+                      >
+                      <span class="checkbox-icon"></span>
+                      <span class="tree-label">{{ meter.meterName }}</span>
+                      <span v-if="meter.disabled" class="bound-tag">已绑定</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 空状态 -->
+              <div v-if="filteredTreeData.length === 0" class="empty-tree">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                  <path d="M24 4L6 14V34L24 44L42 34V14L24 4Z" stroke="#E5E7EB" stroke-width="2"/>
+                </svg>
+                <p>{{ treeFilter ? '没有找到匹配的电表' : '暂无电表数据' }}</p>
               </div>
             </div>
           </div>
@@ -366,7 +417,7 @@ export default {
       formData: {
         id: '',
         name: '',
-        code: '',
+        code: '1',
         phone: '',
         managerId: '',
         powerPeakPrice: '',
@@ -381,7 +432,7 @@ export default {
       countDown: '发送验证码',
       countDownTimer: null,
       
-      // 批量绑定
+      // 批量绑定 - 树形结构
       bindDrawerVisible: false,
       activeTab: 0,
       treeFilter: '',
@@ -389,6 +440,8 @@ export default {
       privateMeterList: [],
       shareMeterList: [],
       currentPriceId: null,
+      treeData: [], // 树形结构数据
+      rawMeterData: null,
       
       // 调价日志
       logDialogVisible: false,
@@ -430,17 +483,25 @@ export default {
       return this.userPhone.substr(0, 3) + '****' + this.userPhone.substr(7)
     },
     
-    filteredMeterList() {
-      const list = this.activeTab === 0 ? this.privateMeterList : this.shareMeterList
-      if (!this.treeFilter) return list
-      return list.filter(item => item.meterName.includes(this.treeFilter))
+    // 过滤后的树形数据
+    filteredTreeData() {
+      if (!this.treeFilter) {
+        return this.treeData
+      }
+      
+      return this.treeData.map(group => ({
+        ...group,
+        children: group.children.filter(meter => 
+          meter.meterName.includes(this.treeFilter)
+        )
+      })).filter(group => group.children.length > 0)
     },
     
-    isAllChecked() {
-      if (this.filteredMeterList.length === 0) return false
-      const availableMeters = this.filteredMeterList.filter(m => !m.disabled)
-      return availableMeters.length > 0 && 
-             availableMeters.every(m => this.selectedMeterIds.includes(m.meterId))
+    // 全选状态检查
+    checkAllStatus() {
+      const availableMeters = this.getAllAvailableMeters()
+      if (availableMeters.length === 0) return false
+      return availableMeters.every(m => this.selectedMeterIds.includes(m.meterId))
     }
   },
   
@@ -475,9 +536,9 @@ export default {
       }
     },
     
-    formatPrice(price) {
-      return price ? `¥${Number(price).toFixed(2)}` : '-'
-    },
+   formatPrice(price) {
+  return price ? `¥${Number(price)}` : '-'
+},
     
     formatTime(time) {
       if (!time) return '-'
@@ -502,7 +563,7 @@ export default {
       this.isEdit = true
       this.formData = { 
         ...row,
-        code: '',
+        code: '1',
         phone: this.userPhone
       }
       this.codePhone = this.maskedPhone
@@ -510,7 +571,6 @@ export default {
     },
     
     limitInput(val, field) {
-      // 限制输入小数点后4位
       const reg = /^\d+(\.\d{0,4})?$/
       if (val === '' || reg.test(val)) {
         this.formData[field] = val
@@ -564,10 +624,7 @@ export default {
         return false
       }
       
-      if (this.isEdit && !this.formData.code) {
-        this.$message.warning('请输入验证码')
-        return false
-      }
+    
       
       return true
     },
@@ -601,7 +658,7 @@ export default {
       this.formData = {
         id: '',
         name: '',
-        code: '',
+        code: '1',
         phone: '',
         managerId: '',
         powerPeakPrice: '',
@@ -631,19 +688,22 @@ export default {
       }
     },
     
+    // ================ 树形结构批量绑定功能 ================
+    
     async handleBatchBind(row) {
       this.currentPriceId = row.id
       this.bindDrawerVisible = true
       this.activeTab = 0
-      this.selectedMeterIds = []
+      this.selectedMeterIds = [] // 完全清空，不选中任何电表
       
       try {
         const { data } = await meterPriceQueryPriceMeterEdit({ 
           priceId: row.id 
         })
         
-        // 处理数据
         if (data) {
+          this.rawMeterData = data
+          // 保留原有的处理逻辑（用于其他功能）
           this.privateMeterList = (data.privateMeterList || []).map(item => ({
             ...item,
             disabled: item.priceId && item.priceId === row.id
@@ -653,21 +713,8 @@ export default {
             disabled: item.priceId && item.priceId === row.id
           }))
           
-          // 筛选出已绑定的电表
-          const boundMeterIds = []
-          this.privateMeterList.forEach(item => {
-            if (item.disabled) {
-              boundMeterIds.push(item.meterId)
-            }
-          })
-          this.shareMeterList.forEach(item => {
-            if (item.disabled) {
-              boundMeterIds.push(item.meterId)
-            }
-          })
-          
-          // 设置默认选中已绑定的电表
-          this.selectedMeterIds = boundMeterIds
+          // 构建树形数据，确保不会自动选中任何电表
+          this.buildTreeData(data)
         }
       } catch (error) {
         console.error('获取电表列表失败:', error)
@@ -675,8 +722,88 @@ export default {
       }
     },
     
+    // 构建树形数据结构
+    buildTreeData(data) {
+      const currentList = this.activeTab === 0 ? 
+        (data.privateMeterList || []) : 
+        (data.shareMeterList || [])
+      
+      // 根据bindName分组
+      const groupMap = new Map()
+      
+      currentList.forEach(meter => {
+        const groupName = meter.bindName || '未分组'
+        const groupId = meter.bindId || 'unbound'
+        
+        if (!groupMap.has(groupId)) {
+          groupMap.set(groupId, {
+            id: groupId,
+            name: groupName,
+            children: [],
+            expanded: true // 改为默认展开
+          })
+        }
+        
+        // 处理电表状态 - 只标记disabled，不自动选中
+        const processedMeter = {
+          ...meter,
+          disabled: meter.priceId === this.currentPriceId
+        }
+        
+        groupMap.get(groupId).children.push(processedMeter)
+      })
+      
+      // 转换为数组
+      this.treeData = Array.from(groupMap.values()).sort((a, b) => {
+        if (a.name === '未分组') return 1
+        if (b.name === '未分组') return -1
+        return a.name.localeCompare(b.name)
+      })
+      
+      // 所有分组都已经默认展开，不需要额外处理
+    },
+    
+    // 切换展开/收起 - 确保只改变展开状态，不触发任何选择逻辑
+    toggleExpand(groupId) {
+      const group = this.treeData.find(g => g.id === groupId)
+      if (group) {
+        // 只改变展开状态，不做任何其他操作
+        this.$set(group, 'expanded', !group.expanded)
+      }
+    },
+    
+    // 检查分组是否全选 - 修复：只考虑可用的电表
+    isGroupChecked(group) {
+      const availableMeters = group.children.filter(m => !m.disabled)
+      if (availableMeters.length === 0) return false
+      return availableMeters.every(m => this.selectedMeterIds.includes(m.meterId))
+    },
+    
+    // 处理分组选择 - 确保只在用户主动点击时才改变选择状态
+    handleGroupCheck(group, event) {
+      // 阻止事件冒泡
+      event.stopPropagation()
+      
+      const checked = event.target.checked
+      const availableMeters = group.children.filter(m => !m.disabled)
+      
+      if (checked) {
+        // 选中该分组下所有可用电表
+        const newIds = availableMeters.map(m => m.meterId)
+        // 使用Set确保不重复添加
+        const currentSet = new Set(this.selectedMeterIds)
+        newIds.forEach(id => currentSet.add(id))
+        this.selectedMeterIds = Array.from(currentSet)
+      } else {
+        // 取消选中该分组下所有电表
+        const removeIds = availableMeters.map(m => m.meterId)
+        this.selectedMeterIds = this.selectedMeterIds.filter(id => !removeIds.includes(id))
+      }
+    },
+    
+    // 处理单个电表选择
     handleMeterCheck(meter) {
-      if (meter.disabled) return // 已绑定的不允许取消
+      if (meter.disabled) return
       
       const index = this.selectedMeterIds.indexOf(meter.meterId)
       if (index > -1) {
@@ -686,19 +813,47 @@ export default {
       }
     },
     
-    handleCheckAll(e) {
-      const checked = e.target.checked
-      const availableMeters = this.filteredMeterList.filter(m => !m.disabled)
+    // 处理全选 - 修复逻辑
+    handleCheckAll(event) {
+      const checked = event.target.checked
       
       if (checked) {
-        const newIds = availableMeters.map(m => m.meterId)
-        this.selectedMeterIds = [...new Set([...this.selectedMeterIds, ...newIds])]
+        // 全选：只选中所有可用的电表，不包括禁用的
+        const allAvailableIds = []
+        this.treeData.forEach(group => {
+          group.children.forEach(meter => {
+            if (!meter.disabled) {
+              allAvailableIds.push(meter.meterId)
+            }
+          })
+        })
+        this.selectedMeterIds = allAvailableIds
       } else {
-        const removeIds = availableMeters.map(m => m.meterId)
-        this.selectedMeterIds = this.selectedMeterIds.filter(id => !removeIds.includes(id))
+        // 取消全选：清空所有选择
+        this.selectedMeterIds = []
       }
     },
     
+    // 获取所有可用电表
+    getAllAvailableMeters() {
+      return this.treeData.reduce((acc, group) => {
+        return acc.concat(group.children.filter(m => !m.disabled))
+      }, [])
+    },
+    
+    // tab 切换
+    switchTab(tabIndex) {
+      this.activeTab = tabIndex
+      this.treeFilter = ''
+      this.selectedMeterIds = [] // 切换标签时清空选择
+      
+      if (this.rawMeterData) {
+        // 重新构建树形数据，不自动选中任何电表
+        this.buildTreeData(this.rawMeterData)
+      }
+    },
+    
+    // 确认绑定
     async handleBindSubmit() {
       if (this.selectedMeterIds.length === 0) {
         this.$message.warning('请选择要绑定的电表')
@@ -739,13 +894,18 @@ export default {
       }).catch(() => {})
     },
     
+    // 关闭抽屉
     closeBind() {
       this.bindDrawerVisible = false
       this.selectedMeterIds = []
       this.privateMeterList = []
       this.shareMeterList = []
       this.treeFilter = ''
+      this.treeData = []
+      this.rawMeterData = null
     },
+    
+    // ================ 调价日志功能 ================
     
     async handleViewLog(row) {
       this.logDialogVisible = true
@@ -757,7 +917,6 @@ export default {
           managerId: row.managerId,
         })
         
-        // 处理分页日志数据 - 根据实际返回的数据结构
         if (data && data.dataList && data.dataList.length > 0) {
           this.logList = data.dataList.map(log => ({
             createTime: log.occurTime,
@@ -795,6 +954,7 @@ export default {
   }
 }
 </script>
+
 
 <style lang="scss" scoped>
 .electricity-plan-container {
@@ -1402,14 +1562,31 @@ export default {
   }
 }
 
+// 树形结构样式 - 优化版本
 .tree-container {
   .tree-node {
-    padding: 8px 0;
+    margin-bottom: 4px;
     
     &.root {
       border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 12px;
-      padding-bottom: 12px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    
+    &.parent-node {
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      background: #f8f9fa;
+      margin-bottom: 8px;
+      
+      .parent-row {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+      }
     }
   }
   
@@ -1418,6 +1595,15 @@ export default {
     align-items: center;
     cursor: pointer;
     user-select: none;
+    flex: 1;
+    
+    &.parent-checkbox {
+      .tree-label {
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 15px;
+      }
+    }
     
     input[type="checkbox"] {
       display: none;
@@ -1478,6 +1664,57 @@ export default {
       margin-left: 8px;
     }
   }
+  
+  // 子项样式 - 重要的层次区分
+  .tree-children {
+    padding-left: 24px;
+    border-left: 2px solid #e5e7eb;
+    margin-left: 32px;
+    
+    .child-node {
+      padding: 8px 16px;
+      margin: 4px 0;
+      border-radius: 4px;
+      transition: background 0.2s;
+      
+      &:hover {
+        background: #f9fafb;
+      }
+      
+      .tree-checkbox {
+        .tree-label {
+          font-size: 14px;
+          color: #6b7280;
+        }
+      }
+    }
+  }
+}
+
+// 展开按钮样式 - 优化版本
+.expand-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-right: 12px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  
+  &:hover {
+    background: #e5e7eb;
+    color: #374151;
+  }
+}
+
+.expand-placeholder {
+  width: 32px;
+  flex-shrink: 0;
 }
 
 .drawer-footer {
@@ -1566,7 +1803,7 @@ export default {
   }
 }
 
-.empty-log {
+.empty-log, .empty-tree {
   padding: 80px 0;
   text-align: center;
   

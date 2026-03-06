@@ -4,6 +4,7 @@ import router from './router'
 import store from './store'
 // main.js
 import * as echarts from 'echarts'
+import VueKonva from 'vue-konva'
 
 // 引入Element UI
 import ElementUI from 'element-ui'
@@ -15,7 +16,6 @@ import '@/assets/iconfont/iconfont.css'
 
 // 设置 moment 中文语言
 import 'moment/locale/zh-cn'
-moment.locale('zh-cn')
 // 引入样式重置
 import 'normalize.css/normalize.css'
 
@@ -35,6 +35,7 @@ import '@/mock'
 import '@/permission'
 
 import './assets/iconfont/iconfont.css'
+moment.locale('zh-cn')
 // 开发环境启用mock
 // if (process.env.NODE_ENV === 'development') {
 //   require('./mock')
@@ -50,6 +51,7 @@ router.onError(error => {
 
 // 使用Element UI
 Vue.use(ElementUI)
+Vue.use(VueKonva)
 
 Vue.config.productionTip = false
 

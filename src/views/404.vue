@@ -13,7 +13,7 @@ export default {
   name: 'Page404',
   methods: {
     back () {
-      this.$router.push({ path: '/' })
+      this.$router.push({ path: '/metering/dashboard' })
     }
   }
 }

@@ -247,3 +247,16 @@ export function waterQueryWaterRecord(data) {
     data
   })
 }
+
+// 设备用水统计
+export function queryWaterUseStatis(data) {
+  return request({
+    url: '/api/ebc-content/water/queryWaterUseStatis',
+    method: 'POST',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}

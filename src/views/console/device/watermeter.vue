@@ -3,45 +3,18 @@
     <!-- 搜索区域 -->
     <div class="search-container">
       <el-card class="search-card" shadow="never">
-        <el-form
-          :model="queryData"
-          ref="searchForm"
-          class="search-form compact-form"
-          label-position="left"
-          label-width="80px"
-        >
-          <!-- 基础筛选 - 动态渲染 -->
+        <el-form :model="queryData" ref="searchForm" class="search-form compact-form" label-position="left"
+          label-width="80px">
+          <!-- 基础筛选 -->
           <el-row :gutter="16" class="search-row">
-            <el-col
-              v-for="field in displayBasicFields"
-              :key="field.prop"
-              :xs="24"
-              :sm="12"
-              :md="8"
-              :lg="6"
-            >
-              <el-form-item
-                :label="field.label"
-                :prop="field.prop"
-                class="compact-form-item"
-              >
+            <el-col v-for="field in displayBasicFields" :key="field.prop" :xs="24" :sm="12" :md="8" :lg="6">
+              <el-form-item :label="field.label" :prop="field.prop" class="compact-form-item">
                 <!-- 输入框 -->
-                <el-input
-                  v-if="field.type === 'input'"
-                  v-model="queryData[field.prop]"
-                  placeholder="请输入"
-                  clearable
-                  size="small"
-                />
+                <el-input v-if="field.type === 'input'" v-model="queryData[field.prop]" placeholder="请输入" clearable
+                  size="small" />
                 <!-- 选择框 -->
-                <el-select
-                  v-else-if="field.type === 'select'"
-                  v-model="queryData[field.prop]"
-                  placeholder="请选择"
-                  clearable
-                  size="small"
-                  style="width: 100%"
-                >
+                <el-select v-else-if="field.type === 'select'" v-model="queryData[field.prop]" placeholder="请选择"
+                  clearable size="small" style="width: 100%" @change="handleSearch">
                   <!-- 水表类型选项 -->
                   <template v-if="field.prop === 'bindType'">
                     <el-option label="全部" value="" />
@@ -54,95 +27,40 @@
             </el-col>
           </el-row>
 
-          <!-- 高级筛选 - 只在需要时显示 -->
+          <!-- 高级筛选 -->
           <el-collapse-transition v-if="needAdvancedSearch">
             <el-row :gutter="16" v-show="showAdvanced" class="search-row">
-              <el-col
-                v-for="field in displayAdvancedFields"
-                :key="field.prop"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="6"
-              >
-                <el-form-item
-                  :label="field.label"
-                  :prop="field.prop"
-                  class="compact-form-item"
-                >
-                  <!-- 输入框 -->
-                  <el-input
-                    v-if="field.type === 'input'"
-                    v-model="queryData[field.prop]"
-                    placeholder="请输入"
-                    clearable
-                    size="small"
-                  />
-                  <!-- 选择框 -->
-                  <el-select
-                    v-else-if="field.type === 'select'"
-                    v-model="queryData[field.prop]"
-                    placeholder="请选择"
-                    clearable
-                    size="small"
-                    style="width: 100%"
-                    :filterable="field.prop === 'bindId'"
-                  >
+              <el-col v-for="field in displayAdvancedFields" :key="field.prop" :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item :label="field.label" :prop="field.prop" class="compact-form-item">
+                  <el-select v-model="queryData[field.prop]" placeholder="请选择" clearable size="small"
+                    style="width: 100%">
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
           </el-collapse-transition>
 
-          <!-- 操作按钮行 - 更合理的布局 -->
+          <!-- 操作按钮行 -->
           <div class="form-actions compact-actions">
             <div class="action-left">
-              <el-button
-                type="primary"
-                icon="el-icon-plus"
-                size="small"
-                @click="handleAdd"
-              >
+              <el-button type="primary" icon="el-icon-plus" size="small" @click="handleAdd">
                 新增水表
               </el-button>
             </div>
             <div class="action-right">
-              <el-button
-                type="primary"
-                icon="el-icon-search"
-                size="small"
-                @click="handleSearch"
-              >
+              <el-button type="primary" icon="el-icon-search" size="small" @click="handleSearch">
                 查询
               </el-button>
-              <el-button
-                icon="el-icon-refresh"
-                size="small"
-                @click="handleReset"
-              >
+              <el-button icon="el-icon-refresh" size="small" @click="handleReset">
                 重置
               </el-button>
-              <el-button
-                v-if="needAdvancedSearch"
-                type="text"
-                size="small"
-                @click="showAdvanced = !showAdvanced"
-                style="padding: 7px 8px"
-              >
+              <el-button v-if="needAdvancedSearch" type="text" size="small" @click="showAdvanced = !showAdvanced"
+                style="padding: 7px 8px">
                 <i class="el-icon-s-operation" style="margin-right: 4px"></i>
                 高级筛选
-                <i
-                  :class="
-                    showAdvanced ? 'el-icon-arrow-up' : 'el-icon-arrow-down'
-                  "
-                  style="margin-left: 2px"
-                ></i>
+                <i :class="showAdvanced ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" style="margin-left: 2px"></i>
               </el-button>
-              <el-divider
-                v-if="needAdvancedSearch"
-                direction="vertical"
-                style="margin: 0 8px"
-              ></el-divider>
+              <el-divider v-if="needAdvancedSearch" direction="vertical" style="margin: 0 8px"></el-divider>
               <el-dropdown trigger="click" @command="handleCommand">
                 <el-button size="small" type="text" style="padding: 7px 12px">
                   更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
@@ -154,11 +72,7 @@
                   <el-dropdown-item command="import" icon="el-icon-upload2">
                     导入数据
                   </el-dropdown-item>
-                  <el-dropdown-item
-                    command="batch"
-                    icon="el-icon-s-operation"
-                    divided
-                  >
+                  <el-dropdown-item command="batch" icon="el-icon-s-operation" divided>
                     批量操作
                   </el-dropdown-item>
                 </el-dropdown-menu>
@@ -182,89 +96,54 @@
         </div>
 
         <!-- 数据表格 -->
-        <el-table
-          :max-height="tableMaxHeight"
-          v-loading="loading"
-          :data="tableData"
-          stripe
+        <el-table 
+          v-loading="loading" 
+          border
+          :data="tableData" 
+          :max-height="tableMaxHeight" 
+          stripe 
           style="width: 100%"
-          class="custom-table"
-          @selection-change="handleSelectionChange"
+          class="custom-table light-border-table" 
+          @selection-change="handleSelectionChange" 
           :header-cell-style="{
-              background: '#f5f7fa',
-              color: '#606266',
-              fontWeight: '600',
-            }"
-        >
+            background: '#f5f7fa',
+            color: '#606266',
+            fontWeight: '600',
+          }">
           <el-table-column type="selection" width="55" align="center" />
 
           <!-- 按照tableKey配置显示列 -->
-          <el-table-column
-            v-for="col in displayColumns"
-            :key="col.key"
-            :prop="col.key"
+          <el-table-column 
+            v-for="col in displayColumns" 
+            :key="col.key" 
+            :prop="col.key" 
             :label="col.label"
-            :width="col.width"
-            :min-width="col.minWidth"
-            :align="col.align || 'center'"
-            :show-overflow-tooltip="true"
-          >
+            :width="col.width" 
+            :min-width="col.minWidth" 
+            :align="col.isTag ? 'center' : 'left'"
+            :header-align="col.isTag ? 'center' : 'left'"
+            :show-overflow-tooltip="true">
             <template slot-scope="scope">
-              <!-- 设备号 - 添加水表icon和跳转功能 -->
-              <template v-if="col.key === 'serial'">
-                <el-link type="primary" @click="handleMonitor(scope.row)">
-                  <i class="iconfont icon-shuibiao" style="margin-right: 4px;"></i>
-                  {{ scope.row.serial || "-" }}
+              <!-- 设备号 - 点击复制 -->
+                <template v-if="col.key === 'serial'">
+                <el-tooltip content="点击可复制" placement="top" :open-delay="300">
+                  <span class="serial-copy" @click="handleCopySerial(scope.row.serial)">
+                    {{ scope.row.serial || "-" }}
+                  </span>
+                </el-tooltip>
+              </template>
+
+              <!-- 水表名称 - 点击查看详情 -->
+              <template v-else-if="col.key === 'waterName'">
+                <el-link type="primary" @click="handleDetail(scope.row)">
+                  {{ scope.row.waterName || "-" }}
                 </el-link>
               </template>
 
-              <!-- 水表名称 - 黑色文字，不可点击 -->
-              <template v-else-if="col.key === 'waterName'">
-                <span style="color: #000;">
-                  {{ scope.row.waterName || "-" }}
-                </span>
-              </template>
-
-              <!-- 水表类型 -->
-              <template v-else-if="col.key === 'bindTypeLabel'">
-                <el-tag
-                  v-if="scope.row.bindType == 1"
-                  type="primary"
-                  size="small"
-                  effect="plain"
-                >
-                  专用表
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.bindType == 2"
-                  type="warning"
-                  size="small"
-                  effect="plain"
-                >
-                  公摊表
-                </el-tag>
-                <el-tag
-                  v-else-if="scope.row.bindType == 3"
-                  type="info"
-                  size="small"
-                  effect="plain"
-                >
-                  公式表
-                </el-tag>
-                <span v-else>-</span>
-              </template>
-
-              <!-- 绑定信息 -->
+              <!-- 已绑信息 -->
               <template v-else-if="col.key === 'bindInfo'">
-                <el-popover
-                  v-if="
-                    scope.row.waterBindDtoList &&
-                    scope.row.waterBindDtoList.length > 1
-                  "
-                  placement="top-start"
-                  width="300"
-                  trigger="hover"
-                >
+                <el-popover v-if="scope.row.waterBindDtoList && scope.row.waterBindDtoList.length > 1"
+                  placement="top-start" width="300" trigger="hover">
                   <el-table :data="scope.row.waterBindDtoList">
                     <el-table-column property="bindId" label="绑定ID" />
                     <el-table-column property="bindName" label="绑定信息" />
@@ -272,64 +151,49 @@
                   <div slot="reference" class="bind-info-wrapper">
                     <el-link type="primary">
                       <i class="el-icon-user"></i>
-                      {{
-                        scope.row.waterBindDtoList[0]
-                          ? `${scope.row.waterBindDtoList[0].bindId}(${scope.row.waterBindDtoList[0].bindName})`
-                          : "-"
-                      }}
+                      {{ scope.row.waterBindDtoList[0] ?
+                        `${scope.row.waterBindDtoList[0].bindId}(${scope.row.waterBindDtoList[0].bindName})` : "-" }}
                     </el-link>
                   </div>
                 </el-popover>
-                <el-link
-                  v-else-if="
-                    scope.row.waterBindDtoList &&
-                    scope.row.waterBindDtoList.length === 1
-                  "
-                  type="primary"
-                  @click="handleBindClick(scope.row)"
-                >
+                <el-link 
+                  v-else-if="scope.row.waterBindDtoList && scope.row.waterBindDtoList.length === 1"
+                  type="primary" 
+                  @click="handleBindClick(scope.row)">
                   <i class="el-icon-user"></i>
-                  {{
-                    scope.row.waterBindDtoList[0]
-                      ? `${scope.row.waterBindDtoList[0].bindId}(${scope.row.waterBindDtoList[0].bindName})`
-                      : "-"
-                  }}
+                  {{ scope.row.waterBindDtoList[0] ?
+                    `${scope.row.waterBindDtoList[0].bindId}(${scope.row.waterBindDtoList[0].bindName})` : "-" }}
                 </el-link>
                 <span v-else class="text-muted">未绑定</span>
               </template>
 
-              <!-- 水价方案 -->
-              <template v-else-if="col.key === 'waterPriceName'">
-                {{
-                  scope.row.waterPriceDto ? scope.row.waterPriceDto.name : "-"
-                }}
+              <!-- 水表类型 -->
+              <template v-else-if="col.key === 'bindTypeLabel'">
+                <el-tag v-if="scope.row.bindType == 1" type="success" size="small" effect="plain">
+                  专用表
+                </el-tag>
+                <el-tag v-else-if="scope.row.bindType == 2" type="warning" size="small" effect="plain">
+                  公摊表
+                </el-tag>
+                <el-tag v-else-if="scope.row.bindType == 3" type="info" size="small" effect="plain">
+                  公式表
+                </el-tag>
+                <span v-else>-</span>
               </template>
 
-              <!-- 阀控 -->
+              <!-- 支持阀控 -->
               <template v-else-if="col.key === 'withSwitch'">
-                <el-tag
-                  :type="scope.row.withSwitch ? 'success' : 'info'"
-                  size="small"
-                  effect="plain"
-                >
+                <el-tag :type="scope.row.withSwitch ? 'success' : 'info'" size="small" effect="plain">
                   {{ scope.row.withSwitch ? "支持" : "不支持" }}
                 </el-tag>
               </template>
 
               <!-- 付费模式 -->
               <template v-else-if="col.key === 'logicPayTypeLabel'">
-                <el-tag
-                  v-if="scope.row.logicPayType == 0"
-                  type="success"
-                  size="small"
-                >
+                <el-tag v-if="scope.row.logicPayType == 0" type="success" size="small">
                   预付费
                 </el-tag>
-                <el-tag
-                  v-else-if="scope.row.logicPayType == 1"
-                  type="primary"
-                  size="small"
-                >
+                <el-tag v-else-if="scope.row.logicPayType == 1" type="primary" size="small">
                   强控
                 </el-tag>
                 <span v-else>-</span>
@@ -337,25 +201,23 @@
 
               <!-- 开关阀状态 -->
               <template v-else-if="col.key === 'switchStatusLabel'">
-                <div class="switch-status">
-                  <i
-                    :class="
-                      scope.row.switchStatus == 1
-                        ? 'el-icon-open'
-                        : 'el-icon-turn-off'
-                    "
-                    :style="{
-                      color:
-                        scope.row.switchStatus == 1 ? '#67C23A' : '#909399',
-                    }"
-                  ></i>
-                  {{ scope.row.switchStatus == 1 ? "开阀" : "关阀" }}
-                </div>
+                <el-tag v-if="scope.row.switchStatus == 1" type="success" size="small" effect="plain">
+                  开阀
+                </el-tag>
+                <el-tag v-else-if="scope.row.switchStatus == 0" type="info" size="small" effect="plain">
+                  关阀
+                </el-tag>
+                <span v-else>-</span>
               </template>
 
               <!-- 最新数据时间 -->
-              <template v-else-if="col.key === 'lastDataTime'">
-                <span>{{ generateRandomTime() }}</span>
+              <template v-else-if="col.key === 'updateTime'">
+                <span>{{ scope.row.updateTime || '-' }}</span>
+              </template>
+
+              <!-- 创建时间 -->
+              <template v-else-if="col.key === 'createTime'">
+                <span>{{ scope.row.createTime || '-' }}</span>
               </template>
 
               <!-- 默认显示 -->
@@ -365,107 +227,81 @@
             </template>
           </el-table-column>
 
-          <!-- 操作列 -->
-          <el-table-column
-            label="操作"
-            width="240"
-            fixed="right"
-            align="center"
-          >
+          <!-- 操作列 - 彻底修复缩放问题 -->
+          <el-table-column label="操作"  align="center" :resizable="false">
+            <template slot="header">
+              <span>操作</span>
+            </template>
             <template slot-scope="scope">
-              <div style="display: flex; align-items: center; justify-content: center; gap: 2px; white-space: nowrap;">
-                <el-button
-                  type="text"
+              <div class="operation-cell">
+                <!-- 编辑按钮 -->
+                <el-button 
+                  type="text" 
                   size="mini"
-                  icon="el-icon-setting"
-                  @click="handleEdit(scope.row)"
-                  style="padding: 1px 2px; font-size: 11px; min-width: auto;"
-                >
-                  设置
+                  @click="handleEdit(scope.row)" 
+                  class="op-btn primary-btn">
+                  编辑
                 </el-button>
-                <span style="color: #DCDFE6; font-size: 10px;">|</span>
-                <el-button
-                  v-if="scope.row.withSwitch"
-                  type="text"
+
+                <!-- <span class="op-divider">|</span> -->
+
+                <!-- 详情按钮 -->
+                <el-button 
+                  type="text" 
                   size="mini"
-                  :icon="scope.row.switchStatus == 1 ? 'el-icon-turn-off' : 'el-icon-open'"
-                  @click="handleSwitch(scope.row, scope.row.switchStatus == 1 ? 0 : 1)"
-                  :style="{
-                    color: scope.row.switchStatus == 1 ? '#F56C6C' : '#67C23A',
-                    padding: '1px 2px',
-                    fontSize: '11px',
-                    minWidth: 'auto'
-                  }"
-                >
-                  {{ scope.row.switchStatus == 1 ? "关阀" : "开阀" }}
-                </el-button>
-                <span v-if="scope.row.withSwitch" style="color: #DCDFE6; font-size: 10px;">|</span>
-                <el-button
-                  type="text"
-                  size="mini"
-                  icon="el-icon-document"
-                  @click="handleRecord(scope.row)"
-                  style="padding: 1px 2px; font-size: 11px; min-width: auto;"
-                >
-                  记录
+                  @click="handleDetail(scope.row)" 
+                  class="op-btn primary-btn">
+                  详情
                 </el-button>
               </div>
             </template>
           </el-table-column>
         </el-table>
+
+        <!-- 分页 -->
+        <div class="pagination-container compact-pagination">
+          <el-pagination 
+            :current-page="pageData.current" 
+            :page-sizes="[15, 30, 60, 100]" 
+            :page-size="pageData.size"
+            :total="pageData.total" 
+            layout="total, sizes, prev, pager, next, jumper" 
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange" 
+          />
+        </div>
       </div>
-    </div>
-    <!-- 分页 -->
-    <div class="pagination-container">
-      <el-pagination
-        :current-page="pageData.current"
-        :page-sizes="[15, 30, 60, 100]"
-        :page-size="pageData.size"
-        :total="pageData.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
     </div>
 
     <!-- 编辑弹窗 -->
-    <el-dialog
-      :title="editForm.id ? '设置水表' : '新增水表'"
-      :visible.sync="dialogVisible"
-      width="680px"
-      :close-on-click-modal="false"
-      class="custom-dialog"
-    >
-      <el-form
-        ref="editForm"
-        :model="editForm"
-        :rules="rules"
-        label-width="110px"
-      >
+    <el-dialog :title="editForm.id ? '编辑水表' : '新增水表'" :visible.sync="dialogVisible" width="680px"
+      :close-on-click-modal="false" class="custom-dialog">
+      <el-form ref="editForm" :model="editForm" :rules="rules" label-width="110px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="设备号" prop="serial">
-              <el-input
-                v-model="editForm.serial"
-                :disabled="!!editForm.id"
-                placeholder="请输入设备号"
-              />
+              <el-input v-model="editForm.serial" placeholder="请输入设备号" :disabled="!!editForm.id" />
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="!editForm.id">
+          <el-col :span="12">
+            <el-form-item label="水表名称" prop="waterName">
+              <el-input v-model="editForm.waterName" placeholder="请输入水表名称" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="水表类型" prop="bindType">
+              <el-select v-model="editForm.bindType" placeholder="请选择水表类型" style="width: 100%">
+                <el-option v-for="item in MeterBindType" :key="item.value" :label="item.label" :value="item.value" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="接入渠道">
-              <el-select
-                v-model="editForm.waterType"
-                clearable
-                placeholder="请选择接入渠道"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="item in waterType"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
+              <el-select v-model="editForm.waterType" clearable placeholder="请选择接入渠道" style="width: 100%">
+                <el-option v-for="item in waterType" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -473,26 +309,14 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="水表名称" prop="waterName">
-              <el-input
-                v-model="editForm.waterName"
-                placeholder="请输入水表名称"
-              />
+            <el-form-item label="设备型号" prop="waterModel">
+              <el-input v-model="editForm.waterModel" :disabled="isWaterModel" placeholder="请输入设备型号" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="水表类型" prop="bindType">
-              <el-select
-                v-model="editForm.bindType"
-                placeholder="请选择水表类型"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="item in MeterBindType"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
+            <el-form-item label="是否支持阀控">
+              <el-select v-model="editForm.withSwitch" clearable placeholder="请选择" style="width: 100%">
+                <el-option v-for="item in withSwitch" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -501,85 +325,27 @@
         <el-row :gutter="20">
           <el-col :span="12" v-if="editForm.waterType === 'YYWL_YY'">
             <el-form-item label="厂家号">
-              <el-select
-                v-model="editForm.mfrsNo"
-                clearable
-                :disabled="!!editForm.id"
-                placeholder="请选择厂家号"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="item in mfrsNoType"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
+              <el-select v-model="editForm.mfrsNo" clearable :disabled="!!editForm.id" placeholder="请选择厂家号"
+                style="width: 100%">
+                <el-option v-for="item in mfrsNoType" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="是否支持阀控">
-              <el-select
-                v-model="editForm.withSwitch"
-                clearable
-                placeholder="请选择"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="item in withSwitch"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="12" v-if="editForm.withSwitch">
             <el-form-item label="付费模式">
-              <el-select
-                v-model="editForm.logicPayType"
-                placeholder="请选择付费模式"
-                style="width: 100%"
-                clearable
-              >
-                <el-option
-                  v-for="item in MeterPayType"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
+              <el-select v-model="editForm.logicPayType" placeholder="请选择付费模式" style="width: 100%" clearable>
+                <el-option v-for="item in MeterPayType" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="设备型号" prop="waterModel">
-              <el-input
-                v-model="editForm.waterModel"
-                :disabled="isWaterModel"
-                placeholder="请输入设备型号"
-              />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-row :gutter="20" v-if="routerAuth">
+        <el-row :gutter="20" v-if="editForm.id">
           <el-col :span="12">
             <el-form-item label="计费方案">
-              <el-select
-                v-model="editForm.priceId"
-                clearable
-                placeholder="请选择计费方案"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="item in priceList"
-                  :key="item.id"
-                  :label="item.name"
-                  :value="item.id"
-                />
+              <el-select v-model="editForm.priceId" clearable placeholder="请选择计费方案" style="width: 100%">
+                <el-option v-for="item in priceList" :key="item.id" :label="`${item.name} (¥${item.price}/吨)`"
+                  :value="item.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -593,6 +359,15 @@
         </el-button>
       </span>
     </el-dialog>
+
+    <!-- 水表详情抽屉 -->
+    <water-detail-drawer 
+      :visible.sync="detailDrawer.visible" 
+      :water-id="detailDrawer.waterId"
+      :serial="detailDrawer.serial" 
+      :row-data="detailDrawer.rowData" 
+      @refresh="fetchTableData" 
+    />
   </div>
 </template>
 
@@ -601,14 +376,11 @@
 import {
   waterPageWater,
   waterAddMeter,
-  waterUpdateWater,
-  waterDeleteMeter,
-  waterDoWaterSwitch,
+  waterUpdateWater
 } from "@/api/water";
 
 import { waterPriceListPrice } from "@/api/waterPrice";
-
-import { tenantPageTenant } from "@/api/tenant";
+import WaterDetailDrawer from './watermeter/detail.vue';
 
 import { mapGetters } from "vuex";
 
@@ -627,23 +399,24 @@ const MeterPayType = [
 
 export default {
   name: "WaterManagement",
+  components: {
+    WaterDetailDrawer
+  },
   data() {
     return {
       tableHeightConfig: {
-        headerHeight: 48, // 表头高度
-        rowHeight: 47, // 每行高度
-        minHeight: 200, // 最小高度
-        maxRows: 10, // 最大显示行数（超过9行显示滚动条）
-        paginationHeight: 68, // 分页高度
+        headerHeight: 48,
+        rowHeight: 47,
+        minHeight: 200,
+        maxRows: 11,
+        paginationHeight: 68,
       },
       // 查询参数
       queryData: {
-        bindId: "",
         bindType: "",
         waterName: "",
         serial: "",
         managerId: "",
-        switchStatus: "",
       },
       // 搜索字段配置
       searchFields: {
@@ -654,8 +427,6 @@ export default {
         ],
         advanced: [],
       },
-      // 租户列表数据
-      tenantList: [],
       // 表格数据
       tableData: [],
       // 加载状态
@@ -689,16 +460,10 @@ export default {
       },
       // 表单验证规则
       rules: {
-        waterName: [
-          { required: true, message: "请输入水表名称", trigger: "blur" },
-        ],
+        waterName: [{ required: true, message: "请输入水表名称", trigger: "blur" }],
         serial: [{ required: true, message: "请输入设备号", trigger: "blur" }],
-        waterModel: [
-          { required: true, message: "请输入设备型号", trigger: "blur" },
-        ],
-        bindType: [
-          { required: true, message: "请选择水表类型", trigger: "change" },
-        ],
+        waterModel: [{ required: true, message: "请输入设备型号", trigger: "blur" }],
+        bindType: [{ required: true, message: "请选择水表类型", trigger: "change" }],
       },
       // 枚举数据
       MeterBindType,
@@ -711,16 +476,21 @@ export default {
       // 厂家号选项
       mfrsNoType: [{ value: "4", label: "4" }],
       // 水表接入渠道
-      waterType: [{ value: "YYWL_YY", label: "云易物联" }],
+      waterType: [
+        { value: 'ZHWL_NS', label: '智慧物联-南硕' }
+      ],
       // 价格方案列表
       priceList: [],
-      // 管理方列表
-      managerNames: [],
       // 设备型号是否可输入
       isWaterModel: false,
-      // 路由权限
-      routerAuth: false,
-      // 表格列配置 - 修改创建时间为最新数据时间
+      // 详情抽屉
+      detailDrawer: {
+        visible: false,
+        waterId: '',
+        serial: '',
+        rowData: null
+      },
+      // 表格列配置 - 添加 isTag 标识
       tableKey: [
         {
           label: "设备号",
@@ -737,44 +507,48 @@ export default {
           disabled: true,
         },
         {
-          label: "水表类型",
+          label: "已绑信息",
+          key: "bindInfo",
+          width: "300",
+          checked: true,
+        },
+        {
+          label: "类型",
           key: "bindTypeLabel",
           checked: true,
-          width: "120",
+          width: "100",
+          isTag: true, // 标记为标签类型
         },
         {
-          label: "绑定信息",
-          key: "bindInfo",
-          width: "280",
-          checked: true,
-        },
-        {
-          label: "水价方案",
-          key: "waterPriceName",
-          width: "150",
-          checked: true,
-        },
-        {
-          label: "阀控",
+          label: "支持阀控",
           key: "withSwitch",
           width: "100",
           checked: true,
+          isTag: true, // 标记为标签类型
         },
         {
           label: "付费模式",
           checked: true,
           key: "logicPayTypeLabel",
-          width: "120",
+          width: "100",
+          isTag: true, // 标记为标签类型
         },
         {
           label: "开关阀状态",
           checked: true,
           key: "switchStatusLabel",
-          width: "140",
+          width: "120",
+          isTag: true, // 标记为标签类型
         },
         {
           label: "最新数据时间",
-          key: "lastDataTime",
+          key: "updateTime",
+          width: "160",
+          checked: true,
+        },
+        {
+          label: "创建时间",
+          key: "createTime",
           width: "160",
           checked: true,
         },
@@ -783,35 +557,23 @@ export default {
   },
   computed: {
     ...mapGetters("manager", ["currentManagerId"]),
-    treeSelectedIds() {
-      const ids = this.$store.state.treeSelection?.selectedIds || [];
-      console.log("实时获取树形选中ID:", ids);
-      return ids;
-    },
-    hasTreeSelection() {
-      return this.treeSelectedIds.length > 0;
+    dataLength() {
+      return this.tableData.length;
     },
     // 计算需要显示的列
     displayColumns() {
       return this.tableKey.filter((col) => col.checked !== false);
     },
-    dataLength() {
-      return this.tableData.length;
-    },
     // 判断是否需要显示高级筛选按钮
     needAdvancedSearch() {
-      // 当总搜索字段数量大于4个时显示高级筛选
-      const totalFields =
-        this.searchFields.basic.length + this.searchFields.advanced.length;
-      return totalFields > 4;
+      const totalFields = this.searchFields.basic.length + this.searchFields.advanced.length;
+      return totalFields > 5;
     },
     // 获取实际显示的基础搜索字段
     displayBasicFields() {
-      // 如果不需要高级筛选，显示所有字段
       if (!this.needAdvancedSearch) {
         return [...this.searchFields.basic, ...this.searchFields.advanced];
       }
-      // 否则只显示基础字段
       return this.searchFields.basic;
     },
     // 获取高级搜索字段
@@ -819,7 +581,6 @@ export default {
       return this.searchFields.advanced;
     },
     tableMaxHeight() {
-      // 始终返回最大高度（9行 + 表头）
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
@@ -832,54 +593,25 @@ export default {
         if (newVal) {
           this.queryData.managerId = newVal;
           this.fetchTableData();
-          if (this.routerAuth) {
-            this.getPriceList();
-          }
+          this.getPriceList();
         }
       },
       immediate: true,
     },
-    // 移除了对 treeSelectedIds 的监听，不再自动调用接口
   },
-  methods: {
-    // 生成随机时间 - 最近10分钟内的随机时间
-    generateRandomTime() {
-      const now = new Date();
-      
-      // 生成0-10分钟内的随机毫秒数
-      const tenMinutes = 10 * 60 * 1000; // 10分钟的毫秒数
-      const randomOffset = Math.random() * tenMinutes;
-      
-      // 当前时间减去随机偏移量
-      const randomTime = now.getTime() - randomOffset;
-      
-      const randomDate = new Date(randomTime);
-      
-      // 格式化为 YYYY-MM-DD HH:mm:ss
-      const year = randomDate.getFullYear();
-      const month = String(randomDate.getMonth() + 1).padStart(2, '0');
-      const day = String(randomDate.getDate()).padStart(2, '0');
-      const hours = String(randomDate.getHours()).padStart(2, '0');
-      const minutes = String(randomDate.getMinutes()).padStart(2, '0');
-      const seconds = String(randomDate.getSeconds()).padStart(2, '0');
-      
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    },
 
+  methods: {
     // 获取水表列表数据
     async fetchTableData() {
       this.loading = true;
       try {
-        // 去除空格
         this.queryData.serial = this.queryData.serial.trim();
 
         const params = {
-          bindId: this.queryData.bindId,
           bindType: this.queryData.bindType,
           waterName: this.queryData.waterName,
           serial: this.queryData.serial,
           managerId: this.queryData.managerId,
-          switchStatus: this.queryData.switchStatus,
           page: {
             size: this.pageData.size,
             current: this.pageData.current,
@@ -912,9 +644,7 @@ export default {
         // 付费模式标签
         let logicPayTypeLabel = "-";
         if (item.logicPayType !== null && item.logicPayType !== undefined) {
-          const payType = this.MeterPayType.find(
-            (p) => p.value == item.logicPayType
-          );
+          const payType = this.MeterPayType.find((p) => p.value == item.logicPayType);
           logicPayTypeLabel = payType ? payType.label : "-";
         }
 
@@ -953,64 +683,19 @@ export default {
       return item ? item.label : "-";
     },
 
-    // 查询 - 修改这个方法来支持树形选择参数
+    // 查询
     handleSearch() {
       this.pageData.current = 1;
-      this.fetchTableDataWithTreeSelection();
-    },
-
-    // 新增方法：带树形选择参数的数据获取
-    async fetchTableDataWithTreeSelection() {
-      this.loading = true;
-      try {
-        // 去除空格
-        this.queryData.serial = this.queryData.serial.trim();
-
-        const params = {
-          bindId: this.queryData.bindId,
-          bindType: this.queryData.bindType,
-          waterName: this.queryData.waterName,
-          serial: this.queryData.serial,
-          managerId: this.queryData.managerId,
-          switchStatus: this.queryData.switchStatus,
-          page: {
-            size: this.pageData.size,
-            current: this.pageData.current,
-          },
-        };
-
-        // 只有在点击搜索时才添加树形选择参数
-        // if (this.hasTreeSelection) {
-        //   params.tierIds = this.treeSelectedIds;
-        //   console.log("搜索时使用树形选中查询:", this.treeSelectedIds);
-        // }
-
-        const response = await waterPageWater(params);
-
-        if (response.code === 200 && response.data) {
-          this.tableData = this.formatTableData(response.data.dataList || []);
-          this.pageData.total = response.data.total || 0;
-          this.pageData.current = response.data.current || 1;
-        } else {
-          this.$message.error(response.msg || "获取数据失败");
-        }
-      } catch (error) {
-        this.$message.error("获取水表数据失败");
-        console.error("获取水表数据失败:", error);
-      } finally {
-        this.loading = false;
-      }
+      this.fetchTableData();
     },
 
     // 重置
     handleReset() {
       this.queryData = {
-        bindId: "",
         bindType: "",
         waterName: "",
         serial: "",
         managerId: this.currentManagerId || "",
-        switchStatus: "",
       };
       this.showAdvanced = false;
       this.handleSearch();
@@ -1027,21 +712,6 @@ export default {
           break;
         case "batch":
           this.$message.info("批量操作功能开发中...");
-          break;
-      }
-    },
-
-    // 处理表格下拉命令
-    handleTableCommand(command, row) {
-      switch (command) {
-        case "switch-on":
-          this.handleSwitch(row, 1);
-          break;
-        case "switch-off":
-          this.handleSwitch(row, 0);
-          break;
-        case "record":
-          this.handleRecord(row);
           break;
       }
     },
@@ -1083,7 +753,6 @@ export default {
         waterModel: row.waterModel,
         priceId: row.priceId,
       };
-      // 如果有值则不可修改
       this.isWaterModel = !!(row.waterModel !== "" && row.waterModel !== null);
       this.dialogVisible = true;
       this.$nextTick(() => {
@@ -1123,82 +792,67 @@ export default {
       });
     },
 
-    // 开关阀门操作
-    async handleSwitch(row, type) {
-      // 如果不支持阀控
-      if (!row.withSwitch) {
-        this.$message.warning("该水表不支持阀控操作");
+    // 查看详情
+    handleDetail(row) {
+      this.detailDrawer = {
+        visible: true,
+        waterId: row.id,
+        serial: row.serial,
+        rowData: row
+      };
+    },
+
+    // 复制序列号
+    handleCopySerial(serial) {
+      if (!serial || serial === '-') {
+        this.$message.warning('无可复制内容');
+        return;
+      }
+      
+      // 创建临时输入框
+      const input = document.createElement('input');
+      input.value = serial;
+      document.body.appendChild(input);
+      input.select();
+      
+      try {
+        document.execCommand('copy');
+        this.$message.success('设备号已复制');
+      } catch (err) {
+        this.$message.error('复制失败');
+      }
+      
+      document.body.removeChild(input);
+    },
+
+    // 绑定信息点击 - 跳转到租户详情
+    handleBindClick(row) {
+      if (!row.waterBindDtoList || row.waterBindDtoList.length === 0) {
+        this.$message.warning('该水表未绑定租户');
+        return;
+      }
+      
+      const bindId = row.waterBindDtoList[0].bindId;
+      if (!bindId) {
+        this.$message.warning('租户ID不存在');
+        return;
+      }
+      
+      // 如果是公摊表(bindType=2)，跳转到公摊详情页
+      if (row.bindType == 2) {
+        this.$router.push({
+          path: '/metering/fee/watermeterSharing/detail',
+          query: {
+            id: bindId
+          }
+        });
         return;
       }
 
-      const typeText = type === 1 ? "开阀" : "关阀";
-
-      try {
-        await this.$confirm(
-          `确定要对水表"${row.waterName}"执行${typeText}操作吗？`,
-          "提示",
-          {
-            confirmButtonText: "确定",
-            cancelButtonText: "取消",
-            type: "warning",
-          }
-        );
-
-        const response = await waterDoWaterSwitch({
-          waterId: row.id,
-          type: type,
-        });
-
-        if (response.code === 200) {
-          this.$message.success(`${typeText}操作成功`);
-          this.fetchTableData();
-        } else {
-          this.$message.error(response.msg || `${typeText}操作失败`);
-        }
-      } catch (error) {
-        if (error !== "cancel") {
-          this.$message.error(`${typeText}操作失败`);
-          console.error("操作失败:", error);
-        }
-      }
-    },
-
-    // 查看抄表记录
-    handleRecord(row) {
+      // 跳转到租户详情页
       this.$router.push({
-        path: `/device/watermeter/detail/${row.id}`,
-        query: { 
-          name: row.waterName,
-          serial: row.serial,
-          deviceId: row.id
-        }
+        path: `/metering/tenant/detail/${bindId}`
       });
-    },
-
-    // 水表监控
-    handleMonitor(row) {
-      this.$router.push({
-        path: `/device/watermeter/detail/${row.id}`,
-        query: { 
-          name: row.waterName,
-          serial: row.serial,
-          deviceId: row.id
-        }
-      });
-    },
-
-    // 绑定信息点击
-    handleBindClick(row) {
-      // if (row.waterBindDtoList && row.waterBindDtoList.length > 0) {
-      //   const bindInfo = row.waterBindDtoList[0];
-      //   this.$router.push({
-      //     path: "/tenant-detail",
-      //     query: {
-      //       id: bindInfo.bindId,
-      //       managerId: row.managerId,
-      //     },
-      //   });
-      // }
     },
 
     // 导出数据
@@ -1210,11 +864,6 @@ export default {
       this.$message.info("导出功能开发中...");
     },
 
-    // 表格设置
-    handleTableSetting() {
-      this.$message.info("表格设置功能开发中...");
-    },
-
     // 选择变化
     handleSelectionChange(selection) {
       this.selectedData = selection;
@@ -1224,14 +873,12 @@ export default {
     handleSizeChange(val) {
       this.pageData.size = val;
       this.pageData.current = 1;
-      // 分页变化时不传递树形选择参数，使用普通的 fetchTableData
       this.fetchTableData();
     },
 
     // 当前页变化
     handleCurrentChange(val) {
       this.pageData.current = val;
-      // 分页变化时不传递树形选择参数，使用普通的 fetchTableData
       this.fetchTableData();
     },
   },
@@ -1241,4 +888,160 @@ export default {
 <style lang="scss" scoped>
 // 引入表格页面公共样式
 @import "@/assets/styles/table-page.scss";
+
+// ==================== 弱化表格边框 ====================
+.light-border-table {
+  ::v-deep {
+    border: 1px solid #f0f0f0 !important;
+    
+    .el-table__header-wrapper {
+      th {
+        border-right: 1px solid #f0f0f0 !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+      }
+    }
+    
+    td {
+      border-right: 1px solid #f5f5f5 !important;
+      border-bottom: 1px solid #f5f5f5 !important;
+    }
+    
+    .el-table__fixed,
+    .el-table__fixed-right {
+      &::before {
+        background-color: transparent !important;
+      }
+    }
+    
+    .el-table__fixed-right-patch {
+      border-bottom: 1px solid #f0f0f0 !important;
+      background-color: #f5f7fa !important;
+    }
+  }
+}
+
+// ==================== 序列号复制样式 ====================
+.serial-copy {
+  color: #000;
+  cursor: pointer;
+  user-select: none;
+  display: inline-block;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #409EFF;
+  }
+
+  &:active {
+    color: #3a8ee6;
+  }
+}
+
+// ==================== 操作列样式 - 彻底修复 ====================
+.operation-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  
+  .op-btn {
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1;
+    border: none;
+    background: none;
+    flex-shrink: 0;
+    
+    // 统一蓝色
+    &.primary-btn {
+      color: #409EFF;
+      
+      &:hover {
+        color: #66b1ff;
+      }
+      
+      &:active {
+        color: #3a8ee6;
+      }
+    }
+  }
+  
+  .op-divider {
+    display: inline-block;
+    margin: 0 8px;
+    color: #DCDFE6;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+}
+
+// ==================== 紧凑型分页样式 ====================
+.compact-pagination {
+  ::v-deep .el-pagination {
+    font-size: 12px;
+    
+    // 总条数文字
+    .el-pagination__total {
+      font-size: 12px;
+      line-height: 24px;
+    }
+    
+    // 每页条数选择器
+    .el-pagination__sizes {
+      .el-input {
+        width: 90px;
+        
+        .el-input__inner {
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+          padding: 0 8px;
+        }
+      }
+    }
+    
+    // 上一页/下一页按钮
+    .btn-prev,
+    .btn-next {
+      min-width: 24px;
+      height: 24px;
+      line-height: 24px;
+      font-size: 12px;
+      padding: 0 6px;
+    }
+    
+    // 页码按钮
+    .el-pager {
+      li {
+        min-width: 24px;
+        height: 24px;
+        line-height: 24px;
+        font-size: 12px;
+        padding: 0 6px;
+        
+        &.active {
+          font-weight: 600;
+        }
+      }
+    }
+    
+    // 跳转输入框
+    .el-pagination__jump {
+      font-size: 12px;
+      line-height: 24px;
+      
+      .el-input {
+        width: 40px;
+        
+        .el-input__inner {
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+          padding: 0 4px;
+        }
+      }
+    }
+  }
+}
 </style>

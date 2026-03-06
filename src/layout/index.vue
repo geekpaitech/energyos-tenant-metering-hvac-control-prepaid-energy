@@ -3,26 +3,18 @@
     <!-- 左侧菜单栏 -->
     <div class="sidebar-container">
       <!-- Logo区域 - 只保留logo，移除标题 -->
-      <div
-        class="sidebar-logo-container"
-        :class="{ collapse: !sidebar.opened }"
-      >
-        <router-link class="sidebar-logo-link" to="/dashboard">
+      <div class="sidebar-logo-container" :class="{ collapse: !sidebar.opened }">
+        <div class="sidebar-logo-link">
           <div class="logo-placeholder">物</div>
-        </router-link>
+        </div>
       </div>
 
       <!-- 菜单区域 -->
       <el-scrollbar wrap-class="scrollbar-wrapper">
         <div class="menu-container">
           <!-- 动态渲染菜单 -->
-          <sidebar-item
-            v-for="route in permission_routes"
-            :key="route.path"
-            :item="route"
-            :base-path="route.path"
-            ref="sidebarItems"
-          />
+          <sidebar-item v-for="route in permission_routes" :key="route.path" :item="route" :base-path="route.path"
+            ref="sidebarItems" />
         </div>
       </el-scrollbar>
     </div>
@@ -30,53 +22,26 @@
     <!-- 右侧子菜单面板 - 支持下拉展开 -->
     <transition name="submenu-slide">
       <div v-if="currentSubmenu && sidebar.opened" class="submenu-panel">
-        <div class="submenu-header">
-          <div class="submenu-title">
-            <i
-              v-if="currentSubmenu.meta && currentSubmenu.meta.icon"
-              :class="['iconfont', currentSubmenu.meta.icon]"
-              class="submenu-icon"
-            />
-            <span>{{
-              currentSubmenu.meta ? currentSubmenu.meta.title : ""
-            }}</span>
-          </div>
-          <!-- 收起按钮 -->
-          <div
-            class="submenu-collapse-btn"
-            @click="handleCollapseSubmenu"
-            title="收起子菜单"
-          >
-            <i class="el-icon-close"></i>
-          </div>
-        </div>
+
 
         <div class="submenu-content">
           <!-- 渲染子菜单项 -->
           <template v-for="(child, index) in visibleSubmenuChildren">
             <!-- 检查是否是第一个有 parentGroup 的项，如果是则渲染可折叠的分组标题 -->
-            <template
-              v-if="
-                child.meta &&
-                child.meta.parentGroup &&
-                isFirstOfGroup(child, index)
-              "
-            >
+            <template v-if="
+              child.meta &&
+              child.meta.parentGroup &&
+              isFirstOfGroup(child, index)
+            ">
               <!-- 可折叠的分组标题 -->
-              <div
-                :key="`group-${child.meta.parentGroup}`"
-                class="submenu-group-header clickable"
-                @click="toggleGroup(child.meta.parentGroup)"
-              >
+              <div :key="`group-${child.meta.parentGroup}`" class="submenu-group-header clickable"
+                @click="toggleGroup(child.meta.parentGroup)">
                 <div class="group-header-content">
                   <i class="group-icon el-icon-s-data"></i>
                   <span class="group-title">{{ child.meta.parentGroup }}</span>
-                  <i
-                    class="group-toggle-icon el-icon-arrow-down"
-                    :class="{
-                      'is-collapsed': collapsedGroups[child.meta.parentGroup],
-                    }"
-                  ></i>
+                  <i class="group-toggle-icon el-icon-arrow-down" :class="{
+                    'is-collapsed': collapsedGroups[child.meta.parentGroup],
+                  }"></i>
                 </div>
               </div>
             </template>
@@ -84,36 +49,25 @@
             <!-- 根据分组折叠状态决定是否显示菜单项 -->
             <template v-if="!isGroupCollapsed(child)">
               <!-- 如果是分隔线 -->
-              <div
-                v-if="child.meta && child.meta.isDivider"
-                :key="child.path"
-                class="submenu-divider"
-                :class="{ 'with-label': child.meta.dividerLabel }"
-              >
+              <div v-if="child.meta && child.meta.isDivider" :key="child.path" class="submenu-divider" :class="{
+                'with-label': child.meta.dividerLabel,
+                // 'is-first': index === 0  /* 🆕 判断是否为第一个 */
+                'is-first': true,
+                'has-bg': index !== 0  /* 全部沿用样式*/
+              }">
                 <span v-if="child.meta.dividerLabel" class="divider-label">
                   {{ child.meta.dividerLabel }}
                 </span>
               </div>
 
               <!-- 有子菜单的项目（可展开） -->
-              <div
-                v-else-if="child.children && child.children.length > 0"
-                :key="child.path"
-                class="submenu-expandable"
-              >
-                <div
-                  class="submenu-item expandable-header"
-                  :class="{
-                    'is-expanded': expandedSubmenuItems[child.path],
-                    'has-active-child': hasActiveChild(child),
-                  }"
-                  @click="toggleSubmenuItem(child.path)"
-                >
-                  <i
-                    v-if="child.meta && child.meta.icon"
-                    :class="['iconfont', child.meta.icon]"
-                    class="submenu-item-icon"
-                  />
+              <div v-else-if="child.children && child.children.length > 0" :key="child.path" class="submenu-expandable">
+                <div class="submenu-item expandable-header" :class="{
+                  'is-expanded': expandedSubmenuItems[child.path],
+                  'has-active-child': hasActiveChild(child),
+                }" @click="toggleSubmenuItem(child.path)">
+                  <i v-if="child.meta && child.meta.icon" :class="['iconfont', child.meta.icon]"
+                    class="submenu-item-icon" />
                   <span class="submenu-item-title">{{
                     child.meta ? child.meta.title : ""
                   }}</span>
@@ -122,52 +76,31 @@
 
                 <!-- 展开的子项 -->
                 <transition name="submenu-expand">
-                  <div
-                    v-if="expandedSubmenuItems[child.path]"
-                    class="submenu-children"
-                  >
+                  <div v-if="expandedSubmenuItems[child.path]" class="submenu-children">
                     <template v-for="subChild in getVisibleChildren(child)">
                       <!-- 子项分隔线 -->
-                      <div
-                        v-if="subChild.meta && subChild.meta.isDivider"
-                        :key="subChild.path"
-                        class="submenu-child-divider"
-                        :class="{ 'with-label': subChild.meta.dividerLabel }"
-                      >
-                        <span
-                          v-if="subChild.meta.dividerLabel"
-                          class="divider-label"
-                        >
+                      <div v-if="subChild.meta && subChild.meta.isDivider" :key="subChild.path"
+                        class="submenu-child-divider" :class="{ 'with-label': subChild.meta.dividerLabel }">
+                        <span v-if="subChild.meta.dividerLabel" class="divider-label">
                           {{ subChild.meta.dividerLabel }}
                         </span>
                       </div>
 
                       <!-- 子项链接 -->
-                      <router-link
-                        v-else
-                        :key="resolvePath(child.path, subChild.path)"
-                        :to="resolvePath(child.path, subChild.path)"
-                        class="submenu-child-link"
-                        @click.native="
+                      <router-link v-else :key="resolvePath(child.path, subChild.path)"
+                        :to="resolvePath(child.path, subChild.path)" class="submenu-child-link" @click.native="
                           handleSubmenuClick(
                             resolvePath(child.path, subChild.path)
                           )
-                        "
-                      >
-                        <div
-                          class="submenu-child-item"
-                          :class="{
-                            'is-active': isSubmenuItemActive(
-                              child.path,
-                              subChild.path
-                            ),
-                          }"
-                        >
-                          <i
-                            v-if="subChild.meta && subChild.meta.icon"
-                            :class="['iconfont', subChild.meta.icon]"
-                            class="submenu-child-icon"
-                          />
+                          ">
+                        <div class="submenu-child-item" :class="{
+                          'is-active': isSubmenuItemActive(
+                            child.path,
+                            subChild.path
+                          ),
+                        }">
+                          <i v-if="subChild.meta && subChild.meta.icon" :class="['iconfont', subChild.meta.icon]"
+                            class="submenu-child-icon" />
                           <span class="submenu-child-title">{{
                             subChild.meta ? subChild.meta.title : ""
                           }}</span>
@@ -179,22 +112,11 @@
               </div>
 
               <!-- 普通的子菜单项（无子级） -->
-              <router-link
-                v-else
-                :key="resolvePath(child.path)"
-                :to="resolvePath(child.path)"
-                class="submenu-item-link"
-                @click.native="handleSubmenuClick(child.path)"
-              >
-                <div
-                  class="submenu-item"
-                  :class="{ 'is-active': isSubmenuItemActive(child.path) }"
-                >
-                  <i
-                    v-if="child.meta && child.meta.icon"
-                    :class="['iconfont', child.meta.icon]"
-                    class="submenu-item-icon"
-                  />
+              <router-link v-else :key="resolvePath(child.path)" :to="resolvePath(child.path)" class="submenu-item-link"
+                @click.native="handleSubmenuClick(child.path)">
+                <div class="submenu-item" :class="{ 'is-active': isSubmenuItemActive(child.path) }">
+                  <i v-if="child.meta && child.meta.icon" :class="['iconfont', child.meta.icon]"
+                    class="submenu-item-icon" />
                   <span class="submenu-item-title">{{
                     child.meta ? child.meta.title : ""
                   }}</span>
@@ -215,11 +137,7 @@
           <!-- 管理方切换器 - 只在控制台且有多个管理方时显示 -->
           <div class="manager-switcher" v-if="shouldShowManagerSwitcher">
             <div class="switcher-label">管理方</div>
-            <el-dropdown
-              @command="handleManagerSwitch"
-              trigger="click"
-              :disabled="platformSwitching"
-            >
+            <el-dropdown @command="handleManagerSwitch" trigger="click" :disabled="platformSwitching">
               <div class="current-manager">
                 <div class="manager-avatar">
                   {{ currentManagerDisplayName.charAt(0) }}
@@ -228,11 +146,7 @@
                   <span class="manager-name">{{
                     currentManagerDisplayName
                   }}</span>
-                  <span
-                    v-if="currentManager && currentManager.isDefault === 1"
-                    class="default-badge"
-                    >默认</span
-                  >
+                  <span v-if="currentManager && currentManager.isDefault === 1" class="default-badge">默认</span>
                 </div>
                 <i class="el-icon-arrow-down manager-arrow"></i>
               </div>
@@ -240,13 +154,8 @@
                 <div class="dropdown-header">
                   <span class="header-title">选择管理方</span>
                 </div>
-                <el-dropdown-item
-                  v-for="manager in managerList"
-                  :key="manager.managerId"
-                  :command="manager.managerId"
-                  :disabled="manager.managerId === currentManagerId"
-                  class="manager-option"
-                >
+                <el-dropdown-item v-for="manager in managerList" :key="manager.managerId" :command="manager.managerId"
+                  :disabled="manager.managerId === currentManagerId" class="manager-option">
                   <div class="option-avatar">
                     {{ manager.managerName.charAt(0) }}
                   </div>
@@ -255,17 +164,11 @@
                     <div class="option-address">{{ manager.address }}</div>
                   </div>
                   <div class="option-badges">
-                    <span v-if="manager.isDefault === 1" class="default-badge"
-                      >默认</span
-                    >
-                    <span
-                      v-if="
-                        manager.managerId === currentManagerId &&
-                        manager.isDefault !== 1
-                      "
-                      class="current-badge"
-                      >当前</span
-                    >
+                    <span v-if="manager.isDefault === 1" class="default-badge">默认</span>
+                    <span v-if="
+                      manager.managerId === currentManagerId &&
+                      manager.isDefault !== 1
+                    " class="current-badge">当前</span>
                   </div>
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -321,25 +224,14 @@
           </div> -->
 
           <!-- 全屏切换按钮 -->
-          <div
-            class="fullscreen-container"
-            @click="toggleFullscreen"
-            :title="isFullscreen ? '退出全屏' : '进入全屏'"
-          >
-            <i
-              :class="
-                isFullscreen ? 'el-icon-copy-document' : 'el-icon-full-screen'
-              "
-            ></i>
+          <div class="fullscreen-container" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏' : '进入全屏'">
+            <i :class="isFullscreen ? 'el-icon-copy-document' : 'el-icon-full-screen'
+              "></i>
           </div>
 
           <!-- 个性设置按钮 -->
-          <div
-            class="settings-container"
-            :class="{ 'is-active': showSettingsPanel }"
-            @click="toggleSettingsPanel"
-            title="个性设置"
-          >
+          <div class="settings-container" :class="{ 'is-active': showSettingsPanel }" @click="toggleSettingsPanel"
+            title="个性设置">
             <i class="el-icon-setting"></i>
           </div>
 
@@ -354,6 +246,9 @@
             </div>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item>个人中心</el-dropdown-item>
+              <el-dropdown-item @click.native="showPasswordModal">
+                <span style="display: block">修改密码</span>
+              </el-dropdown-item>
               <el-dropdown-item divided @click.native="logout">
                 <span style="display: block">退出登录</span>
               </el-dropdown-item>
@@ -367,9 +262,7 @@
         <div class="toolbar-left">
           <!-- 折叠按钮 -->
           <div class="hamburger-container" @click="toggleSideBar">
-            <i
-              :class="sidebar.opened ? 'el-icon-s-fold' : 'el-icon-s-unfold'"
-            ></i>
+            <i :class="sidebar.opened ? 'el-icon-s-fold' : 'el-icon-s-unfold'"></i>
           </div>
           <!-- 面包屑 -->
           <div class="breadcrumb-container">
@@ -390,19 +283,11 @@
               </div>
               <div class="tree-actions">
                 <!-- 刷新按钮 -->
-                <div
-                  class="tree-action-btn"
-                  @click="refreshTreeData"
-                  title="刷新"
-                >
+                <div class="tree-action-btn" @click="refreshTreeData" title="刷新">
                   <i class="el-icon-refresh"></i>
                 </div>
                 <!-- 收起按钮 -->
-                <div
-                  class="tree-collapse-btn"
-                  @click="toggleTreePanel"
-                  title="收起树形面板"
-                >
+                <div class="tree-collapse-btn" @click="toggleTreePanel" title="收起树形面板">
                   <i class="el-icon-d-arrow-left"></i>
                 </div>
               </div>
@@ -410,38 +295,18 @@
 
             <!-- 搜索框 -->
             <div class="tree-search">
-              <el-input
-                v-model="treeFilterText"
-                placeholder="搜索节点..."
-                size="small"
-                prefix-icon="el-icon-search"
-                clearable
-              />
+              <el-input v-model="treeFilterText" placeholder="搜索节点..." size="small" prefix-icon="el-icon-search"
+                clearable />
             </div>
 
             <!-- 树形结构 -->
             <div class="tree-content">
-              <el-tree
-                ref="tree"
-                :data="treeData"
-                :filter-node-method="filterNode"
-                :props="treeProps"
-                :default-expand-all="false"
-                :expand-on-click-node="false"
-                :check-on-click-node="false"
-                show-checkbox
-                node-key="id"
-                class="custom-tree"
-                @node-click="handleNodeClick"
-                @check-change="handleCheckChange"
-              >
+              <el-tree ref="tree" :data="treeData" :filter-node-method="filterNode" :props="treeProps"
+                :default-expand-all="false" :expand-on-click-node="false" :check-on-click-node="false" show-checkbox
+                node-key="id" class="custom-tree" @node-click="handleNodeClick" @check-change="handleCheckChange">
                 <div class="custom-tree-node" slot-scope="{ node, data }">
                   <div class="node-content">
-                    <i
-                      :class="getNodeIcon(data)"
-                      class="node-icon"
-                      :style="{ color: getNodeColor(data) }"
-                    ></i>
+                    <i :class="getNodeIcon(data)" class="node-icon" :style="{ color: getNodeColor(data) }"></i>
                     <span class="node-label" :title="node.label">{{
                       node.label
                     }}</span>
@@ -453,12 +318,8 @@
         </transition>
 
         <!-- 树形面板收起时的展开按钮 -->
-        <div
-          v-if="!finalShowTreePanel && shouldShowTreeByRoute"
-          class="tree-toggle-btn"
-          @click="toggleTreePanel"
-          title="展开树形面板"
-        >
+        <div v-if="!finalShowTreePanel && shouldShowTreeByRoute" class="tree-toggle-btn" @click="toggleTreePanel"
+          title="展开树形面板">
           <i class="el-icon-d-arrow-right"></i>
         </div>
 
@@ -469,10 +330,10 @@
       </div>
     </div>
     <!-- 个性设置面板 - 通过props控制显示 -->
-    <SettingsPanel
-      :visible="showSettingsPanel"
-      @close="handleSettingsPanelClose"
-    />
+    <SettingsPanel :visible="showSettingsPanel" @close="handleSettingsPanelClose" />
+    
+    <!-- 修改密码弹窗 -->
+    <PasswordChangeModal :visible.sync="passwordModalVisible" />
   </div>
 </template>
 
@@ -481,6 +342,7 @@ import { mapGetters, mapActions } from "vuex";
 import TagsView from "@/components/TagsView";
 import SidebarItem from "./components/Sidebar/SidebarItem";
 import SettingsPanel from "@/components/SettingsPanel";
+// import PasswordChangeModal from "@/components/PasswordChangeModal/index.vue";
 import path from "path";
 
 export default {
@@ -489,6 +351,7 @@ export default {
     TagsView,
     SidebarItem,
     SettingsPanel,
+    PasswordChangeModal: () => import("@/components/PasswordChangeModal/index.vue"),
   },
   data() {
     return {
@@ -534,33 +397,34 @@ export default {
       treeVisibleRoutes: [
         "/device/electricity",
         "/device/watermeter",
-        "/device/electricitySharing",
-        "/device/watermeterSharing",
-        "/device/conditioningSharing",
-        "/application/energy/electricity-report",
-        "/application/energy/electricity-sankey",
-        "/application/energy/water-report",
-        "/application/energy/water-sankey",
-        "/application/fee/electricity-plan",
-        "/application/fee/water-plan",
-        "/application/fee/service-plan",
-        "/application/fee/electricity-adjustment",
-        "/application/tenant/list",
-        "/application/bill/energy-bill",
-        "/application/bill/floating-price",
-        "/application/bill/manual-bill",
-        "/application/finance/withdrawal",
-        "/application/finance/fund-flow",
-        "/application/finance/tenant-refund",
+        "/metering/fee/electricitySharing",
+        "/metering/fee/watermeterSharing",
+        "/metering/fee/conditioningSharing",
+        "/energy/electricity-report",
+        "/energy/electricity-sankey",
+        "/energy/water-report",
+        "/energy/water-sankey",
+        "/metering/fee/electricity-plan",
+        "/metering/fee/water-plan",
+        "/metering/fee/service-plan",
+        "/metering/fee/electricity-adjustment",
+        "/metering/tenant/list",
+        "/metering/bill/floating-bill",
+        "/metering/bill/energy-bill",
+        "/metering/bill/floating-price",
+        "/metering/bill/manual-bill",
+        "/metering/finance/withdrawal",
+        "/metering/finance/fund-flow",
+        "/metering/finance/tenant-refund",
         "/device/conditioning",
         "/device/lighting",
         "/device/doorlock",
-        "/application/invoice/tenant-invoice",
-        "/application/invoice/invoice-quota",
-        "/application/invoice/quota-flow",
+        "/metering/invoice/tenant-invoice",
+        "/metering/invoice/invoice-quota",
+        "/metering/invoice/quota-flow",
         "/device/parking",
         "/device/charging",
-        "/console/visualization"
+        "/console/visualization",
         // 可以根据需要添加更多路由
       ],
 
@@ -581,6 +445,9 @@ export default {
 
       // 个性设置面板显示状态
       showSettingsPanel: false,
+      
+      // 修改密码弹窗显示状态
+      passwordModalVisible: false,
     };
   },
 
@@ -594,6 +461,7 @@ export default {
       "managerList",
       "currentManagerId",
       "currentManager",
+      "isInitPassword",
     ]),
     ...mapGetters("treeSelection", [
       "selectedIds",
@@ -724,120 +592,210 @@ export default {
     },
   },
 
-  watch: {
-    // 监听路由变化
+ watch: {
+    isInitPassword: {
+      handler(val) {
+        // 兼容数字1和字符串'1'
+        if (val === 1 || val === '1') {
+          this.checkInitPassword();
+        }
+      },
+      immediate: true,
+    },
+    // 🔥 修改：路由变化时统一处理子菜单展开
     $route: {
-      handler(newRoute, oldRoute) {
-        // 如果新路由需要显示树形面板，且之前没有显示，则自动显示
-        if (this.shouldShowTreeByRoute && !this.showTreePanel) {
-          this.showTreePanel = true;
-          this.forceHideTreePanel = false; // 重置强制隐藏状态
-        }
+    handler(newRoute, oldRoute) {
+      // 🔥 保留：树形面板自动显示逻辑（可随时开启）
+      // if (this.shouldShowTreeByRoute && !this.showTreePanel) {
+      //   this.showTreePanel = true;
+      //   this.forceHideTreePanel = false; // 重置强制隐藏状态
+      // }
 
-        // 如果新路由不需要显示树形面板，则自动隐藏
-        if (!this.shouldShowTreeByRoute && this.showTreePanel) {
-          this.showTreePanel = false;
-        }
+      // 如果新路由不需要显示树形面板，则自动隐藏
+      if (!this.shouldShowTreeByRoute && this.showTreePanel) {
+        this.showTreePanel = false;
+      }
 
-        // 更新选中状态
+      // 🔥 子菜单展开逻辑：只在侧边栏展开时才处理
+      if (this.sidebar.opened) {
+        const isDetailPage = newRoute.path.includes('/detail/') || newRoute.path.endsWith('/detail');
+        
+        if (isDetailPage) {
+          console.log('🔄 详情页路由变化，自动展开父菜单');
+          
+          const parentPath = this.getParentPathFromDetail(newRoute.path);
+          if (parentPath) {
+            const parentMenu = this.findMenuByPath(this.permission_routes, parentPath);
+            
+            if (parentMenu) {
+              console.log('✅ 找到并展开父菜单:', parentMenu);
+              this.expandedItem = parentMenu.path;
+              this.currentSubmenu = parentMenu;
+              this.basePath = parentMenu.path;
+              this.selectedItem = parentMenu.path;
+            }
+          }
+        } else {
+          // 非详情页，使用原有逻辑
+          this.updateSelectionFromRoute(newRoute.path);
+        }
+      } else {
+        // 侧边栏收起时，只更新选中状态
         this.updateSelectionFromRoute(newRoute.path);
-      },
-      immediate: true,
-    },
-
-    // 监听管理方ID变化
-    currentManagerId: {
-      handler(newVal, oldVal) {
-        if (newVal && newVal !== oldVal) {
-          this.handleManagerChange();
-        }
-      },
-    },
-
-    // 监听路由变化，判断是否需要初始化树形数据
-    shouldShowTreeByRoute: {
-      handler(newVal) {
-        if (newVal && !this.treeData.length) {
-          this.initTreeData();
-        }
-      },
-      immediate: true,
-    },
-
-    // 监听侧边栏状态变化
-    "sidebar.opened"(val) {
-      if (!val) {
-        this.closeSubmenu();
       }
     },
-
-    // 监听当前平台变化，决定是否需要加载管理方列表
-    currentPlatformKey: {
-      handler(newPlatform) {
-        if (newPlatform === "console") {
-          // 切换到控制台时加载管理方列表
-          this.loadManagerList();
-        }
-      },
-      immediate: true,
-    },
-
-    // 监听树形搜索文本变化
-    treeFilterText(val) {
-      this.$refs.tree && this.$refs.tree.filter(val);
-    },
-
-    // 监听树形面板显示状态变化
-    finalShowTreePanel: {
-      handler(newVal, oldVal) {
-        // 保存状态到localStorage（只有在路由支持时才保存）
-        if (this.shouldShowTreeByRoute) {
-          this.saveTreePanelState();
-        }
-      },
-    },
+    immediate: true
   },
-
-  async mounted() {
-    try {
-      const { tierSelectTenantTierList } = await import("@/api/tier");
-      this.tierSelectTenantTierListApi = tierSelectTenantTierList;
-    } catch (error) {
-      console.warn("动态导入 tier API 失败:", error);
-    }
-
-    // 初始化选中状态
-    this.updateSelectionFromRoute(this.$route.path);
-
-    // 监听全屏状态变化
-    this.addFullscreenListeners();
-
-    // 初始化平台权限
-    this.initializePlatform();
-
-    // 如果是控制台平台，初始化管理方数据
-    if (this.isConsolePlatform) {
-      await this.loadManagerList();
-    }
-
-    if (this.$store.hasModule("tagsView")) {
-      const routes = this.permission_routes || [];
-      await this.$store.dispatch("tagsView/initAffixTags", routes);
-    }
-
-    if (this.shouldShowTreeByRoute) {
-      await this.initTreeData();
-    }
-
-    // 恢复分组折叠状态
-    this.restoreCollapsedState();
-
-    // 恢复树形面板状态
-    // this.restoreTreePanelState();
-    if (this.shouldShowTreeByRoute && this.showTreePanel) {
-      await this.initTreeData();
+  
+  visible(value) {
+    if (value) {
+      document.body.addEventListener("click", this.closeMenu);
+    } else {
+      document.body.removeEventListener("click", this.closeMenu);
     }
   },
+  
+  currentPlatform: {
+    handler(newPlatform, oldPlatform) {
+      if (
+        this.isInitialized &&
+        this.currentPlatformCache &&
+        this.currentPlatformCache !== newPlatform &&
+        this.isPlatformSwitch(this.currentPlatformCache, newPlatform)
+      ) {
+        this.handlePlatformSwitch(newPlatform);
+      }
+
+      this.currentPlatformCache = newPlatform;
+    },
+    immediate: false,
+  },
+  
+  currentManagerId: {
+    handler(newVal, oldVal) {
+      if (newVal && newVal !== oldVal) {
+        this.handleManagerChange();
+      }
+    },
+  },
+  
+  shouldShowTreeByRoute: {
+    handler(newVal) {
+      if (newVal && !this.treeData.length) {
+        this.initTreeData();
+      }
+    },
+    immediate: true,
+  },
+  
+  "sidebar.opened"(val) {
+    if (!val) {
+      this.closeSubmenu();
+    }
+  },
+  
+  currentPlatformKey: {
+    handler(newPlatform) {
+      if (newPlatform === "console") {
+        this.loadManagerList();
+      }
+    },
+    immediate: true,
+  },
+  
+  treeFilterText(val) {
+    this.$refs.tree && this.$refs.tree.filter(val);
+  },
+  
+  finalShowTreePanel: {
+    handler(newVal, oldVal) {
+      if (this.shouldShowTreeByRoute) {
+        this.saveTreePanelState();
+      }
+    },
+  },
+},
+
+ async mounted() {
+  // 动态导入 tier API
+  try {
+    const { tierSelectTenantTierList } = await import("@/api/tier");
+    this.tierSelectTenantTierListApi = tierSelectTenantTierList;
+  } catch (error) {
+    console.warn("动态导入 tier API 失败:", error);
+  }
+
+  // 监听全屏状态变化
+  this.addFullscreenListeners();
+
+  // 初始化平台权限
+  this.initializePlatform();
+
+  // 如果是控制台平台，初始化管理方数据
+  if (this.isConsolePlatform) {
+    await this.loadManagerList();
+  }
+
+  // 初始化 TagsView
+  if (this.$store.hasModule("tagsView")) {
+    const routes = this.permission_routes || [];
+    await this.$store.dispatch("tagsView/initAffixTags", routes);
+  }
+
+  // 初始化树形数据
+  if (this.shouldShowTreeByRoute) {
+    await this.initTreeData();
+  }
+
+  // 恢复分组折叠状态
+  this.restoreCollapsedState();
+
+  // ESC键关闭弹窗
+  document.addEventListener("keydown", this.handleKeydown);
+
+  // 🔥 新增：刷新后自动恢复子菜单状态
+  this.$nextTick(() => {
+    console.log('🔄 mounted: 检查是否需要恢复子菜单');
+    console.log('🔄 sidebar.opened:', this.sidebar.opened);
+    console.log('🔄 当前路由:', this.$route.path);
+    
+    // 如果侧边栏是展开的，处理子菜单展开
+    if (this.sidebar.opened) {
+      const currentPath = this.$route.path;
+      const isDetailPage = currentPath.includes('/detail/') || currentPath.endsWith('/detail');
+      
+      if (isDetailPage) {
+        console.log('🔄 详情页且侧边栏展开，自动恢复父菜单');
+        
+        const parentPath = this.getParentPathFromDetail(currentPath);
+        if (parentPath) {
+          const parentMenu = this.findMenuByPath(this.permission_routes, parentPath);
+          
+          if (parentMenu) {
+            console.log('✅ 自动恢复父菜单:', parentMenu);
+            this.expandedItem = parentMenu.path;
+            this.currentSubmenu = parentMenu;
+            this.basePath = parentMenu.path;
+            this.selectedItem = parentMenu.path;
+          } else {
+            console.warn('⚠️ 未找到父菜单:', parentPath);
+          }
+        }
+      }
+    }
+    
+    // 标记初始化完成
+    this.isInitialized = true;
+
+    // 过滤隐藏标签
+    // this.filterHiddenTags();
+  });
+
+  // 恢复树形面板状态（如果需要）
+  if (this.shouldShowTreeByRoute && this.showTreePanel) {
+    await this.initTreeData();
+  }
+},
 
   beforeDestroy() {
     // 清理全屏监听器
@@ -1254,17 +1212,168 @@ export default {
       }
     },
 
-    toggleSideBar() {
-      // 只关闭子菜单，不改变侧边栏展开/收缩状态
-      if (this.expandedItem) {
-        this.handleCollapseSubmenu();
-      } else {
-      }
-    },
+   toggleSideBar() {
+  const wasOpened = this.sidebar.opened;
+  this.$store.dispatch("app/toggleSideBar");
 
+  this.$nextTick(() => {
+    if (!wasOpened && this.sidebar.opened) {
+      const currentPath = this.$route.path;
+      
+      // 🔥 详情页特殊处理：手动展开父菜单
+      if (currentPath.includes('/detail/') || currentPath.endsWith('/detail')) {
+   
+        
+        // 根据详情页路径推断父菜单路径
+        const parentPath = this.getParentPathFromDetail(currentPath);
+        
+        if (parentPath) {
+          // 查找父菜单
+          const parentMenu = this.findMenuByPath(this.permission_routes, parentPath);
+          
+          if (parentMenu) {
+       
+            this.expandedItem = parentMenu.path;
+            this.currentSubmenu = parentMenu;
+            this.basePath = parentMenu.path;
+            this.selectedItem = parentMenu.path;
+          } else {
+            console.warn('⚠️ 未找到父菜单:', parentPath);
+          }
+        }
+        
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 350);
+        
+        return;
+      }
+      
+      // 非详情页的正常逻辑
+      const matchingResult = this.findMatchingMenu(
+        this.permission_routes,
+        currentPath
+      );
+
+      if (
+        matchingResult &&
+        matchingResult.isChildRoute &&
+        matchingResult.parentItem
+      ) {
+        this.expandedItem = matchingResult.parentItem.path;
+        this.currentSubmenu = matchingResult.parentItem;
+        this.basePath = matchingResult.parentItem.path;
+        this.selectedItem = matchingResult.parentItem.path;
+
+        if (matchingResult.isDeepChild && matchingResult.expandablePath) {
+          const expandPath = path.resolve(
+            matchingResult.parentItem.path,
+            matchingResult.expandablePath
+          );
+          this.$set(this.expandedSubmenuItems, expandPath, true);
+        }
+      }
+    } else if (wasOpened && !this.sidebar.opened) {
+      this.handleCollapseSubmenu();
+    }
+    
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 350);
+  });
+},
+
+// 🔥 新增方法：从详情页路径推断父菜单路径
+getParentPathFromDetail(detailPath) {
+  // 例如：/metering/tenant/detail/123 → /metering/tenant/list
+  // 或者：/device/electricity/detail/456 → /device/electricity
+  
+  // 移除末尾的 /detail 和 ID
+  const pathWithoutDetail = detailPath
+    .replace(/\/detail\/[^/]+\/?$/, '')  // 匹配 /detail/123 或 /detail/123/
+    .replace(/\/detail\/?$/, '');         // 匹配 /detail 或 /detail/
+  
+  // 尝试几种可能的父路径
+  const possiblePaths = [
+    `${pathWithoutDetail}/list`,   // 最常见：/metering/tenant/list
+    pathWithoutDetail,              // 其次：/metering/tenant
+  ];
+  
+
+  
+  // 返回第一个存在的路径
+  for (const path of possiblePaths) {
+    const menu = this.findMenuByPath(this.permission_routes, path);
+    if (menu) {
+      return path;
+    }
+  }
+  
+  return null;
+},
+
+// 🔥 新增方法：根据路径查找菜单
+findMenuByPath(routes, targetPath) {
+  for (const route of routes) {
+    // 检查当前路由
+    if (route.path === targetPath) {
+      return route;
+    }
+    
+    // 递归检查子路由
+    if (route.children) {
+      for (const child of route.children) {
+        if (!child.hidden) {
+          const childPath = path.resolve(route.path, child.path);
+          if (childPath === targetPath) {
+            return route; // 返回父级菜单
+          }
+          
+          // 继续递归
+          if (child.children) {
+            const found = this.findMenuByPath([child], targetPath);
+            if (found) return route;
+          }
+        }
+      }
+    }
+  }
+  
+  return null;
+},
     handleAvatarError(e) {
       e.target.src =
         "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif";
+    },
+
+    showPasswordModal() {
+      this.passwordModalVisible = true;
+    },
+
+    checkInitPassword() {
+      console.log('🔒 checkInitPassword triggered. isInitPassword:', this.isInitPassword, typeof this.isInitPassword);
+      // 兼容数字1和字符串'1'
+      if (this.isInitPassword === 1 || this.isInitPassword === '1') {
+        const hasShown = sessionStorage.getItem("hasShownInitPasswordPrompt");
+        console.log('🔒 hasShownInitPasswordPrompt:', hasShown);
+        if (!hasShown) {
+          console.log('🔒 Showing password prompt...');
+          sessionStorage.setItem("hasShownInitPasswordPrompt", "true");
+          this.$confirm(
+            "当前账号使用的是初始密码，建议您修改密码以保障账号安全。",
+            "提示",
+            {
+              confirmButtonText: "去修改",
+              cancelButtonText: "暂不修改",
+              type: "warning",
+            }
+          )
+            .then(() => {
+              this.showPasswordModal();
+            })
+            .catch(() => {});
+        }
+      }
     },
 
     // 在 Layout.vue 的 methods 中，替换 logout 方法为以下代码：
@@ -1425,88 +1534,117 @@ export default {
     },
 
     // 企业切换（控制台内切换企业）
-    async handleManagerSwitch(managerId) {
-      if (managerId === this.currentManagerId) {
-        return;
+async handleManagerSwitch(managerId) {
+  if (managerId === this.currentManagerId) {
+    return;
+  }
+
+  const targetManager = this.managerList.find(
+    (m) => m.managerId === managerId
+  );
+  if (!targetManager) {
+    return;
+  }
+
+  try {
+    const loading = this.$loading({
+      lock: true,
+      text: `正在切换到${targetManager.managerName}...`,
+      spinner: "el-icon-loading",
+      background: "rgba(0, 0, 0, 0.7)",
+    });
+
+    // 🔥 步骤1: 记录当前是否在详情页
+    const isOnDetailPage = 
+      this.$route.path.includes('/detail/') || 
+      this.$route.name === 'TenantDetail';
+    
+    const currentRoutePath = this.$route.path;
+
+    // 🔥 步骤2: 如果在详情页，先跳转到列表页
+    if (isOnDetailPage) {
+      console.log('🔄 检测到在详情页，先跳转到列表页');
+      
+      // 根据详情页类型确定目标列表页
+      let targetListPath = '/metering/dashboard'; // 默认首页
+      
+      if (currentRoutePath.includes('/metering/tenant/detail/')) {
+        targetListPath = '/metering/tenant/list';
+      } else if (currentRoutePath.includes('/device/electricity/detail/')) {
+        targetListPath = '/device/electricity';
+      } else if (currentRoutePath.includes('/device/watermeter/detail/')) {
+        targetListPath = '/device/watermeter';
       }
+      
+      // 先跳转，不带参数
+      await this.$router.replace(targetListPath).catch(() => {});
+      
+      // 等待跳转完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
-      const targetManager = this.managerList.find(
-        (m) => m.managerId === managerId
-      );
-      if (!targetManager) {
-        return;
-      }
+    const currentRoute = {
+      path: this.$route.path,
+      query: { ...this.$route.query },
+      params: { ...this.$route.params },
+      name: this.$route.name,
+      fullPath: this.$route.fullPath,
+    };
 
-      try {
-        const loading = this.$loading({
-          lock: true,
-          text: `正在切换到${targetManager.managerName}...`,
-          spinner: "el-icon-loading",
-          background: "rgba(0, 0, 0, 0.7)",
-        });
+    // 步骤3: 清空页面缓存和详情页标签
+    if (this.$store.hasModule("tagsView")) {
+      await this.$store.dispatch("tagsView/clearCacheForManagerSwitch");
+    }
 
-        const currentRoute = {
+    // 步骤4: 调用store中的切换方法
+    await this.switchManager(managerId);
+
+    // 步骤5: 触发企业切换事件
+    this.$bus &&
+      this.$bus.$emit("manager-switched", {
+        managerId: managerId,
+        managerInfo: targetManager,
+        previousManagerId: this.currentManagerId,
+        currentRoute: currentRoute,
+        type: "manager-switch",
+        clearTagsView: false,
+        timestamp: new Date().toISOString(),
+      });
+
+    loading.close();
+
+    this.$message({
+      type: "success",
+      message: `已切换到${targetManager.managerName}`,
+      duration: 2000,
+    });
+
+    // 步骤6: 温和刷新当前页面（现在已经不在详情页了）
+    this.$nextTick(() => {
+      const newQuery = {
+        ...this.$route.query,
+        _t: Date.now(),
+        _m: managerId,
+      };
+
+      this.$router
+        .replace({
           path: this.$route.path,
-          query: { ...this.$route.query },
-          params: { ...this.$route.params },
-          name: this.$route.name,
-          fullPath: this.$route.fullPath,
-        };
+          query: newQuery,
+        })
+        .then(() => {})
+        .catch((err) => {});
+    });
+  } catch (error) {
+    console.error("企业切换失败:", error);
+    this.$message.error(`企业切换失败：${error.message || "请稍后重试"}`);
 
-        // 重要：企业切换时只清空页面缓存，保留TagsView标签页
-        if (this.$store.hasModule("tagsView")) {
-          await this.$store.dispatch("tagsView/clearCacheForManagerSwitch");
-        }
-
-        // 调用store中的切换方法
-        await this.switchManager(managerId);
-
-        // 触发企业切换事件，通知TagsView组件
-        this.$bus &&
-          this.$bus.$emit("manager-switched", {
-            managerId: managerId,
-            managerInfo: targetManager,
-            previousManagerId: this.currentManagerId,
-            currentRoute: currentRoute,
-            type: "manager-switch",
-            clearTagsView: false,
-            timestamp: new Date().toISOString(),
-          });
-
-        loading.close();
-
-        this.$message({
-          type: "success",
-          message: `已切换到${targetManager.managerName}`,
-          duration: 2000,
-        });
-
-        // 企业切换使用温和的页面更新方式
-        this.$nextTick(() => {
-          const newQuery = {
-            ...currentRoute.query,
-            _t: Date.now(),
-            _m: managerId,
-          };
-
-          this.$router
-            .replace({
-              path: currentRoute.path,
-              query: newQuery,
-            })
-            .then(() => {})
-            .catch((err) => {});
-        });
-      } catch (error) {
-        console.error("企业切换失败:", error);
-        this.$message.error(`企业切换失败：${error.message || "请稍后重试"}`);
-
-        const loadingInstance = this.$loading.service();
-        if (loadingInstance) {
-          loadingInstance.close();
-        }
-      }
-    },
+    const loadingInstance = this.$loading.service();
+    if (loadingInstance) {
+      loadingInstance.close();
+    }
+  }
+},
 
     // 设置选中项
     setSelectedItem(path) {
@@ -1639,7 +1777,7 @@ export default {
       // 定义不需要显示子菜单的首页路由
       const homePageRoutes = [
         "/dashboard",
-        "/console/dashboard",
+        // "/metering/dashboard",
         "/admin/dashboard",
         "/",
         "/home",
@@ -1730,6 +1868,9 @@ export default {
 
     // 切换子菜单显示
     toggleSubmenu(item) {
+      if (!this.sidebar.opened) {
+        this.$store.dispatch("app/toggleSideBar");
+      }
       if (this.expandedItem === item.path) {
         // 如果点击的是当前展开的菜单，不做任何操作（需要手动收起）
 
@@ -1957,7 +2098,7 @@ export default {
 
         // 先跳转到切换页面，避免在当前页面显示404
         if (this.$route.path !== "/switching") {
-          await this.$router.push("/switching").catch(() => {});
+          await this.$router.push("/switching").catch(() => { });
         }
 
         const loading = this.$loading({
@@ -2030,7 +2171,7 @@ export default {
         // 步骤10: 跳转到新平台的首页
         let redirectPath = "/";
         if (platformKey === "console") {
-          redirectPath = "/console/dashboard";
+          redirectPath = "/metering/dashboard";
         } else if (platformKey === "admin") {
           redirectPath = "/admin/dashboard";
         }
@@ -2203,7 +2344,7 @@ export default {
   }
 }
 
-/* 右侧子菜单面板增强样式 */
+/* 🔥 右侧子菜单面板 - 完全重构版 */
 .submenu-panel {
   width: 200px;
   background: var(--submenu-bg);
@@ -2214,89 +2355,63 @@ export default {
   flex-direction: column;
   position: relative;
 
-  .submenu-header {
-    height: 50px;
-    padding: 0 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--search-bg);
-    border-bottom: 1px solid var(--border-color);
-
-    .submenu-title {
-      display: flex;
-      align-items: center;
-      color: var(--text-primary);
-      font-weight: 600;
-      font-size: 14px;
-      flex: 1;
-
-      .submenu-icon {
-        font-size: 18px;
-        margin-right: 10px;
-        color: var(--primary-color);
-      }
-    }
-
-    .submenu-collapse-btn {
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border-radius: 6px;
-      background: transparent;
-      border: 1px solid var(--border-color);
-      transition: all 0.3s ease;
-      color: var(--text-muted);
-      flex-shrink: 0;
-
-      &:hover {
-        background: var(--hover-bg);
-        border-color: var(--primary-color);
-        color: var(--primary-color);
-        transform: scale(1.05);
-      }
-
-      &:active {
-        transform: scale(0.95);
-      }
-
-      i {
-        font-size: 12px;
-        transition: transform 0.3s ease;
-      }
-
-      &:hover i {
-        transform: rotate(90deg);
-      }
-    }
-  }
+  /* 🔥 删除了原有的 .submenu-header 样式 */
 
   .submenu-content {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 0;
+    padding: 0;
+    /* 🔥 去掉顶部padding，让第一个分隔线紧贴顶部 */
 
-    /* 分组标题样式 */
+    /* 🔥 分组标题样式 */
     .submenu-group-header {
       padding: 12px 16px 8px;
       margin-bottom: 4px;
       border-bottom: 1px solid var(--border-color);
 
-      .group-title {
-        font-size: 12px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 600;
-        margin-left: 3px;
-        margin-right: 3px;
+      .group-header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+
+        .group-icon {
+          font-size: 14px;
+          color: var(--primary-color);
+          margin-right: 8px;
+        }
+
+        .group-title {
+          font-size: 12px;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          font-weight: 600;
+          flex: 1;
+        }
+
+        .group-toggle-icon {
+          font-size: 12px;
+          color: var(--text-muted);
+          transition: transform 0.3s ease;
+
+          &.is-collapsed {
+            transform: rotate(-90deg);
+          }
+        }
+      }
+
+      /* 分组标题可点击时的hover效果 */
+      &.clickable:hover {
+        background: var(--hover-bg);
+
+        .group-title {
+          color: var(--primary-color);
+        }
       }
     }
 
-    /* 可展开的菜单项 */
+    /* 🔥 可展开的菜单项 */
     .submenu-expandable {
       margin: 2px 0;
 
@@ -2408,7 +2523,7 @@ export default {
             font-size: 13px;
 
             .submenu-child-icon {
-              font-size: 18px !important; // 子项稍小一点，保持层级感
+              font-size: 18px !important;
               margin-right: 10px;
               color: var(--text-secondary);
               width: 20px;
@@ -2459,7 +2574,7 @@ export default {
       }
     }
 
-    /* 普通菜单项样式保持不变 */
+    /* 🔥 普通菜单项样式 */
     .submenu-item-link {
       text-decoration: none;
       display: block;
@@ -2469,20 +2584,22 @@ export default {
         align-items: center;
         padding: 12px 16px;
         color: var(--submenu-text);
-        transition: all 0.15s ease;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         margin: 2px 8px;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 14px;
+        position: relative;
 
         .submenu-item-icon {
-          font-size: 20px !important; // 统一改为20px
+          font-size: 20px !important;
           margin-right: 12px;
           color: var(--text-secondary);
           width: 22px;
           text-align: center;
-          flex-shrink: 0; // 防止图标被压缩
+          flex-shrink: 0;
           line-height: 1;
+          transition: all 0.2s ease;
         }
 
         .submenu-item-title {
@@ -2494,9 +2611,11 @@ export default {
         &:hover {
           background: var(--submenu-hover-bg);
           color: var(--primary-color);
+          transform: translateX(2px);
 
           .submenu-item-icon {
             color: var(--primary-color);
+            transform: scale(1.1);
           }
         }
 
@@ -2504,6 +2623,19 @@ export default {
           background: var(--submenu-active-bg);
           color: var(--submenu-active-text);
           font-weight: 500;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+          &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: var(--primary-color);
+            border-radius: 0 2px 2px 0;
+          }
 
           .submenu-item-icon {
             color: var(--submenu-active-text);
@@ -2512,13 +2644,14 @@ export default {
       }
     }
 
-    /* 分隔线样式 */
+    /* 🔥🔥🔥 分隔线样式 - 核心修改 */
     .submenu-divider {
       height: 1px;
       background: var(--border-color);
       margin: 12px 16px;
       position: relative;
 
+      /* 普通带标签的分隔线 */
       &.with-label {
         height: auto;
         background: none;
@@ -2534,8 +2667,104 @@ export default {
           margin-bottom: 8px;
           padding: 0 4px;
           position: relative;
+          padding-left: 8px;
+
+          /* 左侧小装饰 */
+          &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2px;
+            height: 12px;
+            background: var(--primary-color);
+            border-radius: 1px;
+          }
         }
       }
+
+      /* 🔥🔥🔥 第一个分隔线 = 标题样式（重点） */
+      &.is-first {
+        height: 50px;
+        /* 🔥 改为50px，和左侧logo区域同高 */
+        background: rgba(214, 212, 212, 0.15);
+
+        /* 🔥 只保留底部边框 */
+        margin: 0;
+        /* 紧贴顶部 */
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+
+        &:not(:first-child) {
+          margin-top: 16px;
+          /* 和上面内容的间距 */
+        }
+
+        .divider-label {
+          font-size: 15px;
+          /* 字体更大 */
+          font-weight: 600;
+          /* 加粗 */
+          color: var(--text-primary);
+          text-transform: none;
+          /* 不转大写 */
+          letter-spacing: 0.3px;
+          margin-bottom: 0;
+          /* 取消底部间距 */
+          padding-left: 8px;
+          /* 为左侧装饰条留空间 */
+          padding: 0 0 0 8px;
+
+          /* 渐变文字效果 */
+          background: linear-gradient(135deg,
+              var(--text-primary),
+              var(--primary-color));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+
+          /* 移除原有的装饰线 */
+          &::before {
+            display: none;
+          }
+        }
+      }
+
+      /* 🔥 确保非第一个的分隔线保持原样 */
+      &:not(.is-first) {
+        &.with-label {
+          margin: 20px 16px 12px;
+
+          .divider-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            position: relative;
+            padding-left: 8px;
+
+            &::before {
+              content: "";
+              position: absolute;
+              left: 0;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 2px;
+              height: 12px;
+              background: var(--primary-color);
+              border-radius: 1px;
+            }
+          }
+        }
+      }
+    }
+
+    /* 🔥 第一个分隔线后的菜单项间距调整 */
+    .submenu-divider.is-first+.submenu-item-link,
+    .submenu-divider.is-first+.submenu-expandable,
+    .submenu-divider.is-first+.submenu-group-header {
+      margin-top: 8px;
     }
 
     /* 滚动条样式 */
@@ -2758,27 +2987,27 @@ export default {
         font-size: 14px;
         font-weight: 500;
         transition: all 0.3s ease;
-        border: none !important; /* 完全去除边框 */
-        outline: none !important; /* 去除轮廓线 */
+        border: none !important;
+        outline: none !important;
 
         &:hover {
           background: var(--primary-color);
           color: #fff;
           transform: translateY(-1px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          border: none !important; /* hover时也不要边框 */
-          outline: none !important; /* hover时也不要轮廓线 */
+          border: none !important;
+          outline: none !important;
         }
 
         &:focus {
-          border: none !important; /* focus时也不要边框 */
-          outline: none !important; /* focus时也不要轮廓线 */
+          border: none !important;
+          outline: none !important;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         &:active {
-          border: none !important; /* active时也不要边框 */
-          outline: none !important; /* active时也不要轮廓线 */
+          border: none !important;
+          outline: none !important;
         }
 
         i {
@@ -2969,11 +3198,11 @@ export default {
 
         i {
           color: #fff;
-          transform: rotate(45deg); /* 激活时旋转图标 */
+          transform: rotate(45deg);
         }
 
         &:hover {
-          transform: translateY(-1px); /* 激活时hover效果减弱 */
+          transform: translateY(-1px);
         }
       }
 
@@ -3002,7 +3231,6 @@ export default {
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
         }
 
-        /* 静态用户头像样式 */
         .user-avatar-static {
           width: 28px;
           height: 28px;
@@ -3010,7 +3238,7 @@ export default {
           margin-right: 10px;
           border: 1px solid var(--border-color);
           transition: all 0.3s ease;
-          background: #6c7b88; /* 固定的灰色背景 */
+          background: #6c7b88;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -3115,7 +3343,6 @@ export default {
   width: 240px;
   background: var(--card-bg);
   border-right: 1px solid var(--border-color);
-  // height: calc(100vh - 104px); /* 减去navbar和breadcrumb的高度 */
   height: 80vh;
   flex-shrink: 0;
   display: flex;
@@ -3218,11 +3445,11 @@ export default {
 
     .custom-tree {
       background: transparent;
+
       ::v-deep .el-tree-node__expand-icon.is-leaf {
-        visibility: hidden; // 或者用 display: none;
+        visibility: hidden;
       }
 
-      /* 树节点样式 */
       ::v-deep .el-tree-node {
         .el-tree-node__content {
           height: 36px;
@@ -3249,8 +3476,7 @@ export default {
           }
         }
 
-        /* 选中状态 */
-        &.is-current > .el-tree-node__content {
+        &.is-current>.el-tree-node__content {
           background: var(--primary-color);
           color: #fff;
 
@@ -3321,14 +3547,12 @@ export default {
           }
         }
 
-        /* 鼠标悬停时显示操作按钮 */
         &:hover .node-actions {
           opacity: 1;
         }
       }
     }
 
-    /* 滚动条样式 */
     &::-webkit-scrollbar {
       width: 6px;
     }
@@ -3410,7 +3634,6 @@ export default {
   position: relative;
   transition: all 0.3s ease;
 
-  /* 有树形面板时的样式 */
   &.with-tree {
     margin-left: 0;
   }
@@ -3458,14 +3681,13 @@ export default {
         padding: 6px 12px;
         gap: 8px;
         min-width: unset;
-        border: none !important; /* 移动端也确保没有边框 */
+        border: none !important;
 
         &:hover {
           border: none !important;
           box-shadow: none !important;
         }
 
-        /* 移动端下拉组件样式 */
         .el-dropdown {
           border: none !important;
           outline: none !important;
@@ -3503,8 +3725,8 @@ export default {
           padding: 6px 12px;
           gap: 6px;
           font-size: 13px;
-          border: none !important; /* 移动端也去除边框 */
-          outline: none !important; /* 移动端也去除轮廓线 */
+          border: none !important;
+          outline: none !important;
 
           &:hover,
           &:focus,
@@ -3670,11 +3892,9 @@ export default {
       color: var(--text-primary) !important;
 
       .option-avatar {
-        background: linear-gradient(
-          135deg,
-          var(--primary-color),
-          #667eea
-        ) !important;
+        background: linear-gradient(135deg,
+            var(--primary-color),
+            #667eea) !important;
         transform: scale(1.05);
       }
     }
@@ -3826,13 +4046,14 @@ export default {
   overflow: auto;
   min-height: 50px;
   overflow-x: hidden;
+
   .el-dropdown-menu__item--divided {
     margin-top: 4px;
     padding-top: 4px;
     border-top: 1px solid var(--border-color);
 
     &:before {
-      display: none !important; // 直接隐藏原有的伪元素
+      display: none !important;
     }
   }
 }
@@ -3845,7 +4066,6 @@ export default {
     }
   }
 
-  /* 全屏模式下隐藏浏览器滚动条 */
   body {
     overflow: hidden;
   }

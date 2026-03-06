@@ -25,6 +25,7 @@ const state = {
   role: "", // 主要角色字段
   phone: "", // 电话字段
   userInfoLoaded: false, // 用户信息是否已加载
+  isInitPassword: null, // 是否初始密码：0-是，1-否，null-未知
 };
 
 const mutations = {
@@ -52,6 +53,9 @@ const mutations = {
   SET_PHONE: (state, phone) => {
     state.phone = phone;
   },
+  SET_IS_INIT_PASSWORD: (state, isInitPassword) => {
+    state.isInitPassword = isInitPassword;
+  },
   SET_USER_INFO_LOADED: (state, loaded) => {
     state.userInfoLoaded = loaded;
   },
@@ -64,6 +68,7 @@ const mutations = {
     state.permissions = [];
     state.role = "";
     state.phone = "";
+    state.isInitPassword = null;
     state.userInfoLoaded = false;
   },
 };
@@ -80,11 +85,14 @@ const actions = {
     return new Promise((resolve, reject) => {
       login(loginData)
         .then((response) => {
-          const { data, msg } = response;
-          commit("SET_TOKEN", data);
-          setToken(data);
-
-          resolve(response);
+          if (response.code === 200) {
+            const { data } = response;
+            commit("SET_TOKEN", data);
+            setToken(data);
+            resolve(response);
+          } else {
+            reject(new Error(response.msg || "登录失败"));
+          }
         })
         .catch((error) => {
           console.error("登录失败:", error);
@@ -111,12 +119,13 @@ const actions = {
             return;
           }
 
-          const { role, name, phone } = data;
+          const { role, name, phone, isInitPassword } = data;
 
           // 设置用户信息
           commit("SET_ROLE", role);
           commit("SET_NAME", name || phone || "用户");
           commit("SET_PHONE", phone);
+          commit("SET_IS_INIT_PASSWORD", isInitPassword);
 
           // 根据角色设置roles数组（兼容原有权限系统）
           const roles = [role];
@@ -155,6 +164,8 @@ const actions = {
         .then(async () => {
           await performLogoutCleanup(commit, dispatch);
           resolve();
+          // 强制刷新页面以确保所有状态（特别是路由）被完全重置
+          // window.location.reload(); 
         })
         .catch(async (error) => {
           console.error("退出API调用失败:", error);
@@ -182,6 +193,8 @@ async function performLogoutCleanup(commit, dispatch) {
   // 清除用户状态
   commit("RESET_USER_STATE");
   removeToken();
+  // 清除初始密码提示标记
+  sessionStorage.removeItem('hasShownInitPasswordPrompt');
 
   try {
     // 重置权限路由
@@ -200,6 +213,7 @@ const getters = {
   permissions: (state) => state.permissions,
   role: (state) => state.role,
   phone: (state) => state.phone,
+  isInitPassword: (state) => state.isInitPassword,
   userInfoLoaded: (state) => state.userInfoLoaded,
 };
 

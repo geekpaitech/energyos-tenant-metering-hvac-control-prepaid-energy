@@ -304,7 +304,7 @@ import {
 
 import { mapGetters } from "vuex";
 import moment from 'moment';
-
+import * as XLSX from 'xlsx';
 export default {
   name: "ShareManagement",
   data() {
@@ -731,29 +731,138 @@ export default {
     
     // 导出数据
     handleExport() {
-      if (this.tableData.length === 0) {
-        this.$message.warning("暂无数据可导出");
-        return;
+  if (this.tableData.length === 0) {
+    this.$message.warning("暂无数据可导出");
+    return;
+  }
+
+  try {
+    // 确定要导出的数据：优先导出选中数据，无选中则导出当前页
+    const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData;
+    
+    // 构建导出的表头和数据
+    const headers = this.displayColumns.map(col => col.label);
+    const data = exportData.map(row => {
+      return this.displayColumns.map(col => {
+        const value = row[col.key];
+        
+        // 处理特殊字段的显示格式
+        switch (col.key) {
+          case 'shareTypeLabel':
+            return value || '公摊';
+          case 'settleStatus':
+            return this.getStatusLabel(value);
+          default:
+            if (col.type === 'money') {
+              return value ? parseFloat(value).toFixed(2) : '0.00';
+            } else if (col.type === 'area') {
+              return value ? `${value}` : '0';
+            }
+            return value || '';
+        }
+      });
+    });
+
+    // 创建工作表数据
+    const wsData = [headers, ...data];
+    
+    // 创建工作表
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // 设置列宽
+    const colWidths = this.displayColumns.map(col => {
+      if (col.width) {
+        return { wch: Math.max(parseInt(col.width) / 8, col.label.length + 2) };
+      } else if (col.minWidth) {
+        return { wch: Math.max(parseInt(col.minWidth) / 8, col.label.length + 2) };
       }
+      return { wch: Math.max(15, col.label.length + 2) };
+    });
+    ws['!cols'] = colWidths;
+
+    // 设置表头样式
+    const headerRange = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!ws[cellAddress]) continue;
       
-      // 导出功能
-      const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData;
-      const typeText = this.queryData.shareType === 1 ? "用电" : "用水";
-      
-      // 构建导出数据
-      const params = {
-        ele: this.$el.querySelector('.el-table'),
-        name: `${typeText}公摊账单.xlsx`,
-        data: exportData
+      ws[cellAddress].s = {
+        font: { bold: true, color: { rgb: "606266" } },
+        fill: { fgColor: { rgb: "F5F7FA" } },
+        alignment: { horizontal: "center", vertical: "center" }
       };
-      
-      // 调用导出方法
-      if (this.$store && this.$store.dispatch) {
-        this.$store.dispatch('export/export', params);
-      } else {
-        this.$message.info("导出功能开发中...");
-      }
-    },
+    }
+
+    // 创建工作簿
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "公摊组账单");
+
+    // 生成文件名
+    const fileName = this.generateFileName();
+    
+    // 导出文件（使用原生方法）
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'none';
+    
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    // 显示导出信息
+    const exportCount = exportData.length;
+    const isSelectedExport = this.selectedData.length > 0;
+    this.$message.success(`成功导出${exportCount}条${isSelectedExport ? '选中' : ''}数据！`);
+  } catch (error) {
+    console.error('导出失败:', error);
+    this.$message.error('导出失败，请重试');
+  }
+},
+
+// 3. 添加生成文件名的方法
+generateFileName() {
+  const now = new Date();
+  const timeStr = now.getFullYear() + 
+    String(now.getMonth() + 1).padStart(2, '0') + 
+    String(now.getDate()).padStart(2, '0') + '_' +
+    String(now.getHours()).padStart(2, '0') + 
+    String(now.getMinutes()).padStart(2, '0') + 
+    String(now.getSeconds()).padStart(2, '0');
+  
+  // 根据公摊类型生成不同的文件名
+  let typePrefix = "公摊账单";
+  if (this.queryData.shareType === 1) {
+    typePrefix = "用电公账单";
+  } else if (this.queryData.shareType === 2) {
+    typePrefix = "用水公账单";
+  }
+  
+  // 如果选择了特定公摊组，包含公摊组信息
+  if (this.queryData.shareId) {
+    const shareItem = this.shareList.find(item => item.id === this.queryData.shareId);
+    const shareName = shareItem ? shareItem.name : this.queryData.shareId;
+    return `${typePrefix}_${shareName}_${timeStr}.xlsx`;
+  }
+  
+  // 如果选择了时间范围，包含时间信息
+  if (this.queryData.timeRange && this.queryData.timeRange.length === 2) {
+    const startDate = this.queryData.timeRange[0].replace(/-/g, '');
+    const endDate = this.queryData.timeRange[1].replace(/-/g, '');
+    return `${typePrefix}_${startDate}-${endDate}_${timeStr}.xlsx`;
+  }
+  
+  return `${typePrefix}_${timeStr}.xlsx`;
+},
     
     // 选择变化
     handleSelectionChange(selection) {

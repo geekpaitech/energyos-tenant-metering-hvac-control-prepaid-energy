@@ -39,6 +39,19 @@ export function logout() {
   })
 }
 
+// 修改密码
+export function changePassword(params) {
+  return request({
+    url: '/api/ebc-auth/auth/changePassword',
+    method: 'post',
+    headers: {
+      'userDeviceType': 'PC',
+      'Content-Type': 'application/json'
+    },
+    params
+  })
+}
+
 // 发送验证码（用于调价验证）
 export function authSendSmsCode(params) {
   return request({

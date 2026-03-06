@@ -88,7 +88,7 @@ export default {
       switch (currentPlatform) {
         case 'console':
           return {
-            path: '/console/dashboard',
+            path: '/metering/dashboard',
             meta: { title: '控制台' }
           };
         case 'admin':
@@ -103,7 +103,7 @@ export default {
           
           if (currentPath.startsWith('/console')) {
             return {
-              path: '/console/dashboard',
+              path: '/metering/dashboard',
               meta: { title: '控制台' }
             };
           } else if (currentPath.startsWith('/admin')) {
@@ -123,7 +123,7 @@ export default {
               
               if (availablePlatforms.includes('console')) {
                 return {
-                  path: '/console/dashboard',
+                  path: '/metering/dashboard',
                   meta: { title: '控制台' }
                 };
               } else if (availablePlatforms.includes('admin')) {

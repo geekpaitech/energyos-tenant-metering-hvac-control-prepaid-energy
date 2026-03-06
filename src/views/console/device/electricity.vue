@@ -41,6 +41,7 @@
                   clearable
                   size="small"
                   style="width: 100%"
+                  @change="handleSearch"
                 >
                   <!-- 电表类型选项 -->
                   <template v-if="field.prop === 'bindType'">
@@ -48,6 +49,7 @@
                     <el-option label="专用表" value="1" />
                     <el-option label="公摊表" value="2" />
                     <el-option label="公式表" value="3" />
+                    <el-option label="空调表" value="4" />
                   </template>
                   <!-- 绑定租户选项 -->
                   <template v-else-if="field.prop === 'bindId'">
@@ -114,6 +116,7 @@
                     size="small"
                     style="width: 100%"
                     :filterable="field.prop === 'bindId'"
+                    @change="handleSearch"
                   >
                     <!-- 绑定租户选项 -->
                     <template v-if="field.prop === 'bindId'">
@@ -247,11 +250,12 @@
         <!-- 数据表格 -->
         <el-table
           v-loading="loading"
+          border
           :data="tableData"
           :max-height="tableMaxHeight"
           stripe
           style="width: 100%"
-          class="custom-table"
+          class="custom-table light-border-table"
           @selection-change="handleSelectionChange"
           :header-cell-style="{
             background: '#f5f7fa',
@@ -269,30 +273,92 @@
             :label="col.label"
             :width="col.width"
             :min-width="col.minWidth"
-            :align="col.align || 'center'"
+            :align="col.isTag ? 'center' : 'left'"
+            :header-align="col.isTag ? 'center' : 'left'"
             :show-overflow-tooltip="true"
           >
             <template slot-scope="scope">
-              <!-- 序列号 - 添加图标和跳转链接 -->
+              <!-- 序列号 - 点击复制 -->
               <template v-if="col.key === 'serial'">
-                <el-link type="primary" @click="handleMonitor(scope.row)">
-                  <i class="iconfont  icon-dianbiao1" style="margin-right: 4px;"></i>
-                  {{ scope.row.serial || "-" }}
-                </el-link>
+                <el-tooltip
+                  content="点击可复制"
+                  placement="top"
+                  :open-delay="300"
+                >
+                  <span
+                    class="serial-copy"
+                    @click="handleCopySerial(scope.row.serial)"
+                  >
+                    {{ scope.row.serial || "-" }}
+                  </span>
+                </el-tooltip>
               </template>
 
-              <!-- 设备名称 - 黑色文字，不可点击 -->
+              <!-- 电费方案 -->
+              <template v-else-if="col.key === 'meterPriceName'">
+                <el-popover
+                  v-if="scope.row.meterPriceDetail"
+                  placement="top"
+                  width="360"
+                  trigger="hover"
+                >
+                  <div class="price-detail-popover">
+                    <div class="price-row">
+                      <div class="price-item peak">
+                        <span class="price-label">尖电价</span>
+                        <span class="price-value"
+                          >¥{{
+                            scope.row.meterPriceDetail.powerPeakPrice
+                          }}</span
+                        >
+                      </div>
+                      <div class="price-item top">
+                        <span class="price-label">峰电价</span>
+                        <span class="price-value"
+                          >¥{{ scope.row.meterPriceDetail.powerTopPrice }}</span
+                        >
+                      </div>
+                      <div class="price-item flat">
+                        <span class="price-label">平电价</span>
+                        <span class="price-value"
+                          >¥{{
+                            scope.row.meterPriceDetail.powerFlatPrice
+                          }}</span
+                        >
+                      </div>
+                      <div class="price-item valley">
+                        <span class="price-label">谷电价</span>
+                        <span class="price-value"
+                          >¥{{
+                            scope.row.meterPriceDetail.powerValleyPrice
+                          }}</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                  <span slot="reference" class="price-name-link">
+                    {{ scope.row.meterPriceName }}
+                    <i
+                      class="el-icon-warning-outline"
+                      style="margin-left: 4px; color: #000"
+                    ></i>
+                  </span>
+                </el-popover>
+                <span v-else class="text-muted">-</span>
+              </template>
+
+              <!-- 设备名称 - 点击查看详情 -->
               <template v-else-if="col.key === 'meterName'">
-                <span style="color: #000;">
+                <el-link type="primary" @click="handleMonitor(scope.row)">
                   {{ scope.row.meterName || "-" }}
-                </span>
+                </el-link>
               </template>
 
               <!-- 电表类型 -->
               <template v-else-if="col.key === 'bindTypeLabel'">
                 <el-tag
                   v-if="scope.row.bindType == 1"
-                  type="primary"
+                  type="success"
                   size="small"
                   effect="plain"
                 >
@@ -314,12 +380,18 @@
                 >
                   公式表
                 </el-tag>
+                <el-tag
+                  v-else-if="scope.row.bindType == 4"
+                  type="info"
+                  size="small"
+                  effect="plain"
+                >
+                  空调表
+                </el-tag>
                 <span v-else>-</span>
               </template>
 
-              <!-- 归属项目 - 已移除 -->
-
-              <!-- 已绑租户 -->
+              <!-- 已绑信息 -->
               <template v-else-if="col.key === 'bindName'">
                 <el-link
                   v-if="scope.row.bindId"
@@ -351,22 +423,54 @@
                 <span v-else>-</span>
               </template>
 
-              <!-- 分合闸状态 -->
+              <!-- 分合闸状态 - 标签形式 -->
               <template v-else-if="col.key === 'switchStatusLabel'">
-                <div class="switch-status">
-                  <i
-                    :class="
-                      scope.row.switchStatus == 1
-                        ? 'el-icon-switch-button'
-                        : 'el-icon-turn-off'
-                    "
-                    :style="{
-                      color:
-                        scope.row.switchStatus == 1 ? '#67C23A' : '#909399',
-                    }"
-                  ></i>
-                  {{ scope.row.switchStatus == 1 ? "合闸" : "分闸" }}
-                </div>
+                <el-tag
+                  v-if="scope.row.switchStatus == 1"
+                  type="success"
+                  size="small"
+                  effect="plain"
+                >
+                  合闸
+                </el-tag>
+                <el-tag
+                  v-else-if="scope.row.switchStatus == 0"
+                  type="info"
+                  size="small"
+                  effect="plain"
+                >
+                  分闸
+                </el-tag>
+                <span v-else>-</span>
+              </template>
+
+              <!-- 电表规格（相位） -->
+              <template v-else-if="col.key === 'phaseLabel'">
+                <el-tag
+                  v-if="scope.row.phase == 5"
+                  type="primary"
+                  size="small"
+                  effect="plain"
+                >
+                  三相一次
+                </el-tag>
+                <el-tag
+                  v-else-if="scope.row.phase == 6"
+                  type="success"
+                  size="small"
+                  effect="plain"
+                >
+                  三相二次
+                </el-tag>
+                <el-tag
+                  v-else-if="scope.row.phase == 7"
+                  type="warning"
+                  size="small"
+                  effect="plain"
+                >
+                  单相一次
+                </el-tag>
+                <span v-else>-</span>
               </template>
 
               <!-- 在线状态 -->
@@ -384,33 +488,14 @@
                 </div>
               </template>
 
-              <!-- 余额 -->
-              <template v-else-if="col.key === 'balance'">
-                <span class="balance-text">
-                  {{
-                    scope.row.balance !== null &&
-                    scope.row.balance !== undefined
-                      ? "¥" + parseFloat(scope.row.balance).toFixed(2)
-                      : "-"
-                  }}
-                </span>
-              </template>
-
-              <!-- 实时功率 -->
-              <template v-else-if="col.key === 'p'">
-                <span class="power-text">
-                  {{
-                    scope.row.p !== null &&
-                    scope.row.p !== undefined
-                      ? scope.row.p + "kW"
-                      : "-"
-                  }}
-                </span>
-              </template>
-
               <!-- 最新数据时间 -->
               <template v-else-if="col.key === 'syncTime'">
-                <span>{{ generateRandomTime() }}</span>
+                <span>{{ scope.row.syncTime || "-" }}</span>
+              </template>
+
+              <!-- 创建时间 -->
+              <template v-else-if="col.key === 'createTime'">
+                <span>{{ scope.row.createTime || "-" }}</span>
               </template>
 
               <!-- 默认显示 -->
@@ -420,60 +505,76 @@
             </template>
           </el-table-column>
 
-          <!-- 操作列 -->
+          <!-- 操作列 - 彻底修复缩放问题 -->
+          <!-- 操作列 - 简化布局 -->
           <el-table-column
             label="操作"
-            width="240"
+            width="190"
             fixed="right"
             align="center"
+            :resizable="false"
           >
+            <template slot="header">
+              <span>操作</span>
+            </template>
             <template slot-scope="scope">
-              <div style="display: flex; align-items: center; justify-content: center; gap: 2px; white-space: nowrap;">
+              <div class="operation-cell">
+                <!-- 分闸/合闸按钮 -->
+                <el-button
+                  v-if="scope.row.switchStatus == 1"
+                  type="text"
+                  size="mini"
+                  @click="handleSwitch(scope.row, 0)"
+                  class="op-btn primary-btn"
+                >
+                  <i class="el-icon-switch-button"></i>
+                  分闸
+                </el-button>
+
+                <el-button
+                  v-else
+                  type="text"
+                  size="mini"
+                  @click="handleSwitch(scope.row, 1)"
+                  class="op-btn primary-btn"
+                >
+                  <i class="el-icon-open"></i>
+                  合闸
+                </el-button>
+
+                <!-- <span class="op-divider">|</span> -->
+
+                <!-- 编辑按钮 -->
                 <el-button
                   type="text"
                   size="mini"
-                  icon="el-icon-setting"
                   @click="handleEdit(scope.row)"
-                  style="padding: 1px 2px; font-size: 11px; min-width: auto;"
+                  class="op-btn primary-btn"
                 >
-                  设置
+                  编辑
                 </el-button>
-                <span style="color: #DCDFE6; font-size: 10px;">|</span>
+
+                <!-- <span class="op-divider">|</span> -->
+
+                <!-- 详情按钮 -->
                 <el-button
                   type="text"
                   size="mini"
-                  :icon="scope.row.switchStatus == 1 ? 'el-icon-turn-off' : 'el-icon-switch-button'"
-                  @click="handleSwitch(scope.row, scope.row.switchStatus == 1 ? 0 : 1)"
-                  :style="{
-                    color: scope.row.switchStatus == 1 ? '#F56C6C' : '#67C23A',
-                    padding: '1px 2px',
-                    fontSize: '11px',
-                    minWidth: 'auto'
-                  }"
-                >
-                  {{ scope.row.switchStatus == 1 ? "分闸" : "合闸" }}
-                </el-button>
-                <span style="color: #DCDFE6; font-size: 10px;">|</span>
-                <el-button
-                  type="text"
-                  size="mini"
-                  icon="el-icon-monitor"
                   @click="handleMonitor(scope.row)"
-                  style="padding: 1px 2px; font-size: 11px; min-width: auto;"
+                  class="op-btn primary-btn"
                 >
-                  监控
+                  详情
                 </el-button>
               </div>
             </template>
           </el-table-column>
         </el-table>
-      </div>
-    </div>
-     <!-- 分页 -->
-     <div class="pagination-container">
+
+        <!-- 分页 -->
+        <div class="pagination-container compact-pagination">
           <el-pagination
             :current-page="pageData.current"
-            :page-sizes="[15, 30, 60, 100]"
+            :page-sizes="[15, 30, 60, 100, 200]"
             :page-size="pageData.size"
             :total="pageData.total"
             layout="total, sizes, prev, pager, next, jumper"
@@ -481,6 +582,9 @@
             @current-change="handleCurrentChange"
           />
         </div>
+      </div>
+    </div>
+
     <!-- 编辑弹窗 -->
     <el-dialog
       :title="editForm.id ? '编辑电表' : '新增电表'"
@@ -596,6 +700,36 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <!-- 编辑时显示价格选择 -->
+        <el-row :gutter="20" v-if="editForm.id">
+          <el-col :span="12">
+            <el-form-item label="电价方案" prop="priceId">
+              <el-select
+                v-model="editForm.priceId"
+                placeholder="请选择电价方案"
+                style="width: 100%"
+                clearable
+              >
+                <el-option
+                  v-for="price in priceList"
+                  :key="price.id"
+                  :label="price.name"
+                  :value="price.id"
+                >
+                  <div>
+                    <div>{{ price.name }}</div>
+                    <div style="font-size: 12px; color: #999">
+                      峰:{{ price.powerPeakPrice }}元 平:{{
+                        price.powerFlatPrice
+                      }}元 谷:{{ price.powerValleyPrice }}元
+                    </div>
+                  </div>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
@@ -625,6 +759,12 @@
         <el-button type="primary" @click="handleUpdatePayType">确 定</el-button>
       </span>
     </el-dialog>
+
+    <meter-detail-drawer
+      :visible.sync="detailDrawer.visible"
+      :meter-id="detailDrawer.meterId"
+      :serial="detailDrawer.serial"
+    />
   </div>
 </template>
 
@@ -639,6 +779,9 @@ import {
 } from "@/api/meter";
 
 import { tenantPageTenant } from "@/api/tenant";
+import { meterPriceList } from "@/api/meterPrice";
+import MeterDetailDrawer from "../device/electricity/detail.vue";
+
 // 导入枚举
 import {
   MeterBindType,
@@ -652,20 +795,28 @@ import {
 } from "@/utils/enums/meter";
 
 import { mapGetters } from "vuex";
+import * as XLSX from "xlsx";
 
 export default {
   name: "MeterManagement",
+  components: {
+    MeterDetailDrawer,
+  },
   data() {
     return {
-      
-      tableHeightConfig: {
-        headerHeight: 48, // 表头高度
-        rowHeight: 47, // 每行高度
-        minHeight: 200, // 最小高度
-        maxRows: 10, // 最大显示行数（超过9行显示滚动条）
-        paginationHeight: 68, // 分页高度
+      isInitialLoad: true, // 添加标记
+      detailDrawer: {
+        visible: false,
+        meterId: "",
+        serial: "",
       },
-      // 查询参数
+      tableHeightConfig: {
+        headerHeight: 48,
+        rowHeight: 47,
+        minHeight: 200,
+        maxRows: 11,
+        paginationHeight: 68,
+      },
       queryData: {
         bindId: "",
         bindType: "",
@@ -676,41 +827,30 @@ export default {
         serial: "",
         switchStatus: "",
       },
-      // 搜索字段配置
       searchFields: {
         basic: [
           { prop: "serial", label: "序列号", type: "input" },
           { prop: "meterName", label: "电表名称", type: "input" },
-          // 隐藏电表编号搜索
-          // { prop: "id", label: "电表编号", type: "input" },
           { prop: "bindType", label: "电表类型", type: "select" },
         ],
         advanced: [
-          { prop: "bindId", label: "绑定租户", type: "select" },
           { prop: "onlineStatus", label: "在线状态", type: "select" },
-          { prop: "switchStatus", label: "分合闸", type: "select" },
+          // { prop: "switchStatus", label: "分合闸", type: "select" },
         ],
       },
-      // 租户列表数据
       tenantList: [],
-      // 表格数据
+      priceList: [],
       tableData: [],
-      // 加载状态
       loading: false,
       submitting: false,
-      // 是否显示高级筛选
       showAdvanced: false,
-      // 分页数据
       pageData: {
         current: 1,
         size: 15,
         total: 0,
       },
-      // 选中的数据
       selectedData: [],
-      // 编辑弹窗
       dialogVisible: false,
-      // 编辑表单
       editForm: {
         id: "",
         serial: "",
@@ -722,8 +862,8 @@ export default {
         pt: 1,
         phase: "",
         managerId: "",
+        priceId: "",
       },
-      // 表单验证规则
       rules: {
         serial: [{ required: true, message: "请输入序列号", trigger: "blur" }],
         meterName: [
@@ -739,20 +879,18 @@ export default {
           { required: true, message: "请选择电表相位", trigger: "change" },
         ],
       },
-      // 预付费修改弹窗
       payTypeDialog: {
         visible: false,
         row: null,
         switchType: null,
       },
-      // 枚举数据
       MeterBindType,
       MeterPayType,
       MeterSwitchStatus,
       MeterOnlineStatus,
       MeterPhase,
       MeterMonitorType,
-      // 表格列配置
+      // 表格列配置 - 添加 isTag 标识
       tableKey: [
         {
           label: "序列号",
@@ -761,13 +899,6 @@ export default {
           checked: true,
           disabled: true,
         },
-        // 隐藏电表编号
-        // {
-        //   label: "电表编号",
-        //   key: "id",
-        //   checked: true,
-        //   width: "120",
-        // },
         {
           label: "电表名称",
           key: "meterName",
@@ -775,98 +906,65 @@ export default {
           checked: true,
           click: true,
           disabled: true,
-          id: 630040,
         },
         {
-          label: "电表类型",
+          label: "类型",
           key: "bindTypeLabel",
           checked: true,
-          width: "150",
+          width: "100",
+          isTag: true, // 标记为标签类型
         },
-
         {
-          label: "已绑租户",
+          label: "已绑信息",
           key: "bindName",
           click: true,
           checked: true,
-          width: "280",
-          id: 610022,
+          width: "300",
         },
         {
           label: "付费模式",
           checked: true,
           key: "logicPayTypeLabel",
+          width: "100",
+          isTag: true, // 标记为标签类型
+        },
+        {
+          label: "电费方案",
+          checked: true,
+          key: "meterPriceName",
+          width: "150",
+        },
+        {
+          label: "电表规格",
+          checked: true,
+          key: "phaseLabel",
           width: "120",
+          isTag: true, // 标记为标签类型
         },
         {
           label: "分合闸状态",
           checked: true,
           key: "switchStatusLabel",
-          width: "140",
-        },
-        {
-          label: "电表相位",
-          checked: true,
-          key: "monitorType",
           width: "120",
+          isTag: true, // 标记为标签类型
         },
-        // 隐藏创建时间
-        // {
-        //   label: "创建时间",
-        //   checked: true,
-        //   key: "createTime",
-        //   width: "180",
-        // },
-        // {
-        //   label: "CT",
-        //   key: "ct",
-        //   width: "120",
-        // },
-        // 隐藏PT字段
-        // {
-        //   label: "PT",
-        //   key: "pt",
-        //   width: "120",
-        // },
-        {
-          label: "余额",
-          key: "balance",
-          width: "140",
-        },
-        {
-          label: "实时功率", // 修改为实时功率
-          key: "p",
-          width: "120",
-          checked: true,
-        },
-        // 隐藏Pa字段
-        // {
-        //   label: "Pa",
-        //   key: "pa",
-        //   width: "120",
-        // },
-        // 隐藏Pb字段
-        // {
-        //   label: "Pb",
-        //   key: "pb",
-        //   width: "120",
-        // },
-        // 隐藏Pc字段
-        // {
-        //   label: "Pc",
-        //   key: "pc",
-        //   width: "120",
-        // },
         {
           label: "在线状态",
           checked: true,
           key: "onlineStatusStatus",
-          width: "120",
+          width: "100",
           type: "status",
+          isTag: true, // 标记为标签类型
         },
         {
           label: "最新数据时间",
           key: "syncTime",
+          width: "160",
+          checked: true,
+        },
+        {
+          label: "创建时间",
+          key: "createTime",
           width: "160",
           checked: true,
         },
@@ -876,33 +974,25 @@ export default {
   computed: {
     ...mapGetters("manager", ["currentManagerId"]),
     dataLength() {
-  return this.tableData.length;
-},
-    // 计算需要显示的列
+      return this.tableData.length;
+    },
     displayColumns() {
       return this.tableKey.filter((col) => col.checked !== false);
     },
-    // 判断是否需要显示高级筛选按钮
     needAdvancedSearch() {
-      // 当总搜索字段数量大于5个时显示高级筛选
       const totalFields =
         this.searchFields.basic.length + this.searchFields.advanced.length;
       return totalFields > 5;
     },
-    // 获取实际显示的基础搜索字段
     displayBasicFields() {
-      // 如果不需要高级筛选，显示所有字段
       if (!this.needAdvancedSearch) {
         return [...this.searchFields.basic, ...this.searchFields.advanced];
       }
-      // 否则只显示基础字段
       return this.searchFields.basic;
     },
-    // 获取高级搜索字段
     displayAdvancedFields() {
       return this.searchFields.advanced;
     },
-    // 动态计算表格高度
     dynamicTableHeight() {
       const dataLength = this.tableData.length;
 
@@ -910,7 +1000,6 @@ export default {
         return this.tableHeightConfig.minHeight;
       }
 
-      // 数据 <= 9条：显示实际行数高度
       if (dataLength <= this.tableHeightConfig.maxRows) {
         return (
           this.tableHeightConfig.headerHeight +
@@ -918,14 +1007,12 @@ export default {
         );
       }
 
-      // 数据 > 9条：固定显示9行高度 + 内部滚动
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
       );
     },
     tableMaxHeight() {
-      // 始终返回最大高度（9行 + 表头）
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
@@ -937,42 +1024,49 @@ export default {
       handler(newVal) {
         if (newVal) {
           this.queryData.managerId = newVal;
-          this.fetchTableData();
+
+          // 首次加载时检查路由参数
+          if (this.isInitialLoad) {
+            this.isInitialLoad = false;
+            this.handleRouteQuery(); // 先处理路由参数
+          } else {
+            this.fetchTableData(); // 后续变化直接查询
+          }
+
           this.getTenantPageTenant();
+          this.getMeterPriceList();
         }
       },
       immediate: true,
     },
   },
+  mounted() {
+    // 检查路由参数，如果有serial参数则自动查询
+    this.handleRouteQuery();
+  },
 
   methods: {
-    // 生成随机时间 - 今天半小时内的随机时间
-    generateRandomTime() {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      // 生成今天0点到现在的随机时间
-      const maxTime = now.getTime();
-      const minTime = today.getTime();
-      
-      // 随机时间在半小时内
-      const halfHour = 30 * 60 * 1000; // 30分钟的毫秒数
-      const randomTime = maxTime - Math.random() * halfHour;
-      
-      const randomDate = new Date(randomTime);
-      
-      // 格式化为 YYYY-MM-DD HH:mm:ss
-      const year = randomDate.getFullYear();
-      const month = String(randomDate.getMonth() + 1).padStart(2, '0');
-      const day = String(randomDate.getDate()).padStart(2, '0');
-      const hours = String(randomDate.getHours()).padStart(2, '0');
-      const minutes = String(randomDate.getMinutes()).padStart(2, '0');
-      const seconds = String(randomDate.getSeconds()).padStart(2, '0');
-      
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    async getMeterPriceList() {
+      try {
+        const params = {
+          managerId: this.queryData.managerId,
+          priceType: 1,
+        };
+        const response = await meterPriceList(params);
+
+        if (response.code === 200 && response.data) {
+          this.priceList = response.data || [];
+        } else {
+          this.$message.error(response.msg || "获取价格方案失败");
+          this.priceList = [];
+        }
+      } catch (error) {
+        console.error("获取价格方案失败:", error);
+        this.$message.error("获取价格方案失败");
+        this.priceList = [];
+      }
     },
 
-    // 获取租户信息
     async getTenantPageTenant() {
       try {
         const params = {
@@ -982,7 +1076,6 @@ export default {
         const response = await tenantPageTenant(params);
 
         if (response.code === 200 && response.data) {
-          // 假设返回的数据格式为数组
           this.tenantList = response.data || [];
         } else {
           this.$message.error(response.msg || "获取租户列表失败");
@@ -995,7 +1088,6 @@ export default {
       }
     },
 
-    // 获取电表列表数据
     async fetchTableData() {
       this.loading = true;
       try {
@@ -1031,27 +1123,19 @@ export default {
       }
     },
 
-    // 格式化表格数据
     formatTableData(data) {
       return data.map((item) => {
-        // 已绑租户处理
         const bindName = item.bindName
           ? `${item.bindId}(${item.bindName})`
           : "-";
 
-        // 电表类型标签
         const bindTypeLabel = getEnumLabel(MeterBindType, item.bindType);
-
-        // 付费模式标签
         const logicPayTypeLabel = getEnumLabel(MeterPayType, item.logicPayType);
-
-        // 分合闸状态标签
         const switchStatusLabel = getEnumLabel(
           MeterSwitchStatus,
           item.switchStatus
         );
 
-        // 在线状态 - 返回完整对象
         const onlineStatusStatus = getEnumItem(
           MeterOnlineStatus,
           item.onlineStatus
@@ -1060,20 +1144,9 @@ export default {
           class: "",
         };
 
-        // 电表相位 - 组合相位和监测类型
-        let monitorType = "-";
-        if (item.monitorType) {
-          const monitorTypeLabel = getEnumLabel(
-            MeterMonitorType,
-            item.monitorType
-          );
-          const phaseLabel = getEnumLabel(MeterPhase, item.phase);
-          if (phaseLabel && phaseLabel !== "-") {
-            monitorType = phaseLabel + monitorTypeLabel;
-          } else {
-            monitorType = monitorTypeLabel;
-          }
-        }
+        const phaseLabel = getEnumLabel(MeterPhase, item.phase) || "-";
+        const meterPriceName = item.meterPriceDto?.name || "-";
+        const meterPriceDetail = item.meterPriceDto || null;
 
         return {
           ...item,
@@ -1082,18 +1155,18 @@ export default {
           logicPayTypeLabel,
           switchStatusLabel,
           onlineStatusStatus,
-          monitorType,
+          phaseLabel,
+          meterPriceName,
+          meterPriceDetail,
         };
       });
     },
 
-    // 查询
     handleSearch() {
       this.pageData.current = 1;
       this.fetchTableData();
     },
 
-    // 重置
     handleReset() {
       this.queryData = {
         bindId: "",
@@ -1109,7 +1182,6 @@ export default {
       this.handleSearch();
     },
 
-    // 处理顶部下拉命令
     handleCommand(command) {
       switch (command) {
         case "export":
@@ -1124,7 +1196,6 @@ export default {
       }
     },
 
-    // 新增电表
     handleAdd() {
       this.editForm = {
         id: "",
@@ -1137,6 +1208,7 @@ export default {
         pt: 1,
         phase: "",
         managerId: this.currentManagerId || "",
+        priceId: "",
       };
       this.dialogVisible = true;
       this.$nextTick(() => {
@@ -1144,7 +1216,6 @@ export default {
       });
     },
 
-    // 编辑电表
     handleEdit(row) {
       this.editForm = {
         id: row.id,
@@ -1157,6 +1228,7 @@ export default {
         pt: row.pt || 1,
         phase: row.phase,
         managerId: row.managerId,
+        priceId: row.priceId || "",
       };
       this.dialogVisible = true;
       this.$nextTick(() => {
@@ -1164,7 +1236,6 @@ export default {
       });
     },
 
-    // 保存
     async handleSave() {
       this.$refs.editForm.validate(async (valid) => {
         if (valid) {
@@ -1172,10 +1243,8 @@ export default {
           try {
             let response;
             if (this.editForm.id) {
-              // 编辑
               response = await meterUpdateMeterBase(this.editForm);
             } else {
-              // 新增
               response = await meterAddMeter(this.editForm);
             }
 
@@ -1196,9 +1265,51 @@ export default {
       });
     },
 
-    // 分合闸操作
+    handleRouteQuery() {
+      const { serial, autoSearch } = this.$route.query;
+
+      if (serial && autoSearch === "true") {
+        // 设置查询条件
+        this.queryData.serial = serial;
+
+        // 提示用户
+        this.$message.info(`正在查询序列号为 ${serial} 的电表...`);
+
+        // 滚动到顶部
+        this.$nextTick(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+
+          // 高亮显示序列号输入框
+          const form = this.$refs.searchForm;
+          if (form && form.$el) {
+            const serialInput = form.$el.querySelector(
+              'input[placeholder*="序列号"]'
+            );
+            if (serialInput) {
+              serialInput.focus();
+              serialInput.style.transition = "all 0.3s";
+              serialInput.style.boxShadow = "0 0 0 2px #409EFF";
+              setTimeout(() => {
+                serialInput.style.boxShadow = "";
+              }, 1500);
+            }
+          }
+
+          // 执行搜索
+          this.fetchTableData();
+        });
+
+        // 清除路由参数
+        this.$router.replace({
+          path: this.$route.path,
+          query: {},
+        });
+      } else {
+        // 没有路由参数时正常查询
+        this.fetchTableData();
+      }
+    },
     async handleSwitch(row, type) {
-      // 如果是预付费模式，需要先修改为强控
       if (row.logicPayType === 0 || row.logicPayType === "0") {
         this.payTypeDialog = {
           visible: true,
@@ -1223,7 +1334,9 @@ export default {
 
         const response = await tenantDoMeterSwitchOffOn({
           meterId: row.id,
-          type: type,
+          switchStatus: type,
+          verifyCode: "",
+          verifyPhone: "",
         });
 
         if (response.code === 200) {
@@ -1240,19 +1353,17 @@ export default {
       }
     },
 
-    // 修改付费类型
     async handleUpdatePayType() {
       try {
         const response = await meterUpdateLogicPayType({
           meterId: this.payTypeDialog.row.id,
-          logicPayType: 1, // 改为强控
+          logicPayType: 1,
         });
 
         if (response.code === 200) {
           this.$message.success("付费模式修改成功");
           this.payTypeDialog.visible = false;
 
-          // 修改成功后执行分合闸操作
           setTimeout(() => {
             this.handleSwitch(
               this.payTypeDialog.row,
@@ -1268,65 +1379,166 @@ export default {
       }
     },
 
-    // 电表监控
     handleMonitor(row) {
-      this.$router.push({
-      path: `/device/electricity/detail/${row.id}`,
-      query: { 
-        name: row.meterName,
+      this.detailDrawer = {
+        visible: true,
+        meterId: row.id,
         serial: row.serial,
-        deviceId: row.id
-      }
-    });
+      };
     },
 
-    // 项目点击 - 已移除
-    // handleProjectClick(row) {
-    //   this.$router.push({
-    //   path: `/device/electricity/detail/${row.id}`,
-    //   query: { 
-    //     name: row.meterName,
-    //     serial: row.serial,
-    //     deviceId: row.id
-    //   }
-    // });
-    // },
-
-    // 租户点击
-    handleTenantClick(row) {
-      // this.$router.push({
-      //   path: "/project-tenement-detail",
-      //   query: { id: row.bindId, managerId: row.managerId },
-      // });
-    },
-
-    // 导出数据
-    handleExport() {
-      if (this.selectedData.length === 0) {
-        this.$message.warning("请先选择要导出的数据");
+    // 复制序列号
+    handleCopySerial(serial) {
+      if (!serial || serial === "-") {
+        this.$message.warning("无可复制内容");
         return;
       }
-      this.$message.info("导出功能开发中...");
+
+      // 创建临时输入框
+      const input = document.createElement("input");
+      input.value = serial;
+      document.body.appendChild(input);
+      input.select();
+
+      try {
+        document.execCommand("copy");
+        this.$message.success("序列号已复制");
+      } catch (err) {
+        this.$message.error("复制失败");
+      }
+
+      document.body.removeChild(input);
     },
 
-    // 表格设置
+    handleTenantClick(row) {
+      if (!row.bindId) {
+        this.$message.warning("该电表未绑定租户");
+        return;
+      }
+
+      // 如果是公摊表(bindType=2)，跳转到公摊详情页
+      if (row.bindType == 2) {
+        this.$router.push({
+          path: "/metering/fee/electricitySharing/detail",
+          query: {
+            id: row.bindId,
+          },
+        });
+        return;
+      }
+
+      // 跳转到租户详情页
+      this.$router.push({
+        path: `/metering/tenant/detail/${row.bindId}`,
+      });
+    },
+
+    handleExport() {
+      if (this.tableData.length === 0) {
+        this.$message.warning("暂无数据可导出");
+        return;
+      }
+
+      try {
+        const exportData =
+          this.selectedData.length > 0 ? this.selectedData : this.tableData;
+
+        // 获取表头和对应的key
+        const headers = this.displayColumns.map((col) => col.label);
+        const keys = this.displayColumns.map((col) => col.key);
+
+        // 构建数据
+        const data = exportData.map((row) => {
+          return keys.map((key) => {
+            // 特殊处理一些字段
+            if (key === "bindTypeLabel") {
+              // 如果是标签类型，可能在formatTableData中已经处理好了
+              // 这里直接使用row中的值，因为formatTableData已经把 bindTypeLabel 放入 row 了
+              return row[key] || "";
+            }
+            // 处理在线状态对象
+            if (key === "onlineStatusStatus") {
+              return row[key]?.label || "";
+            }
+            return row[key] || "";
+          });
+        });
+
+        // 添加表头
+        const wsData = [headers, ...data];
+
+        // 创建工作表
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // 设置列宽
+        const colWidths = headers.map((h) => ({ wch: Math.max(h.length * 2, 15) }));
+        ws["!cols"] = colWidths;
+
+        // 创建工作簿
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "电表数据");
+
+        // 生成文件名
+        const fileName = this.generateFileName();
+
+        // 导出文件
+        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([wbout], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+
+        // 创建下载链接
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        link.style.display = "none";
+
+        document.body.appendChild(link);
+        link.click();
+
+        // 清理
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        this.$message.success(
+          `成功导出${exportData.length}条${
+            this.selectedData.length > 0 ? "选中" : ""
+          }数据`
+        );
+      } catch (error) {
+        console.error("导出失败:", error);
+        this.$message.error("导出失败");
+      }
+    },
+
+    generateFileName() {
+      const now = new Date();
+      const timeStr =
+        now.getFullYear() +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        String(now.getDate()).padStart(2, "0") +
+        "_" +
+        String(now.getHours()).padStart(2, "0") +
+        String(now.getMinutes()).padStart(2, "0") +
+        String(now.getSeconds()).padStart(2, "0");
+      return `电表数据_${timeStr}.xlsx`;
+    },
+
     handleTableSetting() {
       this.$message.info("表格设置功能开发中...");
     },
 
-    // 选择变化
     handleSelectionChange(selection) {
       this.selectedData = selection;
     },
 
-    // 分页大小变化
     handleSizeChange(val) {
       this.pageData.size = val;
       this.pageData.current = 1;
       this.fetchTableData();
     },
 
-    // 当前页变化
     handleCurrentChange(val) {
       this.pageData.current = val;
       this.fetchTableData();
@@ -1338,4 +1550,273 @@ export default {
 <style lang="scss" scoped>
 // 引入表格页面公共样式
 @import "@/assets/styles/table-page.scss";
+
+// ==================== 弱化表格边框 ====================
+.light-border-table {
+  ::v-deep {
+    border: 1px solid #f0f0f0 !important;
+
+    .el-table__header-wrapper {
+      th {
+        border-right: 1px solid #f0f0f0 !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+      }
+    }
+
+    td {
+      border-right: 1px solid #f5f5f5 !important;
+      border-bottom: 1px solid #f5f5f5 !important;
+    }
+
+    .el-table__fixed,
+    .el-table__fixed-right {
+      &::before {
+        background-color: transparent !important;
+      }
+    }
+
+    .el-table__fixed-right-patch {
+      border-bottom: 1px solid #f0f0f0 !important;
+      background-color: #f5f7fa !important;
+    }
+  }
+}
+
+// ==================== 序列号复制样式 ====================
+// ==================== 序列号复制样式 ====================
+.serial-copy {
+  color: #000;
+  cursor: pointer;
+  user-select: none;
+  display: inline-block;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #409eff;
+  }
+
+  &:active {
+    color: #3a8ee6;
+  }
+}
+
+// ==================== 操作列样式 - 彻底修复 ====================
+.operation-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+
+  .op-btn {
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1;
+    border: none;
+    background: none;
+    flex-shrink: 0;
+
+    // 统一蓝色
+    &.primary-btn {
+      color: #409eff;
+
+      &:hover {
+        color: #66b1ff;
+      }
+
+      &:active {
+        color: #3a8ee6;
+      }
+    }
+  }
+
+  .op-divider {
+    display: inline-block;
+    margin: 0 8px;
+    color: #dcdfe6;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .op-more {
+    font-size: 12px;
+    color: #409eff;
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+
+    &:hover {
+      color: #409eff;
+    }
+
+    i {
+      margin-left: 2px;
+      font-size: 12px;
+    }
+  }
+}
+
+// ==================== 紧凑型分页样式 ====================
+.compact-pagination {
+  ::v-deep .el-pagination {
+    font-size: 12px;
+
+    // 总条数文字
+    .el-pagination__total {
+      font-size: 12px;
+      line-height: 24px;
+    }
+
+    // 每页条数选择器
+    .el-pagination__sizes {
+      .el-input {
+        width: 90px;
+
+        .el-input__inner {
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+          padding: 0 8px;
+        }
+      }
+    }
+
+    // 上一页/下一页按钮
+    .btn-prev,
+    .btn-next {
+      min-width: 24px;
+      height: 24px;
+      line-height: 24px;
+      font-size: 12px;
+      padding: 0 6px;
+    }
+
+    // 页码按钮
+    .el-pager {
+      li {
+        min-width: 24px;
+        height: 24px;
+        line-height: 24px;
+        font-size: 12px;
+        padding: 0 6px;
+
+        &.active {
+          font-weight: 600;
+        }
+      }
+    }
+
+    // 跳转输入框
+    .el-pagination__jump {
+      font-size: 12px;
+      line-height: 24px;
+
+      .el-input {
+        width: 40px;
+
+        .el-input__inner {
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+          padding: 0 4px;
+        }
+      }
+    }
+  }
+}
+
+// ==================== 电费方案价格弹出框样式 ====================
+.price-detail-popover {
+  .price-row {
+    display: flex;
+    gap: 12px;
+
+    .price-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      border-radius: 6px;
+      background: #f5f7fa;
+
+      .price-label {
+        font-size: 12px;
+        color: #909399;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        &::before {
+          content: "";
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+      }
+
+      .price-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #303133;
+        font-family: "SF Mono", monospace;
+      }
+
+      &.peak {
+        .price-label::before {
+          background: #dc2626;
+        }
+
+        .price-value {
+          color: #000;
+        }
+      }
+
+      &.top {
+        .price-label::before {
+          background: #f59e0b;
+        }
+
+        .price-value {
+          color: #000;
+        }
+      }
+
+      &.flat {
+        .price-label::before {
+          background: #3b82f6;
+        }
+
+        .price-value {
+          color: #000;
+        }
+      }
+
+      &.valley {
+        .price-label::before {
+          background: #10b981;
+        }
+
+        .price-value {
+          color: #000;
+        }
+      }
+    }
+  }
+}
+
+.price-name-link {
+  color: #000;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+
+  &:hover {
+    color: #000;
+  }
+}
 </style>

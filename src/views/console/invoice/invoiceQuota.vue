@@ -1025,11 +1025,15 @@ export default {
 
     // 查看租户详情
     handleTenantDetail(row) {
-      this.$message.info(`查看 ${row.tenantName} 的租户详情`)
-      // this.$router.push({
-      //   path: '/tenant-detail',
-      //   query: { id: row.tenantId }
-      // })
+      this.$router.push({
+        name: "TenantDetail", // 使用路由名称
+        params: { id: row.tenantId }, // 使用 params 传递动态路由参数
+        query: {
+          // 可选：传递额外的查询参数
+          name: row.name,
+          from: "list",
+        },
+      });
     },
 
     // 查看历史记录

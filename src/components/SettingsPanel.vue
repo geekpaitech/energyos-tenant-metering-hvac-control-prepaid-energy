@@ -127,12 +127,12 @@ export default {
   
   data() {
     return {
-      // 当前设置 - 默认改为商务灰白主题
-      currentFontSize: localStorage.getItem('app_font_size') || 'medium',
+      // 当前设置 - 默认改为紧凑字体
+      currentFontSize: localStorage.getItem('app_font_size') || 'small',
       currentTheme: localStorage.getItem('app_theme') || 'white',
       
-      // 预览设置 - 默认改为商务灰白主题
-      previewFontSize: localStorage.getItem('app_font_size') || 'medium',
+      // 预览设置 - 默认改为紧凑字体
+      previewFontSize: localStorage.getItem('app_font_size') || 'small',
       previewTheme: localStorage.getItem('app_theme') || 'white',
       
       // 字体选项
@@ -179,7 +179,7 @@ export default {
   methods: {
     // 关闭面板
     closePanel() {
-      // 如果有未应用的更改，先取消
+      // 如果有未应用的更改,先取消
       if (this.previewFontSize !== this.currentFontSize || this.previewTheme !== this.currentTheme) {
         this.cancelChanges();
       }
@@ -240,16 +240,16 @@ export default {
       this.applySettings(this.currentFontSize, this.currentTheme)
     },
     
-    // 重置设置 - 重置为商务灰白主题
+    // 重置设置 - 重置为紧凑字体 + 商务灰白主题
     resetSettings() {
-      this.previewFontSize = 'medium'
+      this.previewFontSize = 'small'
       this.previewTheme = 'white'
       this.previewChanges()
-      this.currentFontSize = 'medium'
+      this.currentFontSize = 'small'
       this.currentTheme = 'white'
-      localStorage.setItem('app_font_size', 'medium')
+      localStorage.setItem('app_font_size', 'small')
       localStorage.setItem('app_theme', 'white')
-      this.$message.success('已重置为默认设置（商务灰白主题）')
+      this.$message.success('已重置为默认设置（紧凑字体 + 商务灰白主题）')
     },
     
     handleClose(done) {

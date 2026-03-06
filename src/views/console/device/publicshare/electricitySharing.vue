@@ -3,36 +3,26 @@
     <!-- 搜索区域 -->
     <div class="search-container">
       <el-card class="search-card" shadow="never">
-        <el-form
-          :model="queryData"
-          ref="searchForm"
-          class="search-form compact-form"
-          label-position="left"
-          label-width="80px"
-        >
+        <el-form :model="queryData" ref="searchForm" class="search-form compact-form" label-position="left"
+          label-width="80px">
           <el-row :gutter="16" class="search-row">
             <el-col :xs="24" :sm="12" :md="8" :lg="6">
               <el-form-item label="组编号" prop="id" class="compact-form-item">
-                <el-input
-                  v-model="queryData.id"
-                  placeholder="请输入公摊组编号"
-                  clearable
-                  size="small"
-                />
+                <el-input v-model="queryData.id" placeholder="请输入公摊组编号" clearable size="small" />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12" :md="8" :lg="6">
-              <el-form-item
-                label="组名称"
-                prop="name"
-                class="compact-form-item"
-              >
-                <el-input
-                  v-model="queryData.name"
-                  placeholder="请输入公摊组名称"
-                  clearable
-                  size="small"
-                />
+              <el-form-item label="组名称" prop="name" class="compact-form-item">
+                <el-input v-model="queryData.name" placeholder="请输入公摊组名称" clearable size="small" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-form-item label="公摊方式" prop="shareType" class="compact-form-item">
+                <el-select v-model="queryData.shareType" clearable placeholder="请选择公摊方式" size="small"
+                  style="width: 100%">
+                  <el-option v-for="item in shareTypeOptions" :key="item.value" :label="item.label"
+                    :value="item.value" />
+                </el-select>
               </el-form-item>
             </el-col>
           </el-row>
@@ -40,29 +30,15 @@
           <!-- 操作按钮行 -->
           <div class="form-actions compact-actions">
             <div class="action-left">
-              <el-button
-                type="primary"
-                icon="el-icon-plus"
-                size="small"
-                @click="handleAdd"
-              >
+              <el-button type="primary" icon="el-icon-plus" size="small" @click="handleAdd">
                 新增电表公摊组
               </el-button>
             </div>
             <div class="action-right">
-              <el-button
-                type="primary"
-                icon="el-icon-search"
-                size="small"
-                @click="handleSearch"
-              >
+              <el-button type="primary" icon="el-icon-search" size="small" @click="handleSearch">
                 查询
               </el-button>
-              <el-button
-                icon="el-icon-refresh"
-                size="small"
-                @click="handleReset"
-              >
+              <el-button icon="el-icon-refresh" size="small" @click="handleReset">
                 重置
               </el-button>
               <el-dropdown trigger="click" @command="handleCommand">
@@ -85,68 +61,35 @@
     <div class="table-container">
       <div class="table-card" shadow="never">
         <!-- 数据表格 -->
-        <el-table
-          :height="dataLength > 9 ? dynamicTableHeight : null"
-          v-loading="loading"
-          :data="tableData"
-          stripe
-          style="width: 100%"
-          class="custom-table"
-          :header-cell-style="{
+        <el-table :height="dataLength > 9 ? dynamicTableHeight : null" v-loading="loading" :data="tableData" stripe
+          style="width: 100%" class="custom-table" :header-cell-style="{
             background: '#f5f7fa',
             color: '#606266',
             fontWeight: '600',
-          }"
-        >
-          <el-table-column
-            prop="id"
-            label="公摊组编号"
-            width="150"
-            align="center"
-            show-overflow-tooltip
-          />
+          }">
+          <el-table-column prop="id" label="公摊组编号" width="150" align="center" show-overflow-tooltip />
 
-          <el-table-column
-            prop="name"
-            label="公摊组名"
-            min-width="200"
-            align="center"
-            show-overflow-tooltip
-          />
+          <el-table-column prop="name" label="公摊组名" min-width="200" align="center" show-overflow-tooltip />
+
+          <el-table-column prop="shareType" label="公摊方式" width="120" align="center">
+            <template slot-scope="scope">
+              {{ getShareTypeLabel(scope.row.shareType) }}
+            </template>
+          </el-table-column>
 
           <!-- 操作列 -->
-          <el-table-column
-            label="操作"
-            width="280"
-            fixed="right"
-            align="center"
-          >
+          <el-table-column label="操作" width="280" fixed="right" align="center">
             <template slot-scope="scope">
               <div class="table-actions-group">
-                <el-button
-                  type="text"
-                  size="small"
-                  icon="el-icon-view"
-                  @click="handleDetail(scope.row)"
-                >
+                <el-button type="text" size="small" icon="el-icon-view" @click="handleDetail(scope.row)">
                   详情
                 </el-button>
                 <el-divider direction="vertical"></el-divider>
-                <el-button
-                  type="text"
-                  size="small"
-                  icon="el-icon-delete"
-                  @click="handleDelete(scope.row)"
-                >
+                <el-button type="text" size="small" icon="el-icon-delete" @click="handleDelete(scope.row)">
                   删除
                 </el-button>
                 <el-divider direction="vertical"></el-divider>
-                <el-button
-                  type="text"
-                  size="small"
-                  icon="el-icon-coin"
-                  @click="handleDebit(scope.row)"
-                >
+                <el-button type="text" size="small" icon="el-icon-coin" @click="handleDebit(scope.row)">
                   手动扣款
                 </el-button>
               </div>
@@ -162,55 +105,31 @@
     </div>
 
     <!-- 新增/修改弹窗 -->
-    <el-dialog
-      :title="shareDialog.type ? '新增电表公摊组' : '修改电表公摊组'"
-      :visible.sync="shareDialog.visible"
-      width="450px"
-      :close-on-click-modal="false"
-      class="custom-dialog"
-    >
-      <el-form
-        ref="shareForm"
-        :model="shareDialog"
-        :rules="shareRules"
-        label-width="100px"
-      >
+    <el-dialog :title="shareDialog.type ? '新增电表公摊组' : '修改电表公摊组'" :visible.sync="shareDialog.visible" width="450px"
+      :close-on-click-modal="false" class="custom-dialog">
+      <el-form ref="shareForm" :model="shareDialog" :rules="shareRules" label-width="100px">
         <el-form-item label="公摊组名" prop="name">
-          <el-input
-            v-model="shareDialog.name"
-            placeholder="请输入公摊组名"
-            maxlength="50"
-            show-word-limit
-          />
+          <el-input v-model="shareDialog.name" placeholder="请输入公摊组名" maxlength="50" show-word-limit />
+        </el-form-item>
+        <el-form-item label="公摊方式" prop="shareType">
+          <el-select v-model="shareDialog.shareType" placeholder="请选择公摊方式" style="width: 100%">
+            <el-option v-for="item in shareTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
         </el-form-item>
       </el-form>
 
       <span slot="footer" class="dialog-footer">
         <el-button @click="shareDialog.visible = false">取 消</el-button>
-        <el-button
-          type="primary"
-          :loading="submitting"
-          @click="handleShareSubmit"
-        >
+        <el-button type="primary" :loading="submitting" @click="handleShareSubmit">
           {{ submitting ? "提交中..." : "确 定" }}
         </el-button>
       </span>
     </el-dialog>
 
     <!-- 手动扣款弹窗 -->
-    <el-dialog
-      title="电表公摊组扣款"
-      :visible.sync="debitDialog.visible"
-      width="500px"
-      :close-on-click-modal="false"
-      class="custom-dialog"
-    >
-      <el-form
-        ref="debitForm"
-        :model="debitForm"
-        :rules="debitRules"
-        label-width="100px"
-      >
+    <el-dialog title="电表公摊组扣款" :visible.sync="debitDialog.visible" width="500px" :close-on-click-modal="false"
+      class="custom-dialog">
+      <el-form ref="debitForm" :model="debitForm" :rules="debitRules" label-width="100px">
         <el-form-item label="公摊组名">
           <div class="info-text">{{ debitDialog.name }}</div>
         </el-form-item>
@@ -220,34 +139,20 @@
         </el-form-item>
 
         <el-form-item label="扣款金额" prop="balance">
-          <el-input
-            v-model="debitForm.balance"
-            placeholder="请输入扣款金额"
-            @input="handleAmountInput"
-          >
+          <el-input v-model="debitForm.balance" placeholder="请输入扣款金额" @input="handleAmountInput">
             <template slot="append">元</template>
           </el-input>
         </el-form-item>
 
         <el-form-item label="备注内容" prop="remark">
-          <el-input
-            v-model="debitForm.remark"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入备注内容"
-            maxlength="50"
-            show-word-limit
-          />
+          <el-input v-model="debitForm.remark" type="textarea" :rows="3" placeholder="请输入备注内容" maxlength="50"
+            show-word-limit />
         </el-form-item>
       </el-form>
 
       <span slot="footer" class="dialog-footer">
         <el-button @click="handleDebitCancel">取 消</el-button>
-        <el-button
-          type="primary"
-          :loading="debitSubmitting"
-          @click="handleDebitSubmit"
-        >
+        <el-button type="primary" :loading="debitSubmitting" @click="handleDebitSubmit">
           {{ debitSubmitting ? "扣款中..." : "确认扣款" }}
         </el-button>
       </span>
@@ -290,6 +195,11 @@ export default {
       loading: false,
       submitting: false,
       debitSubmitting: false,
+      // 公摊方式选项
+      shareTypeOptions: [
+        { label: "面积占比", value: "AREA" },
+        { label: "能耗占比", value: "ENERGY" },
+      ],
       // 公摊组弹窗
       shareDialog: {
         visible: false,
@@ -369,13 +279,20 @@ export default {
     },
   },
   methods: {
+    // 获取公摊方式标签
+    getShareTypeLabel(type) {
+      const item = this.shareTypeOptions.find((i) => i.value === type);
+      return item ? item.label : "--";
+    },
+
     // 获取表格数据
     async fetchTableData() {
       this.loading = true;
       try {
         const params = {
-          id: this.queryData.id,
-          name: this.queryData.name,
+          id: this.queryData.id || undefined,
+          name: this.queryData.name || undefined,
+          shareType: this.queryData.shareType || undefined,
           managerId: this.queryData.managerId,
         };
 
@@ -442,6 +359,21 @@ export default {
         type: true,
         name: "",
         id: "",
+        shareType: "",
+      };
+      this.$nextTick(() => {
+        this.$refs.shareForm && this.$refs.shareForm.clearValidate();
+      });
+    },
+
+    // 编辑公摊组
+    handleEdit(row) {
+      this.shareDialog = {
+        visible: true,
+        type: false,
+        name: row.name,
+        id: row.id,
+        shareType: row.shareType,
       };
       this.$nextTick(() => {
         this.$refs.shareForm && this.$refs.shareForm.clearValidate();
@@ -451,7 +383,7 @@ export default {
     // 查看详情
     handleDetail(row) {
       this.$router.push({
-        path: "/user-eqyally-ammeterDetail",
+        path: "/metering/fee/electricitySharing/detail",
         query: { id: row.id },
       });
     },
@@ -519,7 +451,7 @@ export default {
             const params = {
               managerId: this.queryData.managerId,
               name: this.shareDialog.name,
-              area: 1,
+              shareType: this.shareDialog.shareType,
             };
 
             let response;

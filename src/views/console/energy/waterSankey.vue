@@ -1,996 +1,668 @@
 <template>
-    <div class="water-detail-dashboard">
-      <!-- 顶部操作栏 -->
-      <div class="dashboard-header">
-        <div class="header-left">
-          <h1 class="dashboard-title">
-            用水明细
-          </h1>
-        </div>
-        
-        <div class="header-right">
-          <button class="export-btn" @click="handleExport">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-            </svg>
-            导出明细
-          </button>
-        </div>
-      </div>
-  
-      <!-- 筛选器 -->
-      <div class="filter-container">
-        <div class="filter-item date-filter">
-          <label class="filter-label">统计时间</label>
+  <div class="water-sankey-dashboard">
+    <!-- 筛选区域 -->
+    <div class="filter-section">
+      <el-form :inline="true" class="filter-form">
+        <el-form-item label="查询日期">
           <el-date-picker
-            v-model="queryParams.dateRange"
-            type="daterange"
+            v-model="queryParams.queryDate"
+            type="date"
+            placeholder="选择日期"
             format="yyyy-MM-dd"
             value-format="yyyy-MM-dd"
-            range-separator="-"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-            :picker-options="pickerOptions"
-            class="custom-date-picker"
-            @change="handleDateRangeChange"
+            :picker-options="datePickerOptions"
+            @change="handleDateChange"
           />
-        </div>
+        </el-form-item>
         
-        <div class="filter-item tenant-filter">
-          <label class="filter-label">选择租户</label>
+        <el-form-item label="租户范围">
           <el-select
-            v-model="queryParams.tenantIds"
+            v-model="queryParams.tenantIdList"
             multiple
             collapse-tags
+            :collapse-tags-tooltip="true"
             filterable
             placeholder="请选择租户"
-            class="custom-select"
+            class="tenant-selector"
             :loading="tenantLoading"
+            @change="handleTenantChange"
           >
             <el-option
               v-for="tenant in tenantList"
               :key="tenant.tenantId"
               :label="tenant.name"
               :value="tenant.tenantId"
-            />
+            >
+              <span class="tenant-option">
+                <span class="tenant-name">{{ tenant.name }}</span>
+                <span class="tenant-code" v-if="tenant.code">{{ tenant.code }}</span>
+              </span>
+            </el-option>
           </el-select>
-        </div>
+        </el-form-item>
         
-        <div class="filter-actions">
-          <button class="search-btn" @click="handleSearch">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
+        <el-form-item>
+          <el-button type="primary" @click="handleQuery" :loading="loading">
             查询
-          </button>
-          <button class="reset-btn" @click="handleReset">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 4v6h6M23 20v-6h-6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-            重置
-          </button>
-          <button
-          class="reset-btn"
-          @click="toggleSelectAll"
-          :disabled="tenantLoading || tenantList.length === 0"
-        >
-          {{ isAllSelected ? "取消全选" : "全选" }}
-        </button>
+          </el-button>
+          <el-button @click="handleReset">重置</el-button>
+          <el-button v-if="tenantList.length > 0" @click="handleSelectAll">
+            {{ isAllSelected ? '取消全选' : '全选' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <!-- 数据概览卡片 -->
+    <div class="overview-cards" v-if="!loading">
+      <div class="overview-card">
+        <div class="card-header">
+          <span class="card-title">总用水量</span>
+          <el-tooltip content="所有租户当日总用水量" placement="top">
+            <i class="el-icon-question"></i>
+          </el-tooltip>
+        </div>
+        <div class="card-value">
+          <span class="value-number">--</span>
+          <span class="value-unit">m³</span>
+        </div>
+        <div class="card-footer">
+          <span class="sub-info">功能开发中</span>
         </div>
       </div>
-  
-      <!-- 数据统计卡片 -->
-      <div class="stats-cards" v-if="tableData.length > 0">
-        <div class="stat-card">
-          <div class="stat-content">
-            <div class="stat-label">总用水量</div>
-            <div class="stat-value">{{ formatNumber(totalStats.totalWater) }} <span class="unit">吨</span></div>
-          </div>
+      
+      <div class="overview-card">
+        <div class="card-header">
+          <span class="card-title">租户数量</span>
         </div>
-        
-        <div class="stat-card">
-          <div class="stat-content">
-            <div class="stat-label">总水费</div>
-            <div class="stat-value">¥{{ formatNumber(totalStats.totalAmount) }}</div>
-          </div>
+        <div class="card-value">
+          <span class="value-number">{{ activeTenantsCount }}</span>
+          <span class="value-unit">户</span>
         </div>
-        
-        <div class="stat-card">
-          <div class="stat-content">
-            <div class="stat-label">租户数量</div>
-            <div class="stat-value">{{ queryParams.tenantIds.length }} <span class="unit">个</span></div>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-content">
-            <div class="stat-label">平均单价</div>
-            <div class="stat-value">¥{{ avgUnitPrice }} <span class="unit">/吨</span></div>
-          </div>
+        <div class="card-footer">
+          <span class="sub-info">已选租户</span>
         </div>
       </div>
-  
-      <!-- 主内容区 -->
-      <div class="main-content" v-loading="loading" :element-loading-text="loadingText">
-        <!-- 明细表格 -->
-        <div class="table-section">
-          <div class="section-header">
-            <h2 class="section-title">用水明细数据</h2>
-            <div class="table-info" v-if="tableData.length > 0">
-              共 {{ tableData.length }} 条记录
-            </div>
+      
+      <div class="overview-card">
+        <div class="card-header">
+          <span class="card-title">平均用水</span>
+        </div>
+        <div class="card-value">
+          <span class="value-number">--</span>
+          <span class="value-unit">m³/户</span>
+        </div>
+        <div class="card-footer">
+          <span class="sub-info">功能开发中</span>
+        </div>
+      </div>
+      
+      <div class="overview-card">
+        <div class="card-header">
+          <span class="card-title">用水分布</span>
+        </div>
+        <div class="card-value">
+          <div class="distribution-placeholder">
+            <span class="placeholder-text">数据开发中</span>
           </div>
-          
-          <div class="detail-table" v-if="tableData.length > 0">
-            <div class="table-header">
-              <div class="header-cell">租户名称</div>
-              <div class="header-cell numeric">用水量(吨)</div>
-              <div class="header-cell numeric">水费(元)</div>
-            </div>
-            
-            <div class="table-body">
-              <div 
-                v-for="(row, index) in paginatedData" 
-                :key="`${row.tenantId}-${index}`"
-                class="table-row"
-              >
-                <div class="table-cell tenant-name">{{ row.tenantName || '-' }}</div>
-                <div class="table-cell numeric water-amount">{{ formatNumber(row.useWater) }}</div>
-                <div class="table-cell numeric amount">¥{{ formatNumber(row.useAmount) }}</div>
-              </div>
-            </div>
-            
-            <div class="table-footer">
-              <div class="footer-cell">合计</div>
-              <div class="footer-cell numeric water-amount">{{ formatNumber(totalStats.totalWater) }}</div>
-              <div class="footer-cell numeric amount">¥{{ formatNumber(totalStats.totalAmount) }}</div>
-            </div>
-          </div>
-          
-          <!-- 分页 -->
-          <div class="pagination-container" v-if="tableData.length > pageSize">
-            <el-pagination
-              @size-change="handleSizeChange"
-              @current-change="handleCurrentChange"
-              :current-page="currentPage"
-              :page-sizes="[20, 50, 100, 200]"
-              :page-size="pageSize"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="tableData.length"
-              background
-            />
-          </div>
-          
-          <div class="empty-state" v-if="tableData.length <= 0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-              <path d="M8 14s.5 2 4 2 4-2 4-2"/>
-            </svg>
-            <p>暂无用水明细数据</p>
-          </div>
+        </div>
+        <div class="card-footer">
+          <span class="sub-info">按类型分布</span>
         </div>
       </div>
     </div>
-  </template>
-  
-  <script>
-  import { mapGetters } from 'vuex'
-  import { 
-    getSimpleTenantList, 
-    queryTenantWaterUse 
-  } from '@/api/useReport'
-  import moment from 'moment'
-  
-  export default {
-    name: 'WaterDetail',
-    data() {
-      return {
-        queryParams: {
-          dateRange: [],
-          tenantIds: []
-        },
-        tenantList: [],
-        tenantLoading: false,
-        loading: false,
-        loadingText: '数据加载中...',
-        tableData: [],
-        currentPage: 1,
-        pageSize: 20,
-        pickerOptions: {
-          shortcuts: [{
-            text: '最近一周',
-            onClick(picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
-              picker.$emit('pick', [start, end])
-            }
-          }, {
-            text: '最近一个月',
-            onClick(picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
-              picker.$emit('pick', [start, end])
-            }
-          }, {
-            text: '最近三个月',
-            onClick(picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
-              picker.$emit('pick', [start, end])
-            }
-          }],
-          disabledDate(time) {
-            return time.getTime() > Date.now()
-          }
-        }
-      }
-    },
-    computed: {
-      ...mapGetters('manager', ['currentManagerId']),
-      totalStats() {
-        const stats = {
-          totalWater: 0,
-          totalAmount: 0,
-          deviceCount: new Set()
-        }
-        
-        this.tableData.forEach(item => {
-          stats.totalWater += Number(item.useWater) || 0
-          stats.totalAmount += Number(item.useAmount) || 0
-          if (item.meterCode) {
-            stats.deviceCount.add(item.meterCode)
-          }
-        })
-        
-        return {
-          ...stats,
-          deviceCount: stats.deviceCount.size
-        }
-      },
-      avgUnitPrice() {
-        if (this.totalStats.totalWater === 0) return '0.00'
-        return (this.totalStats.totalAmount / this.totalStats.totalWater).toFixed(2)
-      },
-      paginatedData() {
-        const start = (this.currentPage - 1) * this.pageSize
-        const end = start + this.pageSize
-        return this.tableData.slice(start, end)
-      },
-      isAllSelected() {
-      return (
-        this.tenantList.length > 0 &&
-        this.queryParams.tenantIds.length === this.tenantList.length
-      );
-    },
-    },
-    watch: {
-      currentManagerId: {
-        handler(val) {
-          if (val) {
-            this.initializeData()
-          }
-        },
-        immediate: true
-      }
-    },
-    methods: {
-      toggleSelectAll() {
-      if (this.tenantLoading || this.tenantList.length === 0) return;
 
-      if (this.isAllSelected) {
-        this.queryParams.tenantIds = [];
-      } else {
-        this.queryParams.tenantIds = this.tenantList.map(
-          (item) => item.tenantId
-        );
+    <!-- 主图表区域 -->
+    <div class="chart-container" v-loading="loading" element-loading-text="数据加载中...">
+      <div class="chart-header" v-if="!loading">
+        <div class="chart-title-group">
+          <h2 class="chart-title">用水流向分析</h2>
+          <p class="chart-subtitle">{{ queryParams.queryDate }} 租户用水分布桑基图</p>
+        </div>
+        <div class="chart-tools">
+          <div class="chart-tips">
+            <i class="el-icon-info"></i>
+            <span>该功能正在开发中，敬请期待</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 空状态展示 -->
+      <div class="chart-empty-state" v-if="!loading">
+        <div class="empty-content">
+          <svg class="empty-icon" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
+              <ellipse fill="#F5F5F5" cx="32" cy="33" rx="32" ry="7"></ellipse>
+              <g fill-rule="nonzero" stroke="#D9D9D9">
+                <path d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z"></path>
+                <path d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z" fill="#FAFAFA"></path>
+              </g>
+            </g>
+          </svg>
+          <h3 class="empty-title">功能开发中</h3>
+          <p class="empty-description">用水桑基图功能正在开发中，将为您提供完整的用水流向分析</p>
+          <div class="empty-features">
+            <div class="feature-item">
+              <i class="el-icon-check"></i>
+              <span>直观的用水流向展示</span>
+            </div>
+            <div class="feature-item">
+              <i class="el-icon-check"></i>
+              <span>详细的设备用水分析</span>
+            </div>
+            <div class="feature-item">
+              <i class="el-icon-check"></i>
+              <span>租户用水对比统计</span>
+            </div>
+          </div>
+          <el-button type="primary" plain disabled class="coming-soon-btn">
+            敬请期待
+          </el-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { mapGetters } from 'vuex'
+import { getSimpleTenantList } from '@/api/useReport'
+import moment from 'moment'
+
+export default {
+  name: 'WaterSankeyChart',
+  
+  data() {
+    return {
+      queryParams: {
+        queryDate: moment().subtract(1, 'days').format('YYYY-MM-DD'),
+        tenantIdList: []
+      },
+      tenantList: [],
+      tenantLoading: false,
+      loading: false,
+      datePickerOptions: {
+        disabledDate(time) {
+          return time.getTime() > Date.now()
+        },
+        shortcuts: [{
+          text: '昨天',
+          onClick(picker) {
+            picker.$emit('pick', moment().subtract(1, 'days').toDate())
+          }
+        }, {
+          text: '前天',
+          onClick(picker) {
+            picker.$emit('pick', moment().subtract(2, 'days').toDate())
+          }
+        }, {
+          text: '本周一',
+          onClick(picker) {
+            picker.$emit('pick', moment().startOf('week').add(1, 'days').toDate())
+          }
+        }, {
+          text: '上周一',
+          onClick(picker) {
+            picker.$emit('pick', moment().startOf('week').subtract(6, 'days').toDate())
+          }
+        }]
+      }
+    }
+  },
+  
+  computed: {
+    ...mapGetters('manager', ['currentManagerId']),
+    
+    isAllSelected() {
+      return this.tenantList.length > 0 && 
+             this.queryParams.tenantIdList.length === this.tenantList.length
+    },
+    
+    activeTenantsCount() {
+      return this.queryParams.tenantIdList.length
+    }
+  },
+  
+  watch: {
+    currentManagerId: {
+      handler(val) {
+        if (val) {
+          this.initializeData()
+        }
+      },
+      immediate: true
+    }
+  },
+  
+  mounted() {
+    // 初始化
+  },
+  
+  beforeDestroy() {
+    // 清理
+  },
+  
+  methods: {
+    async initializeData() {
+      await this.getTenantList()
+      if (this.tenantList.length > 0) {
+        this.queryParams.tenantIdList = this.tenantList.map(item => item.tenantId)
       }
     },
-      async initializeData() {
-        this.setDefaultDateRange()
-        await this.getTenantList()
-        if (this.tenantList.length > 0) {
-          this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId)
-        }
-        this.handleSearch()
-      },
+    
+    async getTenantList() {
+      this.tenantLoading = true
+      try {
+        const { data } = await getSimpleTenantList({
+          managerId: this.currentManagerId,
+          tenantStatus: 0
+        })
+        this.tenantList = data || []
+      } catch (error) {
+        this.$message.error('获取租户列表失败')
+        console.error('获取租户列表失败:', error)
+      } finally {
+        this.tenantLoading = false
+      }
+    },
+    
+    handleSelectAll() {
+      if (this.isAllSelected) {
+        this.queryParams.tenantIdList = []
+      } else {
+        this.queryParams.tenantIdList = this.tenantList.map(item => item.tenantId)
+      }
+    },
+    
+    handleQuery() {
+      if (!this.queryParams.queryDate) {
+        this.$message.warning('请选择查询日期')
+        return
+      }
       
-      setDefaultDateRange() {
-        this.queryParams.dateRange = [
-          moment().subtract(30, 'days').format('YYYY-MM-DD'),
-          moment().format('YYYY-MM-DD')
-        ]
-      },
+      if (this.queryParams.tenantIdList.length === 0) {
+        this.$message.warning('请选择租户')
+        return
+      }
       
-      async getTenantList() {
-        this.tenantLoading = true
-        try {
-          const { data } = await getSimpleTenantList({
-            managerId: this.currentManagerId,
-            tenantStatus: 0
-          })
-          this.tenantList = data || []
-        } catch (error) {
-          this.$message.error('获取租户列表失败')
-          console.error('获取租户列表失败:', error)
-        } finally {
-          this.tenantLoading = false
-        }
-      },
+      // 模拟加载
+      this.loading = true
+      setTimeout(() => {
+        this.loading = false
+        this.$message.info('该功能正在开发中')
+      }, 800)
+    },
+    
+    handleDateChange() {
+      // 日期改变处理
+    },
+    
+    handleTenantChange() {
+      // 租户改变处理
+    },
+    
+    handleReset() {
+      this.queryParams.queryDate = moment().subtract(1, 'days').format('YYYY-MM-DD')
+      this.queryParams.tenantIdList = this.tenantList.map(item => item.tenantId)
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.water-sankey-dashboard {
+  padding: 0;
+  background: #f5f6f8;
+  min-height: 100vh;
+}
+
+// 筛选区域
+.filter-section {
+  background: #fff;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-form {
+  .el-form-item {
+    margin-bottom: 0;
+    margin-right: 24px;
+    
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+  
+  ::v-deep .el-form-item__label {
+    font-size: 13px;
+    color: #666;
+    font-weight: normal;
+  }
+}
+
+.tenant-selector {
+  width: 320px;
+}
+
+.tenant-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  
+  .tenant-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .tenant-code {
+    font-size: 12px;
+    color: #999;
+    margin-left: 12px;
+  }
+}
+
+// 数据概览卡片
+.overview-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #e8e8e8;
+  margin-top: 1px;
+}
+
+.overview-card {
+  background: #fff;
+  padding: 20px 24px;
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    
+    .card-title {
+      font-size: 13px;
+      color: #666;
+      font-weight: normal;
+    }
+    
+    .el-icon-question {
+      font-size: 14px;
+      color: #bfbfbf;
+      margin-left: 6px;
+      cursor: pointer;
       
-      async handleSearch() {
-        if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) {
-          this.$message.warning('请选择统计时间')
-          return
-        }
-        
-        if (this.queryParams.tenantIds.length === 0) {
-          this.$message.warning('请选择租户')
-          return
-        }
-        
-        this.loading = true
-        this.currentPage = 1
-        
-        try {
-          const startDate = this.queryParams.dateRange[0]
-          const endDate = this.queryParams.dateRange[1]
-          
-          const params = {
-            managerId: this.currentManagerId,
-            startDate,
-            endDate,
-            dataType: 1,
-            useType: 0,
-            tenantIdList: this.queryParams.tenantIds
-          }
-          
-          const { data } = await queryTenantWaterUse(params)
-          
-          // 直接使用返回的数据，因为接口返回的是扁平化的数组
-          if (data && data.length > 0) {
-            // 处理每条数据，确保字段正确
-            this.tableData = data.map(item => ({
-              tenantId: item.tenantId,
-              tenantName: item.tenantName || '-',
-              useWater: item.waterUse || item.useWater || 0,  // 注意：接口返回的是waterUse
-              useAmount: item.useAmount || 0,
-              logoUrl: item.logoUrl || ''
-            }))
-            
-            // 调试信息
-            console.log('处理后的数据：', this.tableData)
-            console.log('第一条数据tenantId：', this.tableData[0]?.tenantId)
-            this.$nextTick(() => {
-              console.log('统计信息：', this.totalStats)
-            })
-          } else {
-            this.tableData = []
-          }
-        } catch (error) {
-          this.$message.error('获取数据失败')
-          console.error('获取数据失败:', error)
-        } finally {
-          this.loading = false
-        }
-      },
-      
-      handleReset() {
-        this.setDefaultDateRange()
-        if (this.tenantList.length > 0) {
-          this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId)
-        }
-        this.currentPage = 1
-        this.handleSearch()
-      },
-      
-      handleExport() {
-        this.$message.info('导出功能开发中...')
-      },
-      
-      handleDateRangeChange(val) {
-        if (val && val.length === 2) {
-          const [start, end] = val
-          const startDate = new Date(start)
-          const endDate = new Date(end)
-          const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000))
-          
-          if (diffDays > 90) {
-            this.$message.warning('最多只能选择3个月的数据')
-            const newEndDate = new Date(startDate.getTime() + 90 * 24 * 3600 * 1000)
-            this.queryParams.dateRange = [
-              start,
-              moment(newEndDate).format('YYYY-MM-DD')
-            ]
-          }
-        }
-      },
-      
-      handleSizeChange(val) {
-        this.pageSize = val
-        this.currentPage = 1
-      },
-      
-      handleCurrentChange(val) {
-        this.currentPage = val
-      },
-      
-      formatNumber(num) {
-        if (!num && num !== 0) return '0.00'
-        return Number(num).toFixed(2)
-      },
-      
-      getSettleWayLabel(settleWay) {
-        const settleWayMap = {
-          1: '预付费',
-          2: '后付费',
-          3: '月结'
-        }
-        return settleWayMap[settleWay] || '-'
-      },
-      
-      getSettleWayClass(settleWay) {
-        const classMap = {
-          1: 'prepay',
-          2: 'postpay',
-          3: 'monthly'
-        }
-        return classMap[settleWay] || ''
+      &:hover {
+        color: #1890ff;
       }
     }
   }
-  </script>
   
-  <style lang="scss" scoped>
-  .water-detail-dashboard {
-    min-height: 100vh;
-    padding: 16px;
-  }
-  
-  // 顶部操作栏
-  .dashboard-header {
+  .card-value {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    background: white;
-    padding: 16px 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    align-items: baseline;
+    margin-bottom: 8px;
+    
+    .value-number {
+      font-size: 28px;
+      font-weight: 500;
+      color: #1c1c1c;
+      line-height: 1;
+    }
+    
+    .value-unit {
+      font-size: 14px;
+      color: #8c8c8c;
+      margin-left: 6px;
+    }
   }
   
-  .header-left {
+  .card-footer {
     display: flex;
     align-items: center;
+    font-size: 12px;
+    color: #8c8c8c;
+    
+    .sub-info {
+      color: #999;
+    }
   }
   
-  .dashboard-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: #1a1a1a;
+  .distribution-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    
+    .placeholder-text {
+      font-size: 12px;
+      color: #bfbfbf;
+    }
+  }
+}
+
+// 图表容器
+.chart-container {
+  background: #fff;
+  margin: 24px;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-height: 600px;
+}
+
+.chart-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-title-group {
+  .chart-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #1c1c1c;
+    margin: 0 0 4px 0;
+  }
+  
+  .chart-subtitle {
+    font-size: 13px;
+    color: #8c8c8c;
     margin: 0;
   }
+}
+
+.chart-tools {
+  display: flex;
+  align-items: center;
   
-  .export-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    
-    svg {
-      width: 18px;
-      height: 18px;
-    }
-    
-    &:hover {
-      background: #2563eb;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-  }
-  
-  // 筛选器
-  .filter-container {
-    background: white;
-    padding: 20px 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    margin-bottom: 24px;
-    display: flex;
-    align-items: flex-end;
-    gap: 24px;
-  }
-  
-  .filter-item {
-    flex: 1;
-    
-    &.date-filter {
-      max-width: 320px;
-    }
-    
-    &.tenant-filter {
-      max-width: 360px;
-    }
-  }
-  
-  .filter-label {
-    display: block;
-    font-size: 14px;
-    color: #6b7280;
-    margin-bottom: 8px;
-    font-weight: 500;
-  }
-  
-  .filter-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  .search-btn,
-  .reset-btn {
+  .chart-tips {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    
-    svg {
-      width: 16px;
-      height: 16px;
-    }
-  }
-  
-  .search-btn {
-    background: #3b82f6;
-    color: white;
-    
-    &:hover {
-      background: #2563eb;
-      transform: translateY(-1px);
-    }
-  }
-  
-  .reset-btn {
-    background: #f3f4f6;
-    color: #6b7280;
-    
-    &:hover {
-      background: #e5e7eb;
-      color: #374151;
-    }
-  }
-  
-  // 统计卡片
-  .stats-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    margin-bottom: 24px;
-  }
-  
-  .stat-card {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    }
-  }
-  
-  .stat-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    
-    svg {
-      width: 28px;
-      height: 28px;
-    }
-    
-    &.water-icon {
-      background: #dbeafe;
-      color: #3b82f6;
-    }
-    
-    &.amount-icon {
-      background: #fce7f3;
-      color: #ec4899;
-    }
-    
-    &.tenant-icon {
-      background: #fef3c7;
-      color: #f59e0b;
-    }
-    
-    &.avg-icon {
-      background: #d1fae5;
-      color: #10b981;
-    }
-  }
-  
-  .stat-content {
-    flex: 1;
-  }
-  
-  .stat-label {
-    font-size: 14px;
-    color: #6b7280;
-    margin-bottom: 4px;
-  }
-  
-  .stat-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: #1a1a1a;
-    
-    .unit {
-      font-size: 14px;
-      color: #6b7280;
-      font-weight: 400;
-    }
-  }
-  
-  // 主内容区
-  .main-content {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
-  }
-  
-  // 表格区域
-  .table-section {
-    padding: 24px;
-  }
-  
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  
-  .section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin: 0;
-  }
-  
-  .table-info {
-    font-size: 14px;
-    color: #6b7280;
-  }
-  
-  // 明细表格
-  .detail-table {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  
-  .table-header {
-    display: grid;
-    grid-template-columns: 1fr 200px 200px;
-    background: #f9fafb;
-    font-weight: 600;
-    color: #374151;
-    font-size: 14px;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  
-  .header-cell {
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    
-    &.numeric {
-      justify-content: flex-end;
-    }
-  }
-  
-  .table-body {
-    max-height: 600px;
-    overflow-y: auto;
-  }
-  
-  .table-row {
-    display: grid;
-    grid-template-columns: 1fr 200px 200px;
-    border-bottom: 1px solid #f3f4f6;
-    transition: background 0.2s;
-    
-    &:hover {
-      background: #f9fafb;
-    }
-    
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-  
-  .table-cell {
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-    color: #374151;
-    
-    &.numeric {
-      justify-content: flex-end;
-      font-family: 'SF Mono', Monaco, Consolas, monospace;
-    }
-    
-    &.amount {
-      color: #dc2626;
-      font-weight: 600;
-    }
-    
-    &.water-amount {
-      color: #2563eb;
-      font-weight: 600;
-    }
-    
-    &.tenant-name {
-      color: #1f2937;
-      font-weight: 500;
-    }
-    
-    &.device-name {
-      color: #4b5563;
-    }
-    
-    &.device-code {
-      font-family: 'SF Mono', Monaco, Consolas, monospace;
-      font-size: 13px;
-      color: #6b7280;
-    }
-  }
-  
-  .settle-tag {
-    padding: 4px 12px;
-    border-radius: 4px;
     font-size: 12px;
-    font-weight: 500;
+    color: #faad14;
+    padding: 6px 12px;
+    background: #fffbe6;
+    border: 1px solid #ffe58f;
+    border-radius: 4px;
     
-    &.prepay {
-      background: #d1fae5;
-      color: #065f46;
-    }
-    
-    &.postpay {
-      background: #fed7aa;
-      color: #92400e;
-    }
-    
-    &.monthly {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-  }
-  
-  // 表格底部合计行
-  .table-footer {
-    display: grid;
-    grid-template-columns: 1fr 200px 200px;
-    background: #f3f4f6;
-    font-weight: 600;
-    color: #1a1a1a;
-    border-top: 2px solid #e5e7eb;
-  }
-  
-  .footer-cell {
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-    
-    &.numeric {
-      justify-content: flex-end;
-      font-family: 'SF Mono', Monaco, Consolas, monospace;
-    }
-    
-    &.amount {
-      color: #dc2626;
-    }
-    
-    &.water-amount {
-      color: #2563eb;
-    }
-  }
-  
-  // 分页
-  .pagination-container {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-  }
-  
-  // 空状态
-  .empty-state {
-    padding: 80px 0;
-    text-align: center;
-    
-    svg {
-      width: 64px;
-      height: 64px;
-      color: #e5e7eb;
-      margin-bottom: 16px;
-    }
-    
-    p {
+    .el-icon-info {
       font-size: 14px;
-      color: #9ca3af;
-      margin: 0;
     }
   }
+}
+
+// 空状态
+.chart-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+  padding: 60px 24px;
+}
+
+.empty-content {
+  text-align: center;
+  max-width: 480px;
+}
+
+.empty-icon {
+  width: 160px;
+  height: auto;
+  margin: 0 auto 24px;
+  opacity: 0.8;
+}
+
+.empty-title {
+  font-size: 20px;
+  font-weight: 500;
+  color: #1c1c1c;
+  margin: 0 0 12px 0;
+}
+
+.empty-description {
+  font-size: 14px;
+  color: #8c8c8c;
+  line-height: 1.6;
+  margin: 0 0 32px 0;
+}
+
+.empty-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
   
-  // Element UI 样式覆盖
-  ::v-deep .custom-date-picker {
-    width: 100%;
-    
+  .el-icon-check {
+    color: #52c41a;
+    font-size: 16px;
+    font-weight: bold;
+  }
+}
+
+.coming-soon-btn {
+  min-width: 120px;
+  
+  &.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// Element UI 组件样式覆盖
+::v-deep {
+  .el-select {
     .el-input__inner {
-      height: 40px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      
-      &:hover {
-        border-color: #d1d5db;
-      }
-      
-      &:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      }
+      font-size: 13px;
     }
   }
   
-  ::v-deep .custom-select {
-    width: 100%;
-    
+  .el-date-editor {
     .el-input__inner {
-      height: 40px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
+      font-size: 13px;
+    }
+    
+    &.el-input {
+      width: 160px;
+    }
+  }
+  
+  .el-button {
+    font-size: 13px;
+    
+    &--primary {
+      background: #1890ff;
+      border-color: #1890ff;
       
+      &:hover:not(.is-disabled) {
+        background: #40a9ff;
+        border-color: #40a9ff;
+      }
+    }
+    
+    &--default {
       &:hover {
-        border-color: #d1d5db;
-      }
-      
-      &:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      }
-    }
-    
-    .el-tag {
-      background: #eff6ff;
-      color: #3b82f6;
-      border: none;
-    }
-  }
-  
-  ::v-deep .el-pagination {
-    &.is-background {
-      .btn-prev, .btn-next {
-        background: #f3f4f6;
-        
-        &:hover {
-          color: #3b82f6;
-        }
-      }
-      
-      .el-pager li {
-        background: #f3f4f6;
-        
-        &:hover {
-          color: #3b82f6;
-        }
-        
-        &.active {
-          background: #3b82f6;
-          color: white;
-        }
+        color: #1890ff;
+        border-color: #1890ff;
       }
     }
   }
   
-  // 响应式设计
-  @media (max-width: 1280px) {
-    .stats-cards {
-      grid-template-columns: repeat(2, 1fr);
+  .el-loading-mask {
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+  
+  .el-loading-spinner {
+    .el-loading-text {
+      color: #666;
+      font-size: 13px;
     }
-    
-    .table-header,
-    .table-row {
-      overflow-x: auto;
-      min-width: 1000px;
-    }
-    
-    .detail-table {
-      overflow-x: auto;
+  }
+}
+
+// 响应式设计
+@media (max-width: 1680px) {
+  .overview-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1280px) {
+  .filter-form {
+    .el-form-item {
+      margin-bottom: 12px;
     }
   }
   
-  @media (max-width: 768px) {
-    .water-detail-dashboard {
-      padding: 16px;
-    }
-    
-    .dashboard-header {
-      flex-direction: column;
-      gap: 16px;
-      align-items: flex-start;
-    }
-    
-    .filter-container {
-      flex-direction: column;
-      gap: 16px;
-    }
-    
-    .filter-item {
-      max-width: 100% !important;
-    }
-    
-    .filter-actions {
-      width: 100%;
-      justify-content: space-between;
-    }
-    
-    .stats-cards {
-      grid-template-columns: 1fr;
-    }
-    
-    .stat-card {
-      padding: 16px;
-    }
-    
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      
-      svg {
-        width: 24px;
-        height: 24px;
-      }
-    }
-    
-    .table-section {
-      padding: 16px;
-    }
-    
-    .section-header {
-      flex-direction: column;
-      gap: 12px;
-      align-items: flex-start;
-    }
+  .tenant-selector {
+    width: 280px;
   }
-  </style>
+  
+  .chart-container {
+    min-height: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .overview-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    margin: 12px;
+  }
+  
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .empty-icon {
+    width: 120px;
+  }
+  
+  .empty-title {
+    font-size: 18px;
+  }
+  
+  .empty-description {
+    font-size: 13px;
+  }
+}
+</style>

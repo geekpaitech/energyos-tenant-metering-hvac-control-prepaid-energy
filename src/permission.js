@@ -20,7 +20,7 @@ router.beforeEach(async (to, from, next) => {
 
   // 设置页面标题
   document.title =
-    to.meta && to.meta.title ? `${to.meta.title} -  物联中台` : " 物联中台";
+    to.meta && to.meta.title ? `${to.meta.title} -  数字物宇-物联中台` : " 数字物宇-物联中台";
 
   const hasToken = getToken();
 
@@ -159,7 +159,7 @@ async function getRedirectPath() {
 
   // 根据当前平台确定重定向路径
   if (currentPlatform === "console") {
-    return "/console/dashboard";
+    return "/metering/dashboard";
   } else if (currentPlatform === "admin") {
     return "/admin/dashboard";
   }

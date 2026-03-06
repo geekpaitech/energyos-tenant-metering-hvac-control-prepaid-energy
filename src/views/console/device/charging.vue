@@ -39,7 +39,7 @@
             <el-option label="超级快充" value="super_fast"></el-option>
           </el-select>
           <el-button icon="el-icon-search" @click="handleSearch">搜索</el-button>
-          <el-button icon="el-icon-refresh-left" @click="resetSearch">重置</el-button>
+          <el-button icon="el-icon-refresh-left">重置</el-button>
         </div>
         <div class="filter-right">
           
@@ -426,7 +426,7 @@ export default {
     }
   },
   mounted() {
-    this.loadData()
+    // this.loadData()
   },
   methods: {
     // 生成设备编号
@@ -464,102 +464,102 @@ export default {
       setTimeout(() => {
         // 生成更多测试数据，使用对应的层级结构
         this.deviceList = [
-          {
-            id: 1,
-            deviceCode: 'DC001',
-            deviceName: '120kW直流快充桩A1',
-            type: 'dc_fast',
-            power: 120,
-            stationName: '中心大厦栋-B1地下停车库',
-            status: 'charging',
-            todayCharge: 8,
-            totalCharge: 1247,
-            createTime: '2024-03-01 10:00:00'
-          },
-          {
-            id: 2,
-            deviceCode: 'AC002',
-            deviceName: '7kW交流慢充桩B2',
-            type: 'ac_slow',
-            power: 7,
-            stationName: '创新大厦栋-B1地下停车库',
-            status: 'online',
-            todayCharge: 3,
-            totalCharge: 856,
-            createTime: '2024-03-02 14:30:00'
-          },
-          {
-            id: 3,
-            deviceCode: 'SF003',
-            deviceName: '特来电250kW超充桩',
-            type: 'super_fast',
-            power: 250,
-            stationName: '中心大厦栋-1F展览大厅',
-            status: 'online',
-            todayCharge: 12,
-            totalCharge: 2103,
-            createTime: '2024-03-03 09:15:00'
-          },
-          {
-            id: 4,
-            deviceCode: 'AC004',
-            deviceName: '星星充电11kW交流桩',
-            type: 'ac_slow',
-            power: 11,
-            stationName: '创新大厦栋-1F接待大厅',
-            status: 'fault',
-            todayCharge: 0,
-            totalCharge: 643,
-            createTime: '2024-03-04 16:45:00'
-          },
-          {
-            id: 5,
-            deviceCode: 'DC005',
-            deviceName: '国家电网60kW直流桩',
-            type: 'dc_fast',
-            power: 60,
-            stationName: '中心大厦栋-2F会议接待厅',
-            status: 'offline',
-            todayCharge: 0,
-            totalCharge: 1892,
-            createTime: '2024-03-05 11:20:00'
-          },
-          {
-            id: 6,
-            deviceCode: 'SF006',
-            deviceName: '小鹏汽车480kW超充站',
-            type: 'super_fast',
-            power: 350,
-            stationName: '中心大厦栋-4F技术研发部',
-            status: 'charging',
-            todayCharge: 15,
-            totalCharge: 3421,
-            createTime: '2024-03-06 08:30:00'
-          },
-          {
-            id: 7,
-            deviceCode: 'DC007',
-            deviceName: 'ABB Terra HP 80kW高功率直流充电桩设备',
-            type: 'dc_fast',
-            power: 80,
-            stationName: '中心大厦栋-3F市场营销部办公区域',
-            status: 'online',
-            todayCharge: 5,
-            totalCharge: 987,
-            createTime: '2024-03-07 12:00:00'
-          },
-          {
-            id: 8,
-            deviceCode: 'AC008',
-            deviceName: '依威能源22kW交流桩',
-            type: 'ac_slow',
-            power: 22,
-            stationName: '创新大厦栋-2F餐厅食堂',
-            status: 'charging',
-            todayCharge: 2,
-            totalCharge: 456,
-            createTime: '2024-03-08 15:30:00'
-          }
+          // {
+          //   id: 1,
+          //   deviceCode: 'DC001',
+          //   deviceName: '120kW直流快充桩A1',
+          //   type: 'dc_fast',
+          //   power: 120,
+          //   stationName: '中心大厦栋-B1地下停车库',
+          //   status: 'charging',
+          //   todayCharge: 8,
+          //   totalCharge: 1247,
+          //   createTime: '2024-03-01 10:00:00'
+          // },
+          // {
+          //   id: 2,
+          //   deviceCode: 'AC002',
+          //   deviceName: '7kW交流慢充桩B2',
+          //   type: 'ac_slow',
+          //   power: 7,
+          //   stationName: '创新大厦栋-B1地下停车库',
+          //   status: 'online',
+          //   todayCharge: 3,
+          //   totalCharge: 856,
+          //   createTime: '2024-03-02 14:30:00'
+          // },
+          // {
+          //   id: 3,
+          //   deviceCode: 'SF003',
+          //   deviceName: '特来电250kW超充桩',
+          //   type: 'super_fast',
+          //   power: 250,
+          //   stationName: '中心大厦栋-1F展览大厅',
+          //   status: 'online',
+          //   todayCharge: 12,
+          //   totalCharge: 2103,
+          //   createTime: '2024-03-03 09:15:00'
+          // },
+          // {
+          //   id: 4,
+          //   deviceCode: 'AC004',
+          //   deviceName: '星星充电11kW交流桩',
+          //   type: 'ac_slow',
+          //   power: 11,
+          //   stationName: '创新大厦栋-1F接待大厅',
+          //   status: 'fault',
+          //   todayCharge: 0,
+          //   totalCharge: 643,
+          //   createTime: '2024-03-04 16:45:00'
+          // },
+          // {
+          //   id: 5,
+          //   deviceCode: 'DC005',
+          //   deviceName: '国家电网60kW直流桩',
+          //   type: 'dc_fast',
+          //   power: 60,
+          //   stationName: '中心大厦栋-2F会议接待厅',
+          //   status: 'offline',
+          //   todayCharge: 0,
+          //   totalCharge: 1892,
+          //   createTime: '2024-03-05 11:20:00'
+          // },
+          // {
+          //   id: 6,
+          //   deviceCode: 'SF006',
+          //   deviceName: '小鹏汽车480kW超充站',
+          //   type: 'super_fast',
+          //   power: 350,
+          //   stationName: '中心大厦栋-4F技术研发部',
+          //   status: 'charging',
+          //   todayCharge: 15,
+          //   totalCharge: 3421,
+          //   createTime: '2024-03-06 08:30:00'
+          // },
+          // {
+          //   id: 7,
+          //   deviceCode: 'DC007',
+          //   deviceName: 'ABB Terra HP 80kW高功率直流充电桩设备',
+          //   type: 'dc_fast',
+          //   power: 80,
+          //   stationName: '中心大厦栋-3F市场营销部办公区域',
+          //   status: 'online',
+          //   todayCharge: 5,
+          //   totalCharge: 987,
+          //   createTime: '2024-03-07 12:00:00'
+          // },
+          // {
+          //   id: 8,
+          //   deviceCode: 'AC008',
+          //   deviceName: '依威能源22kW交流桩',
+          //   type: 'ac_slow',
+          //   power: 22,
+          //   stationName: '创新大厦栋-2F餐厅食堂',
+          //   status: 'charging',
+          //   todayCharge: 2,
+          //   totalCharge: 456,
+          //   createTime: '2024-03-08 15:30:00'
+          // }
         ]
         this.pagination.total = 48
         this.loading = false
