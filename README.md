@@ -307,4 +307,4 @@ npm run lint       # 代码规范检查与修复
 ## 相关链接
 
 - 极派科技官网：https://geekpartytech.com/
-- 数字物宇-物联中台：https://iot.geekpartytech.com/
+- 数字物宇-能源管理平台：https://iot.geekpartytech.com/
