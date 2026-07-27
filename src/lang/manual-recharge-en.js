@@ -1,0 +1,38 @@
+/** Manual top-up /metering/finance/manual-recharge (manualRecharge.vue) */
+export default {
+  manualRechargePage: {
+    emptyNoViewPerm: 'No permission to view',
+    phDateStart: 'Start',
+    phDateEnd: 'End',
+    phTenant: 'Tenant name / ID',
+    btnSearch: 'Search',
+    btnReset: 'Reset',
+    btnExport: 'Export',
+    sectionTitle: 'Manual top-up',
+    sortDefault: 'Default sort',
+    colRid: 'Reference no.',
+    colOccurTime: 'Time',
+    colTenantName: 'Tenant',
+    colRechargeAccount: 'Account',
+    colAmount: 'Amount',
+    colRemark: 'Remark',
+    colOperator: 'Operator',
+    accountElectric: 'Electricity wallet',
+    accountWater: 'Water wallet',
+    shortcutYesterday: 'Yesterday',
+    shortcutThisWeek: 'This week',
+    shortcutLastWeek: 'Last week',
+    shortcutThisMonth: 'This month',
+    shortcutLastMonth: 'Last month',
+    shortcutLast3Months: 'Last 3 months',
+    shortcutLastYear: 'Last year',
+    msgTenantListFail: 'Failed to load tenants',
+    msgFetchFail: 'Failed to load data',
+    msgFetchRecordFail: 'Failed to load records',
+    msgNoDataExport: 'No data to export',
+    msgExportOk: 'Exported {count} row(s).',
+    msgExportFail: 'Export failed',
+    exportSheetName: 'Manual top-up',
+    filePrefix: 'ManualTopUp'
+  }
+}

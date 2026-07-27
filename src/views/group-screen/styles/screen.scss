@@ -1,0 +1,121 @@
+@import './design-system.scss';
+
+.group-screen {
+  position: relative;
+  width: $screen-width;
+  height: $screen-height;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(98, 168, 208, 0.08) 0%, transparent 58%),
+    transparent;
+  color: $ds-text;
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', sans-serif;
+  overflow: hidden;
+  text-rendering: optimizeLegibility;
+  image-rendering: auto;
+
+  > *:not(.cockpit-bg) {
+    position: relative;
+    z-index: 1;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 48px;
+    right: 48px;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(109, 193, 192, 0.08),
+      rgba(160, 205, 232, 0.24),
+      rgba(109, 193, 192, 0.08),
+      transparent
+    );
+    pointer-events: none;
+    z-index: 6;
+  }
+}
+
+.group-screen__top {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $ds-kpi-zone-gap;
+  padding: 0 0 $ds-kpi-zone-gap;
+  z-index: 5;
+}
+
+.group-screen .ds-header {
+  flex: 0 0 $ds-header-h;
+  height: $ds-header-h;
+  min-height: $ds-header-h;
+  max-height: $ds-header-h;
+}
+
+.group-screen__main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 24fr) minmax(0, 46fr) minmax(0, 30fr);
+  gap: 28px;
+  padding: 0 24px 22px;
+  z-index: 2;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 25.2%;
+    right: 31.2%;
+    top: 2px;
+    bottom: 18px;
+    border-radius: 14px;
+    background:
+      radial-gradient(ellipse at 50% 12%, rgba(82, 145, 182, 0.045) 0%, rgba(98, 168, 208, 0.02) 32%, transparent 64%),
+      linear-gradient(180deg, rgba(160, 205, 232, 0.018) 0%, transparent 52%);
+    box-shadow:
+      inset 0 0 36px rgba(82, 145, 182, 0.018);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+.group-screen__col {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  &:nth-child(2) {
+    filter: saturate(1.04) brightness(1.035);
+  }
+
+  &:first-child,
+  &:last-child {
+    filter: saturate(0.96) brightness(0.985);
+  }
+}
+
+/* 三级视觉层次见 PanelBox.vue：tier-core / tier-secondary；顶栏 KPI 与面板同套设计语言 */
+
+@media (prefers-reduced-motion: reduce) {
+  .group-screen *,
+  .group-screen *::before,
+  .group-screen *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}

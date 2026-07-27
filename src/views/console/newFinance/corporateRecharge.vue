@@ -1,55 +1,43 @@
 <template>
   <div class="table-page-container">
-    <!-- 搜索区域 -->
-    <div class="search-container">
-      <el-card class="search-card" shadow="never">
-        <el-form
-          :model="queryData"
-          ref="searchForm"
-          class="search-form compact-form"
-          label-position="left"
-          label-width="100px"
+    <el-empty v-if="!canView" :description="$t('corporateRechargePage.emptyNoViewPerm')" />
+    <template v-else>
+      <!-- Tab：样式对齐 conditioning（黑粗选中 + 短蓝条） -->
+      <div class="tab-nav-box" role="tablist" :aria-label="$t('corporateRechargePage.tabNavAria')">
+        <div
+          v-for="t in mainTabs"
+          :key="t.name"
+          role="tab"
+          class="tab-nav-item"
+          :class="{ 'is-active': activeFinanceTab === t.name }"
+          :tabindex="activeFinanceTab === t.name ? 0 : -1"
+          :aria-selected="activeFinanceTab === t.name ? 'true' : 'false'"
+          @click="activeFinanceTab = t.name"
+          @keydown.enter.prevent="activeFinanceTab = t.name"
+          @keydown.space.prevent="activeFinanceTab = t.name"
         >
-          <!-- 第一行:筛选条件 -->
-          <el-row :gutter="16" class="search-row" type="flex" align="middle">
-            <!-- 租户名称/编号 -->
-            <el-col :span="6">
-              <el-form-item
-                label="租户名称/编号"
-                prop="tenantId"
-                class="compact-form-item"
-              >
-                <el-select
-                  v-model="queryData.tenantId"
-                  filterable
-                  clearable
-                  placeholder="请选择租户"
-                  size="small"
-                  style="width: 100%"
-                >
-                  <el-option
-                    v-for="item in tenantList"
-                    :key="item.tenantId"
-                    :label="`${item.tenantId} - ${item.name}`"
-                    :value="item.tenantId"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
+          {{ t.label }}
+        </div>
+      </div>
 
-            <!-- 操作时间 -->
-            <el-col :span="7">
-              <el-form-item
-                label="操作时间"
-                prop="timeRange"
-                class="compact-form-item"
-              >
+      <!-- 对公充值 -->
+      <div v-show="activeFinanceTab === 'public'" class="tab-panel-wrap">
+        <div class="search-box">
+          <el-form
+            :model="queryData"
+            ref="searchForm"
+            class="search-form"
+            @submit.native.prevent
+          >
+            <div class="search-main-grid">
+              <!-- 时间筛选固定第一位（财务列表规范）；布局同 device/watermeter：两列 + 按钮 + 两列空 1fr 避免输入框拉满 -->
+              <div class="field-item field-range">
                 <el-date-picker
                   v-model="queryData.timeRange"
                   type="daterange"
-                  range-separator="至"
-                  start-placeholder="开始时间"
-                  end-placeholder="结束时间"
+                  range-separator="-"
+                  :start-placeholder="$t('corporateRechargePage.phDateStart')"
+                  :end-placeholder="$t('corporateRechargePage.phDateEnd')"
                   value-format="yyyy-MM-dd"
                   size="small"
                   style="width: 100%"
@@ -58,197 +46,185 @@
                   popper-class="elegant-date-picker"
                   @change="handleDateChange"
                 />
-              </el-form-item>
-            </el-col>
+              </div>
+              <div class="field-item field-tenant">
+                <el-select
+                  v-model="queryData.tenantId"
+                  filterable
+                  clearable
+                  :placeholder="$t('corporateRechargePage.phTenant')"
+                  size="small"
+                  style="width: 100%"
+                  @change="handleSearch"
+                >
+                  <el-option
+                    v-for="item in tenantList"
+                    :key="item.tenantId"
+                    :label="String(item.tenantId) + ' - ' + $displayBizHybrid(item.name || '')"
+                    :value="item.tenantId"
+                  />
+                </el-select>
+              </div>
 
-            <!-- 操作按钮 -->
-            <el-col :span="11" style="text-align: right">
-              <el-button
-                type="primary"
-                icon="el-icon-search"
-                size="small"
-                @click="handleSearch"
-              >
-                查询
-              </el-button>
-              <el-button
-                icon="el-icon-refresh"
-                size="small"
-                @click="handleReset"
-              >
-                重置
-              </el-button>
-            </el-col>
-          </el-row>
+              <div class="search-actions">
+                <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">
+                  {{ $t('corporateRechargePage.btnSearch') }}
+                </el-button>
+                <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('corporateRechargePage.btnReset') }}</el-button>
+                <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">
+                  {{ $t('corporateRechargePage.btnExport') }}
+                </el-button>
+              </div>
+            </div>
+          </el-form>
+        </div>
 
-          <!-- 第二行：对公充值按钮 -->
-          <el-row :gutter="16" style="margin-top: 12px">
-            <el-col :span="24">
+        <div class="content-box">
+          <div class="content-toolbar">
+            <div class="toolbar-left">
+              <span class="section-title">
+                <span class="title-bar" />
+                {{ $t('corporateRechargePage.sectionTitle') }}
+              </span>
+            </div>
+            <div class="toolbar-right">
               <el-button
+                v-if="canOperate"
                 type="primary"
+                size="small"
                 icon="el-icon-plus"
-                size="small"
                 @click="handleRecharge"
               >
-                对公充值
+                {{ $t('corporateRechargePage.btnRecharge') }}
               </el-button>
-            </el-col>
-          </el-row>
-        </el-form>
-      </el-card>
-    </div>
+              <el-select v-model="sortOrder" size="small" style="width: 100px">
+                <el-option :label="$t('corporateRechargePage.sortDefault')" value="default" />
+              </el-select>
+            </div>
+          </div>
 
-    <!-- 数据表格区域 -->
-    <div class="table-container" style="height: 475px">
-      <div class="table-card" shadow="never">
-        <!-- 数据表格 -->
-        <el-table
-          v-loading="loading"
-          :data="tableData"
-          :max-height="tableMaxHeight"
-          stripe
-          style="width: 100%"
-          class="custom-table"
-          :header-cell-style="{
-            background: 'linear-gradient(180deg, #f8f9fc 0%, #f0f2f5 100%)',
-            color: '#1f2329',
-            fontWeight: '600',
-            fontSize: '13px',
-            borderBottom: '2px solid #e8e8e8',
-          }"
-        >
-          <!-- 租户ID -->
-          <el-table-column
-            prop="tenantId"
-            label="租户ID"
-            width="100"
-            align="center"
-          />
+          <div class="list-view">
+            <el-table
+              :key="'corporate-recharge-' + localeKey"
+              v-loading="loading"
+              border
+              :data="tableData"
+              stripe
+              style="width: 100%"
+              class="custom-table light-border-table"
+              :header-cell-style="{
+                background: '#f5f7fa',
+                color: '#606266',
+                fontWeight: '600',
+              }"
+            >
+              <el-table-column
+                prop="seqNo"
+                :label="$t('corporateRechargePage.colSeqNo')"
+                width="180"
+                align="center"
+                show-overflow-tooltip
+              />
+              <el-table-column
+                prop="occurTime"
+                :label="$t('corporateRechargePage.colOccurTime')"
+                width="168"
+                align="center"
+              />
+              <el-table-column :label="$t('corporateRechargePage.colTenant')" min-width="200" show-overflow-tooltip>
+                <template slot-scope="scope">
+                  <el-link
+                    v-if="scope.row.tenantId"
+                    type="primary"
+                    class="tenant-link"
+                    @click="goTenantDetail(scope.row)"
+                  >
+                    {{ $displayBizHybrid(scope.row.tenantName || '') || '-' }}
+                  </el-link>
+                  <span v-else class="text-muted">{{ $displayBizHybrid(scope.row.tenantName || '') || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('corporateRechargePage.colRechargeAccount')" width="120" align="center">
+                <template slot-scope="scope">
+                  {{ formatRechargeAccount(scope.row) }}
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('corporateRechargePage.colAmount')" width="130" align="center">
+                <template slot-scope="scope">
+                  <span class="amount-text">¥{{ formatMoney(scope.row.amount) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="payeeName"
+                :label="$t('corporateRechargePage.colPayeeName')"
+                width="180"
+                show-overflow-tooltip
+              />
+              <el-table-column
+                prop="bankNumber"
+                :label="$t('corporateRechargePage.colBankNumber')"
+                width="180"
+                show-overflow-tooltip
+              />
+              <el-table-column :label="$t('corporateRechargePage.colTransferRemark')" min-width="160" show-overflow-tooltip>
+                <template slot-scope="scope">
+                  {{ transferRemark(scope.row) }}
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('corporateRechargePage.colStatus')" width="110" align="center">
+                <template slot-scope="scope">
+                  <div class="status-inline">
+                    <span
+                      class="status-dot"
+                      :style="{ backgroundColor: getStatusColor(scope.row.status) }"
+                    />
+                    {{ getStatusLabel(scope.row.status) }}
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('corporateRechargePage.colAction')" width="100" align="center" fixed="right">
+                <template slot-scope="scope">
+                  <div class="operation-cell">
+                    <el-button
+                      v-if="scope.row.imageList && scope.row.imageList.length > 0"
+                      type="text"
+                      size="mini"
+                      class="op-btn primary-btn"
+                      icon="el-icon-picture"
+                      @click="handleViewImages(scope.row.imageList)"
+                    >
+                      {{ $t('corporateRechargePage.btnView') }}
+                    </el-button>
+                    <span v-else class="text-muted">-</span>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
 
-          <!-- 租户名 -->
-          <el-table-column
-            prop="tenantName"
-            label="租户名"
-            min-width="200"
-            show-overflow-tooltip
-          >
-            <template slot-scope="scope">
-              <span class="tenant-name">{{ scope.row.tenantName || "-" }}</span>
-            </template>
-          </el-table-column>
-
-          <!-- 项目名称 -->
-          <el-table-column
-            prop="managerName"
-            label="项目名称"
-            min-width="220"
-            show-overflow-tooltip
-          />
-
-          <!-- 充值金额 -->
-          <el-table-column
-            prop="amount"
-            label="充值金额(元)"
-            width="130"
-            align="center"
-          >
-            <template slot-scope="scope">
-              <span class="amount-text">
-                ¥{{ formatMoney(scope.row.amount) }}
-              </span>
-            </template>
-          </el-table-column>
-
-          <!-- 银行类型 -->
-          <el-table-column
-            prop="bankType"
-            label="银行类型"
-            width="160"
-            align="center"
-          >
-            <template slot-scope="scope">
-              <el-tag size="small" type="primary">
-                {{ getBankTypeLabel(scope.row.bankType) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-
-          <!-- 交易单号 -->
-          <el-table-column
-            prop="seqNo"
-            label="交易单号"
-            width="180"
-            align="center"
-            show-overflow-tooltip
-          />
-
-          <!-- 汇款账户 -->
-          <el-table-column
-            prop="payeeName"
-            label="汇款账户"
-            width="180"
-            show-overflow-tooltip
-          />
-
-          <!-- 汇款账号 -->
-          <el-table-column
-            prop="bankNumber"
-            label="汇款账号"
-            width="180"
-            show-overflow-tooltip
-          />
-
-          <!-- 开户行 -->
-          <el-table-column
-            prop="openingBank"
-            label="开户行"
-            width="180"
-            show-overflow-tooltip
-          />
-
-          <!-- 操作时间 -->
-          <el-table-column
-            prop="occurTime"
-            label="操作时间"
-            width="160"
-            align="center"
-          />
-
-          <!-- 收款单 -->
-          <el-table-column label="收款单" width="100" align="center">
-            <template slot-scope="scope">
-              <el-button
-                v-if="scope.row.imageList && scope.row.imageList.length > 0"
-                type="text"
-                size="small"
-                icon="el-icon-picture"
-                @click="handleViewImages(scope.row.imageList)"
-              >
-                查看
-              </el-button>
-              <span v-else class="no-data">-</span>
-            </template>
-          </el-table-column>
-        </el-table>
+            <div class="pagination-container compact-pagination">
+              <el-pagination
+                :current-page="pageData.current"
+                :page-sizes="[15, 30, 60, 100]"
+                :page-size="pageData.size"
+                :total="pageData.total"
+                layout="total, sizes, prev, pager, next, jumper"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+              />
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- 分页 -->
-    <div class="pagination-container">
-      <el-pagination
-        :current-page="pageData.current"
-        :page-sizes="[15, 30, 60, 100]"
-        :page-size="pageData.size"
-        :total="pageData.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
-    </div>
+      <!-- 银企直连 -->
+      <div v-show="activeFinanceTab === 'bank'" class="tab-panel-wrap bank-tab-panel">
+        <bank-journal-hub />
+      </div>
+    </template>
 
     <!-- 对公充值弹窗 -->
     <el-dialog
-      title="对公充值"
+      :title="$t('corporateRechargePage.dialogTitleRecharge')"
       :visible.sync="rechargeDialogVisible"
       width="500px"
       :close-on-click-modal="false"
@@ -261,96 +237,78 @@
         label-width="100px"
         label-position="right"
       >
-        <!-- 项目名称 -->
-        <el-form-item label="项目名称" prop="managerId">
+        <el-form-item :label="$t('corporateRechargePage.formProjectName')" prop="managerId">
           <el-select
             v-model="rechargeFormData.managerId"
-            placeholder="请选择项目"
+            :placeholder="$t('corporateRechargePage.phSelectProject')"
             style="width: 100%"
             @change="handleManagerChange"
           >
-            <el-option
-              v-for="item in managerList"
-              :key="item.id"
-              :label="item.label"
-              :value="item.id"
-            />
+            <el-option v-for="item in managerList" :key="item.id" :label="item.label" :value="item.id" />
           </el-select>
         </el-form-item>
 
-        <!-- 租户名 -->
-        <el-form-item
-          v-if="rechargeFormData.managerId"
-          label="租户名"
-          prop="tenantId"
-        >
+        <el-form-item v-if="rechargeFormData.managerId" :label="$t('corporateRechargePage.formTenantName')" prop="tenantId">
           <el-select
             v-model="rechargeFormData.tenantId"
-            placeholder="请选择租户"
+            :placeholder="$t('corporateRechargePage.phSelectTenant')"
             filterable
             style="width: 100%"
           >
             <el-option
               v-for="item in rechargeTenantList"
               :key="item.tenantId"
-              :label="`${item.tenantId} - ${item.name}`"
+              :label="String(item.tenantId) + ' - ' + $displayBizHybrid(item.name || '')"
               :value="item.tenantId"
             />
           </el-select>
         </el-form-item>
 
-        <!-- 交易类型 -->
-        <el-form-item label="交易类型" prop="tradeType">
+        <el-form-item :label="$t('corporateRechargePage.formTradeType')" prop="tradeType">
           <el-select
             v-model="rechargeFormData.tradeType"
-            placeholder="请选择交易类型"
+            :placeholder="$t('corporateRechargePage.phSelectTradeType')"
             style="width: 100%"
           >
-            <el-option label="租户充值" value="TENANT_CHARGE" />
+            <el-option :label="$t('corporateRechargePage.tradeTypeTenantCharge')" value="TENANT_CHARGE" />
           </el-select>
         </el-form-item>
 
-        <!-- 充值金额 -->
-        <el-form-item label="充值金额" prop="amount">
-          <el-input
-            v-model="rechargeFormData.amount"
-            placeholder="请输入充值金额"
-            @input="handleAmountInput"
-          >
-            <template slot="suffix">元</template>
+        <el-form-item :label="$t('corporateRechargePage.formBizType')" prop="bizType">
+          <el-radio-group v-model="rechargeFormData.bizType">
+            <el-radio :label="1">{{ $t('corporateRechargePage.bizElectric') }}</el-radio>
+            <el-radio :label="2">{{ $t('corporateRechargePage.bizWater') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item :label="$t('corporateRechargePage.formAmount')" prop="amount">
+          <el-input v-model="rechargeFormData.amount" :placeholder="$t('corporateRechargePage.phAmount')" @input="handleAmountInput">
+            <template slot="suffix">{{ $t('corporateRechargePage.suffixYuan') }}</template>
           </el-input>
         </el-form-item>
 
-        <!-- 银行类型 -->
-        <el-form-item label="银行类型" prop="bankType">
+        <el-form-item :label="$t('corporateRechargePage.formBankType')" prop="bankType">
           <el-select
             v-model="rechargeFormData.bankType"
-            placeholder="请选择银行类型"
+            :placeholder="$t('corporateRechargePage.phSelectBankType')"
             style="width: 100%"
           >
-            <el-option
-              v-for="item in bankTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+            <el-option v-for="item in bankTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
 
-        <!-- 备注 -->
-        <el-form-item label="备注">
+        <el-form-item :label="$t('corporateRechargePage.formRemark')">
           <el-input
             v-model="rechargeFormData.comment"
             type="textarea"
             :rows="3"
-            placeholder="请输入备注"
+            :placeholder="$t('corporateRechargePage.phRemark')"
             maxlength="200"
             show-word-limit
           />
         </el-form-item>
 
-        <!-- 收款单上传 -->
-        <el-form-item label="收款单">
+        <el-form-item :label="$t('corporateRechargePage.formVoucher')">
           <el-upload
             class="upload-demo"
             :action="uploadUrl"
@@ -363,28 +321,21 @@
             :limit="5"
           >
             <i class="el-icon-plus"></i>
-            <div slot="tip" class="el-upload__tip">
-              支持jpg/png格式，单个文件不超过2MB，最多上传5张
-            </div>
+            <div slot="tip" class="el-upload__tip">{{ $t('corporateRechargePage.uploadTip') }}</div>
           </el-upload>
         </el-form-item>
       </el-form>
 
       <div slot="footer" class="dialog-footer">
-        <el-button @click="handleRechargeDialogClose">取消</el-button>
-        <el-button
-          type="primary"
-          @click="handleRechargeSubmit"
-          :loading="submitting"
-        >
-          {{ submitting ? "提交中..." : "确定充值" }}
+        <el-button @click="handleRechargeDialogClose">{{ $t('corporateRechargePage.btnCancel') }}</el-button>
+        <el-button type="primary" @click="handleRechargeSubmit" :loading="submitting">
+          {{ submitting ? $t('corporateRechargePage.btnSubmitting') : $t('corporateRechargePage.btnConfirmRecharge') }}
         </el-button>
       </div>
     </el-dialog>
 
-    <!-- 图片预览对话框 -->
     <el-dialog
-      title="收款单"
+      :title="$t('corporateRechargePage.dialogTitleVoucher')"
       :visible.sync="imageDialogVisible"
       width="800px"
       :close-on-click-modal="false"
@@ -408,597 +359,1000 @@ import {
   capitalManagePageTenantRecord,
   payPublicTransfers,
   getManagerById,
-  getSimpleTenantList,
-} from "@/api/publicRecharge";
-import { mapGetters } from "vuex";
+  getSimpleTenantList
+} from '@/api/publicRecharge'
+import { mapGetters } from 'vuex'
+import BankJournalHub from './components/bankJournal/BankJournalHub.vue'
+import * as XLSX from 'xlsx'
 
 export default {
-  name: "PublicRecharge",
-  data() {
+  name: 'PublicRecharge',
+  components: { BankJournalHub },
+  data () {
     return {
-      tableHeightConfig: {
-        headerHeight: 48,
-        rowHeight: 47,
-        minHeight: 200,
-        maxRows: 9,
-        paginationHeight: 68,
-      },
+      activeFinanceTab: 'public',
+      sortOrder: 'default',
 
-      // ========== 查询相关 ==========
       queryData: {
-        tenantId: "",
-        timeRange: [],
+        tenantId: null,
+        timeRange: []
       },
 
-      // 日期选择器快捷选项 - 精简版
-      pickerOptions: {
-        shortcuts: [
-          // {
-          //   text: "今天",
-          //   onClick(picker) {
-          //     const start = new Date();
-          //     start.setHours(0, 0, 0, 0);
-          //     const end = new Date();
-          //     end.setHours(23, 59, 59, 999);
-          //     picker.$emit("pick", [start, end]);
-          //   },
-          // },
-          {
-            text: "昨天",
-            onClick(picker) {
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setTime(end.getTime() - 3600 * 1000 * 24);
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "本周",
-            onClick(picker) {
-              const now = new Date();
-              const dayOfWeek = now.getDay();
-              const start = new Date(now);
-              // 本周一（如果今天是周日，则为上周一）
-              const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-              start.setDate(now.getDate() + diff);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "上周",
-            onClick(picker) {
-              const now = new Date();
-              const dayOfWeek = now.getDay();
-              const start = new Date(now);
-              // 上周一
-              const diff = dayOfWeek === 0 ? -13 : -6 - dayOfWeek;
-              start.setDate(now.getDate() + diff);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date(start);
-              // 上周日
-              end.setDate(start.getDate() + 6);
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "本月",
-            onClick(picker) {
-              const start = new Date();
-              start.setDate(1);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "上月",
-            onClick(picker) {
-              const start = new Date();
-              start.setMonth(start.getMonth() - 1);
-              start.setDate(1);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setDate(0);
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "近三个月",
-            onClick(picker) {
-              const end = new Date();
-              end.setHours(23, 59, 59, 999);
-              const start = new Date();
-              start.setMonth(start.getMonth() - 3);
-              start.setHours(0, 0, 0, 0);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "近一年",
-            onClick(picker) {
-              const end = new Date();
-              end.setHours(23, 59, 59, 999);
-              const start = new Date();
-              start.setFullYear(start.getFullYear() - 1);
-              start.setHours(0, 0, 0, 0);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-        ],
-      },
-
-      // 租户列表（用于查询条件）
       tenantList: [],
-
-      // 银行类型枚举
-      bankTypeOptions: [
-        { label: "中国银行（互联）", value: "ZGYH" },
-        { label: "浦发银行（互联）", value: "PFYH" },
-        { label: "中国银行（数字）", value: "ZGYHSZ" },
-        { label: "招商银行（互联）", value: "ZHSHYH" },
-        { label: "中信银行（互联）", value: "ZXYH" },
-      ],
-
-      // ========== 表格相关 ==========
       tableData: [],
       loading: false,
-
-      // 分页数据
       pageData: {
         current: 1,
         size: 15,
-        total: 0,
+        total: 0
       },
 
-      // ========== 充值弹窗相关 ==========
       rechargeDialogVisible: false,
       submitting: false,
-
-      // 充值表单数据
       rechargeFormData: {
-        managerId: "",
-        tenantId: "",
-        tradeType: "TENANT_CHARGE",
-        amount: "",
-        bankType: "",
-        comment: "",
-        payChannel: "PUBLIC_TRANSFERS",
-        imageList: [],
+        managerId: '',
+        tenantId: '',
+        tradeType: 'TENANT_CHARGE',
+        bizType: 1,
+        amount: '',
+        bankType: '',
+        comment: '',
+        payChannel: 'PUBLIC_TRANSFERS',
+        imageList: []
       },
-
-      // 充值表单验证规则
-      rechargeFormRules: {
-        managerId: [
-          { required: true, message: "请选择项目", trigger: "change" },
-        ],
-        tenantId: [
-          { required: true, message: "请选择租户", trigger: "change" },
-        ],
-        tradeType: [
-          { required: true, message: "请选择交易类型", trigger: "change" },
-        ],
-        amount: [
-          { required: true, message: "请输入充值金额", trigger: "blur" },
-          {
-            validator: this.validateAmount,
-            trigger: "blur",
-          },
-        ],
-        bankType: [
-          { required: true, message: "请选择银行类型", trigger: "change" },
-        ],
-      },
-
-      // 项目列表
       managerList: [],
-
-      // 租户列表（用于充值弹窗）
       rechargeTenantList: [],
-
-      // 文件上传
-      uploadUrl: process.env.VUE_APP_BASE_API + "/api/ebc-content/file/upload",
-      uploadHeaders: {
-        userDeviceType: "PC",
-      },
+      uploadUrl: process.env.VUE_APP_BASE_API + '/api/ebc-content/file/upload',
+      uploadHeaders: { userDeviceType: 'PC' },
       fileList: [],
-
-      // 权限标识
       hasRechargePermission: false,
-
-      // ========== 图片预览相关 ==========
       imageDialogVisible: false,
-      currentImages: [],
-    };
+      currentImages: []
+    }
   },
 
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
-    ...mapGetters("user", ["userId"]),
-    tableMaxHeight() {
-      return (
-        this.tableHeightConfig.headerHeight +
-        this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-      );
+    ...mapGetters('manager', ['currentManagerId']),
+    ...mapGetters('user', ['userId']),
+    ...mapGetters(['kztMenuNos']),
+    hasKztPermission () {
+      const allow = new Set((this.kztMenuNos || []).map((v) => String(v)))
+      return (menuNo) => allow.has(String(menuNo))
     },
+    canView () {
+      return this.hasKztPermission('670011')
+    },
+    canOperate () {
+      return this.hasKztPermission('670010')
+    },
+    localeKey () {
+      return this.$i18n && this.$i18n.locale ? this.$i18n.locale : 'zh-CN'
+    },
+    mainTabs () {
+      return [
+        { name: 'public', label: this.$t('corporateRechargePage.tabPublic') },
+        { name: 'bank', label: this.$t('corporateRechargePage.tabBank') }
+      ]
+    },
+    pickerOptions () {
+      const t = (key) => this.$t(`corporateRechargePage.${key}`)
+      return {
+        shortcuts: [
+          {
+            text: t('shortcutYesterday'),
+            onClick (picker) {
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setTime(end.getTime() - 3600 * 1000 * 24)
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('shortcutThisWeek'),
+            onClick (picker) {
+              const now = new Date()
+              const dayOfWeek = now.getDay()
+              const start = new Date(now)
+              const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+              start.setDate(now.getDate() + diff)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('shortcutLastWeek'),
+            onClick (picker) {
+              const now = new Date()
+              const dayOfWeek = now.getDay()
+              const start = new Date(now)
+              const diff = dayOfWeek === 0 ? -13 : -6 - dayOfWeek
+              start.setDate(now.getDate() + diff)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date(start)
+              end.setDate(start.getDate() + 6)
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('shortcutThisMonth'),
+            onClick (picker) {
+              const start = new Date()
+              start.setDate(1)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('shortcutLastMonth'),
+            onClick (picker) {
+              const start = new Date()
+              start.setMonth(start.getMonth() - 1)
+              start.setDate(1)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setDate(0)
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('shortcutLast3Months'),
+            onClick (picker) {
+              const end = new Date()
+              end.setHours(23, 59, 59, 999)
+              const start = new Date()
+              start.setMonth(start.getMonth() - 3)
+              start.setHours(0, 0, 0, 0)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('shortcutLastYear'),
+            onClick (picker) {
+              const end = new Date()
+              end.setHours(23, 59, 59, 999)
+              const start = new Date()
+              start.setFullYear(start.getFullYear() - 1)
+              start.setHours(0, 0, 0, 0)
+              picker.$emit('pick', [start, end])
+            }
+          }
+        ]
+      }
+    },
+    bankTypeOptions () {
+      return [
+        { label: this.$t('corporateRechargePage.bankZGYH'), value: 'ZGYH' },
+        { label: this.$t('corporateRechargePage.bankPFYH'), value: 'PFYH' },
+        { label: this.$t('corporateRechargePage.bankZGYHSZ'), value: 'ZGYHSZ' },
+        { label: this.$t('corporateRechargePage.bankZHSHYH'), value: 'ZHSHYH' },
+        { label: this.$t('corporateRechargePage.bankZXYH'), value: 'ZXYH' },
+        { label: this.$t('corporateRechargePage.bankNBYH'), value: 'NBYH' }
+      ]
+    },
+    statusTableOptions () {
+      return [
+        { label: this.$t('corporateRechargePage.statusNormal'), value: 0, color: '#52c41a' },
+        { label: this.$t('corporateRechargePage.statusRevoked'), value: 1, color: '#909399' }
+      ]
+    },
+    rechargeFormRules () {
+      return {
+        managerId: [{ required: true, message: this.$t('corporateRechargePage.ruleSelectProject'), trigger: 'change' }],
+        tenantId: [{ required: true, message: this.$t('corporateRechargePage.ruleSelectTenant'), trigger: 'change' }],
+        tradeType: [{ required: true, message: this.$t('corporateRechargePage.ruleSelectTradeType'), trigger: 'change' }],
+        bizType: [{ required: true, message: this.$t('corporateRechargePage.ruleSelectBizType'), trigger: 'change' }],
+        amount: [
+          { required: true, message: this.$t('corporateRechargePage.ruleAmountRequired'), trigger: 'blur' },
+          { validator: this.validateAmount, trigger: 'blur' }
+        ],
+        bankType: [{ required: true, message: this.$t('corporateRechargePage.ruleSelectBankType'), trigger: 'change' }]
+      }
+    }
   },
 
   watch: {
-    currentManagerId: {
-      handler(newVal) {
-        if (newVal) {
-          this.fetchTenantList();
-          this.setDefaultTimeRange();
-          this.fetchTableData();
-        }
+    canView: {
+      handler () {
+        this.tryInitData()
       },
-      immediate: true,
+      immediate: true
     },
+    currentManagerId: {
+      handler (newVal) {
+        this.tryInitData()
+      },
+      immediate: true
+    }
   },
 
-  mounted() {
-    this.fetchManagerList();
+  mounted () {
+    this.fetchManagerList()
   },
 
   methods: {
-    // ==================== 工具方法 ====================
-
-    // 设置默认时间范围（最近30天）
-    setDefaultTimeRange() {
-      const endDate = new Date();
-      const startDate = new Date();
-      // ⭐ 修改：减去30天，使得包含今天在内正好是30天
-      startDate.setTime(startDate.getTime() - 3600 * 1000 * 24 * 30);
-
-      this.queryData.timeRange = [
-        this.formatDate(startDate),
-        this.formatDate(endDate),
-      ];
+    normalizeSelect (v) {
+      if (v === null || v === undefined || v === '') return undefined
+      return v
     },
 
-    // 格式化日期
-    formatDate(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
+    tryInitData () {
+      if (!this.canView || !this.currentManagerId) return
+      this.fetchTenantList()
+      this.setDefaultTimeRange()
+      this.fetchTableData()
     },
 
-    // 格式化金额
-    formatMoney(amount) {
-      if (amount === null || amount === undefined) return "0.00";
-      return Number(amount).toFixed(2);
+    setDefaultTimeRange () {
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setTime(startDate.getTime() - 3600 * 1000 * 24 * 30)
+      this.queryData.timeRange = [this.formatDate(startDate), this.formatDate(endDate)]
     },
 
-    // 获取银行类型标签
-    getBankTypeLabel(bankType) {
-      const bank = this.bankTypeOptions.find((b) => b.value === bankType);
-      return bank ? bank.label : bankType || "-";
+    formatDate (date) {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
     },
 
-    // ==================== 查询相关方法 ====================
-
-    // 日期变化时自动触发查询
-    handleDateChange(value) {
-      // 只有当选择了完整的日期范围时才自动查询
-      if (value && value.length === 2 && value[0] && value[1]) {
-        this.handleSearch();
-      }
+    formatMoney (amount) {
+      if (amount === null || amount === undefined) return '0.00'
+      return Number(amount).toFixed(2)
     },
 
-    // 获取租户列表（用于查询条件）- 使用正确的接口
-    async fetchTenantList() {
+    transferRemark (row) {
+      if (!row) return '-'
+      return row.comment || row.remark || '-'
+    },
+
+    formatRechargeAccount (row) {
+      const bizType = row && (row.bizType ?? row.rechargeBizType)
+      const n = Number(bizType)
+      if (n === 1) return this.$t('corporateRechargePage.accountElectric')
+      if (n === 2) return this.$t('corporateRechargePage.accountWater')
+      if (row && row.rechargeAccount) return String(row.rechargeAccount)
+      return '-'
+    },
+
+    getStatusLabel (status) {
+      const statusObj = this.statusTableOptions.find((s) => s.value === status)
+      return statusObj ? statusObj.label : '-'
+    },
+
+    getStatusColor (status) {
+      const statusObj = this.statusTableOptions.find((s) => s.value === status)
+      return statusObj ? statusObj.color : '#909399'
+    },
+
+    goTenantDetail (row) {
+      const id = row && row.tenantId
+      if (!id) return
+      this.$router.push({ path: `/metering/tenant/detail/${id}` })
+    },
+
+    async fetchTenantList () {
       try {
-        const params = {
-          managerId: this.currentManagerId,
-          tenantStatus: 0,
-        };
-
-        const response = await getSimpleTenantList(params);
-        if (response.code === 200) {
-          this.tenantList = response.data || [];
-        }
+        const params = { managerId: this.currentManagerId, tenantStatus: 0 }
+        const response = await getSimpleTenantList(params)
+        if (response.code === 200) this.tenantList = response.data || []
       } catch (error) {
-        console.error("获取租户列表失败:", error);
-        this.$message.error("获取租户列表失败");
+        console.error('获取租户列表失败:', error)
+        this.$apiError.notify(error, this.$t('corporateRechargePage.msgTenantListFail'))
       }
     },
 
-    // 获取表格数据
-    async fetchTableData() {
-      this.loading = true;
+    async fetchTableData () {
+      this.loading = true
       try {
+        const tenantId = this.normalizeSelect(this.queryData.tenantId)
         const params = {
           managerId: this.currentManagerId,
-          tenantId: this.queryData.tenantId || null,
+          tenantId: tenantId === undefined ? null : tenantId,
           startDate:
             this.queryData.timeRange && this.queryData.timeRange[0]
               ? `${this.queryData.timeRange[0]} 00:00:00`
-              : "",
+              : '',
           endDate:
             this.queryData.timeRange && this.queryData.timeRange[1]
               ? `${this.queryData.timeRange[1]} 23:59:59`
-              : "",
-          channels: ["PUBLIC_TRANSFERS"], // 写死只查对公充值
+              : '',
+          channels: ['PUBLIC_TRANSFERS'],
           page: {
             size: this.pageData.size,
             current: this.pageData.current,
-            orders: [{ asc: false, column: "occurTime" }],
-          },
-        };
+            orders: [{ asc: false, column: 'occurTime' }]
+          }
+        }
 
-        const response = await capitalManagePageTenantRecord(params);
-
+        const response = await capitalManagePageTenantRecord(params)
         if (response.code === 200 && response.data) {
-          this.tableData = response.data.dataList || [];
-          this.pageData.total = response.data.total || 0;
+          this.tableData = response.data.dataList || []
+          this.pageData.total = response.data.total || 0
         } else {
-          this.$message.error(response.msg || "获取数据失败");
+          this.$message.error(response.msg || this.$t('corporateRechargePage.msgFetchFail'))
         }
       } catch (error) {
-        this.$message.error("获取充值记录失败");
-        console.error("获取充值记录失败:", error);
+        this.$apiError.notify(error, this.$t('corporateRechargePage.msgFetchRecordFail'))
+        console.error('获取充值记录失败:', error)
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
-    // 查询
-    handleSearch() {
-      this.pageData.current = 1;
-      this.fetchTableData();
+    handleDateChange (value) {
+      if (value && value.length === 2 && value[0] && value[1]) this.handleSearch()
     },
 
-    // 重置
-    handleReset() {
-      this.queryData = {
-        tenantId: "",
-        timeRange: [],
-      };
-      this.setDefaultTimeRange();
-      this.handleSearch();
+    handleSearch () {
+      this.pageData.current = 1
+      this.fetchTableData()
     },
 
-    // 查看收款单图片
-    handleViewImages(imageList) {
-      this.currentImages = imageList;
-      this.imageDialogVisible = true;
+    handleReset () {
+      this.queryData = { tenantId: null, timeRange: [] }
+      this.setDefaultTimeRange()
+      this.handleSearch()
     },
 
-    // 分页大小变化
-    handleSizeChange(val) {
-      this.pageData.size = val;
-      this.pageData.current = 1;
-      this.fetchTableData();
+    handleExport () {
+      if (!this.tableData.length) {
+        this.$message.warning(this.$t('corporateRechargePage.msgNoDataExport'))
+        return
+      }
+      try {
+        const headers = [
+          this.$t('corporateRechargePage.colSeqNo'),
+          this.$t('corporateRechargePage.colOccurTime'),
+          this.$t('corporateRechargePage.colTenant'),
+          this.$t('corporateRechargePage.colRechargeAccount'),
+          this.$t('corporateRechargePage.colAmount'),
+          this.$t('corporateRechargePage.colPayeeName'),
+          this.$t('corporateRechargePage.colBankNumber'),
+          this.$t('corporateRechargePage.colTransferRemark'),
+          this.$t('corporateRechargePage.colStatus')
+        ]
+        const data = this.tableData.map((row) => [
+          row.seqNo || '',
+          row.occurTime || '',
+          this.$displayBizHybrid(row.tenantName || '') || '',
+          this.formatRechargeAccount(row),
+          row.amount != null ? Number(row.amount).toFixed(2) : '',
+          row.payeeName || '',
+          row.bankNumber || '',
+          this.transferRemark(row),
+          this.getStatusLabel(row.status)
+        ])
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...data])
+        const wb = XLSX.utils.book_new()
+        const sheetName = this.$t('corporateRechargePage.exportSheetName')
+        XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31))
+        const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
+        const filePrefix = this.$t('corporateRechargePage.filePrefix')
+        XLSX.writeFile(wb, `${filePrefix}_${timeStr}.xlsx`)
+        this.$message.success(
+          this.$t('corporateRechargePage.msgExportOk', { count: this.tableData.length })
+        )
+      } catch (e) {
+        console.error(e)
+        this.$apiError.notify(e, this.$t('corporateRechargePage.msgExportFail'))
+      }
     },
 
-    // 当前页变化
-    handleCurrentChange(val) {
-      this.pageData.current = val;
-      this.fetchTableData();
+    handleViewImages (imageList) {
+      this.currentImages = imageList
+      this.imageDialogVisible = true
     },
 
-    // ==================== 充值弹窗相关方法 ====================
+    handleSizeChange (val) {
+      this.pageData.size = val
+      this.pageData.current = 1
+      this.fetchTableData()
+    },
 
-    // 打开充值弹窗
-    handleRecharge() {
-      this.rechargeDialogVisible = true;
-      this.rechargeFormData.managerId = this.currentManagerId || "";
+    handleCurrentChange (val) {
+      this.pageData.current = val
+      this.fetchTableData()
+    },
+
+    handleRecharge () {
+      if (!this.canOperate) {
+        this.$message.warning(this.$t('corporateRechargePage.msgNoOperatePerm'))
+        return
+      }
+      this.rechargeDialogVisible = true
+      this.rechargeFormData.managerId = this.currentManagerId || ''
       if (this.rechargeFormData.managerId) {
-        this.checkRechargePermission();
-        this.fetchRechargeTenantList();
+        this.checkRechargePermission()
+        this.fetchRechargeTenantList()
       }
     },
 
-    // 获取项目列表
-    async fetchManagerList() {
+    async fetchManagerList () {
       try {
-        this.managerList = this.$store.state.user.managerNames || [];
+        this.managerList = this.$store.state.user.managerNames || []
       } catch (error) {
-        console.error("获取项目列表失败:", error);
+        console.error('获取项目列表失败:', error)
       }
     },
 
-    // 项目切换
-    async handleManagerChange(managerId) {
-      this.rechargeFormData.tenantId = "";
-      this.rechargeTenantList = [];
+    async handleManagerChange (managerId) {
+      this.rechargeFormData.tenantId = ''
+      this.rechargeTenantList = []
       if (managerId) {
-        await this.checkRechargePermission();
-        await this.fetchRechargeTenantList();
+        await this.checkRechargePermission()
+        await this.fetchRechargeTenantList()
       }
     },
 
-    // 检查充值权限
-    async checkRechargePermission() {
+    async checkRechargePermission () {
       try {
-        const response = await getManagerById({
-          id: this.rechargeFormData.managerId,
-        });
+        const response = await getManagerById({ id: this.rechargeFormData.managerId })
         if (response.code === 200 && response.data) {
-          const rechargeRole = response.data.rechargeRole || [];
-          this.hasRechargePermission = rechargeRole.includes(
-            "PUBLIC_TRANSFERS"
-          );
+          const rechargeRole = response.data.rechargeRole || []
+          this.hasRechargePermission = rechargeRole.includes('PUBLIC_TRANSFERS')
           if (!this.hasRechargePermission) {
-            this.$message.warning("该项目暂无对公充值权限");
+            this.$message.warning(this.$t('corporateRechargePage.msgNoPublicRechargePerm'))
           }
         }
       } catch (error) {
-        console.error("检查充值权限失败:", error);
+        console.error('检查充值权限失败:', error)
       }
     },
 
-    // 获取租户列表（用于充值弹窗）- 使用正确的接口
-    async fetchRechargeTenantList() {
+    async fetchRechargeTenantList () {
       try {
-        const params = {
-          managerId: this.rechargeFormData.managerId,
-          tenantStatus: 0,
-        };
-
-        const response = await getSimpleTenantList(params);
-        if (response.code === 200) {
-          this.rechargeTenantList = response.data || [];
-        }
+        const params = { managerId: this.rechargeFormData.managerId, tenantStatus: 0 }
+        const response = await getSimpleTenantList(params)
+        if (response.code === 200) this.rechargeTenantList = response.data || []
       } catch (error) {
-        console.error("获取租户列表失败:", error);
-        this.$message.error("获取租户列表失败");
+        console.error('获取租户列表失败:', error)
+        this.$apiError.notify(error, this.$t('corporateRechargePage.msgTenantListFail'))
       }
     },
 
-    // 金额输入处理
-    handleAmountInput(value) {
-      // 只允许输入数字和小数点
-      let val = value.replace(/[^\d.]/g, "");
-      // 只保留第一个小数点
-      val = val.replace(/\.{2,}/g, ".");
-      val = val.replace(".", "$#$").replace(/\./g, "").replace("$#$", ".");
-      // 只保留两位小数
-      const arr = val.split(".");
-      if (arr.length > 1) {
-        val = arr[0] + "." + arr[1].substring(0, 2);
-      }
-      this.rechargeFormData.amount = val;
+    handleAmountInput (value) {
+      let val = value.replace(/[^\d.]/g, '')
+      val = val.replace(/\.{2,}/g, '.')
+      val = val.replace('.', '$#$').replace(/\./g, '').replace('$#$', '.')
+      const arr = val.split('.')
+      if (arr.length > 1) val = arr[0] + '.' + arr[1].substring(0, 2)
+      this.rechargeFormData.amount = val
     },
 
-    // 金额验证
-    validateAmount(rule, value, callback) {
+    validateAmount (rule, value, callback) {
       if (!value) {
-        callback(new Error("请输入充值金额"));
-        return;
+        callback(new Error(this.$t('corporateRechargePage.ruleAmountRequired')))
+        return
       }
-      const amount = Number(value);
+      const amount = Number(value)
       if (isNaN(amount)) {
-        callback(new Error("请输入有效的金额"));
-        return;
+        callback(new Error(this.$t('corporateRechargePage.ruleAmountInvalid')))
+        return
       }
       if (amount <= 0) {
-        callback(new Error("充值金额必须大于0"));
-        return;
+        callback(new Error(this.$t('corporateRechargePage.ruleAmountPositive')))
+        return
       }
       if (amount > 999999.99) {
-        callback(new Error("充值金额不能超过999999.99元"));
-        return;
+        callback(new Error(this.$t('corporateRechargePage.ruleAmountMax')))
+        return
       }
-      callback();
+      callback()
     },
 
-    // 文件上传成功
-    handleUploadSuccess(response, file, fileList) {
+    handleUploadSuccess (response, file, fileList) {
       if (response.code === 200) {
-        this.rechargeFormData.imageList.push(response.data.url);
-        this.$message.success("上传成功");
+        this.rechargeFormData.imageList.push(response.data.url)
+        this.$message.success(this.$t('corporateRechargePage.msgUploadSuccess'))
       } else {
-        this.$message.error(response.msg || "上传失败");
-        // 移除失败的文件
-        this.fileList = fileList.filter((f) => f.uid !== file.uid);
+        this.$message.error(response.msg || this.$t('corporateRechargePage.msgUploadFail'))
+        this.fileList = fileList.filter((f) => f.uid !== file.uid)
       }
     },
 
-    // 移除文件
-    handleRemove(file, fileList) {
+    handleRemove (file, fileList) {
       if (file.response && file.response.data) {
-        const index = this.rechargeFormData.imageList.indexOf(
-          file.response.data.url
-        );
-        if (index > -1) {
-          this.rechargeFormData.imageList.splice(index, 1);
-        }
+        const index = this.rechargeFormData.imageList.indexOf(file.response.data.url)
+        if (index > -1) this.rechargeFormData.imageList.splice(index, 1)
       }
-      this.fileList = fileList;
+      this.fileList = fileList
     },
 
-    // 提交充值表单
-    async handleRechargeSubmit() {
+    async handleRechargeSubmit () {
+      if (!this.canOperate) {
+        this.$message.warning(this.$t('corporateRechargePage.msgNoOperatePerm'))
+        return
+      }
       if (!this.hasRechargePermission) {
-        this.$message.warning("该项目暂无对公充值权限");
-        return;
+        this.$message.warning(this.$t('corporateRechargePage.msgNoPublicRechargePerm'))
+        return
       }
 
       try {
-        await this.$refs.rechargeForm.validate();
+        await this.$refs.rechargeForm.validate()
+        await this.$confirm(this.$t('corporateRechargePage.msgConfirmSubmit'), this.$t('corporateRechargePage.confirmTitle'), {
+          confirmButtonText: this.$t('corporateRechargePage.confirmOk'),
+          cancelButtonText: this.$t('corporateRechargePage.confirmCancel'),
+          type: 'warning'
+        })
 
-        await this.$confirm("确认提交充值申请？", "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
-
-        this.submitting = true;
-
-        const params = {
-          ...this.rechargeFormData,
-          userId: this.userId,
-        };
-
-        const response = await payPublicTransfers(params);
+        this.submitting = true
+        const params = { ...this.rechargeFormData, userId: this.userId }
+        const response = await payPublicTransfers(params)
 
         if (response.code === 200) {
-          this.$message.success("充值申请提交成功");
-          this.handleRechargeDialogClose();
-          this.fetchTableData();
+          this.$message.success(this.$t('corporateRechargePage.msgSubmitSuccess'))
+          this.handleRechargeDialogClose()
+          this.fetchTableData()
         } else {
-          this.$message.error(response.msg || "充值失败");
+          this.$message.error(response.msg || this.$t('corporateRechargePage.msgPayFail'))
         }
       } catch (error) {
-        if (error !== "cancel") {
-          console.error("充值失败:", error);
-          this.$message.error("充值失败");
+        if (error !== 'cancel') {
+          console.error('充值失败:', error)
+          this.$message.error(this.$t('corporateRechargePage.msgRechargeFail'))
         }
       } finally {
-        this.submitting = false;
+        this.submitting = false
       }
     },
 
-    // 关闭充值弹窗
-    handleRechargeDialogClose() {
-      this.rechargeDialogVisible = false;
-      this.$refs.rechargeForm && this.$refs.rechargeForm.resetFields();
+    handleRechargeDialogClose () {
+      this.rechargeDialogVisible = false
+      this.$refs.rechargeForm && this.$refs.rechargeForm.resetFields()
       this.rechargeFormData = {
-        managerId: "",
-        tenantId: "",
-        tradeType: "TENANT_CHARGE",
-        amount: "",
-        bankType: "",
-        comment: "",
-        payChannel: "PUBLIC_TRANSFERS",
-        imageList: [],
-      };
-      this.fileList = [];
-      this.rechargeTenantList = [];
-      this.hasRechargePermission = false;
-    },
-  },
-};
+        managerId: '',
+        tenantId: '',
+        tradeType: 'TENANT_CHARGE',
+        bizType: 1,
+        amount: '',
+        bankType: '',
+        comment: '',
+        payChannel: 'PUBLIC_TRANSFERS',
+        imageList: []
+      }
+      this.fileList = []
+      this.rechargeTenantList = []
+      this.hasRechargePermission = false
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
-// 引入表格页面公共样式
-@import "@/assets/styles/table-page.scss";
+.table-page-container {
+  padding: 16px;
+  background: #f0f2f5;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tab-nav-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0 32px;
+  margin: 0 0 16px;
+  padding: 16px 24px 0 40px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+.tab-nav-item {
+  position: relative;
+  padding: 0 10px 9px;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #6b7280;
+  font-weight: 400;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #374151;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(22, 119, 255, 0.45);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  &.is-active {
+    color: #111827;
+    font-weight: 700;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 3px;
+      border-radius: 999px;
+      background: #1677ff;
+    }
+  }
+}
+
+.tab-panel-wrap {
+  min-width: 0;
+}
+
+.bank-tab-panel {
+  margin-top: 0;
+}
+
+.search-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+}
+
+.search-form {
+  margin: 0;
+
+  .search-main-grid {
+    width: 100%;
+    display: grid;
+    align-items: center;
+    /* 与 device/watermeter.vue 一致：两列筛选项 + auto 按钮 + 两列空 1fr，剩余宽度由空列吸收，输入框不被拉满 */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .field-range {
+    grid-column: 1;
+  }
+
+  .field-tenant {
+    grid-column: 2;
+  }
+
+  .field-item {
+    width: 100%;
+    min-width: 0;
+
+    ::v-deep .el-input,
+    ::v-deep .el-select {
+      width: 100%;
+      display: block;
+    }
+
+    ::v-deep .el-input__inner,
+    ::v-deep .el-select .el-input__inner,
+    ::v-deep .el-range-editor.el-input__inner {
+      height: 32px;
+      line-height: 32px;
+      border-radius: 6px;
+      border-color: #e4e7ed;
+      font-size: 13px;
+
+      &::placeholder {
+        color: #c0c4cc;
+      }
+    }
+
+    ::v-deep .el-range-editor--small .el-range-input {
+      font-size: 13px;
+    }
+
+    ::v-deep .el-range-editor--small.el-input__inner {
+      height: 32px;
+      line-height: 32px;
+    }
+
+    ::v-deep .el-range-separator {
+      line-height: 24px;
+    }
+  }
+
+  .search-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    justify-self: start;
+    grid-column: 3;
+    line-height: 1;
+
+    ::v-deep .el-button + .el-button {
+      margin-left: 0 !important;
+    }
+
+    ::v-deep .el-button {
+      height: 32px;
+      padding: 0 14px;
+      font-size: 13px;
+      border-radius: 6px;
+    }
+
+    ::v-deep .el-button--primary {
+      background: #1677ff;
+      border-color: #1677ff;
+
+      &:hover {
+        background: #4096ff;
+        border-color: #4096ff;
+      }
+    }
+
+    ::v-deep .el-button--success {
+      background: #52c41a;
+      border-color: #52c41a;
+
+      &:hover {
+        background: #73d13d;
+        border-color: #73d13d;
+      }
+    }
+  }
+}
+
+.content-box {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  flex: 1;
+  padding: 16px 16px 10px;
+}
+
+.content-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 8px;
+
+  .toolbar-left .section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+
+    .title-bar {
+      width: 3px;
+      height: 16px;
+      background: #1677ff;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+  }
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    ::v-deep .el-button--primary {
+      background: #1677ff;
+      border-color: #1677ff;
+      height: 32px;
+      padding: 0 14px;
+      font-size: 13px;
+      border-radius: 6px;
+
+      &:hover {
+        background: #4096ff;
+        border-color: #4096ff;
+      }
+    }
+
+    ::v-deep .el-select .el-input__inner {
+      height: 32px;
+      line-height: 32px;
+      font-size: 13px;
+      border-radius: 6px;
+      border-color: #e4e7ed;
+    }
+  }
+}
+
+.list-view {
+  padding: 0;
+}
+
+.light-border-table {
+  margin-top: 8px;
+
+  ::v-deep {
+    border: 1px solid #f0f0f0 !important;
+
+    .el-table__header-wrapper th {
+      border-right: 1px solid #f0f0f0 !important;
+      border-bottom: 1px solid #f0f0f0 !important;
+    }
+
+    td {
+      border-right: 1px solid #f5f5f5 !important;
+      border-bottom: 1px solid #f5f5f5 !important;
+    }
+
+    .el-table__body tr.el-table__row--striped > td {
+      background: #fcfdff !important;
+    }
+
+    .el-table--enable-row-hover .el-table__body tr:hover > td {
+      background: #f2f8ff !important;
+    }
+  }
+}
+
+.tenant-link {
+  color: #1677ff !important;
+  font-weight: 500;
+
+  &:hover {
+    color: #4096ff !important;
+  }
+}
 
 .amount-text {
-  color: #67c23a;
+  color: #374151;
   font-weight: 600;
   font-size: 14px;
 }
 
-.tenant-name {
-  color: #303133;
-  font-weight: 500;
+.status-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #374151;
 }
 
-.no-data {
-  color: #909399;
-  font-size: 13px;
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.operation-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  .op-btn {
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1;
+
+    &.primary-btn {
+      color: #1677ff;
+
+      &:hover {
+        color: #4096ff;
+      }
+      &:active {
+        color: #0958d9;
+      }
+    }
+  }
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 0 4px;
+
+  &.compact-pagination {
+    ::v-deep .el-pagination {
+      display: flex !important;
+      align-items: center !important;
+      font-size: 12px;
+
+      span,
+      button,
+      .el-pager li,
+      .el-pagination__total,
+      .el-pagination__jump,
+      .el-pagination__sizes,
+      .el-pagination__sizes .el-input,
+      .el-pagination__sizes .el-input__inner,
+      .btn-prev,
+      .btn-next {
+        vertical-align: middle;
+        display: inline-flex !important;
+        align-items: center !important;
+      }
+
+      .el-pagination__total {
+        font-size: 12px;
+      }
+
+      .el-pagination__sizes .el-input {
+        width: 88px !important;
+        min-width: 0 !important;
+        .el-input__inner {
+          height: 24px;
+          font-size: 12px;
+          padding: 0 8px;
+          box-sizing: border-box;
+        }
+      }
+
+      .btn-prev,
+      .btn-next {
+        min-width: 24px;
+        height: 24px;
+        font-size: 12px;
+        padding: 0 6px;
+      }
+
+      .el-pager li {
+        min-width: 24px;
+        height: 24px;
+        font-size: 12px;
+        padding: 0 6px;
+      }
+
+      .el-pagination__jump {
+        font-size: 12px;
+        .el-input .el-input__inner {
+          height: 24px;
+          font-size: 12px;
+          padding: 0 4px;
+        }
+      }
+    }
+  }
+}
+
+.text-muted {
+  color: #c0c4cc;
+}
+
+.dialog-footer {
+  text-align: right;
+
+  .el-button {
+    min-width: 80px;
+  }
+}
+
+.upload-demo {
+  ::v-deep .el-upload-list--picture-card .el-upload-list__item {
+    width: 100px;
+    height: 100px;
+  }
+
+  ::v-deep .el-upload--picture-card {
+    width: 100px;
+    height: 100px;
+    line-height: 100px;
+  }
+
+  .el-upload__tip {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 8px;
+  }
 }
 
 .image-preview {
@@ -1021,41 +1375,10 @@ export default {
     }
   }
 }
-
-.dialog-footer {
-  text-align: right;
-
-  .el-button {
-    min-width: 80px;
-  }
-}
-
-.upload-demo {
-  ::v-deep .el-upload-list--picture-card {
-    .el-upload-list__item {
-      width: 100px;
-      height: 100px;
-    }
-  }
-
-  ::v-deep .el-upload--picture-card {
-    width: 100px;
-    height: 100px;
-    line-height: 100px;
-  }
-
-  .el-upload__tip {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 8px;
-  }
-}
 </style>
 
 <style lang="scss">
-// ========== 全局样式：自定义日期选择器（简洁层次版）==========
 .elegant-date-picker {
-  // 快捷选项容器
   .el-picker-panel__sidebar {
     width: 115px !important;
     padding: 12px 8px !important;
@@ -1064,7 +1387,6 @@ export default {
     border-right: 1px solid #e8e8e8 !important;
   }
 
-  // 快捷选项按钮 - 简洁层次感
   .el-picker-panel__shortcut {
     display: block !important;
     width: 100% !important;
@@ -1083,168 +1405,33 @@ export default {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
     outline: none !important;
 
-    // 悬停效果 - 微妙的层次感
     &:hover {
-      color: #409eff !important;
+      color: #1677ff !important;
       background: #f0f7ff !important;
-      box-shadow: 0 2px 6px rgba(64, 158, 255, 0.15) !important;
-      transform: translateY(-1px) !important;
-      border: none !important;
     }
 
-    // 激活效果
-    &:active {
-      transform: translateY(0) !important;
-      box-shadow: 0 1px 3px rgba(64, 158, 255, 0.1) !important;
-      border: none !important;
-    }
-
-    // 获得焦点时
-    &:focus {
-      border: none !important;
-      outline: none !important;
-    }
-
-    // 最后一个按钮
     &:last-child {
       margin-bottom: 0 !important;
     }
   }
 
-  // 日历主体
   .el-picker-panel__body {
     padding-left: 12px !important;
   }
 
-  // ⭐ 强制去除所有可能的边框
-  .el-picker-panel__shortcut,
-  button.el-picker-panel__shortcut {
-    border: none !important;
-    border-top: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
-    border-left: none !important;
-    box-sizing: border-box !important;
-  }
-
-  // 日期表格优化
-  .el-date-table {
-    td {
-      padding: 5px 0 !important;
-
-      &.available:hover {
-        color: #409eff !important;
-        background: #f0f7ff !important;
-        border-radius: 4px !important;
-      }
-
-      &.in-range {
-        background: #f5f9ff !important;
-      }
-
-      &.start-date,
-      &.end-date {
-        span {
-          background: #409eff !important;
-          color: #ffffff !important;
-          border-radius: 4px !important;
-        }
-      }
-
-      &.today span {
-        color: #409eff !important;
-        font-weight: 600 !important;
-        position: relative !important;
-
-        &::after {
-          content: "" !important;
-          position: absolute !important;
-          bottom: 2px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          width: 4px !important;
-          height: 4px !important;
-          background: #409eff !important;
-          border-radius: 50% !important;
-        }
-      }
-
-      // ⭐ 修复：当今天是开始或结束日期时，保持白色文字
-      &.today.start-date span,
-      &.today.end-date span {
-        color: #ffffff !important;
-        
-        &::after {
-          background: #ffffff !important;
-        }
-      }
-    }
-  }
-
-  // 月份选择器
-  .el-month-table td {
-    &.current:not(.disabled) .cell {
-      color: #409eff !important;
-      font-weight: 600 !important;
-    }
-
-    .cell:hover {
-      color: #409eff !important;
-      background: #f0f7ff !important;
-      border-radius: 4px !important;
-    }
-  }
-
-  // 年份选择器
-  .el-year-table td {
-    &.current:not(.disabled) .cell {
-      color: #409eff !important;
-      font-weight: 600 !important;
-    }
-
-    .cell:hover {
-      color: #409eff !important;
-      background: #f0f7ff !important;
-      border-radius: 4px !important;
-    }
-  }
-
-  // 底部按钮区域
   .el-picker-panel__footer {
     padding: 10px 12px !important;
     background: #fafafa !important;
     border-top: 1px solid #e8e8e8 !important;
 
-    .el-button {
-      border-radius: 4px !important;
-      font-weight: 500 !important;
-      padding: 7px 15px !important;
-      transition: all 0.2s !important;
+    .el-button--primary {
+      background: #1677ff !important;
+      border-color: #1677ff !important;
 
-      &.el-button--text {
-        &:hover {
-          background: #f0f7ff !important;
-          color: #409eff !important;
-        }
+      &:hover {
+        background: #4096ff !important;
+        border-color: #4096ff !important;
       }
-
-      &.el-button--primary {
-        background: #409eff !important;
-
-        &:hover {
-          background: #66b1ff !important;
-        }
-      }
-    }
-  }
-
-  // 头部按钮优化
-  .el-picker-panel__icon-btn {
-    color: #606266 !important;
-    transition: all 0.2s !important;
-
-    &:hover {
-      color: #409eff !important;
     }
   }
 }

@@ -1,0 +1,78 @@
+/**
+ * 仅英文界面生效：不修改中文 DOM 结构，通过 html.locale-en 限定作用域。
+ * 用于缓解英文标题过长导致的挤压、换行与图表统计条重叠。
+ */
+html.locale-en {
+  .energy-dashboard {
+    .retention-label,
+    .summary-title,
+    .rate-label,
+    .plain-title {
+      font-size: 11px;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .summary-meta .meta-item {
+      font-size: 10px;
+    }
+
+    .quick-card--summary .summary-main {
+      gap: 6px;
+    }
+
+    .quick-card--plain .plain-sub {
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .top-overview .head-title {
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .tenant-arrears {
+      .rank-item {
+        align-items: center;
+        gap: 6px;
+      }
+
+      .rank-left {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .rank-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .rank-amount {
+        flex-shrink: 0;
+        margin-left: 4px;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+
+      .kpi-title {
+        font-size: 10px;
+      }
+
+      .kpi-value {
+        font-size: 12px;
+      }
+    }
+
+    /* Trend 统计条与中文版共用同一套样式，不在此收窄栅格/字号，避免挤压 */
+    .sankey-chart .title-box h3 {
+      font-size: 13px;
+    }
+
+    .sub-metering-chart {
+      .chart-header .title-box h3 {
+        font-size: 13px;
+      }
+    }
+  }
+}

@@ -3,13 +3,13 @@
       <router-view />
     </div>
   </template>
-  
-  <script>
-  export default {
-    name: 'RouterView',
-  }
-  </script>
-  
+
+<script>
+export default {
+  name: 'RouterView'
+}
+</script>
+
   <style scoped>
   .router-view-wrapper {
     height: 100%;

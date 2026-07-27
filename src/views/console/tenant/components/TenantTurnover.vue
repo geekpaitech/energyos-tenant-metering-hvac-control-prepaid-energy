@@ -296,205 +296,205 @@
 <script>
 import {
   getTurnoverList,
-  selectDiscRealTurnoverList,
-} from "@/api/tenantDetail";
+  selectDiscRealTurnoverList
+} from '@/api/tenantDetail'
 
 export default {
-  name: "TenantTurnover",
+  name: 'TenantTurnover',
   props: {
     tenantId: {
       type: [String, Number],
-      required: true,
+      required: true
     },
     managerId: {
       type: [String, Number],
-      default: "",
-    },
+      default: ''
+    }
   },
-  data() {
+  data () {
     return {
       datePickerOptions: {
         shortcuts: [
           {
-            text: "最近7天",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 6);
-              picker.$emit("pick", [start, end]);
-            },
+            text: '最近7天',
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 6)
+              picker.$emit('pick', [start, end])
+            }
           },
           {
-            text: "最近15天",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 14);
-              picker.$emit("pick", [start, end]);
-            },
+            text: '最近15天',
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 14)
+              picker.$emit('pick', [start, end])
+            }
           },
           {
-            text: "最近30天",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 29);
-              picker.$emit("pick", [start, end]);
-            },
+            text: '最近30天',
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 29)
+              picker.$emit('pick', [start, end])
+            }
           },
           {
-            text: "本月",
-            onClick(picker) {
-              const start = new Date();
-              start.setDate(1);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
+            text: '本月',
+            onClick (picker) {
+              const start = new Date()
+              start.setDate(1)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
           },
           {
-            text: "上月",
-            onClick(picker) {
-              const start = new Date();
-              start.setMonth(start.getMonth() - 1);
-              start.setDate(1);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setDate(0);
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
-          },
+            text: '上月',
+            onClick (picker) {
+              const start = new Date()
+              start.setMonth(start.getMonth() - 1)
+              start.setDate(1)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setDate(0)
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          }
         ]
       },
-      activeTab: "electric",
+      activeTab: 'electric',
       turnoverForm: {
-        managerId: "",
-        tenantId: "",
-        specialJump: "",
-        tenantName: "",
+        managerId: '',
+        tenantId: '',
+        specialJump: '',
+        tenantName: '',
         channelList: [],
-        operate: "",
-        endDate: "",
-        startDate: "",
+        operate: '',
+        endDate: '',
+        startDate: '',
         tenantIdList: [],
         bizType: 1,
         page: {
           current: 1,
           size: 30,
-          orders: [{ asc: false, column: "createTime" }],
-        },
+          orders: [{ asc: false, column: 'createTime' }]
+        }
       },
       turnoverDateRange: [],
       turnoverList: [],
       turnoverTotal: 0,
       turnoverLoading: false,
       tableHeight: 400,
-      detailDataCache: {},
-    };
+      detailDataCache: {}
+    }
   },
-  mounted() {
-    this.initFormData();
-    this.fetchTurnoverData();
-    this.calculateTableHeight();
-    window.addEventListener("resize", this.calculateTableHeight);
+  mounted () {
+    this.initFormData()
+    this.fetchTurnoverData()
+    this.calculateTableHeight()
+    window.addEventListener('resize', this.calculateTableHeight)
   },
-  beforeDestroy() {
-    window.removeEventListener("resize", this.calculateTableHeight);
+  beforeDestroy () {
+    window.removeEventListener('resize', this.calculateTableHeight)
   },
   methods: {
-    initFormData() {
-      const endDate = new Date().toISOString().split("T")[0];
+    initFormData () {
+      const endDate = new Date().toISOString().split('T')[0]
       const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
-        .split("T")[0];
+        .split('T')[0]
 
-      this.turnoverForm.managerId = this.managerId;
-      this.turnoverForm.tenantId = Number(this.tenantId);
-      this.turnoverForm.endDate = endDate;
-      this.turnoverForm.startDate = startDate;
-      this.turnoverDateRange = [startDate, endDate];
+      this.turnoverForm.managerId = this.managerId
+      this.turnoverForm.tenantId = Number(this.tenantId)
+      this.turnoverForm.endDate = endDate
+      this.turnoverForm.startDate = startDate
+      this.turnoverDateRange = [startDate, endDate]
     },
 
-    switchTab(tab) {
-      if (this.activeTab === tab) return;
-      this.activeTab = tab;
-      this.turnoverForm.bizType = tab === "electric" ? 1 : 2;
-      this.turnoverForm.page.current = 1;
-      this.detailDataCache = {};
-      this.fetchTurnoverData();
+    switchTab (tab) {
+      if (this.activeTab === tab) return
+      this.activeTab = tab
+      this.turnoverForm.bizType = tab === 'electric' ? 1 : 2
+      this.turnoverForm.page.current = 1
+      this.detailDataCache = {}
+      this.fetchTurnoverData()
     },
 
-    calculateTableHeight() {
+    calculateTableHeight () {
       this.$nextTick(() => {
-        const wrapper = this.$el;
-        if (!wrapper) return;
+        const wrapper = this.$el
+        if (!wrapper) return
 
-        const header = wrapper.querySelector(".header-wrapper");
-        const pagination = wrapper.querySelector(".pagination-wrapper");
+        const header = wrapper.querySelector('.header-wrapper')
+        const pagination = wrapper.querySelector('.pagination-wrapper')
 
-        const headerHeight = header ? header.offsetHeight : 0;
-        const paginationHeight = pagination ? pagination.offsetHeight : 0;
-        const wrapperHeight = wrapper.offsetHeight;
+        const headerHeight = header ? header.offsetHeight : 0
+        const paginationHeight = pagination ? pagination.offsetHeight : 0
+        const wrapperHeight = wrapper.offsetHeight
 
-        const spacing = 40;
+        const spacing = 40
         this.tableHeight =
-          wrapperHeight - headerHeight - paginationHeight - spacing;
-      });
+          wrapperHeight - headerHeight - paginationHeight - spacing
+      })
     },
 
-    async fetchTurnoverData() {
-      this.turnoverLoading = true;
+    async fetchTurnoverData () {
+      this.turnoverLoading = true
       try {
-        const response = await getTurnoverList(this.turnoverForm);
+        const response = await getTurnoverList(this.turnoverForm)
         if (response.code === 200) {
-          this.turnoverList = response.data.dataList || [];
-          this.turnoverTotal = response.data.total || 0;
+          this.turnoverList = response.data.dataList || []
+          this.turnoverTotal = response.data.total || 0
         }
       } catch (error) {
-        console.error("获取流水数据失败:", error);
-        this.$message.error("获取流水数据失败");
+        console.error('获取流水数据失败:', error)
+        this.$message.error('获取流水数据失败')
       } finally {
-        this.turnoverLoading = false;
+        this.turnoverLoading = false
       }
     },
 
-    handleTurnoverDateChange(dateRange) {
+    handleTurnoverDateChange (dateRange) {
       if (dateRange && dateRange.length === 2) {
-        this.turnoverForm.startDate = dateRange[0];
-        this.turnoverForm.endDate = dateRange[1];
+        this.turnoverForm.startDate = dateRange[0]
+        this.turnoverForm.endDate = dateRange[1]
       } else {
-        this.turnoverForm.startDate = "";
-        this.turnoverForm.endDate = "";
+        this.turnoverForm.startDate = ''
+        this.turnoverForm.endDate = ''
       }
-      this.turnoverForm.page.current = 1;
-      this.fetchTurnoverData();
+      this.turnoverForm.page.current = 1
+      this.fetchTurnoverData()
     },
 
-    async fetchDetailData(row) {
+    async fetchDetailData (row) {
       if (this.detailDataCache[row.id]) {
-        return this.detailDataCache[row.id];
+        return this.detailDataCache[row.id]
       }
 
       try {
         const params = {
           newOperate: row.operate,
           newChannel: row.channel,
-          tenantTurnoverId: row.id,
-        };
+          tenantTurnoverId: row.id
+        }
 
-        const response = await selectDiscRealTurnoverList(params);
+        const response = await selectDiscRealTurnoverList(params)
 
         if (
           response.code === 200 &&
           response.data &&
           response.data.length > 0
         ) {
-          const deductList = response.data.filter((item) => item.type === 0);
-          const cashList = response.data.filter((item) => item.type === 1);
+          const deductList = response.data.filter((item) => item.type === 0)
+          const cashList = response.data.filter((item) => item.type === 1)
 
-          const rows = [];
+          const rows = []
 
           deductList.forEach((deductItem, index) => {
             rows.push({
@@ -505,17 +505,17 @@ export default {
               remainCashAccount:
                 index === 0 && cashList.length > 0
                   ? cashList[0].tenantBalance
-                  : null,
-            });
-          });
+                  : null
+            })
+          })
 
           if (deductList.length === 0 && cashList.length > 0) {
             rows.push({
               deductSubAccount: null,
               remainSubAccount: null,
               deductCashAccount: cashList[0].amount,
-              remainCashAccount: cashList[0].tenantBalance,
-            });
+              remainCashAccount: cashList[0].tenantBalance
+            })
           }
 
           if (rows.length === 0) {
@@ -523,13 +523,13 @@ export default {
               deductSubAccount: null,
               remainSubAccount: null,
               deductCashAccount: null,
-              remainCashAccount: null,
-            });
+              remainCashAccount: null
+            })
           }
 
-          const detailData = { rows };
-          this.$set(this.detailDataCache, row.id, detailData);
-          return detailData;
+          const detailData = { rows }
+          this.$set(this.detailDataCache, row.id, detailData)
+          return detailData
         }
 
         const emptyDetailData = {
@@ -538,159 +538,158 @@ export default {
               deductSubAccount: null,
               remainSubAccount: null,
               deductCashAccount: null,
-              remainCashAccount: null,
-            },
-          ],
-        };
-        this.$set(this.detailDataCache, row.id, emptyDetailData);
-        return emptyDetailData;
+              remainCashAccount: null
+            }
+          ]
+        }
+        this.$set(this.detailDataCache, row.id, emptyDetailData)
+        return emptyDetailData
       } catch (error) {
-        console.error("获取明细数据失败:", error);
+        console.error('获取明细数据失败:', error)
         const errorDetailData = {
           rows: [
             {
               deductSubAccount: null,
               remainSubAccount: null,
               deductCashAccount: null,
-              remainCashAccount: null,
-            },
-          ],
-        };
-        return errorDetailData;
+              remainCashAccount: null
+            }
+          ]
+        }
+        return errorDetailData
       }
     },
 
-    async handleDetailShow(row) {
+    async handleDetailShow (row) {
       if (row.detailData) {
-        return;
+        return
       }
 
-      this.$set(row, "detailLoading", true);
+      this.$set(row, 'detailLoading', true)
 
       try {
-        const detailData = await this.fetchDetailData(row);
-        this.$set(row, "detailData", detailData);
+        const detailData = await this.fetchDetailData(row)
+        this.$set(row, 'detailData', detailData)
       } finally {
-        this.$set(row, "detailLoading", false);
+        this.$set(row, 'detailLoading', false)
       }
     },
 
-    resetTurnoverForm() {
-      this.turnoverForm.operate = "";
-      this.turnoverForm.channelList = [];
-      this.turnoverForm.specialJump = "";
-      this.turnoverForm.tenantName = "";
+    resetTurnoverForm () {
+      this.turnoverForm.operate = ''
+      this.turnoverForm.channelList = []
+      this.turnoverForm.specialJump = ''
+      this.turnoverForm.tenantName = ''
 
-      const endDate = new Date().toISOString().split("T")[0];
+      const endDate = new Date().toISOString().split('T')[0]
       const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
-        .split("T")[0];
-      this.turnoverForm.startDate = startDate;
-      this.turnoverForm.endDate = endDate;
-      this.turnoverDateRange = [startDate, endDate];
+        .split('T')[0]
+      this.turnoverForm.startDate = startDate
+      this.turnoverForm.endDate = endDate
+      this.turnoverDateRange = [startDate, endDate]
 
-      this.turnoverForm.page.current = 1;
-      this.detailDataCache = {};
+      this.turnoverForm.page.current = 1
+      this.detailDataCache = {}
 
-      this.fetchTurnoverData();
+      this.fetchTurnoverData()
     },
 
-    handleTurnoverSizeChange(size) {
-      this.turnoverForm.page.size = size;
-      this.turnoverForm.page.current = 1;
-      this.fetchTurnoverData();
+    handleTurnoverSizeChange (size) {
+      this.turnoverForm.page.size = size
+      this.turnoverForm.page.current = 1
+      this.fetchTurnoverData()
     },
 
-    handleTurnoverCurrentChange(current) {
-      this.turnoverForm.page.current = current;
-      this.fetchTurnoverData();
+    handleTurnoverCurrentChange (current) {
+      this.turnoverForm.page.current = current
+      this.fetchTurnoverData()
     },
 
-    getOperateLabel(operate) {
+    getOperateLabel (operate) {
       const operateMap = {
-        1: "充值",
-        2: "退款",
-        3: "电费",
-        4: "水费",
-        5: "服务费",
-        6: "房屋费",
-        7: "物业费",
-      };
-      return operateMap[operate] || "未知";
+        1: '充值',
+        2: '退款',
+        3: '电费',
+        4: '水费',
+        5: '服务费',
+        6: '房屋费',
+        7: '物业费'
+      }
+      return operateMap[operate] || '未知'
     },
 
-    getOperateTagType(operate) {
+    getOperateTagType (operate) {
       const typeMap = {
-        1: "success",
-        2: "warning",
-        3: "danger",
-        4: "danger",
-        5: "info",
-        6: "info",
-        7: "info",
-      };
-      return typeMap[operate] || "";
+        1: 'success',
+        2: 'warning',
+        3: 'danger',
+        4: 'danger',
+        5: 'info',
+        6: 'info',
+        7: 'info'
+      }
+      return typeMap[operate] || ''
     },
 
     // 【核心修复】根据你的外层闭环逻辑判断操作金额的充值/扣款
     // 【核心修复】根据外层显示逻辑判断充值/扣款
-    getAmountActionLabel(row) {
-      if (row.amount === null || row.amount === undefined) return "操作";
+    getAmountActionLabel (row) {
+      if (row.amount === null || row.amount === undefined) return '操作'
 
       // 判断外层是否会加负号显示
       const shouldAddMinus = !(
         row.operate == 1 ||
         (row.operate == 3 && row.channel == 6)
-      );
+      )
 
       // 获取 amount 的实际值
-      const numAmount = parseFloat(row.amount);
+      const numAmount = parseFloat(row.amount)
 
       // 计算最终显示的值（考虑外层是否加负号）
-      const finalAmount = shouldAddMinus ? -numAmount : numAmount;
+      const finalAmount = shouldAddMinus ? -numAmount : numAmount
 
       // 根据最终值的正负判断充值/扣款
-      return finalAmount >= 0 ? "充值" : "扣款";
+      return finalAmount >= 0 ? '充值' : '扣款'
     },
 
     // 根据子账户金额判断充值/扣款标签
-    getSubAccountActionLabel(amount) {
-      if (amount === null || amount === undefined) return "--";
-      const numAmount = parseFloat(amount);
-      return numAmount >= 0 ? "充值" : "扣款";
+    getSubAccountActionLabel (amount) {
+      if (amount === null || amount === undefined) return '--'
+      const numAmount = parseFloat(amount)
+      return numAmount >= 0 ? '充值' : '扣款'
     },
 
-    getChannelLabel(channel) {
+    getChannelLabel (channel) {
       const channelMap = {
-        0: "微信充值",
-        1: "对公充值",
-        2: "手动充值",
-        3: "普通结算",
-        4: "手动扣款",
-        5: "系统补单",
-        6: "浮动电价",
-        7: "分摊结算",
-        8: "余额退款",
-        9: "微信退款",
-        10: "对公退款",
-        11: "设备扣款",
-      };
-      return channelMap[channel] || "未知";
+        0: '微信充值',
+        1: '对公充值',
+        2: '手动充值',
+        3: '普通结算',
+        4: '手动扣款',
+        5: '系统补单',
+        6: '浮动电价',
+        7: '分摊结算',
+        8: '余额退款',
+        9: '微信退款',
+        10: '对公退款',
+        11: '设备扣款'
+      }
+      return channelMap[channel] || '未知'
     },
 
-    formatDetailAmount(amount) {
-      if (amount === null || amount === undefined) return "--";
-      const numAmount = parseFloat(amount);
-      return Math.abs(numAmount).toFixed(2);
+    formatDetailAmount (amount) {
+      if (amount === null || amount === undefined) return '--'
+      const numAmount = parseFloat(amount)
+      return Math.abs(numAmount).toFixed(2)
     },
 
-    formatBalance(balance) {
-      if (balance === null || balance === undefined || balance === "")
-        return "--";
-      return Number(balance).toFixed(2);
-    },
-  },
-};
+    formatBalance (balance) {
+      if (balance === null || balance === undefined || balance === '') { return '--' }
+      return Number(balance).toFixed(2)
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1079,7 +1078,7 @@ $border-light: #e4e7ed;
       border: none !important;
       border-right: 1px solid #e8e8e8 !important;
     }
-  
+
     .el-picker-panel__shortcut {
       display: block !important;
       width: 100% !important;
@@ -1097,7 +1096,7 @@ $border-light: #e4e7ed;
       transition: all 0.2s ease !important;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
       outline: none !important;
-  
+
       &:hover {
         color: #409eff !important;
         background: #f0f7ff !important;
@@ -1105,12 +1104,12 @@ $border-light: #e4e7ed;
         transform: translateY(-1px) !important;
         border: none !important;
       }
-  
+
       &:active {
         transform: translateY(0) !important;
         box-shadow: 0 1px 3px rgba(64, 158, 255, 0.1) !important;
       }
-  
+
       &:last-child {
         margin-bottom: 0 !important;
       }

@@ -53,6 +53,10 @@
 import { mapGetters } from 'vuex'
 import SidebarItem from './SidebarItem.vue'
 import variables from '@/assets/styles/variables.scss'
+import {
+  canAccessMonitoringMenus,
+  MONITORING_ROOT_PATH
+} from '@/config/monitoringAccess'
 
 export default {
   name: 'Sidebar',
@@ -60,11 +64,14 @@ export default {
   computed: {
     ...mapGetters([
       'sidebar',
-      'permission_routes'
+      'permission_routes',
+      'currentManagerId',
+      'currentManager'
     ]),
     routes () {
-      // 暂时使用所有路由，过滤掉hidden的路由
-      return this.$router.options.routes.filter(route => !route.hidden)
+      const src = Array.isArray(this.permission_routes) ? this.permission_routes : []
+      const filtered = this.filterByManager(src)
+      return filtered.filter(route => !route.hidden)
     },
     activeMenu () {
       const route = this.$route
@@ -85,6 +92,99 @@ export default {
     },
     collapse () {
       return !this.sidebar.opened
+    }
+  },
+  methods: {
+    matchesManagerVisibility (route) {
+      const mv = route && route.meta && route.meta.managerVisibility
+      if (!mv) return true
+
+      const id = this.currentManagerId
+      const manager = this.currentManager || {}
+      const name = String(manager.managerName || manager.name || '')
+
+      const ids = Array.isArray(mv.ids) ? mv.ids.map(v => Number(v)) : []
+      const names = Array.isArray(mv.names) ? mv.names.map(v => String(v)) : []
+
+      const idMatch = ids.length > 0 && id !== null && id !== undefined && ids.includes(Number(id))
+      const nameMatch = names.length > 0 && name && names.some(n => name.includes(n))
+
+      // 配置了 ids/names 就必须命中其一；否则默认可见
+      if (ids.length === 0 && names.length === 0) return true
+      return idMatch || nameMatch
+    },
+    pruneDividers (routes) {
+      const src = Array.isArray(routes) ? routes : []
+      const kept = []
+      let hasVisibleItemAfter = false
+
+      for (let i = src.length - 1; i >= 0; i--) {
+        const r = src[i]
+        if (!r) continue
+        const isDivider = !!r.meta && !!r.meta.isDivider
+        const isVisibleItem = !isDivider && !r.hidden && !(r.meta && r.meta.hidden)
+
+        if (isDivider) {
+          if (hasVisibleItemAfter) {
+            kept.push(r)
+            hasVisibleItemAfter = false
+          }
+          continue
+        }
+
+        kept.push(r)
+        if (isVisibleItem) hasVisibleItemAfter = true
+      }
+
+      return kept.reverse()
+    },
+    filterByManager (routes) {
+      const src = Array.isArray(routes) ? routes : []
+      const out = []
+
+      src.forEach((r) => {
+        if (!r) return
+
+        if (
+          r.path === MONITORING_ROOT_PATH &&
+          !canAccessMonitoringMenus(this.currentManagerId)
+        ) {
+          return
+        }
+
+        const next = { ...r }
+        if (Array.isArray(r.children)) {
+          next.children = this.filterByManager(r.children)
+          next.children = this.pruneDividers(next.children)
+        }
+
+        const isDivider = !!next.meta && !!next.meta.isDivider
+        const hasChildren = Array.isArray(next.children) && next.children.length > 0
+
+        // 分隔线是否保留交给 pruneDividers 处理
+        if (isDivider) {
+          out.push(next)
+          return
+        }
+
+        const selfVisible = this.matchesManagerVisibility(next)
+        if (hasChildren) {
+          // 父节点：如果子节点都被隐藏且自身也不满足，则隐藏父节点
+          const hasAnyVisibleChild = next.children.some(c => c && !c.hidden)
+          if (!hasAnyVisibleChild && !selfVisible) {
+            next.hidden = true
+          }
+          out.push(next)
+          return
+        }
+
+        if (!selfVisible) {
+          next.hidden = true
+        }
+        out.push(next)
+      })
+
+      return out
     }
   }
 }

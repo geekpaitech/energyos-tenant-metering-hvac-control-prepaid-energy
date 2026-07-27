@@ -38,7 +38,7 @@
             </div>
             <div class="card-content">
               <div class="size-selector">
-                <div 
+                <div
                   v-for="size in fontSizes"
                   :key="size.value"
                   :class="['size-option', { active: previewFontSize === size.value }]"
@@ -66,7 +66,7 @@
             </div>
             <div class="card-content">
               <div class="theme-grid">
-                <div 
+                <div
                   v-for="theme in themes"
                   :key="theme.value"
                   :class="['theme-card', { active: previewTheme === theme.value }]"
@@ -116,7 +116,7 @@
 <script>
 export default {
   name: 'ModernSettingsPanel',
-  
+
   // 添加props来接收外部控制
   props: {
     visible: {
@@ -124,124 +124,124 @@ export default {
       default: false
     }
   },
-  
-  data() {
+
+  data () {
     return {
       // 当前设置 - 默认改为紧凑字体
       currentFontSize: localStorage.getItem('app_font_size') || 'small',
       currentTheme: localStorage.getItem('app_theme') || 'white',
-      
+
       // 预览设置 - 默认改为紧凑字体
       previewFontSize: localStorage.getItem('app_font_size') || 'small',
       previewTheme: localStorage.getItem('app_theme') || 'white',
-      
+
       // 字体选项
       fontSizes: [
         { label: '紧凑', value: 'small', demo: '12px' },
         { label: '标准', value: 'medium', demo: '14px' },
         { label: '舒适', value: 'large', demo: '16px' }
       ],
-      
+
       // 主题选项 - 去除暗黑主题，将商务灰白置于首位
       themes: [
-        { 
-          name: '商务灰白', 
-          value: 'white', 
-          desc: '专业质感', 
+        {
+          name: '商务灰白',
+          value: 'white',
+          desc: '专业质感',
           color: '#3b82f6',
           gradient: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)'
         },
-        { 
-          name: '清新青绿', 
-          value: 'teal', 
-          desc: '护眼自然', 
+        {
+          name: '清新青绿',
+          value: 'teal',
+          desc: '护眼自然',
           color: '#26a69a',
           gradient: 'linear-gradient(135deg, #26a69a 0%, #4db6ac 100%)'
         }
       ]
     }
   },
-  
+
   computed: {
     // 使用计算属性来同步外部visible和内部状态
     dialogVisible: {
-      get() {
-        return this.visible;
+      get () {
+        return this.visible
       },
-      set(value) {
+      set (value) {
         if (!value) {
-          this.closePanel();
+          this.closePanel()
         }
       }
     }
   },
-  
+
   methods: {
     // 关闭面板
-    closePanel() {
+    closePanel () {
       // 如果有未应用的更改,先取消
       if (this.previewFontSize !== this.currentFontSize || this.previewTheme !== this.currentTheme) {
-        this.cancelChanges();
+        this.cancelChanges()
       }
       // 通知父组件关闭
-      this.$emit('close');
+      this.$emit('close')
     },
-    
+
     // 选择字体大小
-    selectFontSize(size) {
+    selectFontSize (size) {
       this.previewFontSize = size
       this.previewChanges()
     },
-    
+
     // 选择主题
-    selectTheme(theme) {
+    selectTheme (theme) {
       this.previewTheme = theme
       this.previewChanges()
     },
-    
+
     // 应用设置到html元素
-    applySettings(fontSize, theme) {
+    applySettings (fontSize, theme) {
       const html = document.documentElement
-      
+
       // 清理现有class
       html.className = html.className
         .replace(/\bfont-size-\w+\b/g, '')
         .replace(/\btheme-\w+\b/g, '')
         .trim()
-      
+
       // 添加新的class
       html.classList.add(`font-size-${fontSize}`)
       html.classList.add(`theme-${theme}`)
     },
-    
+
     // 预览更改
-    previewChanges() {
+    previewChanges () {
       this.applySettings(this.previewFontSize, this.previewTheme)
     },
-    
+
     // 应用更改
-    applyChanges() {
+    applyChanges () {
       this.currentFontSize = this.previewFontSize
       this.currentTheme = this.previewTheme
-      
+
       localStorage.setItem('app_font_size', this.currentFontSize)
       localStorage.setItem('app_theme', this.currentTheme)
-      
+
       const themeName = this.themes.find(t => t.value === this.currentTheme).name
-      
+
       this.$message.success(`已应用 ${themeName} 主题设置`)
       this.closePanel()
     },
-    
+
     // 取消更改
-    cancelChanges() {
+    cancelChanges () {
       this.previewFontSize = this.currentFontSize
       this.previewTheme = this.currentTheme
       this.applySettings(this.currentFontSize, this.currentTheme)
     },
-    
+
     // 重置设置 - 重置为紧凑字体 + 商务灰白主题
-    resetSettings() {
+    resetSettings () {
       this.previewFontSize = 'small'
       this.previewTheme = 'white'
       this.previewChanges()
@@ -251,21 +251,21 @@ export default {
       localStorage.setItem('app_theme', 'white')
       this.$message.success('已重置为默认设置（紧凑字体 + 商务灰白主题）')
     },
-    
-    handleClose(done) {
+
+    handleClose (done) {
       if (this.previewFontSize !== this.currentFontSize || this.previewTheme !== this.currentTheme) {
         this.cancelChanges()
       }
       done()
     }
   },
-  
-  mounted() {
+
+  mounted () {
     this.applySettings(this.currentFontSize, this.currentTheme)
   },
-  
+
   watch: {
-    visible(newVal) {
+    visible (newVal) {
       if (newVal) {
         // 打开时重置预览为当前设置
         this.previewFontSize = this.currentFontSize

@@ -15,7 +15,6 @@ export default {
   height: 100%;
 }
 
-
 /* Webkit内核浏览器 (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
   width: 6px;  /* 垂直滚动条宽度 */

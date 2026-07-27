@@ -1,0 +1,117 @@
+/** 控制台数据看板（中文，与页面默认文案一致） */
+export default {
+  dashboard: {
+    index: {
+      retentionAmountYuan: '租户留存金额(元)',
+      receivableMonthlyTitle: '本月应收租户费用(元)',
+      receivableElec: '电费：{n} 元',
+      receivableWater: '水费：{n} 元',
+      receivedMonthlyTitle: '本月实收租户费用(元)',
+      receivedElec: '电费：{n} 元',
+      receivedWater: '水费：{n} 元',
+      collectionRate: '费用实收率',
+      verificationTitle: '电费核查联解析',
+      verificationSub: 'AI 助手为您解读核查联，分析差额电费如何收取',
+      btnAnalyze: '去解析',
+      acTopologyTitle: '空调系统拓扑图',
+      acTopologySub: '直观展示空调系统架构及内机连接关系，便于运维排查',
+      btnView: '去查看'
+    },
+    topOverview: {
+      tenantTodayElec: '租户今日用电',
+      elecFeePrefix: '电费：',
+      tenantCount: '租户数（户）',
+      monthNewTenants: '本月开户',
+      offline: '离线',
+      onlineRate: '在线率',
+      meterElecCount: '电表台数（台）',
+      waterMeterCount: '水表台数（台）',
+      acIndoorCount: '空调内机（台）',
+      otherSmartDevices: '其他智能设备（台）'
+    },
+    trend: {
+      title: '用电用水统计',
+      subtitleDay: '用量与费用趋势',
+      subtitleMonth: '近半年用量与费用趋势',
+      loading: '加载用电用水统计…',
+      last7d: '近七天',
+      lastHalfYear: '近半年',
+      last7dTab: '近七天',
+      lastHalfYearTab: '近半年',
+      elecKwh: '{period}用电(度)',
+      waterTon: '{period}用水(吨)',
+      chainRatio: '环比',
+      chainNone: '环比 --',
+      airElec: '空调用电',
+      roomElec: '室内用电',
+      degree: '度',
+      legendElecUsage: '用电量',
+      legendWaterUsage: '用水量',
+      legendIndoorFee: '室内电费',
+      legendAcFee: '空调电费',
+      legendWaterFee: '水费',
+      legendTodayVirtual: '今日用电量/电费',
+      feeComposition: '费用构成',
+      noData: '暂无数据',
+      totalFeeYuan: '总费用(元)',
+      today: '今日',
+      seriesElecUsage: '用电量',
+      seriesWaterUsage: '用水量',
+      seriesVirtual: '今日电量/电费(虚拟)',
+      seriesIndoorFee: '室内电费',
+      seriesAcFee: '空调电费',
+      seriesWaterFee: '水费',
+      feeElec: '电费',
+      feeAc: '空调费',
+      feeWater: '水费',
+      feeOther: '其他',
+      tooltipKwh: '电量',
+      tooltipElecFee: '电费',
+      tooltipTotalElecFee: '总电费',
+      tooltipAcUsage: '空调用电',
+      tooltipRoomUsage: '室内用电',
+      yuan: '元',
+      tenantSplit: '租户/公区能耗拆分',
+      tenantLabel: '租户占比',
+      tenantEnergy: '租户能耗',
+      publicEnergy: '公区能耗'
+    },
+    arrears: {
+      title: '租户欠费排名',
+      subtitle: '欠费 TOP 5',
+      owingElecTotal: '欠电费总额',
+      owingWaterTotal: '欠水费总额',
+      empty: '暂无欠费数据'
+    },
+    sankey: {
+      title: '能源流向分析',
+      subtitle: '从供应到消耗的完整链路',
+      loading: '加载能源流向…',
+      emptyTitle: '暂无数据',
+      emptySub: '能源流向暂未生成',
+      parkTotal: '园区总用电',
+      dedicated: '专用设备',
+      shared: '公摊设备',
+      otherTenants: '其他租户'
+    },
+    subMetering: {
+      title: '分项计量',
+      demoTag: '示例',
+      subtitle: '拓扑缩略预览',
+      goBuild: '去构建'
+    },
+    kpi: {
+      yesterdayElec: '昨日用电',
+      yesterdayWater: '昨日用水',
+      yesterdayFee: '昨日费用',
+      tenantTotal: '租户总数',
+      acRunning: '空调运行',
+      pendingAlerts: '待处理告警'
+    },
+    units: {
+      households: '户',
+      devices: '台',
+      alerts: '条'
+    }
+  }
+}

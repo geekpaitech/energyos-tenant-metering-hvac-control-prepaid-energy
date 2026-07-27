@@ -17,27 +17,27 @@
       </div>
     </div>
   </template>
-  
-  <script>
-  export default {
-    name: 'Page401',
-    methods: {
-      goBack() {
-        this.$router.go(-1)
-      },
-      goLogin() {
-        this.$store.dispatch('user/logout').then(() => {
-          this.$router.push('/login')
-        })
-      },
-      contactAdmin() {
-        this.$message.info('请联系系统管理员分配权限')
-        // 这里可以添加具体的联系方式或者打开客服窗口
-      }
+
+<script>
+export default {
+  name: 'Page401',
+  methods: {
+    goBack () {
+      this.$router.go(-1)
+    },
+    goLogin () {
+      this.$store.dispatch('user/logout').then(() => {
+        this.$router.push('/login')
+      })
+    },
+    contactAdmin () {
+      this.$message.info('请联系系统管理员分配权限')
+      // 这里可以添加具体的联系方式或者打开客服窗口
     }
   }
-  </script>
-  
+}
+</script>
+
   <style lang="scss" scoped>
   .error-page {
     height: 100vh;
@@ -46,7 +46,7 @@
     justify-content: center;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
-  
+
   .error-content {
     text-align: center;
     padding: 60px 40px;
@@ -56,13 +56,13 @@
     max-width: 500px;
     margin: 20px;
   }
-  
+
   .error-icon {
     font-size: 120px;
     color: #ff9800;
     margin-bottom: 20px;
   }
-  
+
   .error-title {
     font-size: 72px;
     font-weight: bold;
@@ -70,55 +70,55 @@
     margin: 0 0 20px 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
-  
+
   .error-message {
     font-size: 24px;
     color: #666;
     margin: 0 0 16px 0;
     font-weight: 500;
   }
-  
+
   .error-description {
     font-size: 16px;
     color: #999;
     line-height: 1.6;
     margin: 0 0 32px 0;
   }
-  
+
   .error-actions {
     display: flex;
     gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
   }
-  
+
   .error-actions .el-button {
     min-width: 120px;
   }
-  
+
   @media (max-width: 768px) {
     .error-content {
       padding: 40px 20px;
       margin: 10px;
     }
-  
+
     .error-icon {
       font-size: 80px;
     }
-  
+
     .error-title {
       font-size: 48px;
     }
-  
+
     .error-message {
       font-size: 20px;
     }
-  
+
     .error-actions {
       flex-direction: column;
       align-items: center;
     }
-  
+
     .error-actions .el-button {
       width: 100%;
       max-width: 200px;

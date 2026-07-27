@@ -2,8 +2,8 @@
   <el-breadcrumb class="app-breadcrumb" separator="/">
     <transition-group name="breadcrumb">
       <el-breadcrumb-item v-for="(item,index) in levelList" :key="`${item.path}-${index}`">
-        <span v-if="item.redirect==='noRedirect'||index==levelList.length-1" class="no-redirect">{{ item.meta.title }}</span>
-        <a v-else @click.prevent="handleLink(item)">{{ item.meta.title }}</a>
+        <span v-if="item.redirect==='noRedirect'||index==levelList.length-1" class="no-redirect">{{ $localeText(item.meta.title) }}</span>
+        <a v-else @click.prevent="handleLink(item)">{{ $localeText(item.meta.title) }}</a>
       </el-breadcrumb-item>
     </transition-group>
   </el-breadcrumb>
@@ -21,7 +21,7 @@ export default {
   },
   watch: {
     $route: {
-      handler(route) {
+      handler (route) {
         // if you go to the redirect page, do not update the breadcrumbs
         if (route.path.startsWith('/redirect/')) {
           return
@@ -38,7 +38,7 @@ export default {
     getBreadcrumb () {
       // only show routes with meta.title
       let matched = this.$route.matched.filter(item => item.meta && item.meta.title)
-      
+
       // 确保 matched 不为空
       if (!matched || matched.length === 0) {
         this.levelList = []
@@ -55,7 +55,7 @@ export default {
       // 去重处理，避免重复的路径
       const uniqueMatched = []
       const pathSet = new Set()
-      
+
       matched.forEach(item => {
         if (item.meta && item.meta.title && item.meta.breadcrumb !== false) {
           const key = `${item.path}-${item.meta.title}`

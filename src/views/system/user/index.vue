@@ -15,7 +15,7 @@
               class="search-input"
             />
           </div>
-          
+
           <div class="search-item">
             <label class="search-label">状态</label>
             <el-select
@@ -28,13 +28,13 @@
               <el-option label="禁用" value="0" />
             </el-select>
           </div>
-          
+
           <div class="search-item">
             <el-button class="search-btn" @click="handleFilter">
               <i class="el-icon-search" /> 搜索
             </el-button>
           </div>
-          
+
           <div class="search-item search-add-btn">
             <el-button class="add-btn" @click="handleCreate">
               <i class="el-icon-plus" /> 新建用户
@@ -59,7 +59,7 @@
               <span class="user-id">#{{ scope.row.id }}</span>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="用户名" min-width="120" align="left">
             <template slot-scope="scope">
               <div class="user-info">
@@ -67,25 +67,25 @@
               </div>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="昵称" min-width="130" align="left">
             <template slot-scope="scope">
               <span class="nickname">{{ scope.row.nickname }}</span>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="邮箱" min-width="200" align="left">
             <template slot-scope="scope">
               <span class="email">{{ scope.row.email }}</span>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="手机号" min-width="130" align="center">
             <template slot-scope="scope">
               <span class="phone">{{ scope.row.phone }}</span>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="状态" width="90" align="center">
             <template slot-scope="scope">
               <span :class="['status-badge', scope.row.status === 1 ? 'status-active' : 'status-disabled']">
@@ -94,19 +94,19 @@
               </span>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="创建时间" min-width="150" align="center">
             <template slot-scope="scope">
               <span class="create-time">{{ scope.row.createTime }}</span>
             </template>
           </el-table-column>
-          
+
           <!-- 自适应操作列 - 关键改进 -->
           <el-table-column label="操作" min-width="200" align="center" fixed="right" class-name="action-column">
             <template slot-scope="scope">
               <div class="action-buttons">
-                <el-button 
-                  class="action-btn edit-btn" 
+                <el-button
+                  class="action-btn edit-btn"
                   size="small"
                   @click="handleUpdate(scope.row)"
                   :disabled="scope.row.status === 0"
@@ -114,7 +114,7 @@
                   <i class="el-icon-edit"></i>
                   <span class="btn-text">编辑</span>
                 </el-button>
-                <el-button 
+                <el-button
                   v-if="scope.row.status !== 0"
                   class="action-btn delete-btn"
                   size="small"
@@ -123,7 +123,7 @@
                   <i class="el-icon-delete"></i>
                   <span class="btn-text">删除</span>
                 </el-button>
-                <el-button 
+                <el-button
                   v-else
                   class="action-btn restore-btn"
                   size="small"
@@ -154,8 +154,8 @@
     </div>
 
     <!-- 添加/编辑对话框 -->
-    <el-dialog 
-      :title="dialogStatus === 'create' ? '新建用户' : '编辑用户'" 
+    <el-dialog
+      :title="dialogStatus === 'create' ? '新建用户' : '编辑用户'"
       :visible.sync="dialogFormVisible"
       width="500px"
       :close-on-click-modal="false"
@@ -170,25 +170,25 @@
         class="dialog-form"
       >
         <el-form-item label="用户名" prop="username">
-          <el-input 
-            v-model="temp.username" 
-            placeholder="请输入用户名" 
+          <el-input
+            v-model="temp.username"
+            placeholder="请输入用户名"
             :disabled="dialogStatus === 'update'"
           />
         </el-form-item>
-        
+
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="temp.nickname" placeholder="请输入昵称" />
         </el-form-item>
-        
+
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="temp.email" placeholder="请输入邮箱地址" />
         </el-form-item>
-        
+
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="temp.phone" placeholder="请输入手机号" />
         </el-form-item>
-        
+
         <el-form-item label="状态">
           <el-select v-model="temp.status" placeholder="请选择状态" style="width: 100%;">
             <el-option label="正常" :value="1" />
@@ -196,11 +196,11 @@
           </el-select>
         </el-form-item>
       </el-form>
-      
+
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible = false" class="cancel-btn">取消</el-button>
-        <el-button 
-          type="primary" 
+        <el-button
+          type="primary"
           class="confirm-btn"
           @click="dialogStatus === 'create' ? createData() : updateData()"
         >
@@ -214,7 +214,7 @@
 <script>
 export default {
   name: 'UserManagement',
-  data() {
+  data () {
     return {
       list: [],
       total: 0,
@@ -249,11 +249,11 @@ export default {
       }
     }
   },
-  created() {
+  created () {
     this.getList()
   },
   methods: {
-    getList() {
+    getList () {
       this.listLoading = true
       // 模拟数据
       setTimeout(() => {
@@ -308,11 +308,11 @@ export default {
         this.listLoading = false
       }, 600)
     },
-    handleFilter() {
+    handleFilter () {
       this.listQuery.page = 1
       this.getList()
     },
-    resetTemp() {
+    resetTemp () {
       this.temp = {
         id: undefined,
         username: '',
@@ -322,7 +322,7 @@ export default {
         status: 1
       }
     },
-    handleCreate() {
+    handleCreate () {
       this.resetTemp()
       this.dialogStatus = 'create'
       this.dialogFormVisible = true
@@ -330,7 +330,7 @@ export default {
         this.$refs.dataForm.clearValidate()
       })
     },
-    createData() {
+    createData () {
       this.$refs.dataForm.validate((valid) => {
         if (valid) {
           this.$message({
@@ -342,7 +342,7 @@ export default {
         }
       })
     },
-    handleUpdate(row) {
+    handleUpdate (row) {
       this.temp = Object.assign({}, row)
       this.dialogStatus = 'update'
       this.dialogFormVisible = true
@@ -350,7 +350,7 @@ export default {
         this.$refs.dataForm.clearValidate()
       })
     },
-    updateData() {
+    updateData () {
       this.$refs.dataForm.validate((valid) => {
         if (valid) {
           this.$message({
@@ -362,7 +362,7 @@ export default {
         }
       })
     },
-    handleDelete(row) {
+    handleDelete (row) {
       this.$confirm('此操作将永久删除该用户，是否继续？', '删除确认', {
         confirmButtonText: '确定删除',
         cancelButtonText: '取消',
@@ -380,7 +380,7 @@ export default {
         })
       })
     },
-    handleRestore(row) {
+    handleRestore (row) {
       this.$confirm('确定要恢复该用户吗？', '恢复确认', {
         confirmButtonText: '确定恢复',
         cancelButtonText: '取消',
@@ -393,11 +393,11 @@ export default {
         this.getList()
       })
     },
-    handleSizeChange(val) {
+    handleSizeChange (val) {
       this.listQuery.limit = val
       this.getList()
     },
-    handleCurrentChange(val) {
+    handleCurrentChange (val) {
       this.listQuery.page = val
       this.getList()
     }
@@ -669,7 +669,7 @@ export default {
   justify-content: center;
   white-space: nowrap;
   flex-shrink: 0;
-  
+
   /* 固定尺寸防止挤压 */
   padding: 5px 10px;
   min-width: 56px;
@@ -729,12 +729,12 @@ export default {
   .action-btn .btn-text {
     display: none; /* 小屏幕隐藏文字 */
   }
-  
+
   .action-btn {
     min-width: 32px;
     padding: 5px 8px;
   }
-  
+
   .action-buttons {
     min-width: 120px;
     gap: 6px;
@@ -746,7 +746,7 @@ export default {
     min-width: 100px;
     gap: 4px;
   }
-  
+
   .action-btn {
     min-width: 28px;
     padding: 4px 6px;
@@ -862,40 +862,40 @@ export default {
   .page-container {
     padding: 8px 4px; /* 移动端减少内边距 */
   }
-  
+
   .main-card {
     margin-left: 4px;
     padding: 16px;
   }
-  
+
   .search-row {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-item {
     width: 100%;
   }
-  
+
   .search-input,
   .search-select {
     width: 100%;
   }
-  
+
   .table-container {
     overflow-x: auto;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: 4px;
     min-width: 80px;
   }
-  
+
   .action-btn .btn-text {
     display: inline; /* 移动端显示文字 */
   }
-  
+
   .action-btn {
     width: 100%;
     min-width: auto;

@@ -156,7 +156,7 @@
           }"
         >
           <el-table-column type="selection" width="55" align="center" />
-          
+
           <!-- 流水号 -->
           <el-table-column
             prop="rid"
@@ -165,7 +165,7 @@
             align="center"
             show-overflow-tooltip
           />
-          
+
           <!-- 申请日期 -->
           <el-table-column
             prop="applyTime"
@@ -174,7 +174,7 @@
             align="center"
             show-overflow-tooltip
           />
-          
+
           <!-- 审核日期 -->
           <el-table-column
             prop="processTime"
@@ -187,7 +187,7 @@
               {{ scope.row.processTime || '-' }}
             </template>
           </el-table-column>
-          
+
           <!-- 租户ID -->
           <el-table-column
             prop="tenantId"
@@ -200,7 +200,7 @@
               <span class="text-primary">{{ scope.row.tenantId || '-' }}</span>
             </template>
           </el-table-column>
-          
+
           <!-- 租户名 -->
           <el-table-column
             prop="tenantName"
@@ -216,7 +216,7 @@
               </el-link>
             </template>
           </el-table-column>
-          
+
           <!-- 申请金额 -->
           <el-table-column
             prop="applyAmt"
@@ -231,7 +231,7 @@
               </span>
             </template>
           </el-table-column>
-          
+
           <!-- 实际金额 -->
           <el-table-column
             prop="actualAmt"
@@ -246,7 +246,7 @@
               </span>
             </template>
           </el-table-column>
-          
+
           <!-- 审核状态 -->
           <el-table-column
             prop="refundStatus"
@@ -308,7 +308,7 @@
                 >
                   审核
                 </el-button>
-                <el-divider 
+                <el-divider
                   v-if="scope.row.refundStatus === 0"
                   direction="vertical"
                 ></el-divider>
@@ -331,7 +331,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 分页 -->
     <div class="pagination-container">
       <el-pagination
@@ -363,7 +363,7 @@ const balanceRefundStatus = [
 
 export default {
   name: 'RefundAudit',
-  data() {
+  data () {
     return {
       // 表格高度配置
       tableHeightConfig: {
@@ -412,11 +412,11 @@ export default {
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
     // 显示的基础搜索字段
-    displayBasicFields() {
+    displayBasicFields () {
       return this.searchFields.basic
     },
     // 表格最大高度
-    tableMaxHeight() {
+    tableMaxHeight () {
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
@@ -425,7 +425,7 @@ export default {
   },
   watch: {
     currentManagerId: {
-      handler(newVal) {
+      handler (newVal) {
         if (newVal) {
           this.queryData.managerId = newVal
           this.getTenantList()
@@ -435,13 +435,13 @@ export default {
       immediate: true
     }
   },
-  created() {
+  created () {
     // 初始化
     this.init()
   },
   methods: {
     // 初始化
-    init() {
+    init () {
       // 设置管理方ID
       if (this.currentManagerId) {
         this.queryData.managerId = this.currentManagerId
@@ -451,14 +451,14 @@ export default {
     },
 
     // 获取租户列表
-    async getTenantList() {
+    async getTenantList () {
       try {
         const params = {
           tenantStatus: 0,
-          managerId: this.currentManagerId,
+          managerId: this.currentManagerId
         }
         const response = await tenantPageTenant(params)
-        
+
         if (response.code === 200 && response.data) {
           this.tenantList = response.data.dataList || []
         } else {
@@ -473,7 +473,7 @@ export default {
     },
 
     // 获取表格数据
-    async fetchTableData() {
+    async fetchTableData () {
       this.loading = true
       try {
         const params = {
@@ -496,7 +496,7 @@ export default {
         }
 
         const response = await tenantRefundPageRefundRecord(params)
-        
+
         if (response.code === 200 && response.data) {
           this.tableData = response.data.dataList || []
           this.pageData.total = response.data.total || 0
@@ -515,7 +515,7 @@ export default {
     },
 
     // 格式化金额
-    formatMoney(value) {
+    formatMoney (value) {
       if (value === null || value === undefined || value === '') {
         return '-'
       }
@@ -523,13 +523,13 @@ export default {
     },
 
     // 查询
-    handleSearch() {
+    handleSearch () {
       this.pageData.current = 1
       this.fetchTableData()
     },
 
     // 重置
-    handleReset() {
+    handleReset () {
       this.queryData = {
         tenantName: '',
         tenantId: '',
@@ -544,7 +544,7 @@ export default {
     },
 
     // 处理下拉命令
-    handleCommand(command) {
+    handleCommand (command) {
       switch (command) {
         case 'export':
           this.handleExport()
@@ -553,22 +553,22 @@ export default {
     },
 
     // 导出
-    handleExport() {
+    handleExport () {
       if (this.tableData.length === 0) {
         this.$message.warning('暂无数据可导出')
         return
       }
-      
+
       // 导出功能
       const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-      
+
       // 构建导出数据
       const params = {
         ele: this.$refs.table?.$el,
         name: '退费审核.xlsx',
         data: exportData
       }
-      
+
       // 调用导出方法
       if (this.$store && this.$store.dispatch) {
         this.$store.dispatch('export/export', params)
@@ -578,16 +578,16 @@ export default {
     },
 
     // 审核
-    handleAudit(row) {
+    handleAudit (row) {
       // 检查权限
       if (!this.checkPermission('140031')) {
         this.$message.warning('暂无审核权限')
         return
       }
-      
+
       // 打开审核弹窗或跳转审核页面
       this.$message.info('审核功能开发中...')
-      
+
       // 示例：可以使用弹窗或路由跳转
       // this.$router.push({
       //   path: '/refund-audit-detail',
@@ -596,16 +596,16 @@ export default {
     },
 
     // 详情
-    handleDetail(row) {
+    handleDetail (row) {
       // 检查权限
       if (!this.checkPermission('140032')) {
         this.$message.warning('暂无查看详情权限')
         return
       }
-      
+
       // 打开详情弹窗或跳转详情页面
       this.$message.info('详情功能开发中...')
-      
+
       // 示例：可以使用弹窗或路由跳转
       // this.$router.push({
       //   path: '/refund-audit-detail',
@@ -614,39 +614,39 @@ export default {
     },
 
     // 查看租户详情
-    handleTenantDetail(row) {
+    handleTenantDetail (row) {
       this.$router.push({
-        name: "TenantDetail", // 使用路由名称
+        name: 'TenantDetail', // 使用路由名称
         params: { id: row.tenantId }, // 使用 params 传递动态路由参数
         query: {
           // 可选：传递额外的查询参数
           name: row.name,
-          from: "list",
-        },
-      });
+          from: 'list'
+        }
+      })
     },
 
     // 权限检查（简化版，实际应根据项目权限系统实现）
-    checkPermission(permissionId) {
+    checkPermission (permissionId) {
       // 这里应该调用实际的权限检查方法
       // return this.$store.getters['user/hasPermission'](permissionId)
       return true // 暂时返回true，实际项目中需要完善
     },
 
     // 选择变化
-    handleSelectionChange(selection) {
+    handleSelectionChange (selection) {
       this.selectedData = selection
     },
 
     // 分页大小变化
-    handleSizeChange(val) {
+    handleSizeChange (val) {
       this.pageData.size = val
       this.pageData.current = 1
       this.fetchTableData()
     },
 
     // 当前页变化
-    handleCurrentChange(val) {
+    handleCurrentChange (val) {
       this.pageData.current = val
       this.fetchTableData()
     }
@@ -662,7 +662,7 @@ export default {
 .amount-text {
   font-weight: 500;
   color: #303133;
-  
+
   &.text-danger {
     color: #F56C6C;
   }
@@ -684,7 +684,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   .el-divider--vertical {
     height: 12px;
     margin: 0 8px;

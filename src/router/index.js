@@ -18,6 +18,15 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/sso/callback',
+    component: () => import('@/views/sso/callback'),
+    hidden: true,
+    meta: {
+      title: '单点登录',
+      noCache: true
+    }
+  },
+  {
     path: '/404',
     component: () => import('@/views/404'),
     hidden: true
@@ -28,8 +37,8 @@ export const constantRoutes = [
     hidden: true
   },
   // 移除根路径重定向，避免与动态路由冲突
-   // 加载页面
-   {
+  // 加载页面
+  {
     path: '/switching',
     component: () => import('@/views/switching/index'), // 需要创建这个组件
     hidden: true
@@ -53,20 +62,50 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/bigscreen/property-screen',
+    name: 'BigscreenPropertyScreen',
+    component: () => import('@/views/bigscreen/auto-login'),
+    hidden: true,
+    meta: {
+      title: '经开资管',
+      noCache: true
+    }
+  },
+  {
+    path: '/group/property-screen',
+    name: 'GroupPropertyScreen',
+    component: () => import('@/views/group-screen/index'),
+    hidden: true,
+    meta: {
+      title: '经开资管物业管理驾驶舱',
+      noCache: true
+    }
+  },
+  {
+    path: '/group/energy-screen',
+    name: 'GroupEnergyScreen',
+    component: () => import('@/views/energy-screen/index'),
+    hidden: true,
+    meta: {
+      title: '综合能源管理大屏',
+      noCache: true
+    }
+  },
+  {
     path: '/metering/tenant/detail/:id',
     component: Layout,
     hidden: true,
     children: [
       {
-        path: '',  // 注意这里是空字符串
+        path: '', // 注意这里是空字符串
         name: 'TenantDetail',
         component: () => import('@/views/console/tenant/detail'),
-        meta: { 
-          title: '租户详情',
+        meta: {
+          title: '租户详情'
         }
       }
     ]
-  },
+  }
 ]
 
 /**
@@ -87,7 +126,7 @@ const router = createRouter()
 const originalPush = Router.prototype.push
 const originalReplace = Router.prototype.replace
 
-Router.prototype.push = function push(location, onResolve, onReject) {
+Router.prototype.push = function push (location, onResolve, onReject) {
   if (onResolve || onReject) {
     return originalPush.call(this, location, onResolve, onReject)
   }
@@ -98,7 +137,7 @@ Router.prototype.push = function push(location, onResolve, onReject) {
   })
 }
 
-Router.prototype.replace = function replace(location, onResolve, onReject) {
+Router.prototype.replace = function replace (location, onResolve, onReject) {
   if (onResolve || onReject) {
     return originalReplace.call(this, location, onResolve, onReject)
   }
@@ -111,10 +150,10 @@ Router.prototype.replace = function replace(location, onResolve, onReject) {
 
 // Detail see: https://github.com/vuejs/vue-router/issues/1234#issuecomment-357941465
 // 改进路由重置函数
-export function resetRouter() {
+export function resetRouter () {
   const newRouter = createRouter()
   router.matcher = newRouter.matcher // reset router
-  
+
   // 清除路由缓存
   if (router.history) {
     router.history.current = router.history.current

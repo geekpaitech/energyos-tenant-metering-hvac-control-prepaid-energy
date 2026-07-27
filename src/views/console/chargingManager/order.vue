@@ -87,7 +87,7 @@
                 </el-form-item>
               </el-col>
             </el-row>
-  
+
             <!-- 高级筛选 - 只在需要时显示 -->
             <el-collapse-transition v-if="needAdvancedSearch">
               <el-row :gutter="16" v-show="showAdvanced" class="search-row">
@@ -140,11 +140,11 @@
                 </el-col>
               </el-row>
             </el-collapse-transition>
-  
+
             <!-- 操作按钮行 - 更合理的布局 -->
             <div class="form-actions compact-actions">
               <div class="action-left">
-             
+
               </div>
               <div class="action-right">
                 <el-button
@@ -208,7 +208,7 @@
           </el-form>
         </el-card>
       </div>
-  
+
       <!-- 数据表格区域 -->
       <div class="table-container">
         <div class="table-card" shadow="never">
@@ -220,7 +220,7 @@
               </span>
             </div>
           </div>
-  
+
           <!-- 数据表格 -->
           <el-table
             v-loading="loading"
@@ -237,7 +237,7 @@
             }"
           >
             <el-table-column type="selection" width="55" align="center" />
-  
+
             <!-- 按照tableKey配置显示列 -->
             <el-table-column
               v-for="col in displayColumns"
@@ -257,14 +257,14 @@
                     {{ scope.row.orderNo || "-" }}
                   </el-link>
                 </template>
-  
+
                 <!-- 充电桩信息 -->
                 <template v-else-if="col.key === 'chargingPileInfo'">
                   <div  @click="handlePileDetail(scope.row)">
                     {{ scope.row.chargingPileInfo || "-" }}
                   </div>
                 </template>
-  
+
                 <!-- 订单状态 -->
                 <template v-else-if="col.key === 'orderStatusLabel'">
                   <span v-if="scope.row.orderStatus == 1" style="color: #E6A23C;">充电中</span>
@@ -273,7 +273,7 @@
                   <span v-else-if="scope.row.orderStatus == 4" style="color: #F56C6C;">异常结束</span>
                   <span v-else>-</span>
                 </template>
-  
+
                 <!-- 支付状态 -->
                 <template v-else-if="col.key === 'payStatusLabel'">
                   <span v-if="scope.row.payStatus == 0" style="color: #E6A23C;">未支付</span>
@@ -282,7 +282,7 @@
                   <span v-else-if="scope.row.payStatus == 3" style="color: #909399;">已退款</span>
                   <span v-else>-</span>
                 </template>
-  
+
                 <!-- 租户信息 -->
                 <template v-else-if="col.key === 'tenantInfo'">
                   <el-link
@@ -295,7 +295,7 @@
                   </el-link>
                   <span v-else class="text-muted">游客用户</span>
                 </template>
-  
+
                 <!-- 支付方式 -->
                 <template v-else-if="col.key === 'payTypeLabel'">
                   <span v-if="scope.row.payType == 1">账户余额</span>
@@ -304,7 +304,7 @@
                   <span v-else-if="scope.row.payType == 4">充电卡</span>
                   <span v-else>-</span>
                 </template>
-  
+
                 <!-- 金额相关 -->
                 <template v-else-if="col.key === 'totalAmount' || col.key === 'electricityFee' || col.key === 'serviceFee'">
                   <span class="amount-text">
@@ -316,7 +316,7 @@
                     }}
                   </span>
                 </template>
-  
+
                 <!-- 充电量 -->
                 <template v-else-if="col.key === 'chargeAmount'">
                   <span class="charge-text">
@@ -328,7 +328,7 @@
                     }}
                   </span>
                 </template>
-  
+
                 <!-- 充电时长 -->
                 <template v-else-if="col.key === 'chargeDuration'">
                   <span>
@@ -340,14 +340,14 @@
                     }}
                   </span>
                 </template>
-  
+
                 <!-- 默认显示 -->
                 <template v-else>
                   {{ scope.row[col.key] || "-" }}
                 </template>
               </template>
             </el-table-column>
-  
+
             <!-- 操作列 -->
             <el-table-column
               label="操作"
@@ -366,14 +366,14 @@
                   >
                     详情
                   </el-button>
-             
+
                 </div>
               </template>
             </el-table-column>
           </el-table>
         </div>
       </div>
-      
+
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination
@@ -386,7 +386,7 @@
           @current-change="handleCurrentChange"
         />
       </div>
-  
+
       <!-- 编辑弹窗 -->
       <el-dialog
         :title="editForm.id ? '编辑订单' : '新增订单'"
@@ -432,7 +432,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-  
+
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="租户" prop="tenantId">
@@ -467,7 +467,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-  
+
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="预计充电量" prop="plannedAmount">
@@ -504,620 +504,620 @@
       </el-dialog>
     </div>
   </template>
-  
-  <script>
-  // 模拟API方法
-  const mockApi = {
-    // 获取订单列表
-    getOrderList: (params) => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const mockData = [];
-          for (let i = 1; i <= 15; i++) {
-            mockData.push({
-              id: i,
-              orderNo: `CD${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(i).padStart(6, '0')}`,
-              chargingPileId: Math.floor(Math.random() * 5) + 1,
-              chargingPileInfo: `CP${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}(${['中心A座', '创新大B栋', '科技楼C区', '办公楼D座', '研发楼E栋'][Math.floor(Math.random() * 5)]}充电桩)`,
-              gunNo: Math.floor(Math.random() * 2) + 1,
-              tenantId: Math.random() > 0.3 ? `T${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}` : null,
-              tenantInfo: Math.random() > 0.3 ? `T${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}(${['asue', '夜曲sin', '子非鱼', 'iiio', 'fcc'][Math.floor(Math.random() * 5)]})` : null,
-              orderStatus: Math.floor(Math.random() * 4) + 1,
-              payStatus: Math.floor(Math.random() * 4),
-              payType: Math.floor(Math.random() * 4) + 1,
-              chargeAmount: (Math.random() * 50 + 5).toFixed(2),
-              chargeDuration: Math.floor(Math.random() * 300) + 30, // 分钟
-              totalAmount: (Math.random() * 100 + 20).toFixed(2),
-              electricityFee: (Math.random() * 80 + 15).toFixed(2),
-              serviceFee: (Math.random() * 20 + 5).toFixed(2),
-              startTime: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleString(),
-              endTime: Math.random() > 0.5 ? new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toLocaleString() : null,
-              createTime: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleString(),
-            });
+
+<script>
+// 模拟API方法
+const mockApi = {
+  // 获取订单列表
+  getOrderList: (params) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const mockData = []
+        for (let i = 1; i <= 15; i++) {
+          mockData.push({
+            id: i,
+            orderNo: `CD${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(i).padStart(6, '0')}`,
+            chargingPileId: Math.floor(Math.random() * 5) + 1,
+            chargingPileInfo: `CP${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}(${['中心A座', '创新大B栋', '科技楼C区', '办公楼D座', '研发楼E栋'][Math.floor(Math.random() * 5)]}充电桩)`,
+            gunNo: Math.floor(Math.random() * 2) + 1,
+            tenantId: Math.random() > 0.3 ? `T${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}` : null,
+            tenantInfo: Math.random() > 0.3 ? `T${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}(${['asue', '夜曲sin', '子非鱼', 'iiio', 'fcc'][Math.floor(Math.random() * 5)]})` : null,
+            orderStatus: Math.floor(Math.random() * 4) + 1,
+            payStatus: Math.floor(Math.random() * 4),
+            payType: Math.floor(Math.random() * 4) + 1,
+            chargeAmount: (Math.random() * 50 + 5).toFixed(2),
+            chargeDuration: Math.floor(Math.random() * 300) + 30, // 分钟
+            totalAmount: (Math.random() * 100 + 20).toFixed(2),
+            electricityFee: (Math.random() * 80 + 15).toFixed(2),
+            serviceFee: (Math.random() * 20 + 5).toFixed(2),
+            startTime: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleString(),
+            endTime: Math.random() > 0.5 ? new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toLocaleString() : null,
+            createTime: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleString()
+          })
+        }
+        resolve({
+          code: 200,
+          data: {
+            dataList: mockData,
+            total: 150
           }
-          resolve({
-            code: 200,
-            data: {
-              dataList: mockData,
-              total: 150
-            }
-          });
-        }, 500);
-      });
-    },
-  
-    // 获取充电桩列表
-    getChargingPileList: () => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const mockData = [];
-          for (let i = 1; i <= 20; i++) {
-            mockData.push({
-              id: i,
-              serial: `CP${String(i).padStart(3, '0')}`,
-              name: `${['中大天A座', '创新大B栋', '科技楼C区', '办公楼D座', '研发楼E栋'][Math.floor(Math.random() * 5)]}充电桩`,
-            });
-          }
-          resolve({
-            code: 200,
-            data: mockData
-          });
-        }, 300);
-      });
-    },
-  
-    // 获取租户列表
-    getTenantList: () => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const mockData = [];
-          for (let i = 1; i <= 50; i++) {
-            mockData.push({
-              tenantId: `T${String(i).padStart(3, '0')}`,
-              tenantName: `${['张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十'][Math.floor(Math.random() * 8)]}${['科技', '贸易', '实业', '文化', '教育'][Math.floor(Math.random() * 5)]}公司`,
-            });
-          }
-          resolve({
-            code: 200,
-            data: mockData
-          });
-        }, 300);
-      });
-    }
-  };
-  
-  export default {
-    name: "ChargingOrderManagement",
-    data() {
-      return {
-        tableHeightConfig: {
-          headerHeight: 48,
-          rowHeight: 47,
-          minHeight: 200,
-          maxRows: 10,
-          paginationHeight: 68,
-        },
-        // 查询参数
-        queryData: {
-          orderNo: "",
-          chargingPileId: "",
-          tenantId: "",
-          orderStatus: "",
-          payStatus: "",
-          payType: "",
-          dateRange: [],
-          managerId: "",
-        },
-        // 搜索字段配置
-        searchFields: {
-          basic: [
-            { prop: "orderNo", label: "订单号", type: "input" },
-            { prop: "chargingPileId", label: "站点", type: "select" },
-            { prop: "orderStatus", label: "订单状态", type: "select" },
-            { prop: "payStatus", label: "支付状态", type: "select" },
-          ],
-          advanced: [
-            { prop: "tenantId", label: "租户", type: "select" },
-            { prop: "payType", label: "支付方式", type: "select" },
-            { prop: "dateRange", label: "创建时间", type: "daterange" },
-          ],
-        },
-        // 租户列表数据
-        tenantList: [],
-        // 充电桩列表数据
-        chargingPileList: [],
-        // 表格数据
-        tableData: [],
-        // 加载状态
-        loading: false,
-        submitting: false,
-        // 是否显示高级筛选
-        showAdvanced: false,
-        // 分页数据
-        pageData: {
-          current: 1,
-          size: 15,
-          total: 0,
-        },
-        // 选中的数据
-        selectedData: [],
-        // 编辑弹窗
-        dialogVisible: false,
-        // 编辑表单
-        editForm: {
-          id: "",
-          chargingPileId: "",
-          gunNo: "",
-          tenantId: "",
-          payType: "",
-          plannedAmount: null,
-          plannedFee: null,
-          managerId: "",
-        },
-        // 表单验证规则
-        rules: {
-          chargingPileId: [
-            { required: true, message: "请选择充电桩", trigger: "change" },
-          ],
-          gunNo: [
-            { required: true, message: "请选择充电枪口", trigger: "change" },
-          ],
-          payType: [
-            { required: true, message: "请选择支付方式", trigger: "change" },
-          ],
-        },
-        // 表格列配置
-        tableKey: [
-          {
-            label: "订单号",
-            key: "orderNo",
-            width: "180",
-            checked: true,
-            disabled: true,
-          },
-          {
-            label: "站点",
-            key: "chargingPileInfo",
-            width: "200",
-            checked: true,
-            disabled: true,
-          },
-          {
-            label: "充电枪口",
-            key: "gunNo",
-            width: "100",
-            checked: true,
-          },
-          {
-            label: "租户信息",
-            key: "tenantInfo",
-            width: "180",
-            checked: true,
-          },
-          {
-            label: "订单状态",
-            key: "orderStatusLabel",
-            width: "120",
-            checked: true,
-          },
-          {
-            label: "支付状态",
-            key: "payStatusLabel",
-            width: "120",
-            checked: true,
-          },
-          {
-            label: "支付方式",
-            key: "payTypeLabel",
-            width: "120",
-            checked: true,
-          },
-          {
-            label: "充电量",
-            key: "chargeAmount",
-            width: "120",
-            checked: true,
-          },
-          {
-            label: "充电时长",
-            key: "chargeDuration",
-            width: "120",
-            checked: true,
-          },
-          {
-            label: "总金额",
-            key: "totalAmount",
-            width: "120",
-            checked: true,
-          },
-          {
-            label: "电费",
-            key: "electricityFee",
-            width: "100",
-            checked: true,
-          },
-          {
-            label: "服务费",
-            key: "serviceFee",
-            width: "100",
-            checked: true,
-          },
-          {
-            label: "开始时间",
-            key: "startTime",
-            width: "160",
-            checked: true,
-          },
-          {
-            label: "结束时间",
-            key: "endTime",
-            width: "160",
-            checked: true,
-          },
-          {
-            label: "创建时间",
-            key: "createTime",
-            width: "160",
-            checked: true,
-          },
+        })
+      }, 500)
+    })
+  },
+
+  // 获取充电桩列表
+  getChargingPileList: () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const mockData = []
+        for (let i = 1; i <= 20; i++) {
+          mockData.push({
+            id: i,
+            serial: `CP${String(i).padStart(3, '0')}`,
+            name: `${['中大天A座', '创新大B栋', '科技楼C区', '办公楼D座', '研发楼E栋'][Math.floor(Math.random() * 5)]}充电桩`
+          })
+        }
+        resolve({
+          code: 200,
+          data: mockData
+        })
+      }, 300)
+    })
+  },
+
+  // 获取租户列表
+  getTenantList: () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const mockData = []
+        for (let i = 1; i <= 50; i++) {
+          mockData.push({
+            tenantId: `T${String(i).padStart(3, '0')}`,
+            tenantName: `${['张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十'][Math.floor(Math.random() * 8)]}${['科技', '贸易', '实业', '文化', '教育'][Math.floor(Math.random() * 5)]}公司`
+          })
+        }
+        resolve({
+          code: 200,
+          data: mockData
+        })
+      }, 300)
+    })
+  }
+}
+
+export default {
+  name: 'ChargingOrderManagement',
+  data () {
+    return {
+      tableHeightConfig: {
+        headerHeight: 48,
+        rowHeight: 47,
+        minHeight: 200,
+        maxRows: 10,
+        paginationHeight: 68
+      },
+      // 查询参数
+      queryData: {
+        orderNo: '',
+        chargingPileId: '',
+        tenantId: '',
+        orderStatus: '',
+        payStatus: '',
+        payType: '',
+        dateRange: [],
+        managerId: ''
+      },
+      // 搜索字段配置
+      searchFields: {
+        basic: [
+          { prop: 'orderNo', label: '订单号', type: 'input' },
+          { prop: 'chargingPileId', label: '站点', type: 'select' },
+          { prop: 'orderStatus', label: '订单状态', type: 'select' },
+          { prop: 'payStatus', label: '支付状态', type: 'select' }
         ],
-      };
+        advanced: [
+          { prop: 'tenantId', label: '租户', type: 'select' },
+          { prop: 'payType', label: '支付方式', type: 'select' },
+          { prop: 'dateRange', label: '创建时间', type: 'daterange' }
+        ]
+      },
+      // 租户列表数据
+      tenantList: [],
+      // 充电桩列表数据
+      chargingPileList: [],
+      // 表格数据
+      tableData: [],
+      // 加载状态
+      loading: false,
+      submitting: false,
+      // 是否显示高级筛选
+      showAdvanced: false,
+      // 分页数据
+      pageData: {
+        current: 1,
+        size: 15,
+        total: 0
+      },
+      // 选中的数据
+      selectedData: [],
+      // 编辑弹窗
+      dialogVisible: false,
+      // 编辑表单
+      editForm: {
+        id: '',
+        chargingPileId: '',
+        gunNo: '',
+        tenantId: '',
+        payType: '',
+        plannedAmount: null,
+        plannedFee: null,
+        managerId: ''
+      },
+      // 表单验证规则
+      rules: {
+        chargingPileId: [
+          { required: true, message: '请选择充电桩', trigger: 'change' }
+        ],
+        gunNo: [
+          { required: true, message: '请选择充电枪口', trigger: 'change' }
+        ],
+        payType: [
+          { required: true, message: '请选择支付方式', trigger: 'change' }
+        ]
+      },
+      // 表格列配置
+      tableKey: [
+        {
+          label: '订单号',
+          key: 'orderNo',
+          width: '180',
+          checked: true,
+          disabled: true
+        },
+        {
+          label: '站点',
+          key: 'chargingPileInfo',
+          width: '200',
+          checked: true,
+          disabled: true
+        },
+        {
+          label: '充电枪口',
+          key: 'gunNo',
+          width: '100',
+          checked: true
+        },
+        {
+          label: '租户信息',
+          key: 'tenantInfo',
+          width: '180',
+          checked: true
+        },
+        {
+          label: '订单状态',
+          key: 'orderStatusLabel',
+          width: '120',
+          checked: true
+        },
+        {
+          label: '支付状态',
+          key: 'payStatusLabel',
+          width: '120',
+          checked: true
+        },
+        {
+          label: '支付方式',
+          key: 'payTypeLabel',
+          width: '120',
+          checked: true
+        },
+        {
+          label: '充电量',
+          key: 'chargeAmount',
+          width: '120',
+          checked: true
+        },
+        {
+          label: '充电时长',
+          key: 'chargeDuration',
+          width: '120',
+          checked: true
+        },
+        {
+          label: '总金额',
+          key: 'totalAmount',
+          width: '120',
+          checked: true
+        },
+        {
+          label: '电费',
+          key: 'electricityFee',
+          width: '100',
+          checked: true
+        },
+        {
+          label: '服务费',
+          key: 'serviceFee',
+          width: '100',
+          checked: true
+        },
+        {
+          label: '开始时间',
+          key: 'startTime',
+          width: '160',
+          checked: true
+        },
+        {
+          label: '结束时间',
+          key: 'endTime',
+          width: '160',
+          checked: true
+        },
+        {
+          label: '创建时间',
+          key: 'createTime',
+          width: '160',
+          checked: true
+        }
+      ]
+    }
+  },
+  computed: {
+    dataLength () {
+      return this.tableData.length
     },
-    computed: {
-      dataLength() {
-        return this.tableData.length;
-      },
-      // 计算需要显示的列
-      displayColumns() {
-        return this.tableKey.filter((col) => col.checked !== false);
-      },
-      // 判断是否需要显示高级筛选按钮
-      needAdvancedSearch() {
-        const totalFields =
-          this.searchFields.basic.length + this.searchFields.advanced.length;
-        return totalFields > 5;
-      },
-      // 获取实际显示的基础搜索字段
-      displayBasicFields() {
-        if (!this.needAdvancedSearch) {
-          return [...this.searchFields.basic, ...this.searchFields.advanced];
-        }
-        return this.searchFields.basic;
-      },
-      // 获取高级搜索字段
-      displayAdvancedFields() {
-        return this.searchFields.advanced;
-      },
-      // 动态计算表格高度
-      dynamicTableHeight() {
-        const dataLength = this.tableData.length;
-  
-        if (dataLength === 0) {
-          return this.tableHeightConfig.minHeight;
-        }
-  
-        if (dataLength <= this.tableHeightConfig.maxRows) {
-          return (
-            this.tableHeightConfig.headerHeight +
+    // 计算需要显示的列
+    displayColumns () {
+      return this.tableKey.filter((col) => col.checked !== false)
+    },
+    // 判断是否需要显示高级筛选按钮
+    needAdvancedSearch () {
+      const totalFields =
+          this.searchFields.basic.length + this.searchFields.advanced.length
+      return totalFields > 5
+    },
+    // 获取实际显示的基础搜索字段
+    displayBasicFields () {
+      if (!this.needAdvancedSearch) {
+        return [...this.searchFields.basic, ...this.searchFields.advanced]
+      }
+      return this.searchFields.basic
+    },
+    // 获取高级搜索字段
+    displayAdvancedFields () {
+      return this.searchFields.advanced
+    },
+    // 动态计算表格高度
+    dynamicTableHeight () {
+      const dataLength = this.tableData.length
+
+      if (dataLength === 0) {
+        return this.tableHeightConfig.minHeight
+      }
+
+      if (dataLength <= this.tableHeightConfig.maxRows) {
+        return (
+          this.tableHeightConfig.headerHeight +
             dataLength * this.tableHeightConfig.rowHeight
-          );
-        }
-  
-        return (
-          this.tableHeightConfig.headerHeight +
+        )
+      }
+
+      return (
+        this.tableHeightConfig.headerHeight +
           this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-        );
-      },
-      tableMaxHeight() {
-        return (
-          this.tableHeightConfig.headerHeight +
+      )
+    },
+    tableMaxHeight () {
+      return (
+        this.tableHeightConfig.headerHeight +
           this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-        );
-      },
+      )
+    }
+  },
+  mounted () {
+    this.queryData.managerId = 'MANAGER001' // 模拟管理员ID
+    this.fetchTableData()
+    this.getTenantList()
+    this.getChargingPileList()
+  },
+
+  methods: {
+    // 格式化充电时长
+    formatDuration (minutes) {
+      if (!minutes) return '-'
+      const hours = Math.floor(minutes / 60)
+      const mins = minutes % 60
+      if (hours > 0) {
+        return `${hours}小时${mins}分钟`
+      }
+      return `${mins}分钟`
     },
-    mounted() {
-      this.queryData.managerId = "MANAGER001"; // 模拟管理员ID
-      this.fetchTableData();
-      this.getTenantList();
-      this.getChargingPileList();
+
+    // 获取租户列表
+    async getTenantList () {
+      try {
+        const response = await mockApi.getTenantList()
+        if (response.code === 200) {
+          this.tenantList = response.data || []
+        }
+      } catch (error) {
+        console.error('获取租户列表失败:', error)
+        this.tenantList = []
+      }
     },
-  
-    methods: {
-      // 格式化充电时长
-      formatDuration(minutes) {
-        if (!minutes) return "-";
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        if (hours > 0) {
-          return `${hours}小时${mins}分钟`;
+
+    // 获取充电桩列表
+    async getChargingPileList () {
+      try {
+        const response = await mockApi.getChargingPileList()
+        if (response.code === 200) {
+          this.chargingPileList = response.data || []
         }
-        return `${mins}分钟`;
-      },
-  
-      // 获取租户列表
-      async getTenantList() {
-        try {
-          const response = await mockApi.getTenantList();
-          if (response.code === 200) {
-            this.tenantList = response.data || [];
+      } catch (error) {
+        console.error('获取充电桩列表失败:', error)
+        this.chargingPileList = []
+      }
+    },
+
+    // 获取订单列表数据
+    async fetchTableData () {
+      this.loading = true
+      try {
+        const params = {
+          orderNo: this.queryData.orderNo,
+          chargingPileId: this.queryData.chargingPileId,
+          tenantId: this.queryData.tenantId,
+          orderStatus: this.queryData.orderStatus,
+          payStatus: this.queryData.payStatus,
+          payType: this.queryData.payType,
+          managerId: this.queryData.managerId,
+          page: {
+            current: this.pageData.current,
+            size: this.pageData.size,
+            orders: [{ asc: false, column: 'createTime' }]
           }
-        } catch (error) {
-          console.error("获取租户列表失败:", error);
-          this.tenantList = [];
         }
-      },
-  
-      // 获取充电桩列表
-      async getChargingPileList() {
-        try {
-          const response = await mockApi.getChargingPileList();
-          if (response.code === 200) {
-            this.chargingPileList = response.data || [];
+
+        const response = await mockApi.getOrderList(params)
+
+        if (response.code === 200 && response.data) {
+          this.tableData = response.data.dataList || []
+          this.pageData.total = response.data.total || 0
+        } else {
+          this.$message.error(response.msg || '获取数据失败')
+        }
+      } catch (error) {
+        this.$message.error('获取订单数据失败')
+        console.error('获取订单数据失败:', error)
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 查询
+    handleSearch () {
+      this.pageData.current = 1
+      this.fetchTableData()
+    },
+
+    // 重置
+    handleReset () {
+      this.queryData = {
+        orderNo: '',
+        chargingPileId: '',
+        tenantId: '',
+        orderStatus: '',
+        payStatus: '',
+        payType: '',
+        dateRange: [],
+        managerId: 'MANAGER001'
+      }
+      this.showAdvanced = false
+      this.handleSearch()
+    },
+
+    // 处理顶部下拉命令
+    handleCommand (command) {
+      switch (command) {
+        case 'export':
+          this.handleExport()
+          break
+        case 'import':
+          this.$message.info('导入功能开发中...')
+          break
+        case 'batch':
+          this.$message.info('批量操作功能开发中...')
+          break
+      }
+    },
+
+    // 新增订单
+    handleAdd () {
+      this.editForm = {
+        id: '',
+        chargingPileId: '',
+        gunNo: '',
+        tenantId: '',
+        payType: '',
+        plannedAmount: null,
+        plannedFee: null,
+        managerId: 'MANAGER001'
+      }
+      this.dialogVisible = true
+      this.$nextTick(() => {
+        this.$refs.editForm && this.$refs.editForm.clearValidate()
+      })
+    },
+
+    // 保存
+    async handleSave () {
+      this.$refs.editForm.validate(async (valid) => {
+        if (valid) {
+          this.submitting = true
+          try {
+            // 模拟API调用
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            this.$message.success('操作成功')
+            this.dialogVisible = false
+            this.fetchTableData()
+          } catch (error) {
+            this.$apiError.notify(error, '操作失败')
+            console.error('保存失败:', error)
+          } finally {
+            this.submitting = false
           }
-        } catch (error) {
-          console.error("获取充电桩列表失败:", error);
-          this.chargingPileList = [];
         }
-      },
-  
-      // 获取订单列表数据
-      async fetchTableData() {
-        this.loading = true;
-        try {
-          const params = {
-            orderNo: this.queryData.orderNo,
-            chargingPileId: this.queryData.chargingPileId,
-            tenantId: this.queryData.tenantId,
-            orderStatus: this.queryData.orderStatus,
-            payStatus: this.queryData.payStatus,
-            payType: this.queryData.payType,
-            managerId: this.queryData.managerId,
-            page: {
-              current: this.pageData.current,
-              size: this.pageData.size,
-              orders: [{ asc: false, column: "createTime" }],
-            },
-          };
-  
-          const response = await mockApi.getOrderList(params);
-  
-          if (response.code === 200 && response.data) {
-            this.tableData = response.data.dataList || [];
-            this.pageData.total = response.data.total || 0;
-          } else {
-            this.$message.error(response.msg || "获取数据失败");
-          }
-        } catch (error) {
-          this.$message.error("获取订单数据失败");
-          console.error("获取订单数据失败:", error);
-        } finally {
-          this.loading = false;
-        }
-      },
-  
-      // 查询
-      handleSearch() {
-        this.pageData.current = 1;
-        this.fetchTableData();
-      },
-  
-      // 重置
-      handleReset() {
-        this.queryData = {
-          orderNo: "",
-          chargingPileId: "",
-          tenantId: "",
-          orderStatus: "",
-          payStatus: "",
-          payType: "",
-          dateRange: [],
-          managerId: "MANAGER001",
-        };
-        this.showAdvanced = false;
-        this.handleSearch();
-      },
-  
-      // 处理顶部下拉命令
-      handleCommand(command) {
-        switch (command) {
-          case "export":
-            this.handleExport();
-            break;
-          case "import":
-            this.$message.info("导入功能开发中...");
-            break;
-          case "batch":
-            this.$message.info("批量操作功能开发中...");
-            break;
-        }
-      },
-  
-      // 新增订单
-      handleAdd() {
-        this.editForm = {
-          id: "",
-          chargingPileId: "",
-          gunNo: "",
-          tenantId: "",
-          payType: "",
-          plannedAmount: null,
-          plannedFee: null,
-          managerId: "MANAGER001",
-        };
-        this.dialogVisible = true;
-        this.$nextTick(() => {
-          this.$refs.editForm && this.$refs.editForm.clearValidate();
-        });
-      },
-  
-      // 保存
-      async handleSave() {
-        this.$refs.editForm.validate(async (valid) => {
-          if (valid) {
-            this.submitting = true;
-            try {
-              // 模拟API调用
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              this.$message.success("操作成功");
-              this.dialogVisible = false;
-              this.fetchTableData();
-            } catch (error) {
-              this.$message.error("操作失败");
-              console.error("保存失败:", error);
-            } finally {
-              this.submitting = false;
-            }
-          }
-        });
-      },
-  
-      // 订单详情
-      handleOrderDetail(row) {
-        this.$message.info(`查看订单详情: ${row.orderNo}`);
-        // this.$router.push({
-        //   path: `/application/charging-management/order/detail/${row.id}`,
-        //   query: { orderNo: row.orderNo }
-        // });
-      },
-  
-      // 充电桩详情
-      handlePileDetail(row) {
-        this.$message.info(`查看充电桩详情: ${row.chargingPileInfo}`);
-        // this.$router.push({
-        //   path: `/device/charging/detail/${row.chargingPileId}`,
-        //   query: { name: row.chargingPileInfo }
-        // });
-      },
-  
-      // 租户点击
-      handleTenantClick(row) {
-        this.$message.info(`查看租户详情: ${row.tenantInfo}`);
-        // this.$router.push({
-        //   path: "/application/tenant/detail",
-        //   query: { id: row.tenantId }
-        // });
-      },
-  
-      // 停止充电
-      async handleStopCharge(row) {
-        try {
-          await this.$confirm(
+      })
+    },
+
+    // 订单详情
+    handleOrderDetail (row) {
+      this.$message.info(`查看订单详情: ${row.orderNo}`)
+      // this.$router.push({
+      //   path: `/application/charging-management/order/detail/${row.id}`,
+      //   query: { orderNo: row.orderNo }
+      // });
+    },
+
+    // 充电桩详情
+    handlePileDetail (row) {
+      this.$message.info(`查看充电桩详情: ${row.chargingPileInfo}`)
+      // this.$router.push({
+      //   path: `/device/charging/detail/${row.chargingPileId}`,
+      //   query: { name: row.chargingPileInfo }
+      // });
+    },
+
+    // 租户点击
+    handleTenantClick (row) {
+      this.$message.info(`查看租户详情: ${row.tenantInfo}`)
+      // this.$router.push({
+      //   path: "/application/tenant/detail",
+      //   query: { id: row.tenantId }
+      // });
+    },
+
+    // 停止充电
+    async handleStopCharge (row) {
+      try {
+        await this.$confirm(
             `确定要停止订单"${row.orderNo}"的充电吗？`,
-            "提示",
+            '提示',
             {
-              confirmButtonText: "确定",
-              cancelButtonText: "取消",
-              type: "warning",
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
             }
-          );
-  
-          // 模拟API调用
-          await new Promise(resolve => setTimeout(resolve, 500));
-          this.$message.success("停止充电成功");
-          this.fetchTableData();
-        } catch (error) {
-          if (error !== "cancel") {
-            this.$message.error("停止充电失败");
-            console.error("操作失败:", error);
-          }
+        )
+
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 500))
+        this.$message.success('停止充电成功')
+        this.fetchTableData()
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('停止充电失败')
+          console.error('操作失败:', error)
         }
-      },
-  
-      // 支付
-      async handlePayment(row) {
-        try {
-          await this.$confirm(
-            `确定要为订单"${row.orderNo}"发起支付吗？`,
-            "提示",
-            {
-              confirmButtonText: "确定",
-              cancelButtonText: "取消",
-              type: "info",
-            }
-          );
-  
-          // 模拟API调用
-          await new Promise(resolve => setTimeout(resolve, 500));
-          this.$message.success("支付成功");
-          this.fetchTableData();
-        } catch (error) {
-          if (error !== "cancel") {
-            this.$message.error("支付失败");
-            console.error("操作失败:", error);
-          }
-        }
-      },
-  
-      // 打印
-      handlePrint(row) {
-        this.$message.info(`打印订单: ${row.orderNo}`);
-      },
-  
-      // 导出数据
-      handleExport() {
-        if (this.selectedData.length === 0) {
-          this.$message.warning("请先选择要导出的数据");
-          return;
-        }
-        this.$message.info("导出功能开发中...");
-      },
-  
-      // 选择变化
-      handleSelectionChange(selection) {
-        this.selectedData = selection;
-      },
-  
-      // 分页大小变化
-      handleSizeChange(val) {
-        this.pageData.size = val;
-        this.pageData.current = 1;
-        this.fetchTableData();
-      },
-  
-      // 当前页变化
-      handleCurrentChange(val) {
-        this.pageData.current = val;
-        this.fetchTableData();
-      },
+      }
     },
-  };
-  </script>
-  
+
+    // 支付
+    async handlePayment (row) {
+      try {
+        await this.$confirm(
+            `确定要为订单"${row.orderNo}"发起支付吗？`,
+            '提示',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'info'
+            }
+        )
+
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 500))
+        this.$message.success('支付成功')
+        this.fetchTableData()
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('支付失败')
+          console.error('操作失败:', error)
+        }
+      }
+    },
+
+    // 打印
+    handlePrint (row) {
+      this.$message.info(`打印订单: ${row.orderNo}`)
+    },
+
+    // 导出数据
+    handleExport () {
+      if (this.selectedData.length === 0) {
+        this.$message.warning('请先选择要导出的数据')
+        return
+      }
+      this.$message.info('导出功能开发中...')
+    },
+
+    // 选择变化
+    handleSelectionChange (selection) {
+      this.selectedData = selection
+    },
+
+    // 分页大小变化
+    handleSizeChange (val) {
+      this.pageData.size = val
+      this.pageData.current = 1
+      this.fetchTableData()
+    },
+
+    // 当前页变化
+    handleCurrentChange (val) {
+      this.pageData.current = val
+      this.fetchTableData()
+    }
+  }
+}
+</script>
+
   <style lang="scss" scoped>
   // 引入表格页面公共样式
   @import "@/assets/styles/table-page.scss";
-  
+
   // 额外样式
   .amount-text {
     color: #e6a23c;
     font-weight: 500;
   }
-  
+
   .charge-text {
     color: #67c23a;
     font-weight: 500;
   }
-  
+
   .option-with-dot {
     display: flex;
     align-items: center;
   }
-  
+
   .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     margin-right: 8px;
-    
+
     &.online {
       background-color: #67c23a;
     }
-    
+
     &.offline {
       background-color: #f56c6c;
     }
   }
-  
+
   .text-muted {
     color: #909399;
   }

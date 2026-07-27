@@ -218,7 +218,7 @@ import moment from 'moment'
 
 export default {
   name: 'ChargingDashboard',
-  data() {
+  data () {
     return {
       timeType: 'day',
       rankingPeriod: 'month',
@@ -268,7 +268,7 @@ export default {
     }
   },
 
-  mounted() {
+  mounted () {
     this.updateCurrentTime()
     this.generateHourlyData()
     this.initCharts()
@@ -282,7 +282,7 @@ export default {
     window.addEventListener('resize', this.handleResize)
   },
 
-  beforeDestroy() {
+  beforeDestroy () {
     if (this.timeInterval) {
       clearInterval(this.timeInterval)
     }
@@ -297,11 +297,11 @@ export default {
   },
 
   methods: {
-    updateCurrentTime() {
+    updateCurrentTime () {
       this.currentTime = moment().format('YYYY/MM/DD HH:mm:ss')
     },
 
-    generateHourlyData() {
+    generateHourlyData () {
       this.hourlyData = Array.from({ length: 24 }, (_, i) => ({
         time: `${i.toString().padStart(2, '0')}:00:00`,
         charging: Math.random() * 50,
@@ -310,7 +310,7 @@ export default {
       }))
     },
 
-    refreshData() {
+    refreshData () {
       this.chartLoading = true
       this.generateHourlyData()
 
@@ -322,38 +322,38 @@ export default {
       }, 1000)
     },
 
-    switchTimeType(type) {
+    switchTimeType (type) {
       this.timeType = type
       this.updateStationChart()
     },
 
-    initCharts() {
+    initCharts () {
       this.$nextTick(() => {
         this.initStationChart()
         this.initDistributionChart()
       })
     },
 
-    initStationChart() {
+    initStationChart () {
       if (this.$refs.stationChart) {
         this.stationChartInstance = echarts.init(this.$refs.stationChart)
         this.updateStationChart()
       }
     },
 
-    initDistributionChart() {
+    initDistributionChart () {
       if (this.$refs.distributionChart) {
         this.distributionChartInstance = echarts.init(this.$refs.distributionChart)
         this.updateDistributionChart()
       }
     },
 
-    updateCharts() {
+    updateCharts () {
       this.updateStationChart()
       this.updateDistributionChart()
     },
 
-    updateStationChart() {
+    updateStationChart () {
       if (!this.stationChartInstance) return
 
       const data = this.mockData.stationData
@@ -401,7 +401,10 @@ export default {
             areaStyle: {
               color: {
                 type: 'linear',
-                x: 0, y: 0, x2: 0, y2: 1,
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
                 colorStops: [
                   { offset: 0, color: 'rgba(0, 212, 170, 0.3)' },
                   { offset: 1, color: 'rgba(0, 212, 170, 0.1)' }
@@ -419,7 +422,10 @@ export default {
             areaStyle: {
               color: {
                 type: 'linear',
-                x: 0, y: 0, x2: 0, y2: 1,
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
                 colorStops: [
                   { offset: 0, color: 'rgba(24, 144, 255, 0.3)' },
                   { offset: 1, color: 'rgba(24, 144, 255, 0.1)' }
@@ -437,7 +443,10 @@ export default {
             areaStyle: {
               color: {
                 type: 'linear',
-                x: 0, y: 0, x2: 0, y2: 1,
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
                 colorStops: [
                   { offset: 0, color: 'rgba(146, 84, 222, 0.3)' },
                   { offset: 1, color: 'rgba(146, 84, 222, 0.1)' }
@@ -451,7 +460,7 @@ export default {
       this.stationChartInstance.setOption(option)
     },
 
-    updateDistributionChart() {
+    updateDistributionChart () {
       if (!this.distributionChartInstance) return
 
       const xAxisData = this.hourlyData.map(item => item.time)
@@ -503,7 +512,10 @@ export default {
             areaStyle: {
               color: {
                 type: 'linear',
-                x: 0, y: 0, x2: 0, y2: 1,
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
                 colorStops: [
                   { offset: 0, color: 'rgba(0, 212, 170, 0.4)' },
                   { offset: 1, color: 'rgba(0, 212, 170, 0.1)' }
@@ -521,7 +533,10 @@ export default {
             areaStyle: {
               color: {
                 type: 'linear',
-                x: 0, y: 0, x2: 0, y2: 1,
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
                 colorStops: [
                   { offset: 0, color: 'rgba(82, 196, 26, 0.4)' },
                   { offset: 1, color: 'rgba(82, 196, 26, 0.1)' }
@@ -539,7 +554,10 @@ export default {
             areaStyle: {
               color: {
                 type: 'linear',
-                x: 0, y: 0, x2: 0, y2: 1,
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
                 colorStops: [
                   { offset: 0, color: 'rgba(24, 144, 255, 0.4)' },
                   { offset: 1, color: 'rgba(24, 144, 255, 0.1)' }
@@ -553,7 +571,7 @@ export default {
       this.distributionChartInstance.setOption(option)
     },
 
-    handleResize() {
+    handleResize () {
       this.$nextTick(() => {
         if (this.stationChartInstance) {
           this.stationChartInstance.resize()

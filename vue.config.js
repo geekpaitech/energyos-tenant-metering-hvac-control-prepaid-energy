@@ -6,14 +6,14 @@ module.exports = {
     open: true,
     proxy: {
       '/api': {
-        target: 'https://iot.geekpartytech.com',
+        target: 'https://iot-test.geekpartytech.com',
         changeOrigin: true,
         secure: true,
         logLevel: 'debug'
       }
     }
   },
-  
+
   chainWebpack: config => {
     // Windows路径兼容性处理
     config.module
@@ -24,7 +24,7 @@ module.exports = {
         return /assets[\\\/]images[\\\/]floors/.test(normalizedResource)
       })
       .end()
-    
+
     config.module
       .rule('floors-svg')
       .test(/\.svg$/)
@@ -40,7 +40,7 @@ module.exports = {
         name: 'img/[name].[hash:8].[ext]'
       })
   },
-  
+
   pwa: {
     iconPaths: {
       faviconSVG: null,

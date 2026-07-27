@@ -2,24 +2,37 @@
 import request from '@/utils/request'
 
 // 统一预下单（手动充值）
-export function payPreOrder(data) {
+export function payPreOrder (data) {
   return request({
     url: '/api/ebc-settle/pay/preOrder',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
   })
 }
 // 手动扣款
-export function manualDebit(data) {
+export function manualDebit (data) {
   return request({
     url: '/api/ebc-settle/pay/manualDebit',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 批量手动扣款
+export function batchManualDebit (data) {
+  return request({
+    url: '/api/ebc-settle/pay/batchManualDebit',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -27,12 +40,12 @@ export function manualDebit(data) {
 }
 
 // 线下充值
-export function payOfflineRechargePreOrder(data) {
+export function payOfflineRechargePreOrder (data) {
   return request({
     url: '/api/ebc-settle/pay/offlineRechargePreOrder',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -40,12 +53,12 @@ export function payOfflineRechargePreOrder(data) {
 }
 
 // 催缴
-export function balancePush(tenantId) {
+export function balancePush (tenantId) {
   return request({
     url: '/api/ebc-settle/pay/balancePush',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: { tenantId }

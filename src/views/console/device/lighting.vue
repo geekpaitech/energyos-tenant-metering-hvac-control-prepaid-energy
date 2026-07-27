@@ -63,8 +63,8 @@
               </div>
               <div class="power-chart">
                 <div class="mini-bars">
-                  <div v-for="i in 8" :key="i" 
-                       class="bar" 
+                  <div v-for="i in 8" :key="i"
+                       class="bar"
                        :style="{height: Math.random() * 60 + 20 + '%'}">
                   </div>
                 </div>
@@ -382,12 +382,12 @@
 
 <script>
 export default {
-  name: "SmartLightingSystem",
-  data() {
+  name: 'SmartLightingSystem',
+  data () {
     return {
       loading: false,
-      activeTab: "areas",
-      currentFilter: "all",
+      activeTab: 'areas',
+      currentFilter: 'all',
       energyDateRange: [],
       powerTrend: 0,
       systemStatus: 'normal',
@@ -400,7 +400,7 @@ export default {
         activeLights: 0,
         currentPower: 0,
         schedules: 0,
-        allLightsOn: true,
+        allLightsOn: true
       },
 
       // 场景数据
@@ -680,245 +680,245 @@ export default {
         //   },
         //   enabled: false,
         // },
-      ],
-    };
+      ]
+    }
   },
 
   computed: {
-    lightingRate() {
+    lightingRate () {
       return Math.round(
         (this.stats.activeLights / this.stats.totalDevices) * 100
-      );
+      )
     },
 
-    filteredDevices() {
-      if (this.currentFilter === "all") {
-        return this.devices;
+    filteredDevices () {
+      if (this.currentFilter === 'all') {
+        return this.devices
       }
       const filterMap = {
-        led: "LED灯",
-        downlight: "筒灯",
-        strip: "灯带",
-        spotlight: "射灯",
-      };
+        led: 'LED灯',
+        downlight: '筒灯',
+        strip: '灯带',
+        spotlight: '射灯'
+      }
       return this.devices.filter(
         (device) => device.type === filterMap[this.currentFilter]
-      );
-    },
+      )
+    }
   },
 
   methods: {
     // 全部灯光开关
-    handleAllLightsToggle(val) {
-      this.loading = true;
+    handleAllLightsToggle (val) {
+      this.loading = true
       setTimeout(() => {
         if (val) {
-          this.$message.success("已开启所有照明设备");
-          this.stats.activeLights = this.stats.totalDevices;
+          this.$message.success('已开启所有照明设备')
+          this.stats.activeLights = this.stats.totalDevices
           this.areas.forEach((area) => {
-            area.enabled = true;
-            area.lightsOn = area.online;
-            area.brightness = 80;
-          });
+            area.enabled = true
+            area.lightsOn = area.online
+            area.brightness = 80
+          })
           this.devices.forEach((device) => {
-            device.status = true;
-            device.brightness = 80;
-          });
+            device.status = true
+            device.brightness = 80
+          })
         } else {
-          this.$message.warning("已关闭所有照明设备");
-          this.stats.activeLights = 0;
+          this.$message.warning('已关闭所有照明设备')
+          this.stats.activeLights = 0
           this.areas.forEach((area) => {
-            area.enabled = false;
-            area.lightsOn = 0;
-            area.brightness = 0;
-          });
+            area.enabled = false
+            area.lightsOn = 0
+            area.brightness = 0
+          })
           this.devices.forEach((device) => {
-            device.status = false;
-            device.brightness = 0;
-          });
+            device.status = false
+            device.brightness = 0
+          })
         }
-        this.loading = false;
-      }, 1000);
+        this.loading = false
+      }, 1000)
     },
 
     // 激活场景
-    activateScene(scene) {
-      this.$confirm(`确定要切换到${scene.name}吗？`, "场景切换", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "info",
+    activateScene (scene) {
+      this.$confirm(`确定要切换到${scene.name}吗？`, '场景切换', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
       })
         .then(() => {
-          this.loading = true;
-          this.activeScene = scene.id;
+          this.loading = true
+          this.activeScene = scene.id
           setTimeout(() => {
             // 根据场景调整所有区域的亮度
             this.areas.forEach((area) => {
               if (area.enabled) {
-                area.brightness = scene.brightness;
+                area.brightness = scene.brightness
               }
-            });
+            })
             this.devices.forEach((device) => {
               if (device.status) {
-                device.brightness = scene.brightness;
+                device.brightness = scene.brightness
               }
-            });
-            this.$message.success(`已切换到${scene.name}`);
-            this.loading = false;
-          }, 1500);
+            })
+            this.$message.success(`已切换到${scene.name}`)
+            this.loading = false
+          }, 1500)
         })
-        .catch(() => {});
+        .catch(() => {})
     },
 
     // 选择区域
-    selectArea(area) {
+    selectArea (area) {
       this.$router.push({
-      path: `/device/lighting/detail/${area.id}`,
-      query: { 
-        name: area.meterName,
-        serial: area.serial,
-        deviceId: area.id
-      }
-    });
+        path: `/device/lighting/detail/${area.id}`,
+        query: {
+          name: area.meterName,
+          serial: area.serial,
+          deviceId: area.id
+        }
+      })
     },
 
     // 切换区域照明
-    toggleAreaLights(area) {
+    toggleAreaLights (area) {
       if (area.enabled) {
-        area.lightsOn = area.online;
-        area.brightness = area.brightness || 80;
-        this.$message.success(`已开启${area.name}照明`);
+        area.lightsOn = area.online
+        area.brightness = area.brightness || 80
+        this.$message.success(`已开启${area.name}照明`)
       } else {
-        area.lightsOn = 0;
-        area.brightness = 0;
-        this.$message.info(`已关闭${area.name}照明`);
+        area.lightsOn = 0
+        area.brightness = 0
+        this.$message.info(`已关闭${area.name}照明`)
       }
-      this.updateStats();
+      this.updateStats()
     },
 
     // 调整区域亮度 - 修复bug
-    adjustAreaBrightness(area) {
+    adjustAreaBrightness (area) {
       if (area.enabled && area.brightness > 0) {
         // 实时更新亮度
-        const areaIndex = this.areas.findIndex(a => a.id === area.id);
+        const areaIndex = this.areas.findIndex(a => a.id === area.id)
         if (areaIndex !== -1) {
-          this.$set(this.areas[areaIndex], 'brightness', area.brightness);
+          this.$set(this.areas[areaIndex], 'brightness', area.brightness)
         }
         // 更新该区域所有设备的亮度
         this.devices.forEach(device => {
           if (device.area === area.name && device.status) {
-            device.brightness = area.brightness;
+            device.brightness = area.brightness
           }
-        });
+        })
       }
     },
 
     // 切换设备
-    toggleDevice(device) {
+    toggleDevice (device) {
       if (device.status) {
-        device.brightness = 80;
-        this.$message.success(`已开启${device.name}`);
+        device.brightness = 80
+        this.$message.success(`已开启${device.name}`)
       } else {
-        device.brightness = 0;
-        this.$message.info(`已关闭${device.name}`);
+        device.brightness = 0
+        this.$message.info(`已关闭${device.name}`)
       }
-      this.updateStats();
+      this.updateStats()
     },
 
     // 调整设备亮度
-    adjustDeviceBrightness(device) {
-      console.log(`${device.name}亮度调整为${device.brightness}%`);
+    adjustDeviceBrightness (device) {
+      console.log(`${device.name}亮度调整为${device.brightness}%`)
     },
 
     // 更新统计数据
-    updateStats() {
-      let activeLights = 0;
+    updateStats () {
+      let activeLights = 0
       this.areas.forEach((area) => {
-        activeLights += area.lightsOn;
-      });
-      this.stats.activeLights = activeLights;
-      this.stats.allLightsOn = activeLights > 0;
+        activeLights += area.lightsOn
+      })
+      this.stats.activeLights = activeLights
+      this.stats.allLightsOn = activeLights > 0
     },
 
     // 导出数据
-    exportData() {
-      this.$message.success("正在导出数据...");
+    exportData () {
+      this.$message.success('正在导出数据...')
     },
 
     // 添加设备
-    handleAddDevice() {
-      this.$message.info("添加设备功能待实现");
+    handleAddDevice () {
+      this.$message.info('添加设备功能待实现')
     },
 
     // 系统设置
-    handleSystemSettings() {
-      this.$message.info("系统设置功能待实现");
+    handleSystemSettings () {
+      this.$message.info('系统设置功能待实现')
     },
 
     // 添加场景
-    handleAddScene() {
-      this.$message.info("自定义场景功能待实现");
+    handleAddScene () {
+      this.$message.info('自定义场景功能待实现')
     },
 
     // 添加定时任务
-    handleAddSchedule() {
-      this.$message.info("添加定时任务功能待实现");
+    handleAddSchedule () {
+      this.$message.info('添加定时任务功能待实现')
     },
 
     // 查看定时任务
-    viewSchedules() {
-      this.activeTab = "schedules";
+    viewSchedules () {
+      this.activeTab = 'schedules'
     },
 
     // 编辑设备
-    editDevice(device) {
-      this.$message.info(`编辑设备: ${device.name}`);
+    editDevice (device) {
+      this.$message.info(`编辑设备: ${device.name}`)
     },
 
     // 查看设备历史
-    viewDeviceHistory(device) {
-      this.$message.info(`查看${device.name}的历史记录`);
+    viewDeviceHistory (device) {
+      this.$message.info(`查看${device.name}的历史记录`)
     },
 
     // 删除设备
-    deleteDevice(device) {
-      this.$confirm(`确定要删除设备"${device.name}"吗？`, "删除确认", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
+    deleteDevice (device) {
+      this.$confirm(`确定要删除设备"${device.name}"吗？`, '删除确认', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
       })
         .then(() => {
-          this.$message.success("删除成功");
+          this.$message.success('删除成功')
         })
-        .catch(() => {});
+        .catch(() => {})
     },
 
     // 获取设备类型标签样式
-    getDeviceTypeTag(type) {
+    getDeviceTypeTag (type) {
       const typeMap = {
-        LED灯: "",
-        筒灯: "success",
-        灯带: "warning",
-        射灯: "info",
-      };
-      return typeMap[type] || "";
-    },
+        LED灯: '',
+        筒灯: 'success',
+        灯带: 'warning',
+        射灯: 'info'
+      }
+      return typeMap[type] || ''
+    }
   },
 
-  mounted() {
+  mounted () {
     // 模拟数据加载
-    this.loading = true;
+    this.loading = true
     setTimeout(() => {
-      this.loading = false;
-    }, 1000);
+      this.loading = false
+    }, 1000)
 
     // 设置默认日期范围（最近7天）
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 7);
-    this.energyDateRange = [start, end];
-  },
-};
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - 7)
+    this.energyDateRange = [start, end]
+  }
+}
 </script>
 
 <style scoped>
@@ -1526,7 +1526,7 @@ export default {
   .primary-stats {
     grid-template-columns: 1fr;
   }
-  
+
   .secondary-stats {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1538,21 +1538,21 @@ export default {
     gap: 16px;
     align-items: flex-start;
   }
-  
+
   .header-actions {
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .secondary-stats {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .area-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .scene-grid {
     grid-template-columns: 1fr;
   }

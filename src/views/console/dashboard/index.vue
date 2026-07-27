@@ -1,2299 +1,1948 @@
 <template>
-  <div class="iot-dashboard">
-    <!-- 演示模式标识 -->
-    <div class="demo-badge">
-      <div class="demo-badge-content">
-        <div class="demo-icon">
-          <i class="el-icon-view"></i>
+  <div :class="['energy-dashboard', `mode-${mode}`]">
+    <!-- 主内容区域 -->
+    <div class="dashboard-content">
+      <!-- 顶部：保留「租户今日用电」在原位；红框区域换成底部两张卡（留存/应收实收） -->
+      <div class="top-row-swap">
+        <top-overview-row variant="today-only" @open-remote="showRemote = true" />
+
+        <div class="top-row-swap__cards">
+          <div class="quick-card quick-card--retention" @click="goToNewFundFlow">
+            <div class="retention-icon">
+              <i class="iconfont icon-zijinguanli"></i>
+            </div>
+            <div class="retention-main">
+              <div class="retention-label">{{ $t('dashboard.index.retentionAmountYuan') }}</div>
+              <div class="retention-value">
+                {{ tenantElecRemainText }}
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-card quick-card--summary" @click="goToFloatingPriceTenant">
+            <div class="summary-main">
+              <div class="summary-block">
+                <div class="summary-block-icon" aria-hidden="true">
+                  <i class="iconfont icon-yingshou"></i>
+                </div>
+                <div class="summary-block-inner">
+                  <div class="summary-title">{{ $t('dashboard.index.receivableMonthlyTitle') }}</div>
+                  <div class="summary-row">
+                    <div class="summary-value">
+                      {{ tenantElecBillText }}
+                    </div>
+                    <div class="summary-meta">
+                      <span class="meta-item">
+                        <i class="iconfont icon-dianfei"></i>
+                        <span>{{ $t('dashboard.index.receivableElec', { n: tenantElecBillElecText }) }}</span>
+                      </span>
+                      <span class="meta-item meta-item--spaced">
+                        <i class="iconfont icon-shuifei"></i>
+                        <span>{{ $t('dashboard.index.receivableWater', { n: tenantWaterBillText }) }}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="summary-divider"></div>
+              <div class="summary-block">
+                <div class="summary-block-icon summary-block-icon--received" aria-hidden="true">
+                  <i class="iconfont icon-round_rmb1"></i>
+                </div>
+                <div class="summary-block-inner">
+                  <div class="summary-title">{{ $t('dashboard.index.receivedMonthlyTitle') }}</div>
+                  <div class="summary-row">
+                    <div class="summary-value">
+                      {{ tenantElecPayText }}
+                    </div>
+                    <div class="summary-meta">
+                      <span class="meta-item">
+                        <i class="iconfont icon-dianfei"></i>
+                        <span>{{ $t('dashboard.index.receivedElec', { n: tenantElecPayElecText }) }}</span>
+                      </span>
+                      <span class="meta-item meta-item--spaced">
+                        <i class="iconfont icon-shuifei"></i>
+                        <span>{{ $t('dashboard.index.receivedWater', { n: tenantWaterPayText }) }}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="summary-rate">
+              <div class="rate-circle" :style="rateCircleStyle">
+                <div class="rate-inner">
+                  <div class="rate-percent">
+                    {{ tenantElecRateText }}
+                  </div>
+                  <div class="rate-unit">%</div>
+                </div>
+              </div>
+              <div class="rate-label">{{ $t('dashboard.index.collectionRate') }}</div>
+            </div>
+          </div>
         </div>
-        <div class="demo-text">
-          <div class="demo-title">即将开放</div>
-          <div class="demo-subtitle">COMING SOON</div>
+      </div>
+
+      <!-- 常规模式 -->
+      <template v-if="mode === 'normal'">
+        <div class="first-screen">
+          <div class="first-screen-body">
+            <div class="dashboard-grid first-row">
+              <div class="span-9">
+                <div class="dashboard-card dashboard-card--fill">
+                  <trend-chart />
+                </div>
+              </div>
+              <div class="span-3">
+                <div class="dashboard-card dashboard-card--fill">
+                  <tenant-arrears-panel />
+                </div>
+              </div>
+            </div>
+
+            <div class="dashboard-grid second-row">
+              <div class="span-8">
+                <div class="dashboard-card dashboard-card--fill">
+                  <sankey-chart />
+                </div>
+              </div>
+              <div class="span-4">
+                <div class="dashboard-card dashboard-card--fill">
+                  <sub-metering-chart />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="demo-pulse"></div>
-      </div>
-      <div class="demo-tag">
-        <i class="el-icon-info"></i>
-        当前为模拟数据
-      </div>
+
+        <div class="quick-actions scroll-three">
+          <!-- 底部：红框区域换成「租户数 + 电表/水表/空调/在线率」 -->
+          <div class="quick-stats-slot" @click.stop>
+            <top-overview-row variant="stats-only" />
+          </div>
+
+          <!-- 3. 电费核查联解析（2 份宽度） -->
+          <div class="quick-card quick-card--plain" @click="goTo('/ai/verification')">
+            <div class="plain-main">
+              <div class="plain-title">{{ $t('dashboard.index.verificationTitle') }}</div>
+              <div class="plain-sub">{{ $t('dashboard.index.verificationSub') }}</div>
+              <button class="plain-btn plain-btn--orange" type="button">{{ $t('dashboard.index.btnAnalyze') }}</button>
+            </div>
+          </div>
+
+          <!-- 4. 空调系统拓扑图（2 份宽度） -->
+          <div class="quick-card quick-card--plain" @click="goTo({ path: '/device/conditioning', query: { tab: 'outdoor' } })">
+            <div class="plain-main">
+              <div class="plain-title">{{ $t('dashboard.index.acTopologyTitle') }}</div>
+              <div class="plain-sub">{{ $t('dashboard.index.acTopologySub') }}</div>
+              <button class="plain-btn plain-btn--purple" type="button">{{ $t('dashboard.index.btnView') }}</button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- AI 模式 -->
+      <ai-mode v-else />
     </div>
-    
-    <div class="dashboard-body">
-      <!-- 快捷操作 -->
-      <div class="quick-operations">
-        <div class="operations-grid">
-          <div class="operation-item" v-for="op in quickOperations" :key="op.id" 
-               :class="op.type" @click="executeOperation(op.id)">
-            <div class="operation-icon">
-              <i :class="op.icon"></i>
-            </div>
-            <div class="operation-label">{{ op.label }}</div>
+
+    <!-- 遥控弹窗 -->
+    <remote-modal :visible.sync="showRemote" />
+
+    <!-- 暂时隐藏：进入/退出 AI 悬浮球，恢复时取消本段注释即可 -->
+    <!--
+    <div class="ai-orb" :class="{ 'is-ai': mode === 'ai', dragging: floatDragging }" :style="floatStyle"
+      @pointerdown="onFloatPointerDown" @pointermove="onFloatPointerMove" @pointerup="onFloatPointerUp"
+      @pointercancel="onFloatPointerUp" @click="onFloatClick" @mouseenter="onFloatHoverEnter"
+      @mousemove="onFloatHoverMove" @mouseleave="onFloatHoverLeave">
+      <div class="ai-orb-core">
+        <div class="core-sphere">
+          <div class="ai-visual ai-visual--sm" :style="{ '--wave-level': waveLevel }">
+            <div class="ai-visual-ring ai-visual-ring-outer"></div>
+            <div class="ai-visual-ring ai-visual-ring-mid"></div>
+            <div class="ai-visual-ring ai-visual-ring-inner"></div>
+            <div class="ai-visual-core"></div>
+            <svg class="ai-visual-wave ai-visual-wave-left" viewBox="0 0 140 60" aria-hidden="true">
+              <path class="wave-glow"
+                d="M0 30 C 10 10 20 50 30 30 S 50 50 60 30 S 80 10 90 30 S 110 50 120 30 S 130 10 140 30" />
+              <path class="wave-core"
+                d="M0 30 C 10 10 20 50 30 30 S 50 50 60 30 S 80 10 90 30 S 110 50 120 30 S 130 10 140 30" />
+            </svg>
+            <svg class="ai-visual-wave ai-visual-wave-right" viewBox="0 0 140 60" aria-hidden="true">
+              <path class="wave-glow"
+                d="M0 30 C 10 10 20 50 30 30 S 50 50 60 30 S 80 10 90 30 S 110 50 120 30 S 130 10 140 30" />
+              <path class="wave-core"
+                d="M0 30 C 10 10 20 50 30 30 S 50 50 60 30 S 80 10 90 30 S 110 50 120 30 S 130 10 140 30" />
+            </svg>
           </div>
         </div>
       </div>
-
-      <div class="main-layout">
-        <!-- 左侧主要区域 -->
-        <div class="main-section">
-          <!-- 设备监控中心 -->
-          <div class="monitoring-panel">
-            <div class="panel-header">
-              <div class="header-left">
-                <h3>设备监控中心</h3>
-                <div class="data-source-info">
-                  <span class="update-indicator">
-                    <i class="el-icon-refresh"></i>
-                    实时更新
-                  </span>
-                </div>
-              </div>
-              <div class="header-actions">
-                <select v-model="timeRange" class="time-selector">
-                  <option value="realtime">实时</option>
-                  <option value="hour">最近1小时</option>
-                  <option value="day">今日</option>
-                  <option value="week">本周</option>
-                </select>
-                <button class="refresh-btn" @click="refreshData">
-                  <i class="el-icon-refresh-right"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- 核心指标 -->
-            <div class="metrics-overview">
-              <div class="metric-card" v-for="metric in coreMetrics" :key="metric.key">
-                <div class="metric-icon" :class="metric.iconClass">
-                  <i :class="metric.icon"></i>
-                </div>
-                <div class="metric-content">
-                  <div class="metric-header">
-                    <span class="metric-label">{{ metric.label }}</span>
-                    <div class="metric-trend" :class="metric.trend">
-                      <i :class="metric.trendIcon"></i>
-                      <span>{{ metric.change }}</span>
-                    </div>
-                  </div>
-                  <div class="metric-value">{{ metric.value }}</div>
-                  <div class="metric-subtitle">{{ metric.subtitle }}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 图表区域 -->
-            <div class="charts-container">
-              <!-- 设备运行状态 -->
-              <div class="chart-box">
-                <div class="chart-header">
-                  <h4>设备运行状态</h4>
-                  <div class="chart-legend">
-                    <span class="legend-item">
-                      <span class="legend-dot excellent"></span>优秀
-                    </span>
-                    <span class="legend-item">
-                      <span class="legend-dot good"></span>良好
-                    </span>
-                    <span class="legend-item">
-                      <span class="legend-dot warning"></span>预警
-                    </span>
-                    <span class="legend-item">
-                      <span class="legend-dot error"></span>故障
-                    </span>
-                  </div>
-                </div>
-                <div ref="statusChart" class="chart-canvas"></div>
-              </div>
-
-              <!-- 能耗流向分析 -->
-              <div class="chart-box">
-                <div class="chart-header">
-                  <h4>能耗流向分析</h4>
-                  <div class="chart-legend">
-                    <span class="legend-item">
-                      <span class="legend-dot source"></span>总能耗
-                    </span>
-                    <span class="legend-item">
-                      <span class="legend-dot target"></span>设备分类
-                    </span>
-                  </div>
-                </div>
-                <div ref="typeChart" class="chart-canvas"></div>
-              </div>
-            </div>
-
-            <!-- 实时数据趋势 -->
-            <div class="trend-section">
-              <div class="chart-header">
-                <h4>24小时运行趋势</h4>
-                <div class="trend-tabs">
-                  <button 
-                    v-for="tab in trendTabs" 
-                    :key="tab.key"
-                    class="trend-tab"
-                    :class="{ active: activeTrendTab === tab.key }"
-                    @click="switchTrendTab(tab.key)">
-                    {{ tab.label }}
-                  </button>
-                </div>
-              </div>
-              <div ref="trendChart" class="trend-chart"></div>
-            </div>
-          </div>
-
-          <!-- 智能分析平台区域 -->
-          <div class="analytics-section">
-            <div class="analytics-left">
-              <div class="analytics-card">
-                <div class="card-header">
-                  <div class="header-icon">
-                    <i class="el-icon-data-line"></i>
-                  </div>
-                  <div class="header-text">
-                    <h3>设备智能分析平台</h3>
-                    <p>基于大数据的设备状态预测与优化建议</p>
-                  </div>
-                </div>
-                
-                <!-- 数据指标网格 -->
-                <div class="analytics-metrics">
-                  <div class="metric-item">
-                    <div class="metric-icon">
-                      <i class="el-icon-aim"></i>
-                    </div>
-                    <div class="metric-info">
-                      <span class="metric-value">98.5%</span>
-                      <span class="metric-label">预测准确率</span>
-                    </div>
-                  </div>
-                  
-                  <div class="metric-item">
-                    <div class="metric-icon">
-                      <i class="el-icon-top-right"></i>
-                    </div>
-                    <div class="metric-info">
-                      <span class="metric-value">15.3%</span>
-                      <span class="metric-label">能效提升</span>
-                    </div>
-                  </div>
-                  
-                  <div class="metric-item">
-                    <div class="metric-icon">
-                      <i class="el-icon-timer"></i>
-                    </div>
-                    <div class="metric-info">
-                      <span class="metric-value">72h</span>
-                      <span class="metric-label">故障预警期</span>
-                    </div>
-                  </div>
-                  
-                  <div class="metric-item">
-                    <div class="metric-icon">
-                      <i class="el-icon-aim"></i>
-                    </div>
-                    <div class="metric-info">
-                      <span class="metric-value">99.2%</span>
-                      <span class="metric-label">系统可靠性</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- 快速洞察 -->
-                <div class="quick-insights">
-                  <div class="insight-title">
-                    <i class="el-icon-light-rain"></i>
-                    智能洞察
-                  </div>
-                  <div class="insight-content">
-                    <div class="insight-item">
-                      <span class="insight-text">检测到空调系统运行效率可提升8%</span>
-                      <span class="insight-action">查看详情</span>
-                    </div>
-                    <div class="insight-item">
-                      <span class="insight-text">预计明日用电高峰在14:00-16:00</span>
-                      <span class="insight-action">优化调度</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- 装饰背景 -->
-                <div class="analytics-bg">
-                  <svg class="bg-pattern" viewBox="0 0 100 100">
-                    <defs>
-                      <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(64, 158, 255, 0.1)" stroke-width="0.5"/>
-                      </pattern>
-                    </defs>
-                    <rect width="100" height="100" fill="url(#grid)" />
-                  </svg>
-                  
-                  <div class="floating-elements">
-                    <div class="floating-dot dot-1"></div>
-                    <div class="floating-dot dot-2"></div>
-                    <div class="floating-dot dot-3"></div>
-                    <div class="floating-circuit">
-                      <svg viewBox="0 0 60 60">
-                        <circle cx="30" cy="30" r="25" fill="none" stroke="rgba(103, 194, 58, 0.2)" stroke-width="1" stroke-dasharray="5,5">
-                          <animateTransform attributeName="transform" type="rotate" values="0 30 30;360 30 30" dur="20s" repeatCount="indefinite"/>
-                        </circle>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="analytics-right">
-              <div class="suggestion-card">
-                <div class="suggestion-header">
-                  <h4>优化建议</h4>
-                  <span class="suggestion-count">1,235条</span>
-                </div>
-                <div class="suggestion-list">
-                  <div class="suggestion-item">
-                    <div class="suggestion-icon">
-                      <i class="el-icon-magic-stick"></i>
-                    </div>
-                    <div class="suggestion-text">
-                      <div class="suggestion-title">空调系统优化</div>
-                      <div class="suggestion-desc">建议调整A栋空调运行策略</div>
-                    </div>
-                  </div>
-                  <div class="suggestion-item">
-                    <div class="suggestion-icon">
-                      <i class="el-icon-lightning"></i>
-                    </div>
-                    <div class="suggestion-text">
-                      <div class="suggestion-title">照明节能方案</div>
-                      <div class="suggestion-desc">可节约15%用电成本</div>
-                    </div>
-                  </div>
-                  <div class="suggestion-item">
-                    <div class="suggestion-icon">
-                      <i class="el-icon-magic-stick"></i>
-                    </div>
-                    <div class="suggestion-text">
-                      <div class="suggestion-title">设备维护提醒</div>
-                      <div class="suggestion-desc">建议对B区设备进行检修</div>
-                    </div>
-                  </div>
-                </div>
-                <button class="view-all-suggestions">查看全部建议</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 右侧信息栏 -->
-        <div class="sidebar">
-          <!-- 设备概览 -->
-          <div class="widget device-overview">
-            <div class="widget-header">
-              <h4>设备概览</h4>
-              <span class="widget-subtitle">实时统计</span>
-            </div>
-            <div class="overview-stats">
-              <div class="stat-card total">
-                <div class="stat-value">15,680</div>
-                <div class="stat-label">设备总数</div>
-                <div class="stat-change up">+256 今日新增</div>
-              </div>
-              <div class="stat-card online">
-                <div class="stat-value">15,392</div>
-                <div class="stat-label">在线设备</div>
-                <div class="stat-change">98.2% 在线率</div>
-              </div>
-            </div>
-            <div class="device-list">
-              <div class="device-item" v-for="item in deviceOverview" :key="item.type">
-                <div class="device-icon" :class="item.type">
-                  <i :class="item.icon"></i>
-                </div>
-                <div class="device-info">
-                  <div class="device-name">{{ item.label }}</div>
-                  <div class="device-count">{{ item.value }}</div>
-                </div>
-                <div class="device-status" :class="item.statusType">
-                  {{ item.status }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 待办提醒 -->
-          <div class="widget todo-widget">
-            <div class="widget-header">
-              <h4>待办事项</h4>
-              <div class="todo-summary">
-                <span class="pending-count">{{ pendingTodos }}项待处理</span>
-              </div>
-            </div>
-            <div class="todo-list">
-              <div class="todo-item" v-for="todo in filteredTodos" :key="todo.id" 
-                   :class="{ completed: todo.completed, urgent: todo.priority === 'urgent' }">
-                <div class="todo-check" @click="toggleTodo(todo.id)">
-                  <i v-if="todo.completed" class="el-icon-check"></i>
-                </div>
-                <div class="todo-content">
-                  <div class="todo-text">{{ todo.text }}</div>
-                  <div class="todo-meta">
-                    <span class="todo-category">{{ todo.category }}</span>
-                    <span class="todo-time">{{ todo.time }}</span>
-                  </div>
-                </div>
-                <div class="todo-priority" :class="todo.priority"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 系统状态 -->
-          <div class="widget system-status">
-            <div class="widget-header">
-              <h4>系统状态</h4>
-              <div class="status-indicator online">
-                <span class="dot"></span>
-                运行正常
-              </div>
-            </div>
-            <div class="status-grid">
-              <div class="status-item" v-for="service in systemServices" :key="service.id">
-                <div class="service-name">{{ service.name }}</div>
-                <div class="service-status" :class="service.status">
-                  <span class="status-dot"></span>
-                  {{ getServiceStatus(service.status) }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="ai-orb-label">{{ mode === 'ai' ? '退出 AI' : '进入 AI' }}</div>
     </div>
+    -->
+
   </div>
 </template>
 
 <script>
-// 在文件顶部引入 echarts
-import * as echarts from 'echarts'
+import { mapGetters } from 'vuex'
+import moment from 'moment'
+import TopOverviewRow from './components/TopOverviewRow.vue'
+import TrendChart from './components/charts/TrendChart.vue'
+import SubMeteringChart from './components/charts/SubMeteringChart.vue'
+import SankeyChart from './components/charts/SankeyChart.vue'
+import RemoteModal from './components/RemoteModal.vue'
+import AiMode from './components/AIMode.vue'
+import TenantArrearsPanel from './components/TenantArrearsPanel.vue'
+import { tenantRetainStatis, tenantSettleStatis } from '@/api/newDashboard'
+import '@/assets/styles/dashboard-locale-en.scss'
 
 export default {
-  name: 'IoTDashboard',
-  data() {
+  name: 'EnergyDashboard',
+  components: {
+    TopOverviewRow,
+    TrendChart,
+    SubMeteringChart,
+    SankeyChart,
+    RemoteModal,
+    AiMode,
+    TenantArrearsPanel
+  },
+  data () {
     return {
-      timeRange: 'realtime',
-      activeTrendTab: 'online',
-      quickOperations: [
-        { id: 1, label: '设备巡检', icon: 'el-icon-search', type: 'primary' },
-        { id: 2, label: '告警处理', icon: 'el-icon-warning-outline', type: 'warning' },
-        { id: 3, label: '数据分析', icon: 'el-icon-data-analysis', type: 'info' },
-        { id: 4, label: '远程控制', icon: 'el-icon-connection', type: 'success' },
-        { id: 5, label: '运维管理', icon: 'el-icon-setting', type: 'secondary' },
-        { id: 6, label: '报表生成', icon: 'el-icon-document', type: 'info' },
-        { id: 7, label: '系统配置', icon: 'el-icon-setting', type: 'secondary' }
-      ],
-      coreMetrics: [
-        {
-          key: 'total',
-          label: '设备总数',
-          value: '15,680',
-          subtitle: '台设备接入',
-          trend: 'up',
-          trendIcon: 'el-icon-top',
-          change: '+2.5%',
-          icon: 'el-icon-cpu',
-          iconClass: 'blue'
-        },
-        {
-          key: 'online',
-          label: '在线率',
-          value: '98.2%',
-          subtitle: '正常运行中',
-          trend: 'up',
-          trendIcon: 'el-icon-top',
-          change: '+0.3%',
-          icon: 'el-icon-connection',
-          iconClass: 'green'
-        },
-        {
-          key: 'energy',
-          label: '今日能耗',
-          value: '2,456',
-          subtitle: 'kWh',
-          trend: 'down',
-          trendIcon: 'el-icon-bottom',
-          change: '-5.1%',
-          icon: 'el-icon-data-analysis',
-          iconClass: 'orange'
-        },
-        {
-          key: 'alert',
-          label: '活跃告警',
-          value: '23',
-          subtitle: '待处理',
-          trend: 'down',
-          trendIcon: 'el-icon-bottom',
-          change: '-12.5%',
-          icon: 'el-icon-warning',
-          iconClass: 'red'
-        }
-      ],
-      trendTabs: [
-        { key: 'online', label: '在线率' },
-        { key: 'energy', label: '能耗' },
-        { key: 'alert', label: '告警' }
-      ],
-      deviceOverview: [
-        { type: 'electric', label: '智能电表', value: '5,680', status: '98.5%在线', statusType: 'excellent', icon: 'el-icon-lightning' },
-        { type: 'water', label: '智能水表', value: '2,890', status: '97.8%在线', statusType: 'good', icon: 'el-icon-coffee-cup' },
-        { type: 'hvac', label: '空调系统', value: '1,245', status: '96.2%在线', statusType: 'good', icon: 'el-icon-wind-power' },
-        { type: 'lighting', label: '照明设备', value: '3,150', status: '99.1%在线', statusType: 'excellent', icon: 'el-icon-light-rain' },
-        { type: 'security', label: '安防监控', value: '890', status: '94.5%在线', statusType: 'warning', icon: 'el-icon-view' },
-        { type: 'charging', label: '充电桩', value: '456', status: '92.3%在线', statusType: 'warning', icon: 'el-icon-loading' }
-      ],
-      todoItems: [
-        {
-          id: 1,
-          text: 'A栋301电表功率异常，需立即处理',
-          category: '设备故障',
-          time: '5分钟前',
-          priority: 'urgent',
-          completed: false
-        },
-        {
-          id: 2,
-          text: '智能照明系统定时策略需要优化',
-          category: '系统优化',
-          time: '1小时前',
-          priority: 'normal',
-          completed: false
-        },
-        {
-          id: 3,
-          text: 'B区水表数据采集异常排查',
-          category: '数据问题',
-          time: '2小时前',
-          priority: 'normal',
-          completed: false
-        },
-        {
-          id: 4,
-          text: '充电桩费率参数更新完成',
-          category: '参数配置',
-          time: '昨天',
-          priority: 'low',
-          completed: true
-        }
-      ],
-      systemServices: [
-        { id: 1, name: '数据采集服务', status: 'online' },
-        { id: 2, name: '设备控制服务', status: 'online' },
-        { id: 3, name: '告警处理服务', status: 'online' },
-        { id: 4, name: 'API网关', status: 'maintenance' }
-      ],
-      resizeObserver: null
+      mode: 'normal',
+      showRemote: false,
+      waveTimer: null,
+      _dashboardRO: null,
+      _dashboardResizeTimer: null,
+      floatPos: { x: null, y: null },
+      floatDragging: false,
+      floatPointerId: null,
+      floatDragOffset: { x: 0, y: 0 },
+      floatMoved: false,
+      tilt: { x: 0, y: 0 },
+      floatHovering: false,
+      panelPlacement: 'left',
+      panelPos: { x: 0, y: 0 },
+      waveLevel: 0.65,
+      tenantElecBillTotalAmt: null,
+      tenantElecBillElecAmt: null,
+      tenantWaterBillAmt: null,
+      tenantElecPayTotalAmt: null,
+      tenantElecPayElecAmt: null,
+      tenantWaterPayAmt: null,
+      tenantElecRemainAmt: null,
+      tenantElecRate: null,
+      tenantElecFeeLoading: false
     }
   },
   computed: {
-    pendingTodos() {
-      return this.todoItems.filter(todo => !todo.completed).length
-    },
-    filteredTodos() {
-      return this.todoItems
-    }
-  },
-  mounted() {
-    this.$nextTick(() => {
-      this.initCharts()
-    })
-    
-    window.addEventListener('resize', this.handleResize)
-    
-    this.$nextTick(() => {
-      if (window.ResizeObserver) {
-        this.resizeObserver = new ResizeObserver(this.handleResize);
-        const mainContent = this.$el.querySelector('.main-layout');
-        if (mainContent) {
-          this.resizeObserver.observe(mainContent);
-        }
+    ...mapGetters('manager', ['currentManagerId']),
+    floatStyle () {
+      if (this.floatPos.x == null || this.floatPos.y == null) return {}
+      return {
+        left: `${this.floatPos.x}px`,
+        top: `${this.floatPos.y}px`,
+        '--tilt-x': `${this.tilt.x}deg`,
+        '--tilt-y': `${this.tilt.y}deg`
       }
-      
-      this.$bus && this.$bus.$on('menu-collapse', this.handleMenuToggle);
-      this.$root.$on && this.$root.$on('sidebar-collapse', this.handleMenuToggle);
-    });
-  },
-  beforeDestroy() {
-    window.removeEventListener('resize', this.handleResize)
-    
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect()
-      this.resizeObserver = null
+    },
+    floatPanelStyle () {
+      return {
+        left: `${this.panelPos.x}px`,
+        top: `${this.panelPos.y}px`,
+        '--wave-level': this.waveLevel
+      }
+    },
+    tenantElecBillText () {
+      return this.formatMoney(this.tenantElecBillTotalAmt)
+    },
+    tenantElecPayText () {
+      return this.formatMoney(this.tenantElecPayTotalAmt)
+    },
+    tenantElecRemainText () {
+      return this.formatMoney(this.tenantElecRemainAmt)
+    },
+    tenantElecBillElecText () {
+      return this.formatMoney(this.tenantElecBillElecAmt)
+    },
+    tenantWaterBillText () {
+      return this.formatMoney(this.tenantWaterBillAmt)
+    },
+    tenantElecPayElecText () {
+      return this.formatMoney(this.tenantElecPayElecAmt)
+    },
+    tenantWaterPayText () {
+      return this.formatMoney(this.tenantWaterPayAmt)
+    },
+    tenantElecRateText () {
+      const n = Number(this.tenantElecRate)
+      if (!Number.isFinite(n)) return '--'
+      return this.formatNumber(n, 0)
+    },
+    tenantElecRatePct () {
+      const n = Number(this.tenantElecRate)
+      if (!Number.isFinite(n)) return 0
+      return Math.max(0, Math.min(100, Math.round(n)))
+    },
+    rateCircleStyle () {
+      return {
+        '--rate': this.tenantElecRatePct
+      }
     }
-    
-    this.$bus && this.$bus.$off('menu-collapse', this.handleMenuToggle)
-    this.$root.$off && this.$root.$off('sidebar-collapse', this.handleMenuToggle)
-    
-    if (this.statusChartInstance) this.statusChartInstance.dispose()
-    if (this.typeChartInstance) this.typeChartInstance.dispose()
-    if (this.trendChartInstance) this.trendChartInstance.dispose()
+  },
+  watch: {
+    currentManagerId: {
+      handler () {
+        this.fetchTenantElecMonthFee()
+        this.fetchTenantRetainAmt()
+        this.$nextTick(() => {
+          window.dispatchEvent(new Event('resize'))
+        })
+      },
+      immediate: true
+    }
+  },
+  mounted () {
+    this.initFloatPos()
+    this.initDashboardResizeObserver()
+    this.waveTimer = setInterval(() => {
+      const base = this.mode === 'ai' ? 0.55 : 0.4
+      this.waveLevel = Math.min(0.98, Math.max(0.25, base + Math.random() * 0.5))
+    }, 700)
+  },
+  beforeDestroy () {
+    if (this.waveTimer) {
+      clearInterval(this.waveTimer)
+    }
+    if (this._dashboardResizeTimer) {
+      clearTimeout(this._dashboardResizeTimer)
+      this._dashboardResizeTimer = null
+    }
+    if (this._dashboardRO) {
+      this._dashboardRO.disconnect()
+      this._dashboardRO = null
+    }
   },
   methods: {
-    initCharts() {
-      this.initStatusChart()
-      this.initTypeChart()
-      this.initTrendChart()
+    initDashboardResizeObserver () {
+      if (this._dashboardRO || typeof ResizeObserver === 'undefined') return
+      this._dashboardRO = new ResizeObserver(() => {
+        if (this._dashboardResizeTimer) clearTimeout(this._dashboardResizeTimer)
+        this._dashboardResizeTimer = setTimeout(() => {
+          this._dashboardResizeTimer = null
+          window.dispatchEvent(new Event('resize'))
+        }, 60)
+      })
+      this._dashboardRO.observe(this.$el)
     },
-    
-    initStatusChart() {
-      if (!this.$refs.statusChart) return
-      
-      const echarts = window.echarts || require('echarts')
-      const chart = echarts.init(this.$refs.statusChart)
-      this.statusChartInstance = chart
-      
-      const option = {
-        backgroundColor: 'transparent',
-        tooltip: {
-          trigger: 'item'
-        },
-        radar: {
-          indicator: [
-            { name: '运行效率', max: 100 },
-            { name: '响应速度', max: 100 },
-            { name: '稳定性', max: 100 },
-            { name: '能效比', max: 100 },
-            { name: '安全性', max: 100 }
-          ],
-          center: ['50%', '50%'],
-          radius: '70%',
-          axisName: {
-            color: '#6b7280',
-            fontSize: 11
-          },
-          splitLine: {
-            lineStyle: {
-              color: '#e2e8f0'
-            }
-          },
-          splitArea: {
-            show: true,
-            areaStyle: {
-              color: ['#f8fafc', '#f1f5f9']
-            }
-          },
-          axisLine: {
-            lineStyle: {
-              color: '#d1d5db'
-            }
-          }
-        },
-        series: [{
-          type: 'radar',
-          data: [
-            {
-              value: [92, 88, 95, 85, 96],
-              name: '优秀设备',
-              itemStyle: {
-                color: '#67c23a'
-              },
-              areaStyle: {
-                color: 'rgba(103, 194, 58, 0.2)'
-              }
-            },
-            {
-              value: [78, 75, 80, 72, 85],
-              name: '良好设备',
-              itemStyle: {
-                color: '#409eff'
-              },
-              areaStyle: {
-                color: 'rgba(64, 158, 255, 0.2)'
-              }
-            },
-            {
-              value: [65, 60, 68, 58, 70],
-              name: '预警设备',
-              itemStyle: {
-                color: '#e6a23c'
-              },
-              areaStyle: {
-                color: 'rgba(230, 162, 60, 0.2)'
-              }
-            },
-            {
-              value: [45, 40, 50, 35, 48],
-              name: '故障设备',
-              itemStyle: {
-                color: '#f56c6c'
-              },
-              areaStyle: {
-                color: 'rgba(245, 108, 108, 0.2)'
-              }
-            }
-          ]
-        }]
-      }
-      
-      chart.setOption(option)
+    formatNumber (value, digits = 0) {
+      const n = Number(value)
+      if (!Number.isFinite(n)) return '0'
+      const fixed = digits > 0 ? Number(n.toFixed(digits)) : Math.round(n)
+      return fixed.toLocaleString()
     },
-    
-    initTypeChart() {
-      if (!this.$refs.typeChart) return
-      
-      const echarts = window.echarts || require('echarts')
-      const chart = echarts.init(this.$refs.typeChart)
-      this.typeChartInstance = chart
-      
-      const option = {
-        backgroundColor: 'transparent',
-        tooltip: {
-          trigger: 'item',
-          triggerOn: 'mousemove',
-          formatter: function(params) {
-            if (params.dataType === 'node') {
-              return `${params.name}: ${params.value}kWh`
-            } else {
-              return `${params.sourceName} → ${params.targetName}<br/>能耗: ${params.value}kWh`
-            }
-          }
-        },
-        series: {
-          type: 'sankey',
-          layout: 'none',
-          emphasis: {
-            focus: 'adjacency'
-          },
-          nodeAlign: 'left',
-          nodeGap: 20,
-          nodeWidth: 15,
-          itemStyle: {
-            borderWidth: 1,
-            borderColor: '#fff'
-          },
-          lineStyle: {
-            color: 'gradient',
-            curveness: 0.5
-          },
-          label: {
-            fontSize: 11,
-            color: '#333',
-            fontWeight: 'normal'
-          },
-          data: [
-            { name: '总能耗', value: 2456, itemStyle: { color: '#67c23a' } },
-            { name: '照明系统', value: 856, itemStyle: { color: '#e6a23c' } },
-            { name: '空调系统', value: 742, itemStyle: { color: '#409eff' } },
-            { name: '电力设备', value: 568, itemStyle: { color: '#909399' } },
-            { name: '安防监控', value: 185, itemStyle: { color: '#f56c6c' } },
-            { name: '其他设备', value: 105, itemStyle: { color: '#c0c4cc' } },
-            { name: 'LED灯具', value: 486, itemStyle: { color: '#fad337' } },
-            { name: '应急照明', value: 215, itemStyle: { color: '#f4d03f' } },
-            { name: '景观照明', value: 155, itemStyle: { color: '#f7dc6f' } },
-            { name: '中央空调', value: 456, itemStyle: { color: '#5dade2' } },
-            { name: '分体空调', value: 186, itemStyle: { color: '#85c1e9' } },
-            { name: '新风系统', value: 100, itemStyle: { color: '#aed6f1' } },
-            { name: '电梯系统', value: 268, itemStyle: { color: '#b2babb' } },
-            { name: '充电桩', value: 185, itemStyle: { color: '#d5dbdb' } },
-            { name: '配电设备', value: 115, itemStyle: { color: '#eaeded' } },
-          ],
-          links: [
-            { source: '总能耗', target: '照明系统', value: 856 },
-            { source: '总能耗', target: '空调系统', value: 742 },
-            { source: '总能耗', target: '电力设备', value: 568 },
-            { source: '总能耗', target: '安防监控', value: 185 },
-            { source: '总能耗', target: '其他设备', value: 105 },
-            { source: '照明系统', target: 'LED灯具', value: 486 },
-            { source: '照明系统', target: '应急照明', value: 215 },
-            { source: '照明系统', target: '景观照明', value: 155 },
-            { source: '空调系统', target: '中央空调', value: 456 },
-            { source: '空调系统', target: '分体空调', value: 186 },
-            { source: '空调系统', target: '新风系统', value: 100 },
-            { source: '电力设备', target: '电梯系统', value: 268 },
-            { source: '电力设备', target: '充电桩', value: 185 },
-            { source: '电力设备', target: '配电设备', value: 115 },
-          ]
+    formatMoney (value) {
+      const n = Number(value)
+      if (!Number.isFinite(n)) return '--'
+      return n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    },
+    normalizeTenantSettleStatis (res) {
+      if (!res || res.code !== 200) {
+        return {
+          billTotalAmt: null,
+          payTotalAmt: null,
+          elecBillTotalAmt: null,
+          waterBillTotalAmt: null,
+          elecPayTotalAmt: null,
+          waterPayTotalAmt: null,
+          retainTotalAmt: null
         }
       }
-      
-      chart.setOption(option)
-    },
-    
-    initTrendChart() {
-      if (!this.$refs.trendChart) return
-      
-      const echarts = window.echarts || require('echarts')
-      const chart = echarts.init(this.$refs.trendChart)
-      this.trendChartInstance = chart
-      
-      const hours = []
-      const data = []
-      for (let i = 0; i < 24; i++) {
-        hours.push(`${i}:00`)
-        data.push(Math.floor(Math.random() * 20) + 80)
+      const dto = res.data || {}
+      const billTotalAmt = Number(dto.billTotalAmt)
+      const payTotalAmt = Number(dto.payTotalAmt)
+      const elecBillTotalAmt = Number(dto.elecBillTotalAmt)
+      const waterBillTotalAmt = Number(dto.waterBillTotalAmt)
+      const elecPayTotalAmt = Number(dto.elecPayTotalAmt)
+      const waterPayTotalAmt = Number(dto.waterPayTotalAmt)
+      const retainTotalAmt = Number(dto.retainTotalAmt)
+      return {
+        billTotalAmt: Number.isFinite(billTotalAmt) ? billTotalAmt : null,
+        payTotalAmt: Number.isFinite(payTotalAmt) ? payTotalAmt : null,
+        elecBillTotalAmt: Number.isFinite(elecBillTotalAmt) ? elecBillTotalAmt : null,
+        waterBillTotalAmt: Number.isFinite(waterBillTotalAmt) ? waterBillTotalAmt : null,
+        elecPayTotalAmt: Number.isFinite(elecPayTotalAmt) ? elecPayTotalAmt : null,
+        waterPayTotalAmt: Number.isFinite(waterPayTotalAmt) ? waterPayTotalAmt : null,
+        retainTotalAmt: Number.isFinite(retainTotalAmt) ? retainTotalAmt : null
       }
-      
-      const option = {
-        backgroundColor: 'transparent',
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'line',
-            lineStyle: {
-              color: '#e2e8f0'
-            }
-          }
-        },
-        grid: {
-          left: '3%',
-          right: '3%',
-          bottom: '3%',
-          top: '3%',
-          containLabel: true
-        },
-        xAxis: {
-          type: 'category',
-          boundaryGap: false,
-          data: hours,
-          axisLabel: {
-            color: '#64748b',
-            fontSize: 11,
-            interval: 5
-          },
-          axisLine: {
-            lineStyle: { color: '#e2e8f0' }
-          }
-        },
-        yAxis: {
-          type: 'value',
-          min: 0,
-          max: 100,
-          axisLabel: {
-            color: '#64748b',
-            fontSize: 11,
-            formatter: '{value}%'
-          },
-          splitLine: {
-            lineStyle: { 
-              color: '#f1f5f9',
-              type: 'dashed'
-            }
-          },
-          axisLine: {
-            lineStyle: { color: '#e2e8f0' }
-          }
-        },
-        series: [{
-          type: 'line',
-          data: data,
-          smooth: true,
-          symbol: 'none',
-          lineStyle: {
-            color: '#67c23a',
-            width: 2
-          },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(103, 194, 58, 0.2)' },
-              { offset: 1, color: 'rgba(103, 194, 58, 0.05)' }
-            ])
-          }
-        }]
-      }
-      
-      chart.setOption(option)
     },
-    
-    handleResize() {
-      this.$nextTick(() => {
-        if (this.statusChartInstance) this.statusChartInstance.resize()
-        if (this.typeChartInstance) this.typeChartInstance.resize()
-        if (this.trendChartInstance) this.trendChartInstance.resize()
+    async fetchTenantElecMonthFee () {
+      if (!this.currentManagerId) {
+        this.tenantElecBillTotalAmt = null
+        this.tenantElecPayTotalAmt = null
+        this.tenantElecBillElecAmt = null
+        this.tenantWaterBillAmt = null
+        this.tenantElecPayElecAmt = null
+        this.tenantWaterPayAmt = null
+        this.tenantElecRate = null
+        return
+      }
+
+      this.tenantElecFeeLoading = true
+      try {
+        const startDate = moment().startOf('month').format('YYYY-MM-DD')
+        const endDate = moment().format('YYYY-MM-DD')
+        const payload = {
+          managerId: this.currentManagerId,
+          tenantId: '',
+          startDate,
+          endDate,
+          tenantStatus: '0'
+        }
+        const res = await tenantSettleStatis(payload).catch(() => null)
+        const dto = this.normalizeTenantSettleStatis(res)
+        this.tenantElecBillTotalAmt = dto.billTotalAmt
+        this.tenantElecPayTotalAmt = dto.payTotalAmt
+        this.tenantElecBillElecAmt = dto.elecBillTotalAmt
+        this.tenantWaterBillAmt = dto.waterBillTotalAmt
+        this.tenantElecPayElecAmt = dto.elecPayTotalAmt
+        this.tenantWaterPayAmt = dto.waterPayTotalAmt
+        this.tenantElecRate = (dto.billTotalAmt != null && dto.billTotalAmt > 0 && dto.payTotalAmt != null)
+          ? (dto.payTotalAmt / dto.billTotalAmt) * 100
+          : null
+      } finally {
+        this.tenantElecFeeLoading = false
+      }
+    },
+    async fetchTenantRetainAmt () {
+      if (!this.currentManagerId) {
+        this.tenantElecRemainAmt = null
+        return
+      }
+      const res = await tenantRetainStatis({
+        managerId: this.currentManagerId
+      }).catch(() => null)
+      if (!res || res.code !== 200) {
+        this.tenantElecRemainAmt = null
+        return
+      }
+      const totalRetainAmt = Number((res.data || {}).totalRetainAmt)
+      this.tenantElecRemainAmt = Number.isFinite(totalRetainAmt) ? totalRetainAmt : null
+    },
+    goTo (path) {
+      this.$router.push(path)
+    },
+    /** 账单统计页：大屏跳转带本月日期区间，与卡片「本月」口径一致 */
+    goToFloatingPriceTenant () {
+      this.$router.push({
+        path: '/metering/bill/floating-price-tenant',
+        query: {
+          fromDashboard: '1',
+          startDate: moment().startOf('month').format('YYYY-MM-DD'),
+          endDate: moment().format('YYYY-MM-DD')
+        }
       })
     },
+    goToNewFundFlow () {
+      this.$router.push('/metering/finance/new-fundFlow')
+    },
+    initFloatPos () {
+      try {
+        const raw = window.localStorage.getItem('energyDashboard.aiFloatPos')
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+            this.floatPos = this.clampFloatPos({ x: parsed.x, y: parsed.y })
+            return
+          }
+        }
+      } catch (e) { }
 
-    handleMenuToggle() {
-      setTimeout(() => {
-        this.handleResize()
-      }, 300)
+      const fallback = {
+        x: Math.max(16, window.innerWidth - 104),
+        y: Math.max(16, window.innerHeight - 148)
+      }
+      this.floatPos = this.clampFloatPos(fallback)
     },
-    
-    switchTrendTab(tab) {
-      this.activeTrendTab = tab
-      this.initTrendChart()
-    },
-    
-    executeOperation(id) {
-      console.log('执行操作:', id)
-    },
-    
-    viewAnalysis() {
-      console.log('查看智能分析')
-    },
-    
-    refreshData() {
-      console.log('刷新数据')
-      this.initCharts()
-    },
-    
-    toggleTodo(id) {
-      const todo = this.todoItems.find(item => item.id === id)
-      if (todo) {
-        todo.completed = !todo.completed
+    clampFloatPos (pos) {
+      const width = 88
+      const height = 56
+      const maxX = Math.max(16, window.innerWidth - width - 16)
+      const maxY = Math.max(16, window.innerHeight - height - 16)
+      return {
+        x: Math.min(Math.max(16, pos.x), maxX),
+        y: Math.min(Math.max(16, pos.y), maxY)
       }
     },
-    
-    getStatusText(status) {
-      const statusMap = {
-        completed: '已完成',
-        resolved: '已解决',
-        processing: '处理中',
-        pending: '待处理'
-      }
-      return statusMap[status] || status
+    persistFloatPos () {
+      try {
+        window.localStorage.setItem('energyDashboard.aiFloatPos', JSON.stringify(this.floatPos))
+      } catch (e) { }
     },
-    
-    getServiceStatus(status) {
-      const statusMap = {
-        online: '运行中',
-        offline: '离线',
-        maintenance: '维护中',
-        error: '异常'
+    onFloatPointerDown (e) {
+      if (!e || e.button === 2) return
+      if (this.floatPos.x == null || this.floatPos.y == null) this.initFloatPos()
+
+      this.floatDragging = true
+      this.floatPointerId = e.pointerId
+      this.floatMoved = false
+      this.floatDragOffset = {
+        x: e.clientX - this.floatPos.x,
+        y: e.clientY - this.floatPos.y
       }
-      return statusMap[status] || status
+
+      if (e.currentTarget && e.currentTarget.setPointerCapture) {
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId)
+        } catch (err) { }
+      }
+    },
+    onFloatPointerMove (e) {
+      if (!this.floatDragging || this.floatPointerId !== e.pointerId) return
+      const next = {
+        x: e.clientX - this.floatDragOffset.x,
+        y: e.clientY - this.floatDragOffset.y
+      }
+
+      const dx = Math.abs(next.x - this.floatPos.x)
+      const dy = Math.abs(next.y - this.floatPos.y)
+      if (dx > 2 || dy > 2) this.floatMoved = true
+
+      this.floatPos = this.clampFloatPos(next)
+    },
+    onFloatPointerUp (e) {
+      if (this.floatPointerId != null && e && this.floatPointerId !== e.pointerId) return
+      this.floatDragging = false
+      this.floatPointerId = null
+      this.persistFloatPos()
+    },
+    onFloatClick () {
+      if (this.floatMoved) {
+        this.floatMoved = false
+        return
+      }
+      this.toggleMode()
+    },
+    onFloatHoverMove (e) {
+      if (this.floatDragging) return
+      this.floatHovering = true
+      this.updatePanelPlacement(e.currentTarget.getBoundingClientRect())
+      const rect = e.currentTarget.getBoundingClientRect()
+      const cx = rect.left + rect.width / 2
+      const cy = rect.top + rect.height / 2
+      const dx = e.clientX - cx
+      const dy = e.clientY - cy
+      const maxTilt = 4
+      this.tilt = {
+        x: Math.max(-maxTilt, Math.min(maxTilt, (dx / (rect.width / 2)) * maxTilt)),
+        y: Math.max(-maxTilt, Math.min(maxTilt, (-dy / (rect.height / 2)) * maxTilt))
+      }
+    },
+    onFloatHoverEnter (e) {
+      if (this.floatDragging) return
+      this.floatHovering = true
+      if (e && e.currentTarget) {
+        this.updatePanelPlacement(e.currentTarget.getBoundingClientRect())
+      }
+    },
+    onFloatHoverLeave () {
+      if (this.floatDragging) return
+      this.tilt = { x: 0, y: 0 }
+      this.floatHovering = false
+    },
+    updatePanelPlacement (rect) {
+      if (!rect) return
+      const preferLeft = rect.left > window.innerWidth * 0.55
+      this.panelPlacement = preferLeft ? 'left' : 'right'
+      const panelWidth = 560
+      const panelHeight = 340
+      const gap = 14
+      const nextX = preferLeft ? rect.left - gap - panelWidth : rect.right + gap
+      const centerY = rect.top + rect.height / 2
+      const nextY = centerY - panelHeight / 2
+      this.panelPos = {
+        x: Math.min(Math.max(16, nextX), Math.max(16, window.innerWidth - panelWidth - 16)),
+        y: Math.min(Math.max(16, nextY), Math.max(16, window.innerHeight - panelHeight - 16))
+      }
+    },
+    toggleMode () {
+      this.mode = this.mode === 'normal' ? 'ai' : 'normal'
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.iot-dashboard {
-  background: #f8fafc;
-  min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&display=swap');
+
+.energy-dashboard {
+  background: #F5F7FB;
+  --dash-gap: clamp(10px, 0.9vw, 14px);
+  --dash-padding: clamp(10px, 0.9vw, 14px);
+  padding: var(--dash-padding);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100%;
+  height: 100%;
+  box-sizing: border-box;
+
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.energy-dashboard.mode-ai .dashboard-content {
+  overflow: visible;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
   position: relative;
 }
 
-// 演示模式标识
-.demo-badge {
-  position: fixed;
-  right: 30px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 1000;
+.header-left {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: slideInRight 0.5s ease-out;
-  
-  .demo-badge-content {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    padding: 14px 20px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 
-      0 10px 40px rgba(59, 130, 246, 0.3),
-      0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-      0 0 30px rgba(59, 130, 246, 0.4);
-    position: relative;
-    overflow: hidden;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.1) 50%,
-        transparent 70%
-      );
-      animation: shimmer 3s infinite;
-    }
-    
-    .demo-icon {
-      width: 36px;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 18px;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      
-      i {
-        animation: pulse 2s ease-in-out infinite;
-      }
-    }
-    
-    .demo-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      
-      .demo-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: white;
-        letter-spacing: 0.5px;
-      }
-      
-      .demo-subtitle {
-        font-size: 10px;
-        color: rgba(255, 255, 255, 0.8);
-        font-weight: 600;
-        letter-spacing: 1px;
-      }
-    }
-    
-    .demo-pulse {
-      width: 8px;
-      height: 8px;
-      background: #fbbf24;
-      border-radius: 50%;
-      position: relative;
-      animation: pulse-dot 2s ease-in-out infinite;
-      
-      &::before {
-        content: '';
-        position: absolute;
-        top: -4px;
-        left: -4px;
-        right: -4px;
-        bottom: -4px;
-        border: 2px solid #fbbf24;
-        border-radius: 50%;
-        animation: pulse-ring 2s ease-in-out infinite;
-      }
-    }
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-box {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.ai-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  background: #8B5CF6;
+  border-radius: 4px;
+  font-size: 8px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.title-box {
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1E293B;
+    margin: 0;
+    letter-spacing: -0.5px;
   }
-  
-  .demo-tag {
-    background: rgba(59, 130, 246, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    padding: 8px 14px;
-    border-radius: 8px;
+
+  .subtitle {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-size: 12px;
-    color: #2563eb;
-    font-weight: 600;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
-    
-    i {
+    color: #64748B;
+    margin-top: 4px;
+
+    .dot {
+      width: 4px;
+      height: 4px;
+      background: #CBD5E1;
+      border-radius: 50%;
+    }
+
+    .highlight {
+      color: #0EA5E9;
+      font-weight: 500;
+    }
+  }
+}
+
+.header-metrics {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.metric-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+
+  i {
+    font-size: 14px;
+    color: #334155;
+  }
+
+  .metric-img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: block;
+  }
+
+  &.bg-green {
+    background: rgba(226, 232, 240, 0.20);
+    i { color: #475569; }
+  }
+
+  &.bg-orange {
+    background: rgba(226, 232, 240, 0.20);
+    i { color: #475569; }
+  }
+
+  &.bg-blue {
+    background: rgba(226, 232, 240, 0.20);
+    i { color: #475569; }
+  }
+
+  &.bg-cyan {
+    background: rgba(226, 232, 240, 0.20);
+    i { color: #475569; }
+  }
+}
+
+.metric-info {
+  .metric-label {
+    font-size: 10px;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .metric-value {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+
+    .number {
       font-size: 14px;
+      font-weight: 700;
+      color: #1E293B;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .unit {
+      font-size: 10px;
+      color: #94A3B8;
     }
   }
 }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(100px);
-    opacity: 0;
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.time-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(241, 245, 249, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+
+  i {
+    font-size: 14px;
+    color: #94A3B8;
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+
+  .time-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+.action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  background: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 10px;
+  color: #0F172A;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+
+  .action-icon-img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: block;
   }
-  100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
+
+  i {
+    font-size: 16px;
+    color: #334155;
+  }
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+
+  &:hover {
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    background: rgba(14, 165, 233, 0.10);
+    border-color: rgba(14, 165, 233, 0.35);
+
+    i { color: #0369A1; }
+    span { color: #0369A1; }
   }
 }
 
-@keyframes pulse-dot {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.8;
-  }
-}
-
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
-}
-
-.dashboard-body {
-  padding: 20px;
-  position: relative;
-  z-index: 2;
-}
-
-// 快捷操作 - 优化图标背景色
-.quick-operations {
-  margin-bottom: 20px;
-  
-  .operations-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 12px;
-    
-    .operation-item {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 16px 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-        border-color: #d1d5db;
-      }
-      
-      .operation-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        
-        i {
-          font-size: 20px;
-        }
-      }
-      
-      .operation-label {
-        font-size: 13px;
-        font-weight: 500;
-        color: #374151;
-        text-align: center;
-      }
-      
-      // B端简洁配色方案
-      &.primary .operation-icon {
-        background: #f3f4f6;
-        color: #1f2937;
-        border: 1px solid #e5e7eb;
-      }
-      
-      &.warning .operation-icon {
-        background: #fef3c7;
-        color: #d97706;
-        border: 1px solid #fbbf24;
-      }
-      
-      &.success .operation-icon {
-        background: #d1fae5;
-        color: #059669;
-        border: 1px solid #34d399;
-      }
-      
-      &.info .operation-icon {
-        background: #dbeafe;
-        color: #2563eb;
-        border: 1px solid #60a5fa;
-      }
-      
-      &.secondary .operation-icon {
-        background: #f9fafb;
-        color: #6b7280;
-        border: 1px solid #d1d5db;
-      }
-    }
-  }
-}
-
-// 主要布局
-.main-layout {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 20px;
+.dashboard-content {
+  flex: 1 1 auto;
   min-height: 0;
-}
-
-// 左侧主要区域
-.main-section {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--dash-gap);
+}
+
+/* 顶部红框互换：左侧仍为 box1，右侧放两张 quick-card */
+.top-row-swap {
+  display: grid;
+  grid-template-columns: 2fr 8fr;
+  gap: var(--dash-gap);
+  min-width: 0;
+  align-items: stretch;
+}
+
+.top-row-swap__cards {
+  display: grid;
+  grid-template-columns: 2fr 6fr;
+  gap: var(--dash-gap);
+  min-width: 0;
+  /* 与 TopOverviewRow .top-overview 同口径：略矮、减少上下留白 */
+  height: clamp(104px, 10vh, 126px);
+  align-self: stretch;
+
+  > .quick-card {
+    height: 100%;
+    min-height: 0;
+    padding: clamp(6px, 0.75vw, 10px) clamp(12px, 1.2vw, 16px);
+    gap: clamp(6px, 0.75vw, 10px);
+  }
+
+  /* 应收/实收卡：左侧内边距略减，整块内容更靠左（箭头所指方向） */
+  > .quick-card--summary {
+    padding-left: clamp(6px, 0.65vw, 10px);
+  }
+}
+
+/* 顶行留存卡：行距略紧，与变矮后的卡片高度匹配 */
+.top-row-swap__cards .quick-card--retention .retention-main {
+  gap: 4px;
+}
+
+/* 底部红框互换：占位容器横跨前两列，不额外画“外框模块” */
+.quick-stats-slot {
+  grid-column: span 2;
+  padding: 0;
+  overflow: visible;
+  align-self: stretch;
+}
+
+.quick-stats-slot ::v-deep .top-overview {
+  height: 100%;
+}
+
+.quick-stats-slot ::v-deep .row-container {
+  padding: 0;
+  height: 100%;
+}
+
+.energy-dashboard.mode-normal .dashboard-content {
+  overflow: visible;
+}
+
+.first-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dash-gap);
+  flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.first-screen-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--dash-gap);
+}
+
+/* Grid 默认 min-height:auto 会吃子元素「异常撑高」，锁死为 0 让子项在格子里裁剪 */
+.first-screen-body > .dashboard-grid {
+  min-height: 0;
+}
+
+.first-screen-body > .dashboard-grid > [class*='span-'] {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.first-row {
+  height: 100%;
+  min-height: 0;
+}
+
+.second-row {
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-grid.first-row {
+  grid-template-columns: 8fr 2fr;
+}
+
+.dashboard-grid.first-row > .span-9,
+.dashboard-grid.first-row > .span-3 {
+  grid-column: span 1;
+}
+
+.dashboard-card--fill {
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-card--fill > * {
+  height: 100%;
+  min-height: 0;
+}
+
+/* =====================
+   Quick Actions 区域
+   ===================== */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1.5fr 5.5fr 1.5fr 1.5fr;
+  gap: var(--dash-gap);
+  flex-shrink: 0;
+}
+
+.quick-card {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.75);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  cursor: pointer;
+  user-select: none;
+  min-height: 72px;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+  }
+}
+
+/* 租户留存金额卡片样式 */
+.quick-card--retention {
+  align-items: center;
+}
+
+.retention-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.retention-label {
+  font-size: clamp(11px, 0.62vw + 0.42rem, 14px);
+  color: #64748B;
+  text-align: left;
+}
+
+.retention-value {
+  font-size: clamp(18px, 1.15vw + 0.65rem, 25px);
+  font-weight: 900;
+  color: #0F172A;
+  font-family: 'Oxanium', 'DIN Alternate', 'DIN', 'Barlow', 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.retention-icon {
+  width: clamp(38px, 3.2vw + 22px, 44px);
+  height: clamp(38px, 3.2vw + 22px, 44px);
+  border-radius: 50%;
+  /* 避免与「本月应收」图标蓝底撞色 */
+  background: rgba(245, 158, 11, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: clamp(4px, 0.5vw, 8px);
+  flex-shrink: 0;
+
+  i {
+    font-size: clamp(18px, 1.1vw + 0.55rem, 22px);
+    color: #D97706;
+  }
+}
+
+/* 本月应收/实收汇总模块（整体略小 + 响应式；布局仍为原 7 列等距） */
+.quick-card--summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(12px, 1.4vw, 20px);
+  padding-right: clamp(14px, 1.5vw, 28px);
+  font-size: clamp(12px, 0.55vw + 0.42rem, 14px);
+}
+
+.summary-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  /* 左侧用较小 fr，避免「左侧一大块白」；右侧仍 1fr 保持与圆环的平衡 */
+  grid-template-columns: 0.38fr auto clamp(56px, 5vw, 108px) 1px clamp(56px, 5vw, 108px) auto 1fr;
+  column-gap: 0;
+  align-items: center;
+  padding-left: clamp(2px, 0.45vw, 10px);
+  padding-right: clamp(8px, 1.2vw, 20px);
+}
+
+.summary-block {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* 与留存卡一致：图标与文案间距用 icon 的 margin-right，不用 gap */
+  gap: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.summary-block-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* 与 .retention-icon 同尺寸、正圆、同色底；右侧留白略大于留存（双行标题+数字，避免贴太紧） */
+.summary-block-icon {
+  width: clamp(38px, 3.2vw + 22px, 44px);
+  height: clamp(38px, 3.2vw + 22px, 44px);
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: clamp(12px, 1.15vw, 18px);
+  flex-shrink: 0;
+
+  i {
+    font-size: clamp(18px, 1.1vw + 0.55rem, 22px);
+    color: #2563eb;
+  }
+}
+
+.summary-block-icon--received {
+  background: rgba(16, 185, 129, 0.12);
+
+  i {
+    color: #059669;
+  }
+}
+
+/* 左右内容固定在两侧，分割线由中间 1fr/1fr 保证等距 */
+.summary-block:first-child {
+  grid-column: 2;
+  padding-right: 0;
+}
+
+.summary-block:last-child {
+  grid-column: 6;
+  padding-left: 0;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(16px, 2.2vw, 26px);
+}
+
+.summary-title {
+  font-size: clamp(11px, 0.62vw + 0.42rem, 14px);
+  color: #9CA3AF;
+}
+
+.summary-value {
+  font-size: clamp(18px, 1.15vw + 0.65rem, 25px);
+  font-weight: 900;
+  color: #0F172A;
+  font-family: 'Oxanium', 'DIN Alternate', 'DIN', 'Barlow', 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: clamp(96px, 10vw, 128px);
+  margin-top: 2px;
+}
+
+.summary-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-size: clamp(11px, 0.55vw + 0.38rem, 13px);
+  color: #6B7280;
+  white-space: nowrap;
+  line-height: 1.3;
+  margin-top: clamp(-26px, -1.65vw - 0.5rem, -20px);
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  i {
+    font-size: clamp(12px, 0.65vw + 0.35rem, 14px);
+    color: #60A5FA;
+  }
+
+  i.icon-dianfei {
+    color: #10B981;
+  }
+}
+
+.meta-item--spaced {
+  margin-top: clamp(4px, 0.45vw, 7px);
+}
+
+.summary-divider {
+  background: #E2E8F0;
+  height: clamp(42px, 4.5vh, 50px);
+  grid-column: 4;
+  justify-self: stretch;
+}
+
+.summary-rate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: auto;
+  margin-right: clamp(6px, 0.8vw, 12px);
+  gap: clamp(4px, 0.5vw, 6px);
+  flex-shrink: 0;
+}
+
+.rate-circle {
+  --rate: 0;
+  width: clamp(50px, 4.5vw + 28px, 58px);
+  height: clamp(50px, 4.5vw + 28px, 58px);
+  position: relative;
+  border-radius: 50%;
+  background: conic-gradient(#4F46E5 calc(var(--rate) * 1%), #E5EDFF 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rate-circle::before {
+  content: '';
+  position: absolute;
+  inset: clamp(4px, 0.35vw, 5px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.rate-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.rate-percent {
+  font-size: clamp(15px, 0.9vw + 0.45rem, 19px);
+  font-weight: 800;
+  color: #111827;
+}
+
+.rate-unit {
+  font-size: clamp(10px, 0.5vw + 0.35rem, 12px);
+  color: #6B7280;
+}
+
+.rate-label {
+  font-size: clamp(10px, 0.55vw + 0.38rem, 13px);
+  color: #6B7280;
+}
+
+/* 右侧两个简版卡片 */
+.quick-card--plain {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  min-height: 66px;
+}
+
+.plain-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plain-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.plain-sub {
+  font-size: 11px;
+  color: #6B7280;
+}
+
+.plain-btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: none;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.plain-btn--orange {
+  background: #F97316;
+  color: #fff;
+}
+
+.plain-btn--purple {
+  background: #6366F1;
+  color: #fff;
+}
+
+.quick-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* 本月 圆形徽章 */
+.quick-badge-month {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1677ff;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.30);
+}
+
+/* 两列水平排列的指标 */
+.quick-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.quick-metrics--row {
+  flex-direction: row;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.quick-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* 纵向排列：标题在上，数值在下 */
+.quick-metric--col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.quick-metric--col .metric-title {
+  font-size: 11px;
+  color: #64748B;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.quick-metric--col .metric-value {
+  font-size: 18px;
+  font-weight: 900;
+  color: #0F172A;
+  font-family: 'Oxanium', 'DIN Alternate', 'DIN', 'Barlow', 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* 普通 metric（非 col 布局） */
+.metric-title {
+  font-size: 10px;
+  color: rgba(71, 85, 105, 0.92);
+  white-space: nowrap;
+}
+
+.metric-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0F172A;
+  font-family: 'Oxanium', 'DIN Alternate', 'DIN', 'Barlow', 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+/* 图标圆形 */
+.quick-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i {
+    font-size: 20px;
+    color: #fff;
+  }
+}
+
+.quick-icon--orange {
+  background: #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.30);
+}
+
+.quick-icon--purple {
+  background: #8B5CF6;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.30);
+}
+
+.quick-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.quick-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick-sub {
+  font-size: 11px;
+  color: rgba(100, 116, 139, 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 按钮基础 */
+.quick-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  font-weight: 600;
+  color: #0F172A;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:focus { outline: none; }
+}
+
+/* 按钮颜色变体 */
+.quick-btn--outline-blue {
+  border-color: rgba(22, 119, 255, 0.55);
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.05);
+
+  &:hover {
+    background: rgba(22, 119, 255, 0.10);
+    border-color: #1677ff;
+  }
+}
+
+.quick-btn--outline-orange {
+  border-color: rgba(245, 158, 11, 0.55);
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.06);
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: #f59e0b;
+  }
+}
+
+.quick-btn--outline-purple {
+  border-color: rgba(139, 92, 246, 0.55);
+  color: #7c3aed;
+  background: rgba(139, 92, 246, 0.06);
+
+  &:hover {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: #8B5CF6;
+  }
+}
+
+.scroll-card {
+  min-height: 420px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--dash-gap);
+  min-width: 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.flex-1 {
+  flex: 1;
+  min-height: 0;
+}
+
+.span-3  { grid-column: span 3; }
+.span-4  { grid-column: span 4; }
+.span-5  { grid-column: span 5; }
+.span-6  { grid-column: span 6; }
+.span-7  { grid-column: span 7; }
+.span-8  { grid-column: span 8; }
+.span-9  { grid-column: span 9; }
+.span-2  { grid-column: span 2; }
+
+.row-grid {
+  display: grid;
+  gap: 14px;
+
+  &.col-2 { grid-template-columns: repeat(2, 1fr); }
+  &.col-3 { grid-template-columns: repeat(3, 1fr); }
+  &.col-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .col-span-2 { grid-column: span 2; }
+  .col-span-3 { grid-column: span 3; }
+}
+
+.dashboard-card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(226, 232, 240, 0.75);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 18px 36px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  backdrop-filter: blur(14px);
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.9), rgba(139, 92, 246, 0.85), rgba(16, 185, 129, 0.85));
+  opacity: 0.25;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(148, 163, 184, 0.55);
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.08),
+    0 26px 58px rgba(15, 23, 42, 0.10);
+}
+
+.dashboard-card:hover::before {
+  opacity: 0.45;
+}
+
+/* AI 悬浮球 */
+.ai-orb {
+  position: fixed;
+  z-index: 999;
+  width: 88px;
+  height: 88px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+  --lift: 0px;
+  --scale: 1;
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  transform-style: preserve-3d;
+  perspective: 400px;
+  transform:
+    translateY(var(--lift)) scale(var(--scale)) rotateX(var(--tilt-y)) rotateY(var(--tilt-x));
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.ai-orb:hover {
+  --lift: -2px;
+  --scale: 1.04;
+}
+
+.ai-orb.dragging {
+  --lift: 0px;
+  --scale: 1.02;
+  cursor: grabbing;
+}
+
+.ai-orb-core {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  filter:
+    drop-shadow(0 10px 16px rgba(15, 23, 42, 0.45)) drop-shadow(0 0 16px rgba(37, 99, 235, 0.55));
+}
+
+.core-sphere {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-visual {
+  --size: 184px;
+  --ring-outer: 7px;
+  --ring-mid: 6px;
+  --ring-inner: 4px;
+  --core-size: 74px;
+  --wave-stroke: 4;
+  --wave-level: 0.65;
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 999px;
+  filter:
+    drop-shadow(0 12px 18px rgba(15, 23, 42, 0.28)) drop-shadow(0 0 18px rgba(56, 189, 248, 0.18));
+}
+
+.ai-visual--sm {
+  --size: 80px;
+  --ring-outer: 4px;
+  --ring-mid: 3px;
+  --ring-inner: 2.5px;
+  --core-size: 36px;
+  --wave-stroke: 3.2;
+}
+
+.ai-visual--lg {
+  --size: 260px;
+  --ring-outer: 8px;
+  --ring-mid: 7px;
+  --ring-inner: 5px;
+  --core-size: 112px;
+  --wave-stroke: 5;
+}
+
+.ai-visual-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  opacity: 0.9;
+  mix-blend-mode: screen;
+}
+
+.ai-visual-ring-outer {
+  background:
+    conic-gradient(from 0deg,
+      rgba(45, 212, 191, 0) 0deg,
+      rgba(45, 212, 191, 0.95) 18deg,
+      rgba(45, 212, 191, 0) 44deg,
+      rgba(56, 189, 248, 0.95) 66deg,
+      rgba(56, 189, 248, 0) 92deg,
+      rgba(45, 212, 191, 0.92) 132deg,
+      rgba(45, 212, 191, 0) 162deg,
+      rgba(56, 189, 248, 0.85) 210deg,
+      rgba(56, 189, 248, 0) 248deg,
+      rgba(45, 212, 191, 0.9) 300deg,
+      rgba(45, 212, 191, 0) 340deg,
+      rgba(45, 212, 191, 0) 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-outer)), black calc(100% - (var(--ring-outer) - 2px)));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-outer)), black calc(100% - (var(--ring-outer) - 2px)));
+  opacity: 0.85;
+  animation: orbRingRotate 22s linear infinite;
+}
+
+.ai-visual-ring-mid {
+  inset: 9%;
+  background:
+    conic-gradient(from 180deg,
+      rgba(45, 212, 191, 0) 0deg,
+      rgba(45, 212, 191, 0.95) 34deg,
+      rgba(45, 212, 191, 0) 62deg,
+      rgba(56, 189, 248, 0.95) 92deg,
+      rgba(56, 189, 248, 0) 122deg,
+      rgba(45, 212, 191, 0.85) 160deg,
+      rgba(45, 212, 191, 0) 210deg,
+      rgba(56, 189, 248, 0.9) 250deg,
+      rgba(56, 189, 248, 0) 292deg,
+      rgba(45, 212, 191, 0) 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-mid)), black calc(100% - (var(--ring-mid) - 2px)));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-mid)), black calc(100% - (var(--ring-mid) - 2px)));
+  opacity: 0.95;
+  animation: orbRingRotate 14s linear infinite reverse;
+}
+
+.ai-visual-ring-inner {
+  inset: 18%;
+  background:
+    conic-gradient(from 20deg,
+      rgba(56, 189, 248, 0) 0deg,
+      rgba(56, 189, 248, 0.95) 58deg,
+      rgba(56, 189, 248, 0) 92deg,
+      rgba(45, 212, 191, 0.95) 126deg,
+      rgba(45, 212, 191, 0) 160deg,
+      rgba(56, 189, 248, 0.9) 212deg,
+      rgba(56, 189, 248, 0) 250deg,
+      rgba(45, 212, 191, 0) 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-inner)), black calc(100% - (var(--ring-inner) - 1px)));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-inner)), black calc(100% - (var(--ring-inner) - 1px)));
+  opacity: 0.75;
+  animation: orbRingRotate 18s linear infinite;
+}
+
+.ai-visual-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--core-size);
+  height: var(--core-size);
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 40% 36%, rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0) 40%),
+    radial-gradient(circle at 70% 70%, rgba(52, 211, 153, 0.52), rgba(3, 48, 36, 0.90) 62%),
+    radial-gradient(circle at 35% 75%, rgba(16, 185, 129, 0.62), rgba(3, 48, 36, 0.94) 68%),
+    linear-gradient(135deg, rgba(3, 48, 36, 0.90), rgba(2, 42, 32, 1));
+  box-shadow:
+    inset 0 0 18px rgba(2, 42, 32, 0.70),
+    0 0 18px rgba(16, 185, 129, 0.46),
+    0 0 22px rgba(45, 212, 191, 0.20);
   overflow: hidden;
 }
 
-// 监控面板
-.monitoring-panel {
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      
-      h3 {
-        font-size: 18px;
-        font-weight: 600;
-        color: #111827;
-        margin: 0;
-      }
-      
-      .data-source-info {
-        .update-indicator {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          color: #67c23a;
-          font-size: 12px;
-          font-weight: 500;
-          
-          i {
-            animation: spin 2s linear infinite;
-          }
-        }
-      }
+.ai-visual-core::after {
+  content: '';
+  position: absolute;
+  inset: 16%;
+  border-radius: inherit;
+  background: radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.35), transparent 60%);
+  mix-blend-mode: soft-light;
+  opacity: 0.9;
+}
+
+.ai-visual-wave {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--size) * 1.7);
+  height: calc(var(--size) * 0.34);
+  transform: translate(-50%, -50%) scaleY(var(--wave-level));
+  transform-origin: center;
+  overflow: visible;
+  opacity: 0.95;
+  pointer-events: none;
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.55));
+}
+
+.ai-visual-wave .wave-core,
+.ai-visual-wave .wave-glow {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ai-visual-wave .wave-glow {
+  stroke: rgba(56, 189, 248, 0.7);
+  stroke-width: calc(var(--wave-stroke) + 2px);
+  stroke-dasharray: 26 16;
+  animation: panelWaveDash 2.6s linear infinite;
+  filter: blur(1.4px);
+  opacity: 0.9;
+}
+
+.ai-visual-wave .wave-core {
+  stroke: rgba(125, 211, 252, 0.98);
+  stroke-width: var(--wave-stroke);
+  stroke-dasharray: 16 10;
+  animation: panelWaveDash 1.9s linear infinite;
+}
+
+.ai-visual-wave-left {
+  transform: translate(-50%, -50%) scaleY(var(--wave-level)) translateX(-3%);
+}
+
+.ai-visual-wave-right {
+  transform: translate(-50%, -50%) scaleY(var(--wave-level)) scaleX(-1) translateX(-3%);
+}
+
+.ai-orb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.ai-orb-ring-outer {
+  background:
+    conic-gradient(from 0deg,
+      rgba(59, 130, 246, 0) 0deg,
+      rgba(59, 130, 246, 0.9) 40deg,
+      rgba(20, 184, 166, 0.9) 80deg,
+      rgba(59, 130, 246, 0.9) 120deg,
+      rgba(20, 184, 166, 0.0) 180deg,
+      rgba(20, 184, 166, 0.0) 360deg);
+  -webkit-mask:
+    radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 1px));
+  mask:
+    radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 1px));
+  opacity: 0.7;
+  animation: orbRingRotate 18s linear infinite;
+}
+
+.ai-orb-ring-inner {
+  inset: 7px;
+  background:
+    conic-gradient(from 180deg,
+      rgba(45, 212, 191, 0) 0deg,
+      rgba(45, 212, 191, 0.9) 60deg,
+      rgba(56, 189, 248, 0.9) 110deg,
+      rgba(45, 212, 191, 0.9) 150deg,
+      rgba(45, 212, 191, 0.0) 210deg,
+      rgba(45, 212, 191, 0.0) 360deg);
+  -webkit-mask:
+    radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 0.5px));
+  mask:
+    radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 0.5px));
+  opacity: 0.9;
+  animation: orbRingRotate 10s linear infinite reverse;
+}
+
+.ai-orb.is-ai .ai-visual-core {
+  box-shadow:
+    inset -6px -8px 22px rgba(0, 0, 0, 0.96),
+    0 0 40px rgba(252, 211, 77, 0.78),
+    0 0 56px rgba(129, 178, 255, 0.85);
+}
+
+.ai-orb-label {
+  position: absolute;
+  left: 96px;
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  padding: 7px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: rgba(241, 245, 249, 0.95);
+  background:
+    radial-gradient(120% 140% at 10% 30%, rgba(56, 189, 248, 0.18), rgba(0, 0, 0, 0) 62%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.48);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+}
+
+.ai-orb:hover .ai-orb-label {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Animations */
+@keyframes orbRingRotate {
+  0%   { transform: rotateZ(0deg); }
+  100% { transform: rotateZ(360deg); }
+}
+
+@keyframes panelWaveDash {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -56; }
+}
+
+/* Responsive */
+@media (max-width: 1366px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .span-2, .span-3, .span-4, .span-5,
+  .span-6, .span-7, .span-8, .span-9 {
+    grid-column: span 1;
+  }
+
+  .row-grid {
+    &.col-3, &.col-4 {
+      grid-template-columns: repeat(2, 1fr);
     }
-    
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      
-      .time-selector {
-        padding: 8px 16px;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        background: white;
-        font-size: 13px;
-        color: #374151;
-        cursor: pointer;
-        
-        &:hover {
-          border-color: #409eff;
-        }
-      }
-      
-      .refresh-btn {
-        width: 36px;
-        height: 36px;
-        background: #f9fafb;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        
-        &:hover {
-          background: #409eff;
-          border-color: #409eff;
-          
-          i {
-            color: white;
-          }
-        }
-        
-        i {
-          font-size: 16px;
-          color: #6b7280;
-        }
-      }
+    .col-span-2, .col-span-3 {
+      grid-column: span 2;
     }
   }
-  
-  // 核心指标 - 优化图标背景色
-  .metrics-overview {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-    
-    .metric-card {
-      background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
-      border: 1px solid #f0f0f0;
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      gap: 14px;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
-      }
-      
-      .metric-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        border: 1px solid;
-        
-        // B端配色优化
-        &.blue {
-          background: #f8fafc;
-          color: #2563eb;
-          border-color: #e2e8f0;
-        }
-        
-        &.green {
-          background: #f8fafc;
-          color: #059669;
-          border-color: #e2e8f0;
-        }
-        
-        &.orange {
-          background: #f8fafc;
-          color: #d97706;
-          border-color: #e2e8f0;
-        }
-        
-        &.red {
-          background: #f8fafc;
-          color: #dc2626;
-          border-color: #e2e8f0;
-        }
-        
-        i {
-          font-size: 20px;
-        }
-      }
-      
-      .metric-content {
-        flex: 1;
-        
-        .metric-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-          
-          .metric-label {
-            font-size: 12px;
-            color: #6b7280;
-            font-weight: 500;
-          }
-          
-          .metric-trend {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            font-size: 11px;
-            font-weight: 600;
-            
-            &.up {
-              color: #67c23a;
-            }
-            
-            &.down {
-              color: #f56c6c;
-            }
-            
-            i {
-              font-size: 12px;
-            }
-          }
-        }
-        
-        .metric-value {
-          font-size: 24px;
-          font-weight: 700;
-          color: #111827;
-          margin-bottom: 4px;
-        }
-        
-        .metric-subtitle {
-          font-size: 11px;
-          color: #9ca3af;
-        }
-      }
-    }
+
+  .header-metrics {
+    display: none;
   }
-  
-  // 图表容器
-  .charts-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 24px;
-    
-    .chart-box {
-      .chart-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-        
-        h4 {
-          font-size: 14px;
-          font-weight: 600;
-          color: #111827;
-          margin: 0;
-        }
-        
-        .chart-legend {
-          display: flex;
-          gap: 12px;
-          
-          .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            color: #6b7280;
-            
-            .legend-dot {
-              width: 8px;
-              height: 8px;
-              border-radius: 50%;
-              
-              &.excellent {
-                background: #67c23a;
-              }
-              
-              &.good {
-                background: #409eff;
-              }
-              
-              &.warning {
-                background: #e6a23c;
-              }
-              
-              &.error {
-                background: #f56c6c;
-              }
-              
-              &.source {
-                background: #67c23a;
-              }
-              
-              &.target {
-                background: #909399;
-              }
-            }
-          }
-        }
-      }
-      
-      .chart-canvas {
-        width: 100%;
-        height: 220px;
-      }
-    }
-  }
-  
-  // 趋势图
-  .trend-section {
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      
-      h4 {
-        font-size: 14px;
-        font-weight: 600;
-        color: #111827;
-        margin: 0;
-      }
-      
-      .trend-tabs {
-        display: flex;
-        gap: 2px;
-        background: #f3f4f6;
-        padding: 3px;
-        border-radius: 8px;
-        
-        .trend-tab {
-          padding: 8px 16px;
-          background: transparent;
-          border: none;
-          border-radius: 6px;
-          font-size: 12px;
-          color: #6b7280;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-weight: 500;
-          
-          &.active {
-            background: white;
-            color: #409eff;
-            font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          }
-          
-          &:hover:not(.active) {
-            color: #374151;
-          }
-        }
-      }
-    }
-    
-    .trend-chart {
-      width: 100%;
-      height: 220px;
-    }
+
+  .quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-// 智能分析区域 - 优化图标背景色
-.analytics-section {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 20px;
-  margin-bottom: 0;
-  
-  .analytics-left {
-    .analytics-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 24px;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-      
-      .card-header {
-        display: flex;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 24px;
-        position: relative;
-        z-index: 2;
-        
-        .header-icon {
-          width: 52px;
-          height: 52px;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #2563eb;
-          
-          i {
-            font-size: 22px;
-          }
-        }
-        
-        .header-text {
-          flex: 1;
-          
-          h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #111827;
-            margin: 0 0 6px 0;
-          }
-          
-          p {
-            font-size: 14px;
-            color: #6b7280;
-            margin: 0;
-          }
-        }
-      }
-      
-      .analytics-metrics {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-bottom: 24px;
-        position: relative;
-        z-index: 2;
-        
-        .metric-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 18px;
-          background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-          border-radius: 10px;
-          transition: all 0.3s ease;
-          
-          &:hover {
-            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-            transform: translateY(-2px);
-          }
-          
-          .metric-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f1f5f9;
-            color: #374151;
-            border: 1px solid #e2e8f0;
-            
-            i {
-              font-size: 16px;
-            }
-          }
-          
-          .metric-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            
-            .metric-value {
-              font-size: 18px;
-              font-weight: 700;
-              color: #111827;
-            }
-            
-            .metric-label {
-              font-size: 11px;
-              color: #6b7280;
-            }
-          }
-        }
-      }
-      
-      .quick-insights {
-        position: relative;
-        z-index: 2;
-        
-        .insight-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          color: #374151;
-          margin-bottom: 16px;
-          
-          i {
-            color: #d97706;
-            font-size: 18px;
-          }
-        }
-        
-        .insight-content {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-        
-        .insight-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 12px 16px;
-          background: rgba(64, 158, 255, 0.05);
-          border-radius: 8px;
-          border-left: 3px solid #409eff;
-          
-          .insight-text {
-            font-size: 12px;
-            color: #374151;
-            flex: 1;
-          }
-          
-          .insight-action {
-            font-size: 11px;
-            color: #409eff;
-            cursor: pointer;
-            font-weight: 600;
-            
-            &:hover {
-              text-decoration: underline;
-            }
-          }
-        }
-      }
-      
-      // 装饰背景
-      .analytics-bg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        pointer-events: none;
-        overflow: hidden;
-        
-        .bg-pattern {
-          position: absolute;
-          top: 0;
-          right: 0;
-          width: 200px;
-          height: 200px;
-          opacity: 0.3;
-        }
-        
-        .floating-elements {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          
-          .floating-dot {
-            position: absolute;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #409eff, #1d4ed8);
-            opacity: 0.1;
-            animation: float 6s ease-in-out infinite;
-            
-            &.dot-1 {
-              width: 8px;
-              height: 8px;
-              top: 20%;
-              right: 15%;
-              animation-delay: 0s;
-            }
-            
-            &.dot-2 {
-              width: 6px;
-              height: 6px;
-              top: 60%;
-              right: 25%;
-              animation-delay: 2s;
-            }
-            
-            &.dot-3 {
-              width: 10px;
-              height: 10px;
-              top: 80%;
-              right: 10%;
-              animation-delay: 4s;
-            }
-          }
-          
-          .floating-circuit {
-            position: absolute;
-            top: 10%;
-            right: 5%;
-            width: 60px;
-            height: 60px;
-            opacity: 0.15;
-          }
-        }
-      }
-    }
+@media (max-height: 900px) {
+  .dashboard-content { gap: var(--dash-gap); }
+  .first-screen { gap: var(--dash-gap); }
+  .first-screen-body {
+    gap: var(--dash-gap);
+    grid-template-rows: minmax(0, 1.12fr) minmax(0, 1fr);
   }
-  
-  .analytics-right {
-    .suggestion-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 20px;
-      height: 100%;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-      
-      .suggestion-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-        
-        h4 {
-          font-size: 15px;
-          font-weight: 600;
-          color: #111827;
-          margin: 0;
-        }
-        
-        .suggestion-count {
-          font-size: 12px;
-          color: #059669;
-          background: #d1fae5;
-          padding: 4px 10px;
-          border-radius: 6px;
-          font-weight: 600;
-        }
-      }
-      
-      .suggestion-list {
-        margin-bottom: 16px;
-        
-        .suggestion-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 14px 0;
-          border-bottom: 1px solid #f3f4f6;
-          
-          &:last-child {
-            border-bottom: none;
-          }
-          
-          .suggestion-icon {
-            width: 36px;
-            height: 36px;
-            background: #f8fafc;
-            color: #6b7280;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            
-            i {
-              font-size: 16px;
-            }
-          }
-          
-          .suggestion-text {
-            flex: 1;
-            
-            .suggestion-title {
-              font-size: 13px;
-              font-weight: 600;
-              color: #111827;
-              margin-bottom: 4px;
-            }
-            
-            .suggestion-desc {
-              font-size: 12px;
-              color: #6b7280;
-            }
-          }
-        }
-      }
-      
-      .view-all-suggestions {
-        width: 100%;
-        padding: 10px 16px;
-        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        color: #374151;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        
-        &:hover {
-          background: linear-gradient(135deg, #409eff, #357abd);
-          color: white;
-          border-color: #409eff;
-        }
-      }
-    }
+  .quick-actions { gap: var(--dash-gap); }
+  .quick-card {
+    min-height: 66px;
+    padding: 10px 14px;
   }
-}
-
-// 右侧边栏 - 优化图标背景色
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-// 通用组件样式
-.widget {
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  
-  .widget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    
-    h4 {
-      font-size: 15px;
-      font-weight: 600;
-      color: #111827;
-      margin: 0;
-    }
-    
-    .widget-subtitle {
-      font-size: 12px;
-      color: #6b7280;
-    }
+  .quick-badge-month,
+  .quick-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
   }
-}
-
-// 设备概览 - 优化图标背景色
-.device-overview {
-  .overview-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-    
-    .stat-card {
-      padding: 18px;
-      border-radius: 10px;
-      
-      &.total {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-      }
-      
-      &.online {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-      }
-      
-      .stat-value {
-        font-size: 22px;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 4px;
-      }
-      
-      .stat-label {
-        font-size: 12px;
-        color: #6b7280;
-        margin-bottom: 4px;
-      }
-      
-      .stat-change {
-        font-size: 11px;
-        color: #6b7280;
-        font-weight: 500;
-        
-        &.up {
-          color: #67c23a;
-        }
-      }
-    }
-  }
-  
-  .device-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    
-    .device-item {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      background: linear-gradient(135deg, #fafafa, #f5f5f5);
-      border-radius: 8px;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        background: linear-gradient(135deg, #f5f5f5, #eeeeee);
-        transform: translateX(3px);
-      }
-      
-      .device-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 12px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        
-        // B端统一图标颜色
-        &.electric {
-          color: #2563eb;
-        }
-        
-        &.water {
-          color: #0891b2;
-        }
-        
-        &.hvac {
-          color: #059669;
-        }
-        
-        &.lighting {
-          color: #d97706;
-        }
-        
-        &.security {
-          color: #7c3aed;
-        }
-        
-        &.charging {
-          color: #dc2626;
-        }
-        
-        i {
-          font-size: 16px;
-        }
-      }
-      
-      .device-info {
-        flex: 1;
-        
-        .device-name {
-          font-size: 13px;
-          color: #111827;
-          font-weight: 600;
-          margin-bottom: 2px;
-        }
-        
-        .device-count {
-          font-size: 11px;
-          color: #6b7280;
-        }
-      }
-      
-      .device-status {
-        font-size: 11px;
-        font-weight: 600;
-        
-        &.excellent {
-          color: #67c23a;
-        }
-        
-        &.good {
-          color: #409eff;
-        }
-        
-        &.warning {
-          color: #e6a23c;
-        }
-      }
-    }
-  }
-}
-
-// 待办组件
-.todo-widget {
-  .todo-summary {
-    .pending-count {
-      font-size: 12px;
-      color: #f56c6c;
-      font-weight: 600;
-    }
-  }
-  
-  .todo-list {
-    max-height: 280px;
-    overflow-y: auto;
-    
-    &::-webkit-scrollbar {
-      width: 4px;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: #f3f4f6;
-      border-radius: 2px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background: #d1d5db;
-      border-radius: 2px;
-    }
-    
-    .todo-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 12px 0;
-      border-bottom: 1px solid #f3f4f6;
-      
-      &:last-child {
-        border-bottom: none;
-      }
-      
-      &.completed {
-        opacity: 0.5;
-        
-        .todo-text {
-          text-decoration: line-through;
-        }
-      }
-      
-      .todo-check {
-        width: 18px;
-        height: 18px;
-        border: 2px solid #d1d5db;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        margin-top: 1px;
-        transition: all 0.2s ease;
-        
-        &:hover {
-          border-color: #409eff;
-        }
-        
-        i {
-          font-size: 12px;
-          color: #67c23a;
-        }
-      }
-      
-      .todo-content {
-        flex: 1;
-        
-        .todo-text {
-          font-size: 13px;
-          color: #111827;
-          line-height: 1.4;
-          margin-bottom: 4px;
-          font-weight: 500;
-        }
-        
-        .todo-meta {
-          display: flex;
-          gap: 8px;
-          font-size: 11px;
-          
-          .todo-category {
-            color: #409eff;
-            font-weight: 500;
-          }
-          
-          .todo-time {
-            color: #9ca3af;
-          }
-        }
-      }
-      
-      .todo-priority {
-        width: 3px;
-        height: 20px;
-        border-radius: 2px;
-        margin-top: 1px;
-        
-        &.urgent {
-          background: #f56c6c;
-          animation: pulse 2s infinite;
-        }
-        
-        &.normal {
-          background: #e6a23c;
-        }
-        
-        &.low {
-          background: #67c23a;
-        }
-      }
-    }
-  }
-}
-
-// 系统状态
-.system-status {
-  .widget-header {
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      
-      .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-      }
-      
-      &.online {
-        color: #67c23a;
-        
-        .dot {
-          background: #67c23a;
-        }
-      }
-    }
-  }
-  
-  .status-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    
-    .status-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px;
-      background: linear-gradient(135deg, #fafafa, #f5f5f5);
-      border-radius: 8px;
-      
-      .service-name {
-        font-size: 13px;
-        color: #111827;
-        font-weight: 600;
-      }
-      
-      .service-status {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        
-        .status-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-        }
-        
-        &.online {
-          color: #67c23a;
-          
-          .status-dot {
-            background: #67c23a;
-          }
-        }
-        
-        &.maintenance {
-          color: #e6a23c;
-          
-          .status-dot {
-            background: #e6a23c;
-          }
-        }
-      }
-    }
-  }
-}
-
-// 动画
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-// 响应式设计
-@media (max-width: 1400px) {
-  .metrics-overview {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  
-  .analytics-section {
-    grid-template-columns: 1fr !important;
-    
-    .analytics-right {
-      .suggestion-card {
-        margin-top: 0;
-      }
-    }
-  }
-}
-
-@media (max-width: 1200px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-  }
-  
-  .operations-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-  }
-  
-  .sidebar {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+  .quick-metric--col .metric-value {
+    font-size: 16px;
   }
 }
 
 @media (max-width: 768px) {
-  .dashboard-body {
-    padding: 16px;
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .span-2, .span-3, .span-4, .span-5,
+  .span-6, .span-7, .span-8, .span-9 {
+    grid-column: span 1;
   }
-  
-  .demo-badge {
-    right: 15px;
-    
-    .demo-badge-content {
-      padding: 10px 14px;
-      
-      .demo-icon {
-        width: 28px;
-        height: 28px;
-        font-size: 14px;
-      }
-      
-      .demo-text {
-        .demo-title {
-          font-size: 13px;
-        }
-        
-        .demo-subtitle {
-          font-size: 9px;
-        }
-      }
+  .row-grid {
+    &.col-2, &.col-3, &.col-4 {
+      grid-template-columns: 1fr;
     }
-    
-    .demo-tag {
-      padding: 6px 10px;
-      font-size: 11px;
+    .col-span-2, .col-span-3 {
+      grid-column: span 1;
     }
   }
-  
-  .operations-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+  .quick-actions {
+    grid-template-columns: 1fr;
   }
-  
-  .charts-container {
-    grid-template-columns: 1fr !important;
-  }
-  
-  .sidebar {
-    grid-template-columns: 1fr !important;
-  }
-  
-  .analytics-section {
-    grid-template-columns: 1fr !important;
+  .quick-metrics--row {
     gap: 16px;
   }
 }

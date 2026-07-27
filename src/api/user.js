@@ -1,17 +1,17 @@
 import request from '@/utils/request'
 
 // 用户登录 - 真实接口
-export function login(data) {
+export function login (data) {
   return request({
     url: '/api/ebc-auth/auth/login',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data: {
       channel: 1,
-      code: "",
+      code: '',
       password: data.password,
       phone: data.username // 将username映射为phone字段
     }
@@ -19,20 +19,20 @@ export function login(data) {
 }
 
 // 获取用户信息 - 真实接口
-export function getUserInfo(token) {
+export function getUserInfo (token) {
   return request({
     url: '/api/ebc-auth/auth/userInfo',
     method: 'post',
     headers: {
-      'Authorization': token,
-      'userDeviceType': 'PC',
+      Authorization: token,
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     }
   })
 }
 
 // 用户退出登录
-export function logout() {
+export function logout () {
   return Promise.resolve({
     code: 200,
     data: 'success'
@@ -40,12 +40,12 @@ export function logout() {
 }
 
 // 修改密码
-export function changePassword(params) {
+export function changePassword (params) {
   return request({
     url: '/api/ebc-auth/auth/changePassword',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params
@@ -53,14 +53,43 @@ export function changePassword(params) {
 }
 
 // 发送验证码（用于调价验证）
-export function authSendSmsCode(params) {
+export function authSendSmsCode (params) {
   return request({
     url: '/api/ebc-auth/auth/sendSmsCode',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params
+  })
+}
+
+export function trialSendSmsCode (params) {
+  return request({
+    url: '/api/ebc-auth/auth/sendSmsCode',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    params
+  })
+}
+
+// 注册体验账号
+export function registerExperienceAccount (dto, authorization) {
+  return request({
+    url: '/api/ebc-content/trialRegister/registerExperienceAccount',
+    method: 'post',
+    headers: {
+      ...(authorization ? { Authorization: authorization } : {}),
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data: {
+      ...dto,
+      channel: 1
+    }
   })
 }

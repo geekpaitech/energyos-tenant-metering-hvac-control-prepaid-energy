@@ -392,7 +392,7 @@
 <script>
 export default {
   name: 'LockManagement',
-  data() {
+  data () {
     return {
       searchText: '',
       selectedBuilding: 'A栋',
@@ -422,8 +422,8 @@ export default {
     }
   },
   computed: {
-    displayLocks() {
-      let result = this.locks.filter(lock => {
+    displayLocks () {
+      const result = this.locks.filter(lock => {
         if (this.selectedBuilding && !lock.location.includes(this.selectedBuilding)) {
           return false
         }
@@ -440,22 +440,22 @@ export default {
       })
       return result
     },
-    floorRooms() {
-      return this.displayLocks.filter(lock => 
+    floorRooms () {
+      return this.displayLocks.filter(lock =>
         lock.location.includes(this.selectedFloor)
       )
     }
   },
-  mounted() {
+  mounted () {
     // this.initData()
   },
   methods: {
-    initData() {
+    initData () {
       // 生成模拟数据
       const buildings = ['A栋', 'B栋', 'C栋', 'D栋', 'E栋']
       const types = ['password', 'fingerprint', 'face', 'card']
       const statuses = ['online', 'online', 'online', 'offline', 'alarm', 'lowBattery']
-      
+
       let lockId = 1
       buildings.forEach(building => {
         const buildingStat = {
@@ -464,13 +464,13 @@ export default {
           offline: 0,
           alarm: 0
         }
-        
+
         this.floors.forEach(floor => {
           const roomCount = floor === 'B1' ? 5 : 10
           for (let i = 1; i <= roomCount; i++) {
             const roomNumber = floor === 'B1' ? `B${i}` : `${floor.replace('F', '')}${String(i).padStart(2, '0')}`
             const status = statuses[Math.floor(Math.random() * statuses.length)]
-            
+
             const lock = {
               lockId: `DL${String(lockId++).padStart(6, '0')}`,
               roomNumber: roomNumber,
@@ -483,18 +483,18 @@ export default {
               weekAccess: Math.floor(Math.random() * 150),
               authUsers: Math.floor(Math.random() * 10) + 5
             }
-            
+
             this.locks.push(lock)
-            
+
             if (status === 'online') buildingStat.online++
             else if (status === 'offline') buildingStat.offline++
             else if (status === 'alarm') buildingStat.alarm++
           }
         })
-        
+
         this.buildingStats.push(buildingStat)
       })
-      
+
       // 生成最近访问记录
       this.recentAccess = [
         { user: '张三', time: '10:23', method: '指纹' },
@@ -502,17 +502,17 @@ export default {
         { user: '王五', time: '08:30', method: '人脸' }
       ]
     },
-    
-    selectBuilding(building) {
+
+    selectBuilding (building) {
       this.selectedBuilding = building
     },
-    
-    selectLock(lock) {
+
+    selectLock (lock) {
       this.selectedLock = lock
     },
-    
-    handleQuickAction(command, lock) {
-      switch(command) {
+
+    handleQuickAction (command, lock) {
+      switch (command) {
         case 'unlock':
           this.remoteUnlock(lock)
           break
@@ -527,8 +527,8 @@ export default {
           break
       }
     },
-    
-    remoteUnlock(lock) {
+
+    remoteUnlock (lock) {
       this.$confirm(`确定要远程开启 ${lock.location} 的门锁吗？`, '远程开锁确认', {
         confirmButtonText: '确定开锁',
         cancelButtonText: '取消',
@@ -537,23 +537,23 @@ export default {
         this.$message.success('开锁指令已发送')
       })
     },
-    
-    generateTempPass(lock) {
+
+    generateTempPass (lock) {
       this.tempPassForm.lockId = lock.lockId
       this.showTempPassword = true
     },
-    
-    confirmGeneratePass() {
+
+    confirmGeneratePass () {
       this.generatedPassword = Math.random().toString().slice(2, 8)
       this.$message.success('临时密码已生成')
     },
-    
-    copyPassword() {
+
+    copyPassword () {
       navigator.clipboard.writeText(this.generatedPassword)
       this.$message.success('密码已复制到剪贴板')
     },
-    
-    triggerAlarm(lock) {
+
+    triggerAlarm (lock) {
       this.$confirm(`确定要点亮 ${lock.location} 的报警灯吗？`, '点亮报警', {
         confirmButtonText: '确定',
         cancelButtonText: '取消'
@@ -567,8 +567,8 @@ export default {
         this.updateStats()
       })
     },
-    
-    viewLogs(lock) {
+
+    viewLogs (lock) {
       this.showLogsDialog = true
       // 生成模拟日志
       this.lockLogs = Array.from({ length: 20 }, (_, i) => ({
@@ -579,8 +579,8 @@ export default {
         remark: Math.random() > 0.8 ? '多次尝试' : ''
       }))
     },
-    
-    getLockIcon(type) {
+
+    getLockIcon (type) {
       const iconMap = {
         password: 'el-icon-lock',
         fingerprint: 'el-icon-thumb',
@@ -589,8 +589,8 @@ export default {
       }
       return iconMap[type] || 'el-icon-lock'
     },
-    
-    getLockTypeName(type) {
+
+    getLockTypeName (type) {
       const typeMap = {
         password: '密码锁',
         fingerprint: '指纹锁',
@@ -599,8 +599,8 @@ export default {
       }
       return typeMap[type] || type
     },
-    
-    getStatusName(status) {
+
+    getStatusName (status) {
       const statusMap = {
         online: '正常',
         offline: '离线',
@@ -609,28 +609,28 @@ export default {
       }
       return statusMap[status] || status
     },
-    
-    getBatteryColor(battery) {
+
+    getBatteryColor (battery) {
       if (battery > 60) return '#67C23A'
       if (battery > 30) return '#E6A23C'
       return '#F56C6C'
     },
-    
-    formatTime(time) {
+
+    formatTime (time) {
       const now = new Date()
       const diff = now - time
       if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
       if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
       return time.toLocaleDateString('zh-CN')
     },
-    
-    getMethodTagType(method) {
+
+    getMethodTagType (method) {
       const typeMap = {
-        '密码': '',
-        '指纹': 'success',
-        '人脸': 'warning',
-        '门禁卡': 'info',
-        '远程': 'danger'
+        密码: '',
+        指纹: 'success',
+        人脸: 'warning',
+        门禁卡: 'info',
+        远程: 'danger'
       }
       return typeMap[method] || ''
     }
@@ -1295,11 +1295,11 @@ export default {
   .building-nav {
     width: 200px;
   }
-  
+
   .detail-panel {
     width: 280px;
   }
-  
+
   .action-grid {
     grid-template-columns: 1fr;
   }

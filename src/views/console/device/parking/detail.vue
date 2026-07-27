@@ -106,8 +106,8 @@
                 <div class="info-col">
                   <label>信号强度</label>
                   <span class="value">
-                    <el-progress 
-                      :percentage="deviceInfo.signal" 
+                    <el-progress
+                      :percentage="deviceInfo.signal"
                       :color="signalColor"
                       :stroke-width="4"
                       :show-text="false"
@@ -194,8 +194,8 @@
               </el-button>
             </div>
             <div class="card-content no-padding">
-              <el-table 
-                :data="usageRecords" 
+              <el-table
+                :data="usageRecords"
                 style="width: 100%"
                 stripe
               >
@@ -214,8 +214,8 @@
                 </el-table-column>
                 <el-table-column prop="status" label="状态" width="80" align="center">
                   <template slot-scope="scope">
-                    <el-tag 
-                      :type="scope.row.status === '使用中' ? 'warning' : 'success'" 
+                    <el-tag
+                      :type="scope.row.status === '使用中' ? 'warning' : 'success'"
                       size="mini"
                     >
                       {{ scope.row.status }}
@@ -333,7 +333,7 @@
 <script>
 export default {
   name: 'ParkingDetail',
-  data() {
+  data () {
     return {
       // 车位基本信息
       parkingInfo: {
@@ -341,10 +341,10 @@ export default {
         area: 'B2层A区',
         type: '标准车位',
         status: 'occupied',
-        currentVehicle: '苏E12345',  // 修改为苏E车牌
+        currentVehicle: '苏E12345', // 修改为苏E车牌
         duration: 375 // 分钟
       },
-      
+
       // 设备信息
       deviceInfo: {
         lockId: 'LK-2024-0815',
@@ -354,21 +354,21 @@ export default {
         firmware: 'v2.3.1',
         signal: 85
       },
-      
+
       // 监控信息
       monitorInfo: {
         cameraId: 'CAM-B2-015',
         updateTime: '实时更新'
       },
       monitorImage: '', // 监控画面URL
-      
+
       // 控制状态
       controlState: {
         lockState: true,
         lightState: false,
         reserveState: true
       },
-      
+
       // 使用记录
       usageRecords: [
         {
@@ -396,7 +396,7 @@ export default {
           status: '已完成'
         }
       ],
-      
+
       // 统计数据
       statistics: {
         todayUsage: 5,
@@ -404,7 +404,7 @@ export default {
         monthlyIncome: '3,250',
         avgDuration: 3.5
       },
-      
+
       // 操作日志
       operationLogs: [
         {
@@ -423,98 +423,98 @@ export default {
           operator: '操作员:张三'
         }
       ],
-      
+
       // 告警信息
       alerts: [],
-      
+
       // 定时器
       timer: null,
       timeTimer: null,
       currentTime: ''
     }
   },
-  
+
   computed: {
-    statusText() {
+    statusText () {
       const statusMap = {
-        'occupied': '使用中',
-        'available': '空闲',
-        'reserved': '已预约',
-        'maintenance': '维护中'
+        occupied: '使用中',
+        available: '空闲',
+        reserved: '已预约',
+        maintenance: '维护中'
       }
       return statusMap[this.parkingInfo.status] || '未知'
     },
-    
-    parkingDurationText() {
+
+    parkingDurationText () {
       if (!this.parkingInfo.duration) return '--'
       const hours = Math.floor(this.parkingInfo.duration / 60)
       const minutes = this.parkingInfo.duration % 60
       return `${hours}小时${minutes}分钟`
     },
-    
-    currentFee() {
+
+    currentFee () {
       if (!this.parkingInfo.duration) return '0.00'
       const hours = Math.ceil(this.parkingInfo.duration / 60)
       const fee = Math.min(hours * 5, 50) // 5元/小时，封顶50元
       return fee.toFixed(2)
     },
-    
-    signalColor() {
+
+    signalColor () {
       const signal = this.deviceInfo.signal
       if (signal >= 80) return '#52C41A'
       if (signal >= 60) return '#FAAD14'
       return '#FF4D4F'
     }
   },
-  
-  mounted() {
+
+  mounted () {
     this.initData()
     this.startTimer()
     this.updateCurrentTime()
     this.startTimeTimer()
   },
-  
-  beforeDestroy() {
+
+  beforeDestroy () {
     this.clearTimer()
     this.clearTimeTimer()
   },
-  
+
   methods: {
-    initData() {
+    initData () {
       this.fetchParkingDetail()
       this.fetchDeviceStatus()
       this.fetchUsageRecords()
     },
-    
-    fetchParkingDetail() {
+
+    fetchParkingDetail () {
       console.log('获取车位详情')
     },
-    
-    fetchDeviceStatus() {
+
+    fetchDeviceStatus () {
       console.log('获取设备状态')
     },
-    
-    fetchUsageRecords() {
+
+    fetchUsageRecords () {
       console.log('获取使用记录')
     },
-    
-    startTimer() {
+
+    startTimer () {
       this.timer = setInterval(() => {
         if (this.parkingInfo.status === 'occupied') {
           this.parkingInfo.duration++
         }
       }, 60000)
     },
-    
-    clearTimer() {
+
+    clearTimer () {
       if (this.timer) {
         clearInterval(this.timer)
         this.timer = null
       }
     },
-    
+
     // 更新当前时间
-    updateCurrentTime() {
+    updateCurrentTime () {
       const now = new Date()
       const year = now.getFullYear()
       const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -522,40 +522,40 @@ export default {
       const hours = String(now.getHours()).padStart(2, '0')
       const minutes = String(now.getMinutes()).padStart(2, '0')
       const seconds = String(now.getSeconds()).padStart(2, '0')
-      
+
       this.currentTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     },
-    
+
     // 启动时间更新定时器
-    startTimeTimer() {
+    startTimeTimer () {
       this.timeTimer = setInterval(() => {
         this.updateCurrentTime()
       }, 1000)
     },
-    
+
     // 清除时间定时器
-    clearTimeTimer() {
+    clearTimeTimer () {
       if (this.timeTimer) {
         clearInterval(this.timeTimer)
         this.timeTimer = null
       }
     },
-    
+
     // 返回上一页
-    goBack() {
+    goBack () {
       this.$router.go(-1)
     },
-    
-    handleRefresh() {
+
+    handleRefresh () {
       this.$message.success('数据已刷新')
       this.initData()
     },
-    
-    exportData() {
+
+    exportData () {
       this.$message.success('正在导出...')
     },
-    
-    handleLockControl(val) {
+
+    handleLockControl (val) {
       const action = val ? '升起' : '降下'
       this.$confirm(`确认${action}地锁？`, '操作确认', {
         confirmButtonText: '确定',
@@ -567,18 +567,18 @@ export default {
         this.controlState.lockState = !val
       })
     },
-    
-    handleLightControl(val) {
+
+    handleLightControl (val) {
       const action = val ? '开启' : '关闭'
       this.$message.success(`照明已${action}`)
     },
-    
-    handleReserveControl(val) {
+
+    handleReserveControl (val) {
       const action = val ? '开放' : '关闭'
       this.$message.success(`预约已${action}`)
     },
-    
-    handleEmergencyRelease() {
+
+    handleEmergencyRelease () {
       this.$confirm('确认执行紧急释放？', '紧急操作', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -590,8 +590,8 @@ export default {
         this.controlState.lockState = false
       })
     },
-    
-    showMoreRecords() {
+
+    showMoreRecords () {
       this.$router.push('/parking/records/' + this.parkingInfo.code)
     }
   }
@@ -720,12 +720,12 @@ export default {
 }
 
 @keyframes pulse {
-  0%, 100% { 
-    opacity: 1; 
+  0%, 100% {
+    opacity: 1;
     box-shadow: 0 0 0 0 rgba(82, 196, 26, 0.4);
   }
-  50% { 
-    opacity: 0.7; 
+  50% {
+    opacity: 0.7;
     box-shadow: 0 0 0 6px rgba(82, 196, 26, 0);
   }
 }
@@ -1144,7 +1144,7 @@ export default {
   .info-row {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1156,26 +1156,26 @@ export default {
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .header-right {
     align-self: flex-end;
   }
-  
+
   .info-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .control-row {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .stat-grid {
     grid-template-columns: 1fr;
   }
@@ -1185,19 +1185,19 @@ export default {
   .main-content {
     padding: 12px;
   }
-  
+
   .page-header {
     padding: 12px 16px;
   }
-  
+
   .info-row {
     grid-template-columns: 1fr;
   }
-  
+
   .card-content {
     padding: 16px;
   }
-  
+
   .monitor-screen {
     height: 200px;
   }

@@ -9,9 +9,9 @@ const state = {
 }
 
 const mutations = {
-  TOGGLE_SIDEBAR: state => {
+  TOGGLE_SIDEBAR: (state, withoutAnimation = false) => {
     state.sidebar.opened = !state.sidebar.opened
-    state.sidebar.withoutAnimation = false
+    state.sidebar.withoutAnimation = !!withoutAnimation
     if (state.sidebar.opened) {
       Cookies.set('sidebarStatus', 1)
     } else {
@@ -23,17 +23,23 @@ const mutations = {
     state.sidebar.opened = false
     state.sidebar.withoutAnimation = withoutAnimation
   },
+  SET_WITHOUT_ANIMATION: (state, withoutAnimation) => {
+    state.sidebar.withoutAnimation = !!withoutAnimation
+  },
   TOGGLE_DEVICE: (state, device) => {
     state.device = device
   }
 }
 
 const actions = {
-  toggleSideBar ({ commit }) {
-    commit('TOGGLE_SIDEBAR')
+  toggleSideBar ({ commit }, payload = {}) {
+    commit('TOGGLE_SIDEBAR', payload.withoutAnimation)
   },
   closeSideBar ({ commit }, { withoutAnimation }) {
     commit('CLOSE_SIDEBAR', withoutAnimation)
+  },
+  setWithoutAnimation ({ commit }, withoutAnimation) {
+    commit('SET_WITHOUT_ANIMATION', withoutAnimation)
   },
   toggleDevice ({ commit }, device) {
     commit('TOGGLE_DEVICE', device)

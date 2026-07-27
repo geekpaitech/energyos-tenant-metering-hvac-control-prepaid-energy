@@ -1,6 +1,11 @@
 <template>
   <div class="visualization">
-    <div class="tj-Container">
+    <div v-if="!enableVisualization" class="empty-page">
+      <i class="el-icon-data-analysis empty-icon"></i>
+      <div class="empty-title">暂无数据</div>
+      <div class="empty-desc">楼层可视化数据暂未接入</div>
+    </div>
+    <div v-else class="tj-Container">
       <div class="floor-name">{{ floorName }}</div>
       <div class="base-data">
         <div class="base-data-item">
@@ -111,6 +116,7 @@ export default {
   },
   data () {
     return {
+      enableVisualization: false,
       treeData: [{
         id: 1,
         label: '一级 1',
@@ -161,17 +167,12 @@ export default {
     currentManagerId: {
       handler (newVal) {
         if (newVal) {
-          console.log(newVal, this.currentManager, 'newVal===')
-          // this.queryData.managerId = newVal;
-          // this.fetchTableData();
-          // this.getTenantPageTenant();
         }
       },
       immediate: true
     }
   },
   mounted () {
-    console.log(this.manager, this.currentManagerId, 'currentManager===')
   },
   methods: {
     filterNode (value, data) {
@@ -195,6 +196,30 @@ export default {
   height: 100%;
   padding: 16px;
   display: flex;
+  .empty-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+  }
+  .empty-icon {
+    font-size: 64px;
+    color: #c0c4cc;
+    margin-bottom: 12px;
+  }
+  .empty-title {
+    font-size: 16px;
+    color: #303133;
+    margin-bottom: 6px;
+  }
+  .empty-desc {
+    font-size: 13px;
+    color: #909399;
+  }
   .tj-Container {
     margin-top: 20px;
     box-sizing: border-box;

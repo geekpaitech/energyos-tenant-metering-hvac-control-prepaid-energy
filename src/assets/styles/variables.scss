@@ -204,10 +204,36 @@ body {
     background: var(--primary-gradient) !important;
     border: none !important;
     box-shadow: 0 2px 8px var(--button-shadow) !important;
-    
-    &:hover {
+    color: #fff !important;
+
+    &:hover,
+    &:focus {
+      color: #fff !important;
       transform: translateY(-1px) !important;
       box-shadow: 0 4px 12px var(--button-shadow) !important;
+    }
+
+    &.is-plain {
+      background: #fff !important;
+      color: var(--primary-color) !important;
+      border: 1px solid var(--primary-color) !important;
+      box-shadow: none !important;
+
+      &:hover,
+      &:focus {
+        background: rgba(59, 130, 246, 0.08) !important;
+        color: var(--primary-hover) !important;
+        transform: none !important;
+      }
+    }
+  }
+
+  &--success {
+    color: #fff !important;
+
+    &:hover,
+    &:focus {
+      color: #fff !important;
     }
   }
 }

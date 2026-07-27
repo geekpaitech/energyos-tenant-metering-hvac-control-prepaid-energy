@@ -3,26 +3,26 @@
     <!-- 筛选区域 -->
     <div class="filter-section">
       <el-form :inline="true" class="filter-form">
-        <el-form-item label="查询日期">
+        <el-form-item :label="$t('waterSankey.filterQueryDate')">
           <el-date-picker
             v-model="queryParams.queryDate"
             type="date"
-            placeholder="选择日期"
+            :placeholder="$t('waterSankey.phPickDate')"
             format="yyyy-MM-dd"
             value-format="yyyy-MM-dd"
             :picker-options="datePickerOptions"
             @change="handleDateChange"
           />
         </el-form-item>
-        
-        <el-form-item label="租户范围">
+
+        <el-form-item :label="$t('waterSankey.filterTenantScope')">
           <el-select
             v-model="queryParams.tenantIdList"
             multiple
             collapse-tags
             :collapse-tags-tooltip="true"
             filterable
-            placeholder="请选择租户"
+            :placeholder="$t('waterSankey.phTenant')"
             class="tenant-selector"
             :loading="tenantLoading"
             @change="handleTenantChange"
@@ -30,24 +30,24 @@
             <el-option
               v-for="tenant in tenantList"
               :key="tenant.tenantId"
-              :label="tenant.name"
+              :label="tenantOptionLabel(tenant)"
               :value="tenant.tenantId"
             >
               <span class="tenant-option">
-                <span class="tenant-name">{{ tenant.name }}</span>
+                <span class="tenant-name">{{ $displayBizHybrid(tenant.name) }}</span>
                 <span class="tenant-code" v-if="tenant.code">{{ tenant.code }}</span>
               </span>
             </el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item>
           <el-button type="primary" @click="handleQuery" :loading="loading">
-            查询
+            {{ $t('waterSankey.btnQuery') }}
           </el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button @click="handleReset">{{ $t('waterSankey.btnReset') }}</el-button>
           <el-button v-if="tenantList.length > 0" @click="handleSelectAll">
-            {{ isAllSelected ? '取消全选' : '全选' }}
+            {{ isAllSelected ? $t('waterSankey.btnDeselectAll') : $t('waterSankey.btnSelectAll') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -57,8 +57,8 @@
     <div class="overview-cards" v-if="!loading">
       <div class="overview-card">
         <div class="card-header">
-          <span class="card-title">总用水量</span>
-          <el-tooltip content="所有租户当日总用水量" placement="top">
+          <span class="card-title">{{ $t('waterSankey.cardTotalWater') }}</span>
+          <el-tooltip :content="$t('waterSankey.cardTotalWaterTip')" placement="top">
             <i class="el-icon-question"></i>
           </el-tooltip>
         </div>
@@ -67,66 +67,66 @@
           <span class="value-unit">m³</span>
         </div>
         <div class="card-footer">
-          <span class="sub-info">功能开发中</span>
+          <span class="sub-info">{{ $t('waterSankey.comingSoon') }}</span>
         </div>
       </div>
-      
+
       <div class="overview-card">
         <div class="card-header">
-          <span class="card-title">租户数量</span>
+          <span class="card-title">{{ $t('waterSankey.cardTenantCount') }}</span>
         </div>
         <div class="card-value">
           <span class="value-number">{{ activeTenantsCount }}</span>
-          <span class="value-unit">户</span>
+          <span class="value-unit">{{ $t('waterSankey.unitTenants') }}</span>
         </div>
         <div class="card-footer">
-          <span class="sub-info">已选租户</span>
+          <span class="sub-info">{{ $t('waterSankey.selectedTenants') }}</span>
         </div>
       </div>
-      
+
       <div class="overview-card">
         <div class="card-header">
-          <span class="card-title">平均用水</span>
+          <span class="card-title">{{ $t('waterSankey.cardAvgWater') }}</span>
         </div>
         <div class="card-value">
           <span class="value-number">--</span>
-          <span class="value-unit">m³/户</span>
+          <span class="value-unit">{{ $t('waterSankey.unitM3PerTenant') }}</span>
         </div>
         <div class="card-footer">
-          <span class="sub-info">功能开发中</span>
+          <span class="sub-info">{{ $t('waterSankey.comingSoon') }}</span>
         </div>
       </div>
-      
+
       <div class="overview-card">
         <div class="card-header">
-          <span class="card-title">用水分布</span>
+          <span class="card-title">{{ $t('waterSankey.cardDistribution') }}</span>
         </div>
         <div class="card-value">
           <div class="distribution-placeholder">
-            <span class="placeholder-text">数据开发中</span>
+            <span class="placeholder-text">{{ $t('waterSankey.dataInDevelopment') }}</span>
           </div>
         </div>
         <div class="card-footer">
-          <span class="sub-info">按类型分布</span>
+          <span class="sub-info">{{ $t('waterSankey.byTypeDistribution') }}</span>
         </div>
       </div>
     </div>
 
     <!-- 主图表区域 -->
-    <div class="chart-container" v-loading="loading" element-loading-text="数据加载中...">
+    <div class="chart-container" v-loading="loading" :element-loading-text="$t('waterSankey.loading')">
       <div class="chart-header" v-if="!loading">
         <div class="chart-title-group">
-          <h2 class="chart-title">用水流向分析</h2>
-          <p class="chart-subtitle">{{ queryParams.queryDate }} 租户用水分布桑基图</p>
+          <h2 class="chart-title">{{ $t('waterSankey.chartTitle') }}</h2>
+          <p class="chart-subtitle">{{ $t('waterSankey.chartSubtitle', { date: queryParams.queryDate }) }}</p>
         </div>
         <div class="chart-tools">
           <div class="chart-tips">
             <i class="el-icon-info"></i>
-            <span>该功能正在开发中，敬请期待</span>
+            <span>{{ $t('waterSankey.tipDeveloping') }}</span>
           </div>
         </div>
       </div>
-      
+
       <!-- 空状态展示 -->
       <div class="chart-empty-state" v-if="!loading">
         <div class="empty-content">
@@ -139,24 +139,24 @@
               </g>
             </g>
           </svg>
-          <h3 class="empty-title">功能开发中</h3>
-          <p class="empty-description">用水桑基图功能正在开发中，将为您提供完整的用水流向分析</p>
+          <h3 class="empty-title">{{ $t('waterSankey.emptyTitle') }}</h3>
+          <p class="empty-description">{{ $t('waterSankey.emptyDescription') }}</p>
           <div class="empty-features">
             <div class="feature-item">
               <i class="el-icon-check"></i>
-              <span>直观的用水流向展示</span>
+              <span>{{ $t('waterSankey.featureFlow') }}</span>
             </div>
             <div class="feature-item">
               <i class="el-icon-check"></i>
-              <span>详细的设备用水分析</span>
+              <span>{{ $t('waterSankey.featureDevice') }}</span>
             </div>
             <div class="feature-item">
               <i class="el-icon-check"></i>
-              <span>租户用水对比统计</span>
+              <span>{{ $t('waterSankey.featureCompare') }}</span>
             </div>
           </div>
           <el-button type="primary" plain disabled class="coming-soon-btn">
-            敬请期待
+            {{ $t('waterSankey.btnComingSoon') }}
           </el-button>
         </div>
       </div>
@@ -171,8 +171,8 @@ import moment from 'moment'
 
 export default {
   name: 'WaterSankeyChart',
-  
-  data() {
+
+  data () {
     return {
       queryParams: {
         queryDate: moment().subtract(1, 'days').format('YYYY-MM-DD'),
@@ -180,52 +180,56 @@ export default {
       },
       tenantList: [],
       tenantLoading: false,
-      loading: false,
-      datePickerOptions: {
-        disabledDate(time) {
+      loading: false
+    }
+  },
+
+  computed: {
+    ...mapGetters('manager', ['currentManagerId']),
+
+    datePickerOptions () {
+      const t = (k) => this.$t(`waterSankey.${k}`)
+      return {
+        disabledDate (time) {
           return time.getTime() > Date.now()
         },
         shortcuts: [{
-          text: '昨天',
-          onClick(picker) {
+          text: t('pickerYesterday'),
+          onClick (picker) {
             picker.$emit('pick', moment().subtract(1, 'days').toDate())
           }
         }, {
-          text: '前天',
-          onClick(picker) {
+          text: t('pickerDayBefore'),
+          onClick (picker) {
             picker.$emit('pick', moment().subtract(2, 'days').toDate())
           }
         }, {
-          text: '本周一',
-          onClick(picker) {
+          text: t('pickerMondayThisWeek'),
+          onClick (picker) {
             picker.$emit('pick', moment().startOf('week').add(1, 'days').toDate())
           }
         }, {
-          text: '上周一',
-          onClick(picker) {
+          text: t('pickerLastMonday'),
+          onClick (picker) {
             picker.$emit('pick', moment().startOf('week').subtract(6, 'days').toDate())
           }
         }]
       }
-    }
-  },
-  
-  computed: {
-    ...mapGetters('manager', ['currentManagerId']),
-    
-    isAllSelected() {
-      return this.tenantList.length > 0 && 
+    },
+
+    isAllSelected () {
+      return this.tenantList.length > 0 &&
              this.queryParams.tenantIdList.length === this.tenantList.length
     },
-    
-    activeTenantsCount() {
+
+    activeTenantsCount () {
       return this.queryParams.tenantIdList.length
     }
   },
-  
+
   watch: {
     currentManagerId: {
-      handler(val) {
+      handler (val) {
         if (val) {
           this.initializeData()
         }
@@ -233,24 +237,28 @@ export default {
       immediate: true
     }
   },
-  
-  mounted() {
+
+  mounted () {
     // 初始化
   },
-  
-  beforeDestroy() {
+
+  beforeDestroy () {
     // 清理
   },
-  
+
   methods: {
-    async initializeData() {
+    tenantOptionLabel (tenant) {
+      return this.$displayBizHybrid(tenant.name)
+    },
+
+    async initializeData () {
       await this.getTenantList()
       if (this.tenantList.length > 0) {
         this.queryParams.tenantIdList = this.tenantList.map(item => item.tenantId)
       }
     },
-    
-    async getTenantList() {
+
+    async getTenantList () {
       this.tenantLoading = true
       try {
         const { data } = await getSimpleTenantList({
@@ -259,49 +267,49 @@ export default {
         })
         this.tenantList = data || []
       } catch (error) {
-        this.$message.error('获取租户列表失败')
+        this.$apiError.notify(error, this.$t('waterSankey.msgTenantListFail'))
         console.error('获取租户列表失败:', error)
       } finally {
         this.tenantLoading = false
       }
     },
-    
-    handleSelectAll() {
+
+    handleSelectAll () {
       if (this.isAllSelected) {
         this.queryParams.tenantIdList = []
       } else {
         this.queryParams.tenantIdList = this.tenantList.map(item => item.tenantId)
       }
     },
-    
-    handleQuery() {
+
+    handleQuery () {
       if (!this.queryParams.queryDate) {
-        this.$message.warning('请选择查询日期')
+        this.$message.warning(this.$t('waterSankey.msgPickDate'))
         return
       }
-      
+
       if (this.queryParams.tenantIdList.length === 0) {
-        this.$message.warning('请选择租户')
+        this.$message.warning(this.$t('waterSankey.msgPickTenant'))
         return
       }
-      
+
       // 模拟加载
       this.loading = true
       setTimeout(() => {
         this.loading = false
-        this.$message.info('该功能正在开发中')
+        this.$message.info(this.$t('waterSankey.msgFeatureDeveloping'))
       }, 800)
     },
-    
-    handleDateChange() {
+
+    handleDateChange () {
       // 日期改变处理
     },
-    
-    handleTenantChange() {
+
+    handleTenantChange () {
       // 租户改变处理
     },
-    
-    handleReset() {
+
+    handleReset () {
       this.queryParams.queryDate = moment().subtract(1, 'days').format('YYYY-MM-DD')
       this.queryParams.tenantIdList = this.tenantList.map(item => item.tenantId)
     }
@@ -327,12 +335,12 @@ export default {
   .el-form-item {
     margin-bottom: 0;
     margin-right: 24px;
-    
+
     &:last-child {
       margin-right: 0;
     }
   }
-  
+
   ::v-deep .el-form-item__label {
     font-size: 13px;
     color: #666;
@@ -349,14 +357,14 @@ export default {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  
+
   .tenant-name {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  
+
   .tenant-code {
     font-size: 12px;
     color: #999;
@@ -376,60 +384,60 @@ export default {
 .overview-card {
   background: #fff;
   padding: 20px 24px;
-  
+
   .card-header {
     display: flex;
     align-items: center;
     margin-bottom: 12px;
-    
+
     .card-title {
       font-size: 13px;
       color: #666;
       font-weight: normal;
     }
-    
+
     .el-icon-question {
       font-size: 14px;
       color: #bfbfbf;
       margin-left: 6px;
       cursor: pointer;
-      
+
       &:hover {
         color: #1890ff;
       }
     }
   }
-  
+
   .card-value {
     display: flex;
     align-items: baseline;
     margin-bottom: 8px;
-    
+
     .value-number {
       font-size: 28px;
       font-weight: 500;
       color: #1c1c1c;
       line-height: 1;
     }
-    
+
     .value-unit {
       font-size: 14px;
       color: #8c8c8c;
       margin-left: 6px;
     }
   }
-  
+
   .card-footer {
     display: flex;
     align-items: center;
     font-size: 12px;
     color: #8c8c8c;
-    
+
     .sub-info {
       color: #999;
     }
   }
-  
+
   .distribution-placeholder {
     display: flex;
     align-items: center;
@@ -437,7 +445,7 @@ export default {
     height: 32px;
     background: #f5f5f5;
     border-radius: 4px;
-    
+
     .placeholder-text {
       font-size: 12px;
       color: #bfbfbf;
@@ -469,7 +477,7 @@ export default {
     color: #1c1c1c;
     margin: 0 0 4px 0;
   }
-  
+
   .chart-subtitle {
     font-size: 13px;
     color: #8c8c8c;
@@ -480,7 +488,7 @@ export default {
 .chart-tools {
   display: flex;
   align-items: center;
-  
+
   .chart-tips {
     display: flex;
     align-items: center;
@@ -491,7 +499,7 @@ export default {
     background: #fffbe6;
     border: 1px solid #ffe58f;
     border-radius: 4px;
-    
+
     .el-icon-info {
       font-size: 14px;
     }
@@ -547,7 +555,7 @@ export default {
   gap: 8px;
   font-size: 13px;
   color: #666;
-  
+
   .el-icon-check {
     color: #52c41a;
     font-size: 16px;
@@ -557,7 +565,7 @@ export default {
 
 .coming-soon-btn {
   min-width: 120px;
-  
+
   &.is-disabled {
     cursor: not-allowed;
     opacity: 0.6;
@@ -571,30 +579,30 @@ export default {
       font-size: 13px;
     }
   }
-  
+
   .el-date-editor {
     .el-input__inner {
       font-size: 13px;
     }
-    
+
     &.el-input {
       width: 160px;
     }
   }
-  
+
   .el-button {
     font-size: 13px;
-    
+
     &--primary {
       background: #1890ff;
       border-color: #1890ff;
-      
+
       &:hover:not(.is-disabled) {
         background: #40a9ff;
         border-color: #40a9ff;
       }
     }
-    
+
     &--default {
       &:hover {
         color: #1890ff;
@@ -602,11 +610,11 @@ export default {
       }
     }
   }
-  
+
   .el-loading-mask {
     background-color: rgba(255, 255, 255, 0.95);
   }
-  
+
   .el-loading-spinner {
     .el-loading-text {
       color: #666;
@@ -628,11 +636,11 @@ export default {
       margin-bottom: 12px;
     }
   }
-  
+
   .tenant-selector {
     width: 280px;
   }
-  
+
   .chart-container {
     min-height: 500px;
   }
@@ -642,25 +650,25 @@ export default {
   .overview-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .chart-container {
     margin: 12px;
   }
-  
+
   .chart-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .empty-icon {
     width: 120px;
   }
-  
+
   .empty-title {
     font-size: 18px;
   }
-  
+
   .empty-description {
     font-size: 13px;
   }

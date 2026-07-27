@@ -1,9 +1,9 @@
 import request from '@/utils/request'
 
 // 获取用户权限菜单
-export function getMenuRoleList(role) {
+export function getMenuRoleList (role) {
   return request({
-    url: '/api/ebc-evc/evcMenuRole/getMenuRoleListByRole',
+    url: '/api/ebc-content/menuRole/getMenuRoleListByRole',
     method: 'post',
     params: {
       role: role,

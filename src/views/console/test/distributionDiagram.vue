@@ -1,6 +1,12 @@
 <template>
   <div class="car-wrapper">
-       <div class="demo-badge">
+    <div v-if="!enableDistributionDiagram" class="empty-page">
+      <i class="el-icon-data-analysis empty-icon"></i>
+      <div class="empty-title">暂无数据</div>
+      <div class="empty-desc">配电图数据暂未接入</div>
+    </div>
+    <template v-else>
+      <div class="demo-badge">
       <div class="demo-badge-content">
         <div class="demo-icon">
           <i class="el-icon-view"></i>
@@ -181,11 +187,13 @@
         </el-tab-pane>
       </el-tabs>
     </el-dialog>
+    </template>
   </div>
 </template>
 
 <script>
 import Konva from 'konva'
+import { mapGetters } from 'vuex'
 import svgData from './svgInfo.json'
 import currentData from './currentVal.json'
 export default {
@@ -233,13 +241,35 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['currentManager']),
+    enableDistributionDiagram () {
+      const name =
+        (this.currentManager && (this.currentManager.managerName || this.currentManager.name)) ||
+        ''
+      return String(name).includes('数字物宇')
+    }
     // svgScale () {
     //   const containerWidth = this.$refs.svgEnergyContainer?.offsetWidth || this.svgWidth
     //   return containerWidth / this.svgWidth // 基于SVG原始宽度1149计算
     // }
   },
+  watch: {
+    enableDistributionDiagram: {
+      immediate: true,
+      handler (enabled) {
+        if (enabled) {
+          this.$nextTick(() => this.initKonva())
+        } else {
+          window.removeEventListener('resize', this.applyScale)
+          if (this.konvaStage) {
+            this.konvaStage.destroy()
+            this.konvaStage = null
+          }
+        }
+      }
+    }
+  },
   mounted () {
-    this.initKonva()
   },
   beforeDestroy () {
     window.removeEventListener('resize', this.applyScale)
@@ -649,6 +679,33 @@ export default {
     height: 100vh;
   }
 }
+
+.empty-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: #c0c4cc;
+  margin-bottom: 12px;
+}
+
+.empty-title {
+  font-size: 16px;
+  color: #303133;
+  margin-bottom: 6px;
+}
+
+.empty-desc {
+  font-size: 13px;
+  color: #909399;
+}
+
 .demo-badge {
   position: fixed;
   right: 30px;

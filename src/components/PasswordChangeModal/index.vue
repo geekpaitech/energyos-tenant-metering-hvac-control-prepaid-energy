@@ -47,88 +47,88 @@
 </template>
 
 <script>
-import { changePassword } from "@/api/user";
+import { changePassword } from '@/api/user'
 
 export default {
-  name: "PasswordChangeModal",
+  name: 'PasswordChangeModal',
   props: {
     visible: {
       type: Boolean,
-      default: false,
-    },
+      default: false
+    }
   },
   computed: {
     dialogVisible: {
-      get() {
-        return this.visible;
+      get () {
+        return this.visible
       },
-      set(val) {
-        this.$emit("update:visible", val);
-      },
-    },
+      set (val) {
+        this.$emit('update:visible', val)
+      }
+    }
   },
-  data() {
+  data () {
     const validateConfirmPassword = (rule, value, callback) => {
       if (value !== this.form.newPassword) {
-        callback(new Error("两次输入的密码不一致"));
+        callback(new Error('两次输入的密码不一致'))
       } else {
-        callback();
+        callback()
       }
-    };
+    }
     return {
       loading: false,
       form: {
-        oldPassword: "",
-        newPassword: "",
-        confirmPassword: "",
+        oldPassword: '',
+        newPassword: '',
+        confirmPassword: ''
       },
       rules: {
         oldPassword: [
-          { required: true, message: "请输入旧密码", trigger: "blur" },
+          { required: true, message: '请输入旧密码', trigger: 'blur' }
         ],
         newPassword: [
-          { required: true, message: "请输入新密码", trigger: "blur" },
-          { min: 6, message: "密码长度不能少于6位", trigger: "blur" },
+          { required: true, message: '请输入新密码', trigger: 'blur' },
+          { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
         ],
         confirmPassword: [
-          { required: true, message: "请再次输入新密码", trigger: "blur" },
-          { validator: validateConfirmPassword, trigger: "blur" },
-        ],
-      },
-    };
+          { required: true, message: '请再次输入新密码', trigger: 'blur' },
+          { validator: validateConfirmPassword, trigger: 'blur' }
+        ]
+      }
+    }
   },
   methods: {
-    close() {
-      this.$emit("update:visible", false);
+    close () {
+      this.$emit('update:visible', false)
     },
-    handleClose() {
-      this.$refs.form.resetFields();
-      this.close();
+    handleClose () {
+      this.$refs.form.resetFields()
+      this.close()
     },
-    handleSubmit() {
+    handleSubmit () {
       this.$refs.form.validate((valid) => {
         if (valid) {
-          this.loading = true;
-          const { oldPassword, newPassword } = this.form;
+          this.loading = true
+          const { oldPassword, newPassword } = this.form
           changePassword({ oldPassword, newPassword })
             .then((res) => {
               if (res.code === 200) {
-                this.$message.success("密码修改成功，请重新登录");
-                this.close();
-                this.$store.dispatch("user/logout").then(() => {
+                this.$message.success('密码修改成功，请重新登录')
+                this.close()
+                this.$store.dispatch('user/logout').then(() => {
                   // 强制刷新页面，确保路由和状态彻底重置
-                  location.reload();
-                });
+                  location.reload()
+                })
               } else {
-                this.$message.error(res.msg || "修改失败");
+                this.$message.error(res.msg || '修改失败')
               }
             })
             .finally(() => {
-              this.loading = false;
-            });
+              this.loading = false
+            })
         }
-      });
-    },
-  },
-};
+      })
+    }
+  }
+}
 </script>

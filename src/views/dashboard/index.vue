@@ -12,7 +12,7 @@
           <span class="stat-label">待处理报警</span>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon offline">
           <i class="icon-offline"></i>
@@ -23,7 +23,7 @@
           <span class="stat-label">离线设备数</span>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon finance">
           <i class="icon-finance"></i>
@@ -34,7 +34,7 @@
           <span class="stat-label">待审核单据</span>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon tenant">
           <i class="icon-tenant"></i>
@@ -75,7 +75,7 @@
             </h3>
             <i class="icon-arrow-right"></i>
           </div>
-          
+
           <div class="notification-list">
             <div class="notification-item urgent">
               <div class="notification-icon">
@@ -87,7 +87,7 @@
                 <div class="notification-time">5分钟前</div>
               </div>
             </div>
-            
+
             <div class="notification-item warning">
               <div class="notification-icon">
                 <i class="icon-debt"></i>
@@ -133,7 +133,7 @@
               </h3>
               <i class="icon-arrow-right"></i>
             </div>
-            
+
             <div class="monitor-list">
               <div class="monitor-item alarm">
                 <div class="monitor-status"></div>
@@ -143,7 +143,7 @@
                 </div>
                 <span class="monitor-time">刚刚</span>
               </div>
-              
+
               <div class="monitor-item alarm">
                 <div class="monitor-status"></div>
                 <div class="monitor-content">
@@ -181,7 +181,7 @@
               </h3>
               <i class="icon-arrow-right"></i>
             </div>
-            
+
             <div class="finance-list">
               <div class="finance-item">
                 <div class="finance-type pending">充值审核</div>
@@ -190,7 +190,7 @@
                   <span class="finance-amount">+50,000元</span>
                 </div>
               </div>
-              
+
               <div class="finance-item">
                 <div class="finance-type processing">提现审核</div>
                 <div class="finance-content">
@@ -224,7 +224,7 @@
             <h3>租户管理</h3>
             <i class="icon-more"></i>
           </div>
-          
+
           <div class="tenant-list">
             <div class="tenant-item">
               <div class="tenant-avatar">A301</div>
@@ -234,7 +234,7 @@
               </div>
               <div class="tenant-status normal">正常</div>
             </div>
-            
+
             <div class="tenant-item">
               <div class="tenant-avatar debt">B205</div>
               <div class="tenant-info">
@@ -272,7 +272,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="activity-list">
             <div class="activity-item">
               <div class="activity-content">
@@ -282,7 +282,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="activity-item">
               <div class="activity-content">
                 <span class="activity-text">水费账单已生成，涉及租户210户，预计收费28,960元</span>
@@ -291,7 +291,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="activity-item">
               <div class="activity-content">
                 <span class="activity-text">设备巡检完成，发现异常设备8台，已安排维修</span>
@@ -323,7 +323,7 @@
               <span>2024年4月15日</span>
             </div>
           </div>
-          
+
           <div class="overview-stats">
             <div class="overview-item">
               <div class="overview-number">1,258</div>
@@ -349,7 +349,7 @@
           <div class="actions-header">
             <h3>快速操作</h3>
           </div>
-          
+
           <div class="actions-grid">
             <div class="action-item">
               <div class="action-icon recharge">
@@ -357,21 +357,21 @@
               </div>
               <span class="action-name">租户充值</span>
             </div>
-            
+
             <div class="action-item">
               <div class="action-icon bill">
                 <i class="icon-bill"></i>
               </div>
               <span class="action-name">生成账单</span>
             </div>
-            
+
             <div class="action-item">
               <div class="action-icon device">
                 <i class="icon-device"></i>
               </div>
               <span class="action-name">设备管理</span>
             </div>
-            
+
             <div class="action-item">
               <div class="action-icon report">
                 <i class="icon-report"></i>
@@ -400,7 +400,7 @@
           <div class="status-header">
             <h3>设备状态</h3>
           </div>
-          
+
           <div class="status-list">
             <div class="status-item">
               <div class="status-indicator normal"></div>
@@ -409,7 +409,7 @@
                 <div class="status-desc">32台在线 / 2台离线</div>
               </div>
             </div>
-            
+
             <div class="status-item">
               <div class="status-indicator warning"></div>
               <div class="status-content">
@@ -417,7 +417,7 @@
                 <div class="status-desc">28台在线 / 4台离线</div>
               </div>
             </div>
-            
+
             <div class="status-item">
               <div class="status-indicator normal"></div>
               <div class="status-content">
@@ -425,7 +425,7 @@
                 <div class="status-desc">45台在线 / 1台离线</div>
               </div>
             </div>
-            
+
             <div class="status-item">
               <div class="status-indicator alarm"></div>
               <div class="status-content">
@@ -441,7 +441,7 @@
           <div class="info-header">
             <h3>系统信息</h3>
           </div>
-          
+
           <div class="info-content">
             <div class="info-item">
               <span class="info-label">系统版本</span>
@@ -465,7 +465,7 @@
 <script>
 export default {
   name: 'MeterOADashboard',
-  data() {
+  data () {
     return {
       currentDate: new Date(),
       notifications: [
@@ -524,22 +524,22 @@ export default {
       ]
     }
   },
-  
+
   methods: {
-    handleNotificationClick(notification) {
-      console.log('Notification clicked:', notification);
-    },
-    
-    handleDeviceClick(device) {
-      console.log('Device clicked:', device);
-    },
-    
-    handleTenantClick(tenant) {
-      console.log('Tenant clicked:', tenant);
+    handleNotificationClick (notification) {
+      console.log('Notification clicked:', notification)
     },
 
-    handleQuickAction(action) {
-      console.log('Quick action:', action);
+    handleDeviceClick (device) {
+      console.log('Device clicked:', device)
+    },
+
+    handleTenantClick (tenant) {
+      console.log('Tenant clicked:', tenant)
+    },
+
+    handleQuickAction (action) {
+      console.log('Quick action:', action)
     }
   }
 }
@@ -550,14 +550,14 @@ export default {
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
   padding: 24px;
-  
+
   // 统计卡片区域
   .stats-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr) 1.5fr;
     gap: 20px;
     margin-bottom: 24px;
-    
+
     .stat-card {
       background: white;
       border-radius: 8px;
@@ -568,11 +568,11 @@ export default {
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       border: 1px solid #e5e7eb;
       transition: box-shadow 0.2s ease;
-      
+
       &:hover {
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       }
-      
+
       .stat-icon {
         width: 48px;
         height: 48px;
@@ -580,32 +580,32 @@ export default {
         display: flex;
         align-items: center;
         justify-content: center;
-        
+
         &.alarm {
           background: #fef2f2;
           color: #dc2626;
         }
-        
+
         &.offline {
           background: #fef3c7;
           color: #d97706;
         }
-        
+
         &.finance {
           background: #eff6ff;
           color: #2563eb;
         }
-        
+
         &.tenant {
           background: #f0f9ff;
           color: #0284c7;
         }
-        
+
         i {
           font-size: 20px;
         }
       }
-      
+
       .stat-content {
         h3 {
           font-size: 14px;
@@ -613,7 +613,7 @@ export default {
           color: #6b7280;
           margin: 0 0 4px 0;
         }
-        
+
         .stat-number {
           font-size: 28px;
           font-weight: 600;
@@ -621,14 +621,14 @@ export default {
           margin: 0 0 2px 0;
           line-height: 1;
         }
-        
+
         .stat-label {
           font-size: 12px;
           color: #9ca3af;
         }
       }
     }
-    
+
     .revenue-card {
       background: #374151;
       border-radius: 8px;
@@ -637,14 +637,14 @@ export default {
       position: relative;
       overflow: hidden;
       border: 1px solid #4b5563;
-      
+
       .revenue-icon {
         font-size: 24px;
         font-weight: 600;
         margin-bottom: 8px;
         color: #e5e7eb;
       }
-      
+
       .revenue-content {
         h3 {
           font-size: 14px;
@@ -652,21 +652,21 @@ export default {
           color: #d1d5db;
           font-weight: 500;
         }
-        
+
         .revenue-amount {
           font-size: 24px;
           font-weight: 600;
           margin-bottom: 4px;
           color: white;
         }
-        
+
         .revenue-growth {
           font-size: 12px;
           color: #10b981;
           font-weight: 500;
         }
       }
-      
+
       .revenue-chart {
         position: absolute;
         bottom: 0;
@@ -677,18 +677,18 @@ export default {
       }
     }
   }
-  
+
   // 主要内容区域
   .main-content {
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: 24px;
-    
+
     .left-content {
       display: flex;
       flex-direction: column;
       gap: 24px;
-      
+
       // 系统通知
       .notification-section {
         background: white;
@@ -696,13 +696,13 @@ export default {
         padding: 24px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         border: 1px solid #e5e7eb;
-        
+
         .section-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 20px;
-          
+
           h3 {
             display: flex;
             align-items: center;
@@ -711,12 +711,12 @@ export default {
             font-weight: 600;
             color: #111827;
             margin: 0;
-            
+
             i {
               font-size: 16px;
               color: #6b7280;
             }
-            
+
             .count {
               background: #374151;
               color: white;
@@ -726,18 +726,18 @@ export default {
               font-weight: 500;
             }
           }
-          
+
           i.icon-arrow-right {
             color: #9ca3af;
             cursor: pointer;
             transition: color 0.2s ease;
-            
+
             &:hover {
               color: #6b7280;
             }
           }
         }
-        
+
         .notification-list {
           .notification-item {
             display: flex;
@@ -750,15 +750,15 @@ export default {
             border-radius: 6px;
             margin: 0 -12px;
             padding: 16px 12px;
-            
+
             &:hover {
               background: #f9fafb;
             }
-            
+
             &:last-child {
               border-bottom: none;
             }
-            
+
             .notification-icon {
               width: 36px;
               height: 36px;
@@ -767,49 +767,49 @@ export default {
               align-items: center;
               justify-content: center;
               flex-shrink: 0;
-              
+
               i {
                 font-size: 16px;
               }
             }
-            
+
             &.urgent .notification-icon {
               background: #dcfce7;
               color: #16a34a;
             }
-            
+
             &.warning .notification-icon {
               background: #fef3c7;
               color: #d97706;
             }
-            
+
             &.info .notification-icon {
               background: #eff6ff;
               color: #2563eb;
             }
-            
+
             &.success .notification-icon {
               background: #f0f9ff;
               color: #0284c7;
             }
-            
+
             .notification-content {
               flex: 1;
-              
+
               .notification-title {
                 font-size: 14px;
                 font-weight: 500;
                 color: #111827;
                 margin-bottom: 4px;
               }
-              
+
               .notification-desc {
                 font-size: 13px;
                 color: #6b7280;
                 line-height: 1.4;
                 margin-bottom: 4px;
               }
-              
+
               .notification-time {
                 font-size: 12px;
                 color: #9ca3af;
@@ -818,26 +818,26 @@ export default {
           }
         }
       }
-      
+
       // 设备监控和财务管理
       .monitor-section {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 24px;
-        
+
         .monitor-column, .finance-column {
           background: white;
           border-radius: 8px;
           padding: 24px;
           box-shadow: 0 1px 2px rgba(0,0,0,0.05);
           border: 1px solid #e5e7eb;
-          
+
           .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 20px;
-            
+
             h3 {
               display: flex;
               align-items: center;
@@ -846,24 +846,24 @@ export default {
               font-weight: 600;
               color: #111827;
               margin: 0;
-              
+
               i {
                 font-size: 16px;
                 color: #6b7280;
               }
             }
-            
+
             i.icon-arrow-right {
               color: #9ca3af;
               cursor: pointer;
               transition: color 0.2s ease;
-              
+
               &:hover {
                 color: #6b7280;
               }
             }
           }
-          
+
           .monitor-list {
             .monitor-item {
               display: flex;
@@ -876,37 +876,37 @@ export default {
               border-radius: 4px;
               margin: 0 -8px;
               padding: 12px 8px;
-              
+
               &:hover {
                 background: #f9fafb;
               }
-              
+
               &:last-child {
                 border-bottom: none;
               }
-              
+
               .monitor-status {
                 width: 6px;
                 height: 6px;
                 border-radius: 50%;
                 flex-shrink: 0;
               }
-              
+
               &.alarm .monitor-status {
                 background: #dc2626;
               }
-              
+
               &.warning .monitor-status {
                 background: #d97706;
               }
-              
+
               &.success .monitor-status {
                 background: #16a34a;
               }
-              
+
               .monitor-content {
                 flex: 1;
-                
+
                 .monitor-title {
                   display: block;
                   font-size: 13px;
@@ -914,20 +914,20 @@ export default {
                   color: #111827;
                   margin-bottom: 2px;
                 }
-                
+
                 .monitor-desc {
                   font-size: 12px;
                   color: #6b7280;
                 }
               }
-              
+
               .monitor-time {
                 font-size: 11px;
                 color: #9ca3af;
               }
             }
           }
-          
+
           .finance-list {
             .finance-item {
               display: flex;
@@ -940,15 +940,15 @@ export default {
               border-radius: 4px;
               margin: 0 -8px;
               padding: 12px 8px;
-              
+
               &:hover {
                 background: #f9fafb;
               }
-              
+
               &:last-child {
                 border-bottom: none;
               }
-              
+
               .finance-type {
                 padding: 4px 8px;
                 border-radius: 4px;
@@ -956,29 +956,29 @@ export default {
                 font-weight: 500;
                 flex-shrink: 0;
                 border: 1px solid;
-                
+
                 &.pending {
                   background: #fffbeb;
                   color: #d97706;
                   border-color: #fed7aa;
                 }
-                
+
                 &.processing {
                   background: #eff6ff;
                   color: #2563eb;
                   border-color: #bfdbfe;
                 }
-                
+
                 &.completed {
                   background: #f0fdf4;
                   color: #16a34a;
                   border-color: #bbf7d0;
                 }
               }
-              
+
               .finance-content {
                 flex: 1;
-                
+
                 .finance-title {
                   display: block;
                   font-size: 13px;
@@ -986,7 +986,7 @@ export default {
                   margin-bottom: 2px;
                   font-weight: 500;
                 }
-                
+
                 .finance-amount {
                   font-size: 12px;
                   font-weight: 600;
@@ -997,7 +997,7 @@ export default {
           }
         }
       }
-      
+
       // 租户管理
       .tenant-section {
         background: white;
@@ -1005,31 +1005,31 @@ export default {
         padding: 24px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         border: 1px solid #e5e7eb;
-        
+
         .section-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 20px;
-          
+
           h3 {
             font-size: 16px;
             font-weight: 600;
             color: #111827;
             margin: 0;
           }
-          
+
           i {
             color: #9ca3af;
             cursor: pointer;
             transition: color 0.2s ease;
-            
+
             &:hover {
               color: #6b7280;
             }
           }
         }
-        
+
         .tenant-list {
           .tenant-item {
             display: flex;
@@ -1042,15 +1042,15 @@ export default {
             border-radius: 6px;
             margin: 0 -12px;
             padding: 16px 12px;
-            
+
             &:hover {
               background: #f9fafb;
             }
-            
+
             &:last-child {
               border-bottom: none;
             }
-            
+
             .tenant-avatar {
               width: 44px;
               height: 44px;
@@ -1062,52 +1062,52 @@ export default {
               font-weight: 600;
               color: white;
               background: #6b7280;
-              
+
               &.debt {
                 background: #dc2626;
               }
-              
+
               &.offline {
                 background: #d97706;
               }
             }
-            
+
             .tenant-info {
               flex: 1;
-              
+
               h4 {
                 font-size: 14px;
                 font-weight: 500;
                 color: #111827;
                 margin: 0 0 4px 0;
               }
-              
+
               p {
                 font-size: 12px;
                 color: #6b7280;
                 margin: 0;
               }
             }
-            
+
             .tenant-status {
               padding: 4px 8px;
               border-radius: 4px;
               font-size: 11px;
               font-weight: 500;
               border: 1px solid;
-              
+
               &.normal {
                 background: #f0fdf4;
                 color: #16a34a;
                 border-color: #bbf7d0;
               }
-              
+
               &.debt {
                 background: #fef2f2;
                 color: #dc2626;
                 border-color: #fecaca;
               }
-              
+
               &.offline {
                 background: #fffbeb;
                 color: #d97706;
@@ -1117,13 +1117,13 @@ export default {
           }
         }
       }
-      
+
       // 数据统计
       .stats-section {
         display: grid;
         grid-template-columns: 280px 1fr;
         gap: 24px;
-        
+
         .stats-card {
           background: white;
           border-radius: 8px;
@@ -1131,50 +1131,50 @@ export default {
           box-shadow: 0 1px 2px rgba(0,0,0,0.05);
           border: 1px solid #e5e7eb;
           text-align: center;
-          
+
           .stats-illustration {
             margin-bottom: 16px;
-            
+
             i {
               font-size: 40px;
               color: #6b7280;
             }
           }
-          
+
           h4 {
             font-size: 14px;
             font-weight: 600;
             color: #111827;
             margin: 0 0 16px 0;
           }
-          
+
           .stats-chart {
             display: flex;
             align-items: flex-end;
             justify-content: center;
             gap: 6px;
             height: 80px;
-            
+
             .chart-bar {
               width: 12px;
               background: #6b7280;
               border-radius: 2px;
               transition: background-color 0.2s ease;
-              
+
               &:hover {
                 background: #374151;
               }
             }
           }
         }
-        
+
         .activity-list {
           background: white;
           border-radius: 8px;
           padding: 24px;
           box-shadow: 0 1px 2px rgba(0,0,0,0.05);
           border: 1px solid #e5e7eb;
-          
+
           .activity-item {
             padding: 16px 0;
             border-bottom: 1px solid #f3f4f6;
@@ -1183,15 +1183,15 @@ export default {
             border-radius: 4px;
             margin: 0 -12px;
             padding: 16px 12px;
-            
+
             &:hover {
               background: #f9fafb;
             }
-            
+
             &:last-child {
               border-bottom: none;
             }
-            
+
             .activity-content {
               .activity-text {
                 display: block;
@@ -1200,7 +1200,7 @@ export default {
                 line-height: 1.5;
                 margin-bottom: 8px;
               }
-              
+
               .activity-stats {
                 span {
                   display: flex;
@@ -1210,11 +1210,11 @@ export default {
                   color: #6b7280;
                   cursor: pointer;
                   transition: color 0.2s ease;
-                  
+
                   &:hover {
                     color: #374151;
                   }
-                  
+
                   i {
                     font-size: 12px;
                   }
@@ -1225,13 +1225,13 @@ export default {
         }
       }
     }
-    
+
     // 右侧边栏
     .right-sidebar {
       display: flex;
       flex-direction: column;
       gap: 24px;
-      
+
       // 今日概览
       .today-overview {
         background: white;
@@ -1239,20 +1239,20 @@ export default {
         padding: 24px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         border: 1px solid #e5e7eb;
-        
+
         .overview-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 20px;
-          
+
           h3 {
             font-size: 16px;
             font-weight: 600;
             color: #111827;
             margin: 0;
           }
-          
+
           .date-info {
             span {
               font-size: 12px;
@@ -1260,12 +1260,12 @@ export default {
             }
           }
         }
-        
+
         .overview-stats {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 16px;
-          
+
           .overview-item {
             text-align: center;
             padding: 16px;
@@ -1273,18 +1273,18 @@ export default {
             border-radius: 6px;
             border: 1px solid #f3f4f6;
             transition: border-color 0.2s ease;
-            
+
             &:hover {
               border-color: #e5e7eb;
             }
-            
+
             .overview-number {
               font-size: 20px;
               font-weight: 600;
               color: #111827;
               margin-bottom: 4px;
             }
-            
+
             .overview-label {
               font-size: 11px;
               color: #6b7280;
@@ -1293,7 +1293,7 @@ export default {
           }
         }
       }
-      
+
       // 快速操作
       .quick-actions {
         background: white;
@@ -1301,10 +1301,10 @@ export default {
         padding: 24px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         border: 1px solid #e5e7eb;
-        
+
         .actions-header {
           margin-bottom: 20px;
-          
+
           h3 {
             font-size: 16px;
             font-weight: 600;
@@ -1312,12 +1312,12 @@ export default {
             margin: 0;
           }
         }
-        
+
         .actions-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 12px;
-          
+
           .action-item {
             display: flex;
             flex-direction: column;
@@ -1327,12 +1327,12 @@ export default {
             cursor: pointer;
             transition: all 0.2s ease;
             border: 1px solid #f3f4f6;
-            
+
             &:hover {
               border-color: #e5e7eb;
               background: #f9fafb;
             }
-            
+
             .action-icon {
               width: 36px;
               height: 36px;
@@ -1341,42 +1341,42 @@ export default {
               align-items: center;
               justify-content: center;
               margin-bottom: 8px;
-              
+
               &.recharge {
                 background: #f0fdf4;
                 color: #16a34a;
               }
-              
+
               &.bill {
                 background: #eff6ff;
                 color: #2563eb;
               }
-              
+
               &.device {
                 background: #fffbeb;
                 color: #d97706;
               }
-              
+
               &.report {
                 background: #f8fafc;
                 color: #64748b;
               }
-              
+
               &.maintenance {
                 background: #fef2f2;
                 color: #dc2626;
               }
-              
+
               &.audit {
                 background: #f0f9ff;
                 color: #0284c7;
               }
-              
+
               i {
                 font-size: 16px;
               }
             }
-            
+
             .action-name {
               font-size: 12px;
               color: #111827;
@@ -1386,7 +1386,7 @@ export default {
           }
         }
       }
-      
+
       // 设备状态
       .device-status {
         background: white;
@@ -1394,10 +1394,10 @@ export default {
         padding: 24px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         border: 1px solid #e5e7eb;
-        
+
         .status-header {
           margin-bottom: 20px;
-          
+
           h3 {
             font-size: 16px;
             font-weight: 600;
@@ -1405,7 +1405,7 @@ export default {
             margin: 0;
           }
         }
-        
+
         .status-list {
           .status-item {
             display: flex;
@@ -1418,33 +1418,33 @@ export default {
             border-radius: 4px;
             margin: 0 -8px;
             padding: 12px 8px;
-            
+
             &:hover {
               background: #f9fafb;
             }
-            
+
             &:last-child {
               border-bottom: none;
             }
-            
+
             .status-indicator {
               width: 6px;
               height: 6px;
               border-radius: 50%;
-              
+
               &.normal {
                 background: #16a34a;
               }
-              
+
               &.warning {
                 background: #d97706;
               }
-              
+
               &.alarm {
                 background: #dc2626;
               }
             }
-            
+
             .status-content {
               .status-title {
                 font-size: 13px;
@@ -1452,7 +1452,7 @@ export default {
                 color: #111827;
                 margin-bottom: 2px;
               }
-              
+
               .status-desc {
                 font-size: 12px;
                 color: #6b7280;
@@ -1461,7 +1461,7 @@ export default {
           }
         }
       }
-      
+
       // 系统信息
       .system-info {
         background: white;
@@ -1469,10 +1469,10 @@ export default {
         padding: 24px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         border: 1px solid #e5e7eb;
-        
+
         .info-header {
           margin-bottom: 20px;
-          
+
           h3 {
             font-size: 16px;
             font-weight: 600;
@@ -1480,19 +1480,19 @@ export default {
             margin: 0;
           }
         }
-        
+
         .info-content {
           .info-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 0;
-            
+
             .info-label {
               font-size: 12px;
               color: #6b7280;
             }
-            
+
             .info-value {
               font-size: 12px;
               color: #111827;
@@ -1533,21 +1533,21 @@ export default {
   .oa-dashboard {
     .main-content {
       grid-template-columns: 1fr;
-      
+
       .right-sidebar {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 24px;
-        
+
         .today-overview {
           grid-column: 1 / -1;
         }
       }
     }
-    
+
     .stats-cards {
       grid-template-columns: repeat(3, 1fr) 1.5fr;
-      
+
       .stat-card:nth-child(4) {
         display: none;
       }
@@ -1558,35 +1558,35 @@ export default {
 @media (max-width: 768px) {
   .oa-dashboard {
     padding: 16px;
-    
+
     .stats-cards {
       grid-template-columns: 1fr;
       gap: 16px;
-      
+
       .revenue-card {
         order: -1;
       }
     }
-    
+
     .main-content {
       gap: 20px;
-      
+
       .left-content {
         gap: 20px;
-        
+
         .monitor-section {
           grid-template-columns: 1fr;
         }
-        
+
         .stats-section {
           grid-template-columns: 1fr;
         }
       }
-      
+
       .right-sidebar {
         grid-template-columns: 1fr;
         gap: 20px;
-        
+
         .actions-grid {
           grid-template-columns: repeat(3, 1fr);
         }
@@ -1598,21 +1598,21 @@ export default {
 @media (max-width: 480px) {
   .oa-dashboard {
     padding: 12px;
-    
+
     .stats-cards {
       gap: 12px;
     }
-    
+
     .main-content {
       gap: 16px;
-      
+
       .left-content {
         gap: 16px;
       }
-      
+
       .right-sidebar {
         gap: 16px;
-        
+
         .actions-grid {
           grid-template-columns: repeat(2, 1fr);
         }
@@ -1625,7 +1625,7 @@ export default {
 @media (prefers-color-scheme: dark) {
   .oa-dashboard {
     background: #0f172a;
-    
+
     .stat-card,
     .notification-section,
     .monitor-column,
@@ -1641,12 +1641,12 @@ export default {
       border-color: #334155;
       color: #f1f5f9;
     }
-    
+
     .revenue-card {
       background: #334155;
       border-color: #475569;
     }
-    
+
     h3, h4,
     .notification-title,
     .monitor-title,
@@ -1657,7 +1657,7 @@ export default {
     .overview-number {
       color: #f1f5f9;
     }
-    
+
     .notification-desc,
     .monitor-desc,
     .status-desc,
@@ -1666,7 +1666,7 @@ export default {
     .overview-label {
       color: #94a3b8;
     }
-    
+
     .overview-item {
       background: #334155;
       border-color: #475569;
@@ -1679,16 +1679,16 @@ export default {
   .oa-dashboard {
     background: white;
     padding: 0;
-    
+
     .revenue-card .revenue-chart,
     .stats-chart {
       display: none;
     }
-    
+
     .main-content {
       grid-template-columns: 1fr;
     }
-    
+
     .stats-cards {
       grid-template-columns: repeat(4, 1fr);
     }
@@ -1702,7 +1702,7 @@ export default {
     outline-offset: 2px;
     border-radius: 4px;
   }
-  
+
   .action-item,
   .notification-item,
   .tenant-item,
@@ -1711,7 +1711,7 @@ export default {
   .finance-item {
     min-height: 44px;
   }
-  
+
   // 键盘导航支持
   .action-item:focus,
   .notification-item:focus,
@@ -1727,7 +1727,7 @@ export default {
     position: relative;
     opacity: 0.6;
     pointer-events: none;
-    
+
     &::after {
       content: '';
       position: absolute;
@@ -1771,7 +1771,7 @@ export default {
     font-size: 14px;
     margin: 12px 0;
   }
-  
+
   .warning-message {
     background: #fffbeb;
     color: #92400e;
@@ -1789,7 +1789,7 @@ export default {
     text-align: center;
     padding: 48px 24px;
     color: #6b7280;
-    
+
     .empty-icon {
       width: 64px;
       height: 64px;
@@ -1802,13 +1802,13 @@ export default {
       color: #9ca3af;
       font-size: 24px;
     }
-    
+
     .empty-text {
       font-size: 14px;
       line-height: 1.5;
       margin-bottom: 16px;
     }
-    
+
     .empty-action {
       button {
         background: #2563eb;
@@ -1820,11 +1820,11 @@ export default {
         font-size: 14px;
         font-weight: 500;
         transition: background-color 0.2s ease;
-        
+
         &:hover {
           background: #1d4ed8;
         }
-        
+
         &:focus {
           outline: 2px solid #2563eb;
           outline-offset: 2px;
@@ -1849,7 +1849,7 @@ export default {
   ::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 3px;
-    
+
     &:hover {
       background: #94a3b8;
     }
@@ -1883,7 +1883,7 @@ export default {
       transform: translateY(1px);
     }
   }
-  
+
   // 数据可视化增强
   .chart-bar {
     &:nth-child(1) { background: #64748b; }
@@ -1899,13 +1899,13 @@ export default {
   .data-table {
     width: 100%;
     border-collapse: collapse;
-    
+
     th, td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid #e5e7eb;
     }
-    
+
     th {
       background: #f9fafb;
       font-weight: 600;
@@ -1914,12 +1914,12 @@ export default {
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    
+
     td {
       font-size: 14px;
       color: #111827;
     }
-    
+
     tbody tr:hover {
       background: #f9fafb;
     }
@@ -1930,7 +1930,7 @@ export default {
 .oa-dashboard {
   [data-tooltip] {
     position: relative;
-    
+
     &:hover::after {
       content: attr(data-tooltip);
       position: absolute;
@@ -1945,7 +1945,7 @@ export default {
       white-space: nowrap;
       z-index: 1000;
       margin-bottom: 4px;
-      
+
       &::before {
         content: '';
         position: absolute;
@@ -1977,7 +1977,7 @@ export default {
     .action-item {
       border: 2px solid #000;
     }
-    
+
     .status-indicator {
       border: 1px solid #000;
     }

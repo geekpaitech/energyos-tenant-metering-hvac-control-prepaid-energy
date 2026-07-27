@@ -1,0 +1,9 @@
+// 仅由 ScreenHeader 引入，避免 webpack 在多入口下解析相对路径失败
+
+@font-face {
+  font-family: 'YouSheBiaoTiHei';
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  src: url('~@/views/group-screen/fonts/YouSheBiaoTiHei.woff2') format('woff2');
+}

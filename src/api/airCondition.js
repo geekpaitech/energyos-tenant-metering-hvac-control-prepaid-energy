@@ -4,7 +4,7 @@ import request from '@/utils/request'
 // ============ 空调信息管理接口 ============
 
 // 分页查询空调
-export function airInfoPageAir(query) {
+export function airInfoPageAir (query) {
   return request({
     url: '/api/ebc-content/airInfo/pageAir',
     method: 'post',
@@ -13,7 +13,7 @@ export function airInfoPageAir(query) {
 }
 
 // 控制空调
-export function airInfoControlAir(query) {
+export function airInfoControlAir (query) {
   return request({
     url: '/api/ebc-content/airInfo/controlAir',
     method: 'post',
@@ -22,7 +22,7 @@ export function airInfoControlAir(query) {
 }
 
 // 获取空调
-export function airInfoBatchBindAirInfo(query) {
+export function airInfoBatchBindAirInfo (query) {
   return request({
     url: '/api/ebc-content/airInfo/batchBindAirInfo',
     method: 'post',
@@ -31,7 +31,7 @@ export function airInfoBatchBindAirInfo(query) {
 }
 
 // 批量锁定空调
-export function airInfoBathcLockAir(query) {
+export function airInfoBathcLockAir (query) {
   return request({
     url: '/api/ebc-content/airInfo/bathcLockAir',
     method: 'post',
@@ -40,7 +40,7 @@ export function airInfoBathcLockAir(query) {
 }
 
 // 批量控制空调
-export function airInfoBatchBindAir(query) {
+export function airInfoBatchBindAir (query) {
   return request({
     url: '/api/ebc-content/airInfo/batchBindAir',
     method: 'post',
@@ -49,7 +49,7 @@ export function airInfoBatchBindAir(query) {
 }
 
 // 空调绑定（解绑）租户-专用
-export function airInfoBindTenantAir(query) {
+export function airInfoBindTenantAir (query) {
   return request({
     url: '/api/ebc-content/airInfo/bindTenantAir',
     method: 'post',
@@ -58,7 +58,7 @@ export function airInfoBindTenantAir(query) {
 }
 
 // 创建空调
-export function airInfoCreateAir(query) {
+export function airInfoCreateAir (query) {
   return request({
     url: '/api/ebc-content/airInfo/createAir',
     method: 'post',
@@ -67,7 +67,7 @@ export function airInfoCreateAir(query) {
 }
 
 // 删除空调
-export function airInfoDelete(query) {
+export function airInfoDelete (query) {
   return request({
     url: '/api/ebc-content/airInfo/delete',
     method: 'post',
@@ -76,7 +76,7 @@ export function airInfoDelete(query) {
 }
 
 // 获取租户-空调绑定信息
-export function airInfoGetTenantAirBindEdit(query) {
+export function airInfoGetTenantAirBindEdit (query) {
   return request({
     url: '/api/ebc-content/airInfo/getTenantAirBindEdit',
     method: 'post',
@@ -85,7 +85,7 @@ export function airInfoGetTenantAirBindEdit(query) {
 }
 
 // 锁定空调
-export function airInfoLockAir(query) {
+export function airInfoLockAir (query) {
   return request({
     url: '/api/ebc-content/airInfo/lockAir',
     method: 'post',
@@ -94,7 +94,7 @@ export function airInfoLockAir(query) {
 }
 
 // 修改空调
-export function airInfoUpdateAir(query) {
+export function airInfoUpdateAir (query) {
   return request({
     url: '/api/ebc-content/airInfo/updateAir',
     method: 'post',
@@ -103,7 +103,7 @@ export function airInfoUpdateAir(query) {
 }
 
 // 批量设置计费方式
-export function airInfoUpdateBillingMode(query) {
+export function airInfoUpdateBillingMode (query) {
   return request({
     url: '/api/ebc-content/airInfo/updateBillingMode',
     method: 'post',
@@ -112,7 +112,7 @@ export function airInfoUpdateBillingMode(query) {
 }
 
 // 根据id查询空调
-export function airInfoGetAirById(query) {
+export function airInfoGetAirById (query) {
   return request({
     url: '/api/ebc-content/airInfo/getAirById',
     method: 'post',
@@ -121,7 +121,7 @@ export function airInfoGetAirById(query) {
 }
 
 // 查询空调设备用能统计
-export function airInfoQueryAirUseStatis(query) {
+export function airInfoQueryAirUseStatis (query) {
   return request({
     url: '/api/ebc-content/airInfo/queryAirUseStatis',
     method: 'post',
@@ -130,7 +130,7 @@ export function airInfoQueryAirUseStatis(query) {
 }
 
 // 查询空调设备列表
-export function airInfoListAirInfo(query) {
+export function airInfoListAirInfo (query) {
   return request({
     url: '/api/ebc-content/airInfo/listAirInfo',
     method: 'post',
@@ -139,7 +139,7 @@ export function airInfoListAirInfo(query) {
 }
 
 // 分页查询空调面板逐日累计用量
-export function airInfoPageAirAccumulateUse(query) {
+export function airInfoPageAirAccumulateUse (query) {
   return request({
     url: '/api/ebc-content/airInfo/pageAirAccumulateUse',
     method: 'post',
@@ -150,7 +150,7 @@ export function airInfoPageAirAccumulateUse(query) {
 // ============ 空调控制日志接口 ============
 
 // 分页查询空调控制日志
-export function airControlLogPageAirGateWay(query) {
+export function airControlLogPageAirGateWay (query) {
   return request({
     url: '/api/ebc-content/airControlLog/pageAirGateWay',
     method: 'post',
@@ -161,7 +161,7 @@ export function airControlLogPageAirGateWay(query) {
 // ============ 空调网关接口 ============
 
 // 创建空调网关
-export function airGatewayCreateAirGateway(query) {
+export function airGatewayCreateAirGateway (query) {
   return request({
     url: '/api/ebc-content/airGateway/createAirGateway',
     method: 'post',
@@ -170,7 +170,7 @@ export function airGatewayCreateAirGateway(query) {
 }
 
 // 删除空调网关
-export function airGatewayDelete(query) {
+export function airGatewayDelete (query) {
   return request({
     url: '/api/ebc-content/airGateway/delete',
     method: 'post',
@@ -179,7 +179,7 @@ export function airGatewayDelete(query) {
 }
 
 // 查询网关列表
-export function airGatewayListAirGateWay(query) {
+export function airGatewayListAirGateWay (query) {
   return request({
     url: '/api/ebc-content/airGateway/listAirGateWay',
     method: 'post',
@@ -188,12 +188,12 @@ export function airGatewayListAirGateWay(query) {
 }
 
 // 分页查询空调网关 外机
-export function pageAirGateWay(data) {
+export function pageAirGateWay (data) {
   return request({
     url: '/api/ebc-content/airGateway/pageAirGateWay',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -201,7 +201,7 @@ export function pageAirGateWay(data) {
 }
 
 // 修改空调网关
-export function airGatewayUpdateAirGateway(query) {
+export function airGatewayUpdateAirGateway (query) {
   return request({
     url: '/api/ebc-content/airGateway/updateAirGateway',
     method: 'post',
@@ -210,7 +210,7 @@ export function airGatewayUpdateAirGateway(query) {
 }
 
 // 批量绑定空调网关计费方案
-export function airGatewayBatchBindPriceAirGateway(query) {
+export function airGatewayBatchBindPriceAirGateway (query) {
   return request({
     url: '/api/ebc-content/airGateway/batchBindPriceAirGateway',
     method: 'post',
@@ -221,7 +221,7 @@ export function airGatewayBatchBindPriceAirGateway(query) {
 // ============ 空调定时任务接口 ============
 
 // 分页查询空调定时
-export function airScheduledTaskPageAirScheduledTask(query) {
+export function airScheduledTaskPageAirScheduledTask (query) {
   return request({
     url: '/api/ebc-content/airScheduledTask/pageAirScheduledTask',
     method: 'post',
@@ -230,7 +230,7 @@ export function airScheduledTaskPageAirScheduledTask(query) {
 }
 
 // 创建空调定时
-export function airScheduledTaskAddAirScheduledTasks(query) {
+export function airScheduledTaskAddAirScheduledTasks (query) {
   return request({
     url: '/api/ebc-content/airScheduledTask/addAirScheduledTasks',
     method: 'post',
@@ -239,7 +239,7 @@ export function airScheduledTaskAddAirScheduledTasks(query) {
 }
 
 // 删除空调定时
-export function airScheduledTaskDelete(query) {
+export function airScheduledTaskDelete (query) {
   return request({
     url: '/api/ebc-content/airScheduledTask/delete',
     method: 'post',
@@ -248,7 +248,7 @@ export function airScheduledTaskDelete(query) {
 }
 
 // 根据id查询空调定时
-export function airScheduledTaskGetAirScheduledTaskById(query) {
+export function airScheduledTaskGetAirScheduledTaskById (query) {
   return request({
     url: '/api/ebc-content/airScheduledTask/getAirScheduledTaskById',
     method: 'post',
@@ -257,7 +257,7 @@ export function airScheduledTaskGetAirScheduledTaskById(query) {
 }
 
 // 查询空调列表
-export function airScheduledTaskListAirInfoByIds(query) {
+export function airScheduledTaskListAirInfoByIds (query) {
   return request({
     url: '/api/ebc-content/airScheduledTask/listAirInfoByIds',
     method: 'post',
@@ -266,7 +266,7 @@ export function airScheduledTaskListAirInfoByIds(query) {
 }
 
 // 任务开关控制
-export function airScheduledTaskUpdateEnabled(query) {
+export function airScheduledTaskUpdateEnabled (query) {
   return request({
     url: '/api/ebc-content/airScheduledTask/updateEnabled',
     method: 'post',
@@ -275,7 +275,7 @@ export function airScheduledTaskUpdateEnabled(query) {
 }
 
 // 修改空调定时
-export function airScheduledTaskEditAirScheduledTasks(query) {
+export function airScheduledTaskEditAirScheduledTasks (query) {
   return request({
     url: '/api/ebc-content/airScheduledTask/editAirScheduledTasks',
     method: 'post',
@@ -283,12 +283,10 @@ export function airScheduledTaskEditAirScheduledTasks(query) {
   })
 }
 // 查询空调电表
-export function listAirMeterInfo(query) {
+export function listAirMeterInfo (query) {
   return request({
     url: '/api/ebc-content/meter/listAirMeterInfo',
     method: 'post',
     params: query
   })
 }
-
-

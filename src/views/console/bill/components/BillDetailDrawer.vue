@@ -62,7 +62,7 @@
           <div class="info-row">
             <div class="info-item">
               <span class="label">缴费账户：</span>
-              <span class="value">{{ formatValue(billInfo.payAccount, '电费专户') }}</span>
+              <span class="value">{{ formatValue(billInfo.payAccount, payAccountDefaultLabel) }}</span>
             </div>
             <div class="info-item">
               <span class="label">开票状态：</span>
@@ -213,6 +213,16 @@
                 {{ formatNumber(scope.row.totalUseElec) }}
               </template>
             </el-table-column>
+            <el-table-column
+              v-if="isNanduPlazaManager"
+              label="公摊组系统用电量(度)"
+              width="160"
+              align="right"
+            >
+              <template slot-scope="scope">
+                {{ formatNumber(scope.row.totalSysElec) }}
+              </template>
+            </el-table-column>
             <el-table-column label="分摊比例" width="100" align="center">
               <template slot-scope="scope">
                 {{ calculateRatio(scope.row.shareArea, scope.row.totalArea) }}
@@ -221,6 +231,16 @@
             <el-table-column label="分摊电量(度)" width="120" align="right">
               <template slot-scope="scope">
                 {{ formatNumber(scope.row.shareUseElec) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="isNanduPlazaManager"
+              label="系统分摊电量(度)"
+              width="150"
+              align="right"
+            >
+              <template slot-scope="scope">
+                {{ formatNumber(scope.row.shareSysElec) }}
               </template>
             </el-table-column>
             <el-table-column label="账单金额(元)" width="130" align="right">
@@ -255,6 +275,21 @@
                 </div>
               </template>
             </el-table-column>
+            <el-table-column
+              v-if="isNanduPlazaManager"
+              label="系统总电量(度)"
+              width="150"
+              align="right"
+            >
+              <template slot-scope="scope">
+                <div class="value-with-action">
+                  <span>{{ formatNumber(scope.row.sysElec) }}</span>
+                  <el-button type="text" size="mini" class="inline-view-btn" @click="handleViewDetail(scope.row)">
+                    查看
+                  </el-button>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column label="账单金额(元)" width="130" align="right">
               <template slot-scope="scope">
                 <span class="amount-text">{{ formatMoney(scope.row.balance) }}</span>
@@ -273,6 +308,16 @@
                 {{ formatNumber(scope.row.totalUseElec) }}
               </template>
             </el-table-column>
+            <el-table-column
+              v-if="isNanduPlazaManager"
+              label="系统公摊组用电量(度)"
+              width="160"
+              align="right"
+            >
+              <template slot-scope="scope">
+                {{ formatNumber(scope.row.totalSysElec) }}
+              </template>
+            </el-table-column>
             <el-table-column label="分摊比例" width="100" align="center">
               <template slot-scope="scope">
                 {{ calculateRatio(scope.row.shareArea, scope.row.totalArea) }}
@@ -281,6 +326,16 @@
             <el-table-column label="分摊电量(度)" width="120" align="right">
               <template slot-scope="scope">
                 {{ formatNumber(scope.row.shareUseElec) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="isNanduPlazaManager"
+              label="系统分摊电量(度)"
+              width="150"
+              align="right"
+            >
+              <template slot-scope="scope">
+                {{ formatNumber(scope.row.shareSysElec) }}
               </template>
             </el-table-column>
             <el-table-column label="账单金额(元)" width="130" align="right">
@@ -301,7 +356,7 @@
               <span>浮动电价明细</span>
             </div>
           </div>
-          
+
           <div v-show="floatDto.floatType == 'PART'" class="drawer-table">
             <el-table
               v-if="floatList && floatList.length"
@@ -463,14 +518,15 @@ import {
   settleListTenantAirPublicSettleDetail,
   waterGetTenantWaterSettleDetail,
   floatQueryFloatDetail
-} from '@/api/billDetailApi';
+} from '@/api/billDetailApi'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'BillDetailDrawer',
   props: {
     detailDrawer: {
       type: Object,
-      default() {
+      default () {
         return {
           show: false,
           id: '',
@@ -478,11 +534,11 @@ export default {
           settleWay: '',
           useType: '',
           floatId: ''
-        };
+        }
       }
     }
   },
-  data() {
+  data () {
     return {
       loading: false,
       billInfo: {},
@@ -508,212 +564,225 @@ export default {
       formatting: {},
 
       MeterBindType: [
-        { value: 1, label: "专用表" },
-        { value: 2, label: "公摊组" },
+        { value: 1, label: '专用表' },
+        { value: 2, label: '公摊组' }
       ],
       // 公摊方式选项
       shareTypeOptions: [
-        { label: "面积占比", value: "AREA" },
-        { label: "能耗占比", value: "ENERGY" },
-      ],
-    };
+        { label: '面积占比', value: 'AREA' },
+        { label: '能耗占比', value: 'ENERGY' }
+      ]
+    }
   },
   computed: {
+    ...mapGetters('manager', ['currentManagerId', 'isAirSysElecManager']),
+    /** 系统电量扩展列（由 getAirSysElecCoefKeys 白名单决定，如南都广场） */
+    isNanduPlazaManager () {
+      return this.isAirSysElecManager(this.currentManagerId)
+    },
     // 是否是简单账单（手动扣款1、分摊结算4、租户充值10）
-    isSimpleBill() {
-      const settleWay = this.detailDrawer.settleWay;
-      return settleWay == 1 || settleWay == 4 || settleWay == 10;
+    isSimpleBill () {
+      const settleWay = this.detailDrawer.settleWay
+      return settleWay == 1 || settleWay == 4 || settleWay == 10
     },
     // 是否是水费账单
-    isWaterBill() {
-      return this.detailDrawer.useType == 0 && !this.isSimpleBill;
+    isWaterBill () {
+      return this.detailDrawer.useType == 0 && !this.isSimpleBill
     },
     // 是否是电费账单
-    isElectricBill() {
-      return this.detailDrawer.useType == 2 && !this.isSimpleBill;
+    isElectricBill () {
+      return this.detailDrawer.useType == 2 && !this.isSimpleBill
     },
     // 是否是浮动电价
-    isFloatBill() {
-      return this.detailDrawer.settleWay == 3;
+    isFloatBill () {
+      return this.detailDrawer.settleWay == 3
+    },
+    payAccountDefaultLabel () {
+      const useType = (this.billInfo.useType === null || this.billInfo.useType === undefined)
+        ? this.detailDrawer.useType
+        : this.billInfo.useType
+      if (String(useType) === '0') return '水费专户'
+      if (String(useType) === '2') return '电费专户'
+      return '--'
     }
   },
   methods: {
-    handleClose() {
-      this.detailDrawer.show = false;
-      this.resetData();
+    handleClose () {
+      this.detailDrawer.show = false
+      this.resetData()
     },
 
-    handleOpen() {
-      console.log('打开详情抽屉，参数：', this.detailDrawer);
-      this.loadBillDetail();
+    handleOpen () {
+      console.log('打开详情抽屉，参数：', this.detailDrawer)
+      this.loadBillDetail()
     },
     // 获取公摊方式标签
-    getShareTypeLabel(type) {
-      const item = this.shareTypeOptions.find((i) => i.value === type);
-      return item ? item.label : "--";
+    getShareTypeLabel (type) {
+      const item = this.shareTypeOptions.find((i) => i.value === type)
+      return item ? item.label : '--'
     },
 
-    resetData() {
-      this.billInfo = {};
-      this.waterPrivateList = [];
-      this.waterShareList = [];
-      this.electricPrivateList = [];
-      this.electricShareList = [];
-      this.electricPrivateSum = 0;
-      this.airPrivateList = [];
-      this.airShareList = [];
-      this.airPrivateSum = 0;
-      this.floatList = [];
-      this.floatDto = {};
-      this.floatType = '';
-      this.formatting = {};
+    resetData () {
+      this.billInfo = {}
+      this.waterPrivateList = []
+      this.waterShareList = []
+      this.electricPrivateList = []
+      this.electricShareList = []
+      this.electricPrivateSum = 0
+      this.airPrivateList = []
+      this.airShareList = []
+      this.airPrivateSum = 0
+      this.floatList = []
+      this.floatDto = {}
+      this.floatType = ''
+      this.formatting = {}
     },
 
-    async loadBillDetail() {
-      this.loading = true;
+    async loadBillDetail () {
+      this.loading = true
       try {
-        await this.getBillInfo();
+        await this.getBillInfo()
 
         if (this.isSimpleBill) {
-          return;
+          return
         }
 
         if (this.isWaterBill) {
-          await this.getWaterDetail();
+          await this.getWaterDetail()
         } else if (this.isFloatBill) {
-          await this.getFloatDetail();
+          await this.getFloatDetail()
         } else if (this.isElectricBill) {
           if (this.detailDrawer.useType == 7) {
-            await this.getServiceDetail();
+            await this.getServiceDetail()
           } else {
-            await this.getElectricDetail();
-            await this.getAirDetail();
+            await this.getElectricDetail()
+            await this.getAirDetail()
           }
         }
       } catch (error) {
-        console.error('加载账单详情失败:', error);
-        this.$message.error('加载账单详情失败');
+        console.error('加载账单详情失败:', error)
+        this.$message.error('加载账单详情失败')
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
-    async getBillInfo() {
-      console.log('调用 getBillInfo，参数：', { settleTenantId: this.detailDrawer.id });
+    async getBillInfo () {
+      console.log('调用 getBillInfo，参数：', { settleTenantId: this.detailDrawer.id })
       const { data } = await settleGetTenantDailyBill({
         settleTenantId: this.detailDrawer.id
-      });
-      console.log('getBillInfo 返回数据：', data);
-      this.billInfo = data || {};
+      })
+      console.log('getBillInfo 返回数据：', data)
+      this.billInfo = data || {}
     },
 
-    async getWaterDetail() {
+    async getWaterDetail () {
       const { data } = await waterGetTenantWaterSettleDetail({
         settleTenantId: this.detailDrawer.id
-      });
-      this.waterPrivateList = data.privateSettleList || [];
-      this.waterShareList = data.shareSettleList || [];
+      })
+      this.waterPrivateList = data.privateSettleList || []
+      this.waterShareList = data.shareSettleList || []
     },
 
-    async getElectricDetail() {
+    async getElectricDetail () {
       const { data: privateData } = await settleListTenantPrivateSettleDetail({
         settleTenantId: this.detailDrawer.id
-      });
-      this.electricPrivateList = privateData || [];
-      this.electricPrivateSum = this.electricPrivateList.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0);
+      })
+      this.electricPrivateList = privateData || []
+      this.electricPrivateSum = this.electricPrivateList.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0)
 
       const { data: shareData } = await listTenantPublicSettleDetail({
         settleTenantId: this.detailDrawer.id
-      });
-      this.electricShareList = shareData || [];
+      })
+      this.electricShareList = shareData || []
     },
 
-    async getServiceDetail() {
+    async getServiceDetail () {
       const { data } = await settleListTenantSettleDetail({
         settleTenantId: this.detailDrawer.id
-      });
-      this.electricPrivateList = data.privateSettleList || [];
-      this.electricShareList = data.publicSettleList || [];
-      this.electricPrivateSum = this.electricPrivateList.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0);
-      this.electricPrivateSum += this.electricShareList.reduce((sum, item) => sum + (parseFloat(item.shareServiceBalance) || 0), 0);
+      })
+      this.electricPrivateList = data.privateSettleList || []
+      this.electricShareList = data.publicSettleList || []
+      this.electricPrivateSum = this.electricPrivateList.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0)
+      this.electricPrivateSum += this.electricShareList.reduce((sum, item) => sum + (parseFloat(item.shareServiceBalance) || 0), 0)
     },
 
-    async getAirDetail() {
+    async getAirDetail () {
       const { data: privateData } = await settleListTenantAirPrivateSettleDetail({
         settleTenantId: this.detailDrawer.id
-      });
-      this.airPrivateList = privateData || [];
-      this.airPrivateSum = this.airPrivateList.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0);
+      })
+      this.airPrivateList = privateData || []
+      this.airPrivateSum = this.airPrivateList.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0)
 
       const { data: shareData } = await settleListTenantAirPublicSettleDetail({
         settleTenantId: this.detailDrawer.id
-      });
-      this.airShareList = shareData || [];
-      this.airPrivateSum += this.airShareList.reduce((sum, item) => sum + (parseFloat(item.shareBalance) || 0), 0);
+      })
+      this.airShareList = shareData || []
+      this.airPrivateSum += this.airShareList.reduce((sum, item) => sum + (parseFloat(item.shareBalance) || 0), 0)
     },
 
-    async getFloatDetail() {
+    async getFloatDetail () {
       const { data } = await floatQueryFloatDetail({
         rid: this.detailDrawer.floatId
-      });
+      })
 
-      this.floatDto = data.floatDto || {};
-      this.floatType = this.floatDto.floatType;
+      this.floatDto = data.floatDto || {}
+      this.floatType = this.floatDto.floatType
 
-      const floatContentDtoList = data.floatContentDtoList || [];
+      const floatContentDtoList = data.floatContentDtoList || []
 
       const filterData = floatContentDtoList.filter(item =>
         item.tenantId == this.detailDrawer.tenantId
-      );
+      )
 
       // 计算合计金额
       const totalAmount = filterData.reduce((sum, item) => {
-        return sum + (parseFloat(item.floatBalance) || 0);
-      }, 0);
-      this.$set(this.floatDto, this.detailDrawer.tenantId, totalAmount);
+        return sum + (parseFloat(item.floatBalance) || 0)
+      }, 0)
+      this.$set(this.floatDto, this.detailDrawer.tenantId, totalAmount)
 
       filterData.forEach(item => {
         if (this.formatting[item.tenantId]) {
-          this.formatting[item.tenantId]++;
-          item.showTenantId = false;
+          this.formatting[item.tenantId]++
+          item.showTenantId = false
         } else {
-          this.formatting[item.tenantId] = 1;
-          item.showTenantId = true;
+          this.formatting[item.tenantId] = 1
+          item.showTenantId = true
         }
-      });
+      })
 
-      this.floatList = filterData;
+      this.floatList = filterData
     },
 
-    arraySpanMethod({ row, column, rowIndex, columnIndex }) {
+    arraySpanMethod ({ row, column, rowIndex, columnIndex }) {
       if ((columnIndex === 0 || columnIndex === 10) && this.floatType === 'PART') {
         if (row.showTenantId) {
           return {
             rowspan: this.formatting[row.tenantId],
             colspan: 1
-          };
+          }
         } else {
           return {
             rowspan: 0,
             colspan: 0
-          };
+          }
         }
       }
     },
 
-    handleViewDetail(row) {
+    handleViewDetail (row) {
       if (this.isWaterBill) {
-        this.handleViewWaterReport(row);
+        this.handleViewWaterReport(row)
       } else if (this.isElectricBill && !this.isFloatBill) {
         if (row.serial || row.meterName) {
-          this.handleViewElectricReport(row);
+          this.handleViewElectricReport(row)
         } else if (row.indoorUnitId || row.airName) {
-          this.handleViewAirReport(row);
+          this.handleViewAirReport(row)
         }
       }
     },
 
-    handleViewElectricReport(row) {
+    handleViewElectricReport (row) {
       this.$router.push({
         path: '/energy/equipmentPower',
         query: {
@@ -722,10 +791,10 @@ export default {
           startDate: this.billInfo.occurDate,
           endDate: this.billInfo.occurDate
         }
-      });
+      })
     },
 
-    handleViewAirReport(row) {
+    handleViewAirReport (row) {
       this.$router.push({
         path: '/energy/charging-sankey',
         query: {
@@ -734,10 +803,10 @@ export default {
           startDate: this.billInfo.occurDate,
           endDate: this.billInfo.occurDate
         }
-      });
+      })
     },
 
-    handleViewWaterReport(row) {
+    handleViewWaterReport (row) {
       this.$router.push({
         path: '/energy/charging-water',
         query: {
@@ -745,42 +814,42 @@ export default {
           startDate: this.billInfo.occurDate,
           endDate: this.billInfo.occurDate
         }
-      });
+      })
     },
 
-    formatValue(value, defaultValue = '--') {
+    formatValue (value, defaultValue = '--') {
       if (value === null || value === undefined || value === '') {
-        return defaultValue;
+        return defaultValue
       }
-      return value;
+      return value
     },
 
-    formatMoney(amount) {
-      if (!amount || amount === 0) return '0.00';
-      return parseFloat(amount).toFixed(2);
+    formatMoney (amount) {
+      if (!amount || amount === 0) return '0.00'
+      return parseFloat(amount).toFixed(2)
     },
 
-    formatNumber(num) {
-      if (!num || num === 0) return '0';
-      return parseFloat(num).toFixed(2);
+    formatNumber (num) {
+      if (!num || num === 0) return '0'
+      return parseFloat(num).toFixed(2)
     },
 
-    calculateRatio(shareArea, totalArea) {
-      if (!totalArea || totalArea === 0 || !shareArea) return '0%';
-      const ratio = (shareArea / totalArea) * 100;
-      return ratio.toFixed(2) + '%';
+    calculateRatio (shareArea, totalArea) {
+      if (!totalArea || totalArea === 0 || !shareArea) return '0%'
+      const ratio = (shareArea / totalArea) * 100
+      return ratio.toFixed(2) + '%'
     },
 
-    getBillTypeLabel(type) {
+    getBillTypeLabel (type) {
       const labelMap = {
-        '0': '水费',
-        '2': '电费',
-        '7': '服务费'
-      };
-      return labelMap[String(type)] || '其他';
+        0: '水费',
+        2: '电费',
+        7: '服务费'
+      }
+      return labelMap[String(type)] || '其他'
     },
 
-    getSettleWayLabel(way) {
+    getSettleWayLabel (way) {
       const labelMap = {
         0: '普通结算',
         1: '手动扣款',
@@ -789,11 +858,11 @@ export default {
         4: '分摊结算',
         5: '设备扣款',
         10: '租户充值'
-      };
-      return labelMap[way] || '--';
+      }
+      return labelMap[way] || '--'
     },
 
-    getSettleWayType(way) {
+    getSettleWayType (way) {
       const typeMap = {
         0: 'primary',
         1: 'success',
@@ -802,31 +871,31 @@ export default {
         4: 'info',
         5: 'info',
         10: 'success'
-      };
-      return typeMap[way] || '';
+      }
+      return typeMap[way] || ''
     },
 
-    getInvoiceStatusLabel(status) {
+    getInvoiceStatusLabel (status) {
       const labelMap = {
         0: '未开票',
         1: '审核中',
         2: '已开票',
         3: '已拒绝'
-      };
-      return labelMap[status] || '--';
+      }
+      return labelMap[status] || '--'
     },
 
-    getInvoiceStatusType(status) {
+    getInvoiceStatusType (status) {
       const typeMap = {
         0: 'info',
         1: 'warning',
         2: 'success',
         3: 'danger'
-      };
-      return typeMap[status] || '';
+      }
+      return typeMap[status] || ''
     }
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>

@@ -3,13 +3,13 @@ import request from '@/utils/request'
 /**
  * 获取租户专用电表列表
  */
-export function getTenantElectricMeters(data) {
+export function getTenantElectricMeters (data) {
   return request({
     url: '/api/ebc-content/meter/pageMeterInfo',
     method: 'post',
     data,
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     }
   })
@@ -18,7 +18,7 @@ export function getTenantElectricMeters(data) {
 /**
  * 获取租户电表绑定编辑数据
  */
-export function getTenantMeterBindEdit(params) {
+export function getTenantMeterBindEdit (params) {
   return request({
     url: '/api/ebc-content/meter/getTenantMeterBindEdit',
     method: 'post',
@@ -29,7 +29,7 @@ export function getTenantMeterBindEdit(params) {
 /**
  * 绑定/解绑租户电表
  */
-export function bindTenantMeter(params) {
+export function bindTenantMeter (params) {
   return request({
     url: '/api/ebc-device/meter/bindTenantMeter',
     method: 'post',
@@ -40,7 +40,7 @@ export function bindTenantMeter(params) {
 /**
  * 获取租户电表公摊组列表
  */
-export function getTenantElectricGroups(params) {
+export function getTenantElectricGroups (params) {
   return request({
     url: '/api/ebc-content/share/getTenantShareList',
     method: 'post',
@@ -51,7 +51,7 @@ export function getTenantElectricGroups(params) {
 /**
  * 获取租户公摊组绑定编辑数据
  */
-export function getTenantShareBindEdit(params) {
+export function getTenantShareBindEdit (params) {
   return request({
     url: '/api/ebc-content/share/getTenantShareBindEdit',
     method: 'post',
@@ -62,7 +62,7 @@ export function getTenantShareBindEdit(params) {
 /**
  * 绑定/解绑租户公摊组
  */
-export function bindShareTenant(params) {
+export function bindShareTenant (params) {
   return request({
     url: '/api/ebc-content/share/bindShareTenant',
     method: 'post',
@@ -73,7 +73,7 @@ export function bindShareTenant(params) {
 /**
  * 获取租户专用水表列表
  */
-export function getTenantWaterMeters(params) {
+export function getTenantWaterMeters (params) {
   return request({
     url: '/api/ebc-content/water/getTenantWaterBindEdit',
     method: 'post',
@@ -84,7 +84,7 @@ export function getTenantWaterMeters(params) {
 /**
  * 获取租户水表绑定编辑数据
  */
-export function getTenantWaterBindEdit(params) {
+export function getTenantWaterBindEdit (params) {
   return request({
     url: '/api/ebc-content/water/getTenantWaterBindEdit',
     method: 'post',
@@ -95,7 +95,7 @@ export function getTenantWaterBindEdit(params) {
 /**
  * 绑定/解绑租户水表
  */
-export function bindTenantWater(params) {
+export function bindTenantWater (params) {
   return request({
     url: '/api/ebc-content/water/bindTenantWater',
     method: 'post',
@@ -106,7 +106,7 @@ export function bindTenantWater(params) {
 /**
  * 获取租户水表公摊组列表
  */
-export function getTenantWaterGroups(params) {
+export function getTenantWaterGroups (params) {
   return request({
     url: '/api/ebc-content/waterShare/getTenantShareList',
     method: 'post',
@@ -117,7 +117,7 @@ export function getTenantWaterGroups(params) {
 /**
  * 获取租户水表公摊组绑定编辑数据
  */
-export function getTenantWaterShareBindEdit(params) {
+export function getTenantWaterShareBindEdit (params) {
   return request({
     url: '/api/ebc-content/waterShare/getTenantShareBindEdit',
     method: 'post',
@@ -128,7 +128,7 @@ export function getTenantWaterShareBindEdit(params) {
 /**
  * 绑定/解绑租户水表公摊组
  */
-export function bindWaterShareTenant(params) {
+export function bindWaterShareTenant (params) {
   return request({
     url: '/api/ebc-content/waterShare/bindShareTenant',
     method: 'post',
@@ -142,13 +142,13 @@ export function bindWaterShareTenant(params) {
  * 获取租户专用空调列表
  * @param {Object} data - { bindId, bindType: 1, managerId, page }
  */
-export function getTenantAirConditioners(data) {
+export function getTenantAirConditioners (data) {
   return request({
     url: '/api/ebc-content/airInfo/pageAir',
     method: 'post',
     data,
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     }
   })
@@ -158,7 +158,7 @@ export function getTenantAirConditioners(data) {
  * 获取租户空调绑定编辑数据
  * @param {Object} params - { managerId, tenantId }
  */
-export function getTenantAirBindEdit(params) {
+export function getTenantAirBindEdit (params) {
   return request({
     url: '/api/ebc-content/airInfo/getTenantAirBindEdit',
     method: 'post',
@@ -170,7 +170,7 @@ export function getTenantAirBindEdit(params) {
  * 绑定/解绑租户空调
  * @param {Object} params - { airId, tenantId, type: 'bind'/'unbind' }
  */
-export function bindTenantAir(params) {
+export function bindTenantAir (params) {
   return request({
     url: '/api/ebc-content/airInfo/bindTenantAir',
     method: 'post',
@@ -182,7 +182,7 @@ export function bindTenantAir(params) {
  * 获取租户空调公摊组列表
  * @param {Object} params - { tenantId }
  */
-export function getTenantAirShareGroups(params) {
+export function getTenantAirShareGroups (params) {
   return request({
     url: '/api/ebc-content/airShare/getTenantAirShareList',
     method: 'post',
@@ -194,7 +194,7 @@ export function getTenantAirShareGroups(params) {
  * 获取租户空调公摊组绑定编辑数据
  * @param {Object} params - { managerId, tenantId }
  */
-export function getTenantAirShareBindEdit(params) {
+export function getTenantAirShareBindEdit (params) {
   return request({
     url: '/api/ebc-content/airShare/getTenantShareBindEdit',
     method: 'post',
@@ -206,7 +206,7 @@ export function getTenantAirShareBindEdit(params) {
  * 绑定/解绑租户空调公摊组
  * @param {Object} params - { tenantId, managerId, type, area, shareType, shareId }
  */
-export function bindAirShareTenant(params) {
+export function bindAirShareTenant (params) {
   return request({
     url: '/api/ebc-content/airShare/bindShareTenant',
     method: 'post',
@@ -219,13 +219,13 @@ export function bindAirShareTenant(params) {
 /**
  * 获取账单列表
  */
-export function getBillList(data) {
+export function getBillList (data) {
   return request({
     url: '/api/ebc-settle/settle/pageSettleTenant',
     method: 'post',
     data,
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     }
   })
@@ -234,13 +234,13 @@ export function getBillList(data) {
 /**
  * 获取账单统计
  */
-export function getBillStatistics(data) {
+export function getBillStatistics (data) {
   return request({
     url: '/api/ebc-settle/settle/settleTenantStatisti',
     method: 'post',
     data,
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     }
   })
@@ -249,13 +249,13 @@ export function getBillStatistics(data) {
 /**
  * 获取流水列表
  */
-export function getTurnoverList(data) {
+export function getTurnoverList (data) {
   return request({
     url: '/api/ebc-settle/capitalManage/pageTenantTurnover',
     method: 'post',
     data,
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     }
   })
@@ -267,13 +267,13 @@ export function getTurnoverList(data) {
  * 获取租户电表用量统计列表
  * @param {Object} data - { tenantId, useType(2:日/3:月), startDate, endDate }
  */
-export function getTenantEachMeterUseList(data) {
+export function getTenantEachMeterUseList (data) {
   return request({
     url: '/api/ebc-content/tenant/getTenantEachMeterUseList',
     method: 'post',
     data,
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     }
   })
@@ -283,13 +283,13 @@ export function getTenantEachMeterUseList(data) {
  * 获取租户水表用量统计列表
  * @param {Object} data - { tenantId, useType(0:日/5:月), startDate, endDate }
  */
-export function getTenantEachWaterUseList(data) {
+export function getTenantEachWaterUseList (data) {
   return request({
     url: '/api/ebc-content/tenant/getTenantEachWaterUseList',
     method: 'post',
     data,
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     }
   })
@@ -298,13 +298,10 @@ export function getTenantEachWaterUseList(data) {
  * 获取资金流水查看
  * @param {Object} data - { tenantId, useType(0:日/5:月), startDate, endDate }
  */
-export function selectDiscRealTurnoverList(params) {
+export function selectDiscRealTurnoverList (params) {
   return request({
     url: '/api/ebc-content/disc_real_turnover/selectDiscRealTurnoverList',
     method: 'post',
     params
   })
 }
-
-
-

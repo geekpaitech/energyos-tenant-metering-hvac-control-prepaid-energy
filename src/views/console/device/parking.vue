@@ -284,7 +284,7 @@
                   <div class="device-header">
                     <span class="device-title">地磁传感器</span>
                     <el-tag
-                      :type="scope.row.magneticSensor.status === 'online' ? 'success' : 
+                      :type="scope.row.magneticSensor.status === 'online' ? 'success' :
                              scope.row.magneticSensor.status === 'offline' ? 'info' : 'warning'"
                       size="mini"
                     >
@@ -312,7 +312,7 @@
                   <div class="device-header">
                     <span class="device-title">车位锁</span>
                     <el-tag
-                      :type="scope.row.parkingLock.status === 'online' ? 'success' : 
+                      :type="scope.row.parkingLock.status === 'online' ? 'success' :
                              scope.row.parkingLock.status === 'offline' ? 'info' : 'warning'"
                       size="mini"
                     >
@@ -345,7 +345,7 @@
                   <div class="device-header">
                     <span class="device-title">摄像头</span>
                     <el-tag
-                      :type="scope.row.camera.status === 'online' ? 'success' : 
+                      :type="scope.row.camera.status === 'online' ? 'success' :
                              scope.row.camera.status === 'offline' ? 'info' : 'warning'"
                       size="mini"
                     >
@@ -401,7 +401,7 @@
                     ]"
                   ></span>
                   <span>{{
-                    scope.row.magneticSensor 
+                    scope.row.magneticSensor
                       ? getStatusText(scope.row.magneticSensor.status)
                       : '离线'
                   }}</span>
@@ -772,9 +772,9 @@
     </el-dialog>
 
     <!-- 设备绑定对话框 -->
-    <el-dialog 
-      title="绑定设备" 
-      :visible.sync="bindDialogVisible" 
+    <el-dialog
+      title="绑定设备"
+      :visible.sync="bindDialogVisible"
       width="600px"
       class="custom-dialog"
     >
@@ -915,8 +915,8 @@
 
 <script>
 export default {
-  name: "ParkingDeviceManagement",
-  data() {
+  name: 'ParkingDeviceManagement',
+  data () {
     return {
       // 表格高度配置
       tableHeightConfig: {
@@ -924,34 +924,34 @@ export default {
         rowHeight: 47,
         minHeight: 200,
         maxRows: 10,
-        paginationHeight: 68,
+        paginationHeight: 68
       },
-      
+
       // 查询参数
       queryData: {
-        parkingCode: "",
-        meterName: "", // 保持兼容性，实际对应车位名称
-        floor: "",
-        area: "",
-        parkingType: "",
-        deviceStatus: "",
-        occupiedStatus: "",
-        lockStatus: "",
+        parkingCode: '',
+        meterName: '', // 保持兼容性，实际对应车位名称
+        floor: '',
+        area: '',
+        parkingType: '',
+        deviceStatus: '',
+        occupiedStatus: '',
+        lockStatus: ''
       },
 
       // 搜索字段配置
       searchFields: {
         basic: [
-          { prop: "parkingCode", label: "车位编号", type: "input", placeholder: "请输入车位编号" },
-          { prop: "meterName", label: "车位名称", type: "input", placeholder: "请输入车位名称" },
-          { prop: "area", label: "区域", type: "select" },
-          { prop: "parkingType", label: "车位类型", type: "select" },
+          { prop: 'parkingCode', label: '车位编号', type: 'input', placeholder: '请输入车位编号' },
+          { prop: 'meterName', label: '车位名称', type: 'input', placeholder: '请输入车位名称' },
+          { prop: 'area', label: '区域', type: 'select' },
+          { prop: 'parkingType', label: '车位类型', type: 'select' }
         ],
         advanced: [
-          { prop: "deviceStatus", label: "设备状态", type: "select" },
-          { prop: "occupiedStatus", label: "占用状态", type: "select" },
-          { prop: "lockStatus", label: "车位锁", type: "select" },
-        ],
+          { prop: 'deviceStatus', label: '设备状态', type: 'select' },
+          { prop: 'occupiedStatus', label: '占用状态', type: 'select' },
+          { prop: 'lockStatus', label: '车位锁', type: 'select' }
+        ]
       },
 
       // 表格数据
@@ -959,501 +959,501 @@ export default {
       allData: [], // 所有数据
       loading: false,
       submitting: false,
-      
+
       // 是否显示高级筛选
       showAdvanced: false,
-      
+
       // 分页数据
       pageData: {
         current: 1,
         size: 15,
-        total: 0,
+        total: 0
       },
-      
+
       // 选中的数据
       selectedData: [],
-      
+
       // 对话框控制
       dialogVisible: false,
       bindDialogVisible: false,
       controlDialogVisible: false,
-      activeTab: "basic",
-      
+      activeTab: 'basic',
+
       // 当前操作的车位
       currentParking: {},
-      
+
       // 编辑表单
       editForm: {
-        id: "",
-        parkingCode: "",
-        parkingType: "normal",
-        floor: "B2",
-        area: "A",
+        id: '',
+        parkingCode: '',
+        parkingType: 'normal',
+        floor: 'B2',
+        area: 'A',
         enabled: true,
-        locationDesc: "",
-        longitude: "",
-        latitude: "",
-        magneticSensorId: "",
-        parkingLockId: "",
-        cameraId: "",
-        collectFrequency: "1min",
-        alarmRules: ["offline", "longPark"],
+        locationDesc: '',
+        longitude: '',
+        latitude: '',
+        magneticSensorId: '',
+        parkingLockId: '',
+        cameraId: '',
+        collectFrequency: '1min',
+        alarmRules: ['offline', 'longPark'],
         reservable: false,
-        hourlyRate: "",
-        remark: "",
+        hourlyRate: '',
+        remark: ''
       },
-      
+
       // 表单验证规则
       editRules: {
         parkingCode: [
-          { required: true, message: "请输入车位编号", trigger: "blur" },
+          { required: true, message: '请输入车位编号', trigger: 'blur' },
           {
             pattern: /^[A-Z0-9\-]+$/,
-            message: "车位编号只能包含大写字母、数字和横线",
-            trigger: "blur",
-          },
+            message: '车位编号只能包含大写字母、数字和横线',
+            trigger: 'blur'
+          }
         ],
         parkingType: [
-          { required: true, message: "请选择车位类型", trigger: "change" },
+          { required: true, message: '请选择车位类型', trigger: 'change' }
         ],
-        floor: [{ required: true, message: "请选择楼层", trigger: "change" }],
-        area: [{ required: true, message: "请选择区域", trigger: "change" }],
+        floor: [{ required: true, message: '请选择楼层', trigger: 'change' }],
+        area: [{ required: true, message: '请选择区域', trigger: 'change' }]
       },
-      
+
       // 设备绑定相关
-      bindDeviceType: "magnetic",
-      selectedDeviceId: "",
+      bindDeviceType: 'magnetic',
+      selectedDeviceId: '',
       selectedDeviceInfo: null,
-      
+
       // 可用设备列表
       availableMagneticSensors: [],
       availableParkingLocks: [],
       availableCameras: [],
-      
+
       // 表格列配置
       tableKey: [
         {
-          label: "车位编号",
-          key: "parkingCode",
-          width: "150",
+          label: '车位编号',
+          key: 'parkingCode',
+          width: '150',
           checked: true,
-          disabled: true,
+          disabled: true
         },
         {
-          label: "位置信息",
-          key: "locationInfo",
-          width: "160",
-          checked: true,
+          label: '位置信息',
+          key: 'locationInfo',
+          width: '160',
+          checked: true
         },
         {
-          label: "车位类型",
-          key: "parkingTypeLabel",
-          width: "120",
-          checked: true,
+          label: '车位类型',
+          key: 'parkingTypeLabel',
+          width: '120',
+          checked: true
         },
         {
-          label: "地磁传感器",
-          key: "magneticSensor",
-          width: "200",
-          checked: true,
+          label: '地磁传感器',
+          key: 'magneticSensor',
+          width: '200',
+          checked: true
         },
         {
-          label: "车位锁",
-          key: "parkingLock",
-          width: "180",
-          checked: true,
+          label: '车位锁',
+          key: 'parkingLock',
+          width: '180',
+          checked: true
         },
         {
-          label: "摄像头",
-          key: "camera",
-          width: "160",
-          checked: true,
+          label: '摄像头',
+          key: 'camera',
+          width: '160',
+          checked: true
         },
         {
-          label: "占用状态",
-          key: "occupiedStatus",
-          width: "100",
-          checked: true,
+          label: '占用状态',
+          key: 'occupiedStatus',
+          width: '100',
+          checked: true
         },
         {
-          label: "当前车辆",
-          key: "currentVehicle",
-          width: "140",
-          checked: true,
+          label: '当前车辆',
+          key: 'currentVehicle',
+          width: '140',
+          checked: true
         },
         {
-          label: "设备状态",
-          key: "deviceStatus",
-          width: "120",
-          checked: true,
+          label: '设备状态',
+          key: 'deviceStatus',
+          width: '120',
+          checked: true
         },
         {
-          label: "最后更新",
-          key: "lastUpdate",
-          width: "160",
-          checked: true,
-        },
+          label: '最后更新',
+          key: 'lastUpdate',
+          width: '160',
+          checked: true
+        }
       ],
-      
+
       // 自动刷新定时器
-      refreshTimer: null,
-    };
+      refreshTimer: null
+    }
   },
 
   computed: {
     // 计算需要显示的列
-    displayColumns() {
-      return this.tableKey.filter((col) => col.checked !== false);
+    displayColumns () {
+      return this.tableKey.filter((col) => col.checked !== false)
     },
-    
+
     // 判断是否需要显示高级筛选按钮
-    needAdvancedSearch() {
-      const totalFields = this.searchFields.basic.length + this.searchFields.advanced.length;
-      return totalFields > 5;
+    needAdvancedSearch () {
+      const totalFields = this.searchFields.basic.length + this.searchFields.advanced.length
+      return totalFields > 5
     },
-    
+
     // 获取实际显示的基础搜索字段
-    displayBasicFields() {
+    displayBasicFields () {
       if (!this.needAdvancedSearch) {
-        return [...this.searchFields.basic, ...this.searchFields.advanced];
+        return [...this.searchFields.basic, ...this.searchFields.advanced]
       }
-      return this.searchFields.basic;
+      return this.searchFields.basic
     },
-    
+
     // 获取高级搜索字段
-    displayAdvancedFields() {
-      return this.searchFields.advanced;
+    displayAdvancedFields () {
+      return this.searchFields.advanced
     },
-    
+
     // 根据筛选条件过滤数据
-    filteredData() {
-      let data = [...this.allData];
+    filteredData () {
+      let data = [...this.allData]
 
       // 搜索过滤
       if (this.queryData.parkingCode) {
         data = data.filter(item =>
           item.parkingCode.toLowerCase().includes(this.queryData.parkingCode.toLowerCase())
-        );
+        )
       }
 
       if (this.queryData.meterName) {
         data = data.filter(item =>
           (item.meterName || '').toLowerCase().includes(this.queryData.meterName.toLowerCase())
-        );
+        )
       }
 
       // 楼层过滤
       if (this.queryData.floor) {
-        data = data.filter(item => item.floor === this.queryData.floor);
+        data = data.filter(item => item.floor === this.queryData.floor)
       }
 
       // 区域过滤
       if (this.queryData.area) {
-        data = data.filter(item => item.area === this.queryData.area);
+        data = data.filter(item => item.area === this.queryData.area)
       }
 
       // 类型过滤
       if (this.queryData.parkingType) {
-        data = data.filter(item => item.parkingType === this.queryData.parkingType);
+        data = data.filter(item => item.parkingType === this.queryData.parkingType)
       }
 
       // 设备状态过滤
       if (this.queryData.deviceStatus) {
         data = data.filter(item =>
           item.magneticSensor && item.magneticSensor.status === this.queryData.deviceStatus
-        );
+        )
       }
 
       // 占用状态过滤
       if (this.queryData.occupiedStatus) {
-        const isOccupied = this.queryData.occupiedStatus === "1";
+        const isOccupied = this.queryData.occupiedStatus === '1'
         data = data.filter(item =>
           item.magneticSensor && item.magneticSensor.occupied === isOccupied
-        );
+        )
       }
 
       // 车位锁状态过滤
       if (this.queryData.lockStatus) {
-        const isLocked = this.queryData.lockStatus === "1";
+        const isLocked = this.queryData.lockStatus === '1'
         data = data.filter(item =>
           item.parkingLock && item.parkingLock.locked === isLocked
-        );
+        )
       }
 
-      return data;
+      return data
     },
-    
+
     // 动态计算表格高度
-    dynamicTableHeight() {
-      const dataLength = this.tableData.length;
+    dynamicTableHeight () {
+      const dataLength = this.tableData.length
       if (dataLength === 0) {
-        return this.tableHeightConfig.minHeight;
+        return this.tableHeightConfig.minHeight
       }
       if (dataLength <= this.tableHeightConfig.maxRows) {
         return (
           this.tableHeightConfig.headerHeight +
           dataLength * this.tableHeightConfig.rowHeight
-        );
+        )
       }
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-      );
+      )
     },
-    
-    tableMaxHeight() {
+
+    tableMaxHeight () {
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-      );
-    },
+      )
+    }
   },
 
   watch: {
-    selectedDeviceId(val) {
+    selectedDeviceId (val) {
       if (val) {
-        const devices = this.getAvailableDevices(this.bindDeviceType);
-        this.selectedDeviceInfo = devices.find((d) => d.deviceId === val);
+        const devices = this.getAvailableDevices(this.bindDeviceType)
+        this.selectedDeviceInfo = devices.find((d) => d.deviceId === val)
       } else {
-        this.selectedDeviceInfo = null;
+        this.selectedDeviceInfo = null
       }
     },
 
     // 监听筛选条件变化，更新分页数据
     filteredData: {
-      handler(newData) {
-        this.pageData.total = newData.length;
-        this.updateTableData();
+      handler (newData) {
+        this.pageData.total = newData.length
+        this.updateTableData()
       },
-      immediate: true,
+      immediate: true
     },
 
-    "pageData.current"() {
-      this.updateTableData();
+    'pageData.current' () {
+      this.updateTableData()
     },
 
-    "pageData.size"() {
-      this.pageData.current = 1;
-      this.updateTableData();
-    },
+    'pageData.size' () {
+      this.pageData.current = 1
+      this.updateTableData()
+    }
   },
 
-  created() {
+  created () {
     // this.initData();
     // this.loadAvailableDevices();
     // this.startAutoRefresh();
   },
 
-  beforeDestroy() {
+  beforeDestroy () {
     if (this.refreshTimer) {
-      clearInterval(this.refreshTimer);
+      clearInterval(this.refreshTimer)
     }
   },
 
   methods: {
     // 初始化数据
-    initData() {
-      this.loading = true;
+    initData () {
+      this.loading = true
       setTimeout(() => {
-        this.generateMockData();
-        this.loading = false;
-      }, 500);
+        this.generateMockData()
+        this.loading = false
+      }, 500)
     },
 
     // 生成模拟数据
-    generateMockData() {
-      const floors = ["B1", "B2"];
-      const areas = ["A", "B", "VIP", "CHARGE"];
-      const types = ["normal", "vip", "charging", "disabled"];
-      const statuses = ["online", "offline", "fault"];
+    generateMockData () {
+      const floors = ['B1', 'B2']
+      const areas = ['A', 'B', 'VIP', 'CHARGE']
+      const types = ['normal', 'vip', 'charging', 'disabled']
+      const statuses = ['online', 'offline', 'fault']
 
-      const data = [];
-      let id = 1;
+      const data = []
+      let id = 1
 
       for (let f = 0; f < floors.length; f++) {
         for (let a = 0; a < areas.length; a++) {
           for (let i = 1; i <= 4; i++) {
-            const floor = floors[f];
-            const area = areas[a];
-            const hasLock = area === "VIP" || Math.random() > 0.7;
-            const hasCamera = area === "VIP" || area === "CHARGE" || Math.random() > 0.8;
-            const isOccupied = Math.random() > 0.4;
-            const deviceStatus = Math.random() > 0.8 ? "offline" : Math.random() > 0.9 ? "fault" : "online";
+            const floor = floors[f]
+            const area = areas[a]
+            const hasLock = area === 'VIP' || Math.random() > 0.7
+            const hasCamera = area === 'VIP' || area === 'CHARGE' || Math.random() > 0.8
+            const isOccupied = Math.random() > 0.4
+            const deviceStatus = Math.random() > 0.8 ? 'offline' : Math.random() > 0.9 ? 'fault' : 'online'
 
             data.push({
               id: id++,
-              parkingCode: `${floor}-${area}-${String(i).padStart(3, "0")}`,
-              meterName: `车位${floor}-${area}-${String(i).padStart(3, "0")}`,
+              parkingCode: `${floor}-${area}-${String(i).padStart(3, '0')}`,
+              meterName: `车位${floor}-${area}-${String(i).padStart(3, '0')}`,
               floor: floor,
               area: area,
               locationDesc: `第${Math.ceil(i / 2)}排第${((i - 1) % 2) + 1}个`,
-              parkingType: area === "VIP" ? "vip" : area === "CHARGE" ? "charging" : types[Math.floor(Math.random() * 2)],
+              parkingType: area === 'VIP' ? 'vip' : area === 'CHARGE' ? 'charging' : types[Math.floor(Math.random() * 2)],
               magneticSensor: {
-                deviceId: `MAG-${floor}${area}${String(i).padStart(3, "0")}`,
+                deviceId: `MAG-${floor}${area}${String(i).padStart(3, '0')}`,
                 mac: this.generateMAC(),
                 status: deviceStatus,
                 occupied: isOccupied,
                 battery: Math.floor(Math.random() * 100),
-                signal: Math.floor(Math.random() * 100),
+                signal: Math.floor(Math.random() * 100)
               },
               parkingLock: hasLock ? {
-                deviceId: `LOCK-${floor}${area}${String(i).padStart(3, "0")}`,
+                deviceId: `LOCK-${floor}${area}${String(i).padStart(3, '0')}`,
                 status: deviceStatus,
-                locked: !isOccupied && Math.random() > 0.5,
+                locked: !isOccupied && Math.random() > 0.5
               } : null,
               camera: hasCamera ? {
-                deviceId: `CAM-${floor}${area}${String(i).padStart(2, "0")}`,
-                status: deviceStatus,
+                deviceId: `CAM-${floor}${area}${String(i).padStart(2, '0')}`,
+                status: deviceStatus
               } : null,
               currentVehicle: isOccupied ? {
                 plateNumber: this.generatePlateNumber(),
                 duration: (Math.random() * 24).toFixed(1),
-                entryTime: this.generateEntryTime(),
+                entryTime: this.generateEntryTime()
               } : null,
-              lastUpdate: this.formatDateTime(new Date(Date.now() - Math.random() * 3600000)),
-            });
+              lastUpdate: this.formatDateTime(new Date(Date.now() - Math.random() * 3600000))
+            })
           }
         }
       }
 
-      this.allData = data;
-      this.pageData.total = data.length;
+      this.allData = data
+      this.pageData.total = data.length
     },
 
     // 更新表格显示数据（分页）
-    updateTableData() {
-      const start = (this.pageData.current - 1) * this.pageData.size;
-      const end = start + this.pageData.size;
-      this.tableData = this.filteredData.slice(start, end);
+    updateTableData () {
+      const start = (this.pageData.current - 1) * this.pageData.size
+      const end = start + this.pageData.size
+      this.tableData = this.filteredData.slice(start, end)
     },
 
     // 加载可用设备列表
-    loadAvailableDevices() {
+    loadAvailableDevices () {
       for (let i = 1; i <= 10; i++) {
         this.availableMagneticSensors.push({
           id: i,
-          deviceId: `MAG-NEW-${String(i).padStart(4, "0")}`,
+          deviceId: `MAG-NEW-${String(i).padStart(4, '0')}`,
           name: `地磁传感器${i}`,
           mac: this.generateMAC(),
-          status: "online",
-          firmware: "v2.1.0",
-        });
+          status: 'online',
+          firmware: 'v2.1.0'
+        })
       }
 
       for (let i = 1; i <= 8; i++) {
         this.availableParkingLocks.push({
           id: i,
-          deviceId: `LOCK-NEW-${String(i).padStart(4, "0")}`,
+          deviceId: `LOCK-NEW-${String(i).padStart(4, '0')}`,
           name: `智能车位锁${i}`,
           mac: this.generateMAC(),
-          status: "online",
-          firmware: "v1.5.0",
-        });
+          status: 'online',
+          firmware: 'v1.5.0'
+        })
       }
 
       for (let i = 1; i <= 5; i++) {
         this.availableCameras.push({
           id: i,
-          deviceId: `CAM-NEW-${String(i).padStart(4, "0")}`,
+          deviceId: `CAM-NEW-${String(i).padStart(4, '0')}`,
           name: `高清摄像头${i}`,
           mac: this.generateMAC(),
-          status: "online",
-          firmware: "v3.0.0",
-        });
+          status: 'online',
+          firmware: 'v3.0.0'
+        })
       }
     },
 
     // 搜索处理
-    handleSearch() {
-      this.pageData.current = 1;
-      this.updateTableData();
-      this.$message.success("搜索完成");
+    handleSearch () {
+      this.pageData.current = 1
+      this.updateTableData()
+      this.$message.success('搜索完成')
     },
 
     // 重置筛选
-    handleReset() {
+    handleReset () {
       this.queryData = {
-        parkingCode: "",
-        meterName: "",
-        floor: "",
-        area: "",
-        parkingType: "",
-        deviceStatus: "",
-        occupiedStatus: "",
-        lockStatus: "",
-      };
-      this.showAdvanced = false;
-      this.pageData.current = 1;
-      this.updateTableData();
+        parkingCode: '',
+        meterName: '',
+        floor: '',
+        area: '',
+        parkingType: '',
+        deviceStatus: '',
+        occupiedStatus: '',
+        lockStatus: ''
+      }
+      this.showAdvanced = false
+      this.pageData.current = 1
+      this.updateTableData()
     },
 
     // 处理顶部下拉命令
-    handleCommand(command) {
+    handleCommand (command) {
       switch (command) {
-        case "export":
-          this.handleExport();
-          break;
-        case "import":
-          this.$message.info("导入功能开发中...");
-          break;
-        case "batch":
-          this.$message.info("批量操作功能开发中...");
-          break;
+        case 'export':
+          this.handleExport()
+          break
+        case 'import':
+          this.$message.info('导入功能开发中...')
+          break
+        case 'batch':
+          this.$message.info('批量操作功能开发中...')
+          break
       }
     },
 
     // 处理表格下拉命令
-    handleTableCommand(command, row) {
+    handleTableCommand (command, row) {
       switch (command) {
-        case "bind-device":
-          this.handleBindDevice(row);
-          break;
-        case "control":
-          this.handleControl(row);
-          break;
-        case "history":
-          this.handleHistory(row);
-          break;
-        case "maintenance":
-          this.handleMaintenance(row);
-          break;
-        case "delete":
-          this.handleDelete(row);
-          break;
+        case 'bind-device':
+          this.handleBindDevice(row)
+          break
+        case 'control':
+          this.handleControl(row)
+          break
+        case 'history':
+          this.handleHistory(row)
+          break
+        case 'maintenance':
+          this.handleMaintenance(row)
+          break
+        case 'delete':
+          this.handleDelete(row)
+          break
       }
     },
 
     // 新增车位
-    handleAdd() {
+    handleAdd () {
       this.editForm = {
-        id: "",
-        parkingCode: "",
-        parkingType: "normal",
-        floor: "B2",
-        area: "A",
+        id: '',
+        parkingCode: '',
+        parkingType: 'normal',
+        floor: 'B2',
+        area: 'A',
         enabled: true,
-        locationDesc: "",
-        longitude: "",
-        latitude: "",
-        magneticSensorId: "",
-        parkingLockId: "",
-        cameraId: "",
-        collectFrequency: "1min",
-        alarmRules: ["offline", "longPark"],
+        locationDesc: '',
+        longitude: '',
+        latitude: '',
+        magneticSensorId: '',
+        parkingLockId: '',
+        cameraId: '',
+        collectFrequency: '1min',
+        alarmRules: ['offline', 'longPark'],
         reservable: false,
-        hourlyRate: "",
-        remark: "",
-      };
-      this.activeTab = "basic";
-      this.dialogVisible = true;
+        hourlyRate: '',
+        remark: ''
+      }
+      this.activeTab = 'basic'
+      this.dialogVisible = true
       this.$nextTick(() => {
-        this.$refs.editForm && this.$refs.editForm.clearValidate();
-      });
+        this.$refs.editForm && this.$refs.editForm.clearValidate()
+      })
     },
 
     // 编辑车位
-    handleEdit(row) {
-      this.currentParking = row;
+    handleEdit (row) {
+      this.currentParking = row
       this.editForm = {
         id: row.id,
         parkingCode: row.parkingCode.split('-')[2] || row.parkingCode, // 只取编号部分
@@ -1462,32 +1462,32 @@ export default {
         area: row.area,
         enabled: true,
         locationDesc: row.locationDesc,
-        magneticSensorId: row.magneticSensor ? row.magneticSensor.deviceId : "",
-        parkingLockId: row.parkingLock ? row.parkingLock.deviceId : "",
-        cameraId: row.camera ? row.camera.deviceId : "",
-        collectFrequency: "1min",
-        alarmRules: ["offline", "longPark"],
-        reservable: row.parkingType === "vip",
-        hourlyRate: "5",
-        remark: "",
-      };
-      this.activeTab = "basic";
-      this.dialogVisible = true;
+        magneticSensorId: row.magneticSensor ? row.magneticSensor.deviceId : '',
+        parkingLockId: row.parkingLock ? row.parkingLock.deviceId : '',
+        cameraId: row.camera ? row.camera.deviceId : '',
+        collectFrequency: '1min',
+        alarmRules: ['offline', 'longPark'],
+        reservable: row.parkingType === 'vip',
+        hourlyRate: '5',
+        remark: ''
+      }
+      this.activeTab = 'basic'
+      this.dialogVisible = true
     },
 
     // 保存车位数据
-    handleSave() {
+    handleSave () {
       this.$refs.editForm.validate((valid) => {
         if (valid) {
-          this.submitting = true;
+          this.submitting = true
           setTimeout(() => {
             if (this.editForm.id) {
               // 更新现有车位
-              const index = this.allData.findIndex(item => item.id === this.editForm.id);
+              const index = this.allData.findIndex(item => item.id === this.editForm.id)
               if (index > -1) {
                 // 生成完整的车位编号
-                const fullParkingCode = `${this.editForm.floor}-${this.editForm.area}-${this.editForm.parkingCode.padStart(3, '0')}`;
-                
+                const fullParkingCode = `${this.editForm.floor}-${this.editForm.area}-${this.editForm.parkingCode.padStart(3, '0')}`
+
                 Object.assign(this.allData[index], {
                   parkingCode: fullParkingCode,
                   meterName: `车位${fullParkingCode}`,
@@ -1495,15 +1495,15 @@ export default {
                   area: this.editForm.area,
                   locationDesc: this.editForm.locationDesc,
                   parkingType: this.editForm.parkingType,
-                  lastUpdate: this.formatDateTime(new Date()),
-                });
+                  lastUpdate: this.formatDateTime(new Date())
+                })
               }
-              this.$message.success("车位信息更新成功");
+              this.$message.success('车位信息更新成功')
             } else {
               // 添加新车位
               // 生成完整的车位编号
-              const fullParkingCode = `${this.editForm.floor}-${this.editForm.area}-${this.editForm.parkingCode.padStart(3, '0')}`;
-              
+              const fullParkingCode = `${this.editForm.floor}-${this.editForm.area}-${this.editForm.parkingCode.padStart(3, '0')}`
+
               const newParking = {
                 id: this.allData.length + 1,
                 parkingCode: fullParkingCode,
@@ -1515,289 +1515,289 @@ export default {
                 magneticSensor: this.editForm.magneticSensorId ? {
                   deviceId: this.editForm.magneticSensorId,
                   mac: this.generateMAC(),
-                  status: "online",
+                  status: 'online',
                   occupied: false,
                   battery: 100,
-                  signal: 100,
+                  signal: 100
                 } : null,
                 parkingLock: this.editForm.parkingLockId ? {
                   deviceId: this.editForm.parkingLockId,
-                  status: "online",
-                  locked: false,
+                  status: 'online',
+                  locked: false
                 } : null,
                 camera: this.editForm.cameraId ? {
                   deviceId: this.editForm.cameraId,
-                  status: "online",
+                  status: 'online'
                 } : null,
                 currentVehicle: null,
-                lastUpdate: this.formatDateTime(new Date()),
-              };
-              
-              this.allData.unshift(newParking);
-              this.$message.success(`车位 ${fullParkingCode} 添加成功`);
+                lastUpdate: this.formatDateTime(new Date())
+              }
+
+              this.allData.unshift(newParking)
+              this.$message.success(`车位 ${fullParkingCode} 添加成功`)
             }
-            
-            this.submitting = false;
-            this.dialogVisible = false;
-            this.updateTableData();
-          }, 1000);
+
+            this.submitting = false
+            this.dialogVisible = false
+            this.updateTableData()
+          }, 1000)
         }
-      });
+      })
     },
 
     // 绑定设备
-    handleBindDevice(row) {
-      this.currentParking = row;
-      this.bindDeviceType = "magnetic";
-      this.selectedDeviceId = "";
-      this.selectedDeviceInfo = null;
-      this.bindDialogVisible = true;
+    handleBindDevice (row) {
+      this.currentParking = row
+      this.bindDeviceType = 'magnetic'
+      this.selectedDeviceId = ''
+      this.selectedDeviceInfo = null
+      this.bindDialogVisible = true
     },
 
     // 远程控制
-    handleControl(row) {
-      this.currentParking = row;
-      this.controlDialogVisible = true;
+    handleControl (row) {
+      this.currentParking = row
+      this.controlDialogVisible = true
     },
 
     // 历史数据
-    handleHistory(row) {
-      this.$message.info(`查看车位 ${row.parkingCode} 的历史数据`);
+    handleHistory (row) {
+      this.$message.info(`查看车位 ${row.parkingCode} 的历史数据`)
     },
 
     // 维护记录
-    handleMaintenance(row) {
-      this.$message.info(`查看车位 ${row.parkingCode} 的维护记录`);
+    handleMaintenance (row) {
+      this.$message.info(`查看车位 ${row.parkingCode} 的维护记录`)
     },
 
     // 删除车位
-    handleDelete(row) {
+    handleDelete (row) {
       this.$confirm(
         `确定要删除车位 ${row.parkingCode} 吗？删除后相关设备绑定关系也将解除。`,
-        "提示",
+        '提示',
         {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
         }
       ).then(() => {
-        const index = this.allData.findIndex((item) => item.id === row.id);
+        const index = this.allData.findIndex((item) => item.id === row.id)
         if (index > -1) {
-          this.allData.splice(index, 1);
-          this.$message.success("删除成功");
-          this.updateTableData();
+          this.allData.splice(index, 1)
+          this.$message.success('删除成功')
+          this.updateTableData()
         }
-      }).catch(() => {});
+      }).catch(() => {})
     },
 
     // 电表监控（保持兼容性）
-    handleMonitor(row) {
+    handleMonitor (row) {
       this.$router.push({
-      path: `/device/parking/detail/${row.id}`,
-      query: { 
-        name: row.meterName,
-        serial: row.serial,
-        deviceId: row.id
-      }
-    });
+        path: `/device/parking/detail/${row.id}`,
+        query: {
+          name: row.meterName,
+          serial: row.serial,
+          deviceId: row.id
+        }
+      })
     },
 
     // 导出数据
-    handleExport() {
+    handleExport () {
       if (this.selectedData.length === 0) {
-        this.$message.warning("请先选择要导出的数据");
-        return;
+        this.$message.warning('请先选择要导出的数据')
+        return
       }
-      this.$message.success("正在导出数据...");
+      this.$message.success('正在导出数据...')
     },
 
     // 扫描设备
-    scanDevice(type) {
+    scanDevice (type) {
       this.$message.info(
         `正在扫描${
-          type === "magnetic" ? "地磁传感器" : type === "lock" ? "车位锁" : "摄像头"
+          type === 'magnetic' ? '地磁传感器' : type === 'lock' ? '车位锁' : '摄像头'
         }...`
-      );
+      )
       setTimeout(() => {
-        this.$message.success("扫描完成，请在下拉列表中选择设备");
-      }, 1500);
+        this.$message.success('扫描完成，请在下拉列表中选择设备')
+      }, 1500)
     },
 
     // 控制车位锁
-    controlLock(action) {
-      this.$message.info(`正在${action === "up" ? "升起" : "降下"}车位锁...`);
+    controlLock (action) {
+      this.$message.info(`正在${action === 'up' ? '升起' : '降下'}车位锁...`)
       setTimeout(() => {
         if (this.currentParking.parkingLock) {
-          this.currentParking.parkingLock.locked = action === "down";
-          this.$message.success(`车位锁已${action === "up" ? "升起" : "降下"}`);
+          this.currentParking.parkingLock.locked = action === 'down'
+          this.$message.success(`车位锁已${action === 'up' ? '升起' : '降下'}`)
         }
-      }, 1000);
+      }, 1000)
     },
 
     // 抓拍图像
-    captureImage() {
-      this.$message.info("正在抓拍图像...");
+    captureImage () {
+      this.$message.info('正在抓拍图像...')
       setTimeout(() => {
-        this.$message.success("图像抓拍成功");
-      }, 800);
+        this.$message.success('图像抓拍成功')
+      }, 800)
     },
 
     // 查看实时画面
-    viewLiveStream() {
-      this.$message.info("正在连接摄像头...");
+    viewLiveStream () {
+      this.$message.info('正在连接摄像头...')
     },
 
     // 获取可用设备列表
-    getAvailableDevices(type) {
+    getAvailableDevices (type) {
       switch (type) {
-        case "magnetic":
-          return this.availableMagneticSensors;
-        case "lock":
-          return this.availableParkingLocks;
-        case "camera":
-          return this.availableCameras;
+        case 'magnetic':
+          return this.availableMagneticSensors
+        case 'lock':
+          return this.availableParkingLocks
+        case 'camera':
+          return this.availableCameras
         default:
-          return [];
+          return []
       }
     },
 
     // 确认绑定设备
-    confirmBindDevice() {
+    confirmBindDevice () {
       if (!this.selectedDeviceId) {
-        this.$message.warning("请选择要绑定的设备");
-        return;
+        this.$message.warning('请选择要绑定的设备')
+        return
       }
-      this.$message.success(`设备 ${this.selectedDeviceId} 绑定成功`);
-      this.bindDialogVisible = false;
+      this.$message.success(`设备 ${this.selectedDeviceId} 绑定成功`)
+      this.bindDialogVisible = false
     },
 
     // 选择变化
-    handleSelectionChange(selection) {
-      this.selectedData = selection;
+    handleSelectionChange (selection) {
+      this.selectedData = selection
     },
 
     // 分页大小变化
-    handleSizeChange(val) {
-      this.pageData.size = val;
-      this.pageData.current = 1;
-      this.updateTableData();
+    handleSizeChange (val) {
+      this.pageData.size = val
+      this.pageData.current = 1
+      this.updateTableData()
     },
 
     // 当前页变化
-    handleCurrentChange(val) {
-      this.pageData.current = val;
-      this.updateTableData();
+    handleCurrentChange (val) {
+      this.pageData.current = val
+      this.updateTableData()
     },
 
     // 辅助方法
-    generateMAC() {
-      const hex = "0123456789ABCDEF";
-      let mac = "";
+    generateMAC () {
+      const hex = '0123456789ABCDEF'
+      let mac = ''
       for (let i = 0; i < 6; i++) {
-        if (i > 0) mac += ":";
-        mac += hex[Math.floor(Math.random() * 16)];
-        mac += hex[Math.floor(Math.random() * 16)];
+        if (i > 0) mac += ':'
+        mac += hex[Math.floor(Math.random() * 16)]
+        mac += hex[Math.floor(Math.random() * 16)]
       }
-      return mac;
+      return mac
     },
 
-    generatePlateNumber() {
-      const provinces = ["京", "沪", "粤", "苏", "浙", "鲁", "川", "渝"];
-      const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-      const province = provinces[Math.floor(Math.random() * provinces.length)];
-      const letter = letters[Math.floor(Math.random() * letters.length)];
+    generatePlateNumber () {
+      const provinces = ['京', '沪', '粤', '苏', '浙', '鲁', '川', '渝']
+      const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+      const province = provinces[Math.floor(Math.random() * provinces.length)]
+      const letter = letters[Math.floor(Math.random() * letters.length)]
       const numbers = Math.floor(Math.random() * 100000)
         .toString()
-        .padStart(5, "0");
-      return `${province}${letter}·${numbers}`;
+        .padStart(5, '0')
+      return `${province}${letter}·${numbers}`
     },
 
-    generateEntryTime() {
-      const now = new Date();
-      const hoursAgo = Math.floor(Math.random() * 24);
-      return new Date(now - hoursAgo * 3600000);
+    generateEntryTime () {
+      const now = new Date()
+      const hoursAgo = Math.floor(Math.random() * 24)
+      return new Date(now - hoursAgo * 3600000)
     },
 
-    formatDateTime(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-      const seconds = String(date.getSeconds()).padStart(2, "0");
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    formatDateTime (date) {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     },
 
-    getParkingTypeTag(type) {
+    getParkingTypeTag (type) {
       const map = {
-        normal: "",
-        vip: "warning",
-        charging: "success",
-        disabled: "info",
-        truck: "primary",
-      };
-      return map[type] || "";
+        normal: '',
+        vip: 'warning',
+        charging: 'success',
+        disabled: 'info',
+        truck: 'primary'
+      }
+      return map[type] || ''
     },
 
-    getParkingTypeText(type) {
+    getParkingTypeText (type) {
       const map = {
-        normal: "普通",
-        vip: "VIP",
-        charging: "充电",
-        disabled: "无障碍",
-        truck: "货车位",
-      };
-      return map[type] || type;
+        normal: '普通',
+        vip: 'VIP',
+        charging: '充电',
+        disabled: '无障碍',
+        truck: '货车位'
+      }
+      return map[type] || type
     },
 
-    getStatusText(status) {
+    getStatusText (status) {
       const map = {
-        online: "在线",
-        offline: "离线",
-        fault: "故障",
-      };
-      return map[status] || status;
+        online: '在线',
+        offline: '离线',
+        fault: '故障'
+      }
+      return map[status] || status
     },
 
     // 自动刷新（优化后，只更新少量数据）
-    startAutoRefresh() {
+    startAutoRefresh () {
       this.refreshTimer = setInterval(() => {
         // 只随机更新1-2个车位状态
-        const updateCount = Math.floor(Math.random() * 2) + 1;
-        const indices = [];
+        const updateCount = Math.floor(Math.random() * 2) + 1
+        const indices = []
 
         // 随机选择要更新的车位
         for (let i = 0; i < updateCount; i++) {
-          const randomIndex = Math.floor(Math.random() * this.allData.length);
+          const randomIndex = Math.floor(Math.random() * this.allData.length)
           if (!indices.includes(randomIndex)) {
-            indices.push(randomIndex);
+            indices.push(randomIndex)
           }
         }
 
         // 更新选中的车位
         indices.forEach((index) => {
-          const item = this.allData[index];
+          const item = this.allData[index]
           if (item.magneticSensor) {
-            item.magneticSensor.occupied = !item.magneticSensor.occupied;
+            item.magneticSensor.occupied = !item.magneticSensor.occupied
             if (item.magneticSensor.occupied) {
               item.currentVehicle = {
                 plateNumber: this.generatePlateNumber(),
-                duration: "0.1",
-                entryTime: new Date(),
-              };
+                duration: '0.1',
+                entryTime: new Date()
+              }
             } else {
-              item.currentVehicle = null;
+              item.currentVehicle = null
             }
-            item.lastUpdate = this.formatDateTime(new Date());
+            item.lastUpdate = this.formatDateTime(new Date())
           }
-        });
+        })
 
         // 更新当前页显示
-        this.updateTableData();
-      }, 10000); // 10秒刷新一次
-    },
-  },
-};
+        this.updateTableData()
+      }, 10000) // 10秒刷新一次
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1862,7 +1862,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  
+
   span:first-child {
     font-weight: 500;
     color: #111827;
@@ -1908,15 +1908,15 @@ export default {
   height: 6px;
   border-radius: 50%;
   display: inline-block;
-  
+
   &.online {
     background: #10b981;
   }
-  
+
   &.offline {
     background: #9ca3af;
   }
-  
+
   &.fault {
     background: #f59e0b;
   }
@@ -1972,7 +1972,7 @@ export default {
   background: #f9fafb;
   border-radius: 6px;
   border: 1px solid #e5e7eb;
-  
+
   h4 {
     margin: 0 0 12px 0;
     color: #111827;

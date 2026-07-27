@@ -8,7 +8,7 @@
           设置
         </el-button>
       </div>
-      
+
       <div class="tree-search">
         <el-input
           v-model="filterText"
@@ -18,7 +18,7 @@
           size="small"
         />
       </div>
-      
+
       <div class="tree-content" v-loading="treeLoading">
         <el-tree
           ref="treeRef"
@@ -66,26 +66,26 @@
             <el-radio-button label="monitor" :disabled="!checkedNode.subType">实时监测</el-radio-button>
           </el-radio-group>
         </div>
-        
+
         <!-- 用能报表筛选条件 -->
         <div class="filter-bar" v-if="activeTab === 'report'">
           <div class="time-shortcuts">
-            <el-button 
-              :type="timeType === 'week' ? 'primary' : 'default'" 
+            <el-button
+              :type="timeType === 'week' ? 'primary' : 'default'"
               size="small"
               @click="handleTimeShortcut('week')"
             >
               近一周
             </el-button>
-            <el-button 
-              :type="timeType === 'month' ? 'primary' : 'default'" 
+            <el-button
+              :type="timeType === 'month' ? 'primary' : 'default'"
               size="small"
               @click="handleTimeShortcut('month')"
             >
               近一月
             </el-button>
           </div>
-          
+
           <div class="time-picker">
             <el-date-picker
               v-model="timeRange"
@@ -106,14 +106,14 @@
       <!-- 内容区域 -->
       <div class="content-body">
         <!-- 用能报表 -->
-        <TopStatistic 
+        <TopStatistic
           v-if="activeTab === 'report'"
           ref="topStatisticRef"
           :time-range="timeRange"
           :checked-node="checkedNode"
           :trigger="queryTrigger"
         />
-        
+
         <!-- 实时监测 -->
         <Ammeter
           v-if="activeTab === 'monitor' && checkedNode.subType"
@@ -140,13 +140,13 @@ const NODE_ICONS = {
 
 export default {
   name: 'SubMetering',
-  
+
   components: {
     TopStatistic,
     Ammeter
   },
-  
-  data() {
+
+  data () {
     return {
       // 树相关
       filterText: '',
@@ -159,10 +159,10 @@ export default {
         children: 'zones',
         isLeaf: 'leaf'
       },
-      
+
       // Tab切换
       activeTab: 'report',
-      
+
       // 时间筛选
       timeType: 'week',
       timeRange: [
@@ -170,7 +170,7 @@ export default {
         moment().subtract(1, 'days').format('YYYY-MM-DD')
       ],
       queryTrigger: 0,
-      
+
       // 日期选择器配置
       pickerMinDate: '',
       isRestart: false,
@@ -194,18 +194,18 @@ export default {
       }
     }
   },
-  
+
   computed: {
     ...mapGetters('manager', ['currentManagerId'])
   },
-  
+
   watch: {
-    filterText(val) {
+    filterText (val) {
       this.$refs.treeRef?.filter(val)
     },
-    
+
     currentManagerId: {
-      handler(val) {
+      handler (val) {
         if (val) {
           this.initData()
         }
@@ -213,28 +213,28 @@ export default {
       immediate: true
     }
   },
-  
+
   methods: {
     // 初始化数据
-    async initData() {
+    async initData () {
       await this.getTreeData()
     },
-    
+
     // 获取分项树数据
-    async getTreeData() {
+    async getTreeData () {
       this.treeLoading = true
       try {
         const { data } = await getSubTree({ managerId: this.currentManagerId })
         this.treeData = data || []
-        
+
         if (this.treeData.length > 0) {
           this.checkedNode = this.treeData[0]
           this.currentNodeId = this.treeData[0].id
-          
+
           this.$nextTick(() => {
             this.$refs.treeRef?.setCurrentKey(this.currentNodeId)
           })
-          
+
           this.queryTrigger++
         }
       } catch (error) {
@@ -244,23 +244,23 @@ export default {
         this.treeLoading = false
       }
     },
-    
+
     // 树节点懒加载
-    loadNode(node, resolve) {
+    loadNode (node, resolve) {
       if (node.level === 0) {
         return resolve(this.treeData)
       }
-      
+
       if (node.data.subType) {
         return resolve([])
       }
-      
+
       const { subTreeList = [], mainMeterList = [], subMeterList = [] } = node.data
-      
+
       if (!subTreeList.length && !mainMeterList.length && !subMeterList.length) {
         return resolve([])
       }
-      
+
       // 处理电表数据
       const processedMainList = mainMeterList.map(item => ({
         ...item,
@@ -268,55 +268,55 @@ export default {
         id: item.meterId,
         leaf: true
       }))
-      
+
       const processedSubList = subMeterList.map(item => ({
         ...item,
         name: item.meterName,
         id: item.meterId,
         leaf: true
       }))
-      
+
       resolve([...processedMainList, ...processedSubList, ...subTreeList])
     },
-    
+
     // 树节点过滤
-    filterNode(value, data) {
+    filterNode (value, data) {
       if (!value) return true
       return data.name?.includes(value)
     },
-    
+
     // 节点点击
-    handleNodeClick(data) {
+    handleNodeClick (data) {
       this.checkedNode = data
       this.currentNodeId = data.id
-      
+
       // 如果点击的不是电表节点，切换到用能报表
       if (!data.subType) {
         this.activeTab = 'report'
       }
-      
+
       this.queryTrigger++
     },
-    
+
     // 获取节点图标
-    getNodeIcon(data) {
+    getNodeIcon (data) {
       if (data.subType === 'MAIN') return NODE_ICONS.main
       if (data.subType === 'SUB') return NODE_ICONS.sub
       return NODE_ICONS.folder
     },
-    
+
     // Tab切换
-    handleTabChange(val) {
+    handleTabChange (val) {
       if (val === 'monitor' && !this.checkedNode.subType) {
         this.$message.warning('请选择电表节点')
         this.activeTab = 'report'
       }
     },
-    
+
     // 时间快捷选择
-    handleTimeShortcut(type) {
+    handleTimeShortcut (type) {
       this.timeType = type
-      
+
       const shortcuts = {
         week: [
           moment().subtract(7, 'days').format('YYYY-MM-DD'),
@@ -327,30 +327,30 @@ export default {
           moment().subtract(1, 'days').format('YYYY-MM-DD')
         ]
       }
-      
+
       this.timeRange = shortcuts[type]
       this.queryTrigger++
     },
-    
+
     // 时间范围变化
-    handleTimeRangeChange(val) {
+    handleTimeRangeChange (val) {
       if (!val) {
         this.timeType = ''
         return
       }
-      
+
       const weekRange = [
         moment().subtract(7, 'days').format('YYYY-MM-DD'),
         moment().subtract(1, 'days').format('YYYY-MM-DD')
       ].join(',')
-      
+
       const monthRange = [
         moment().subtract(30, 'days').format('YYYY-MM-DD'),
         moment().subtract(1, 'days').format('YYYY-MM-DD')
       ].join(',')
-      
+
       const currentRange = val.join(',')
-      
+
       if (currentRange === weekRange) {
         this.timeType = 'week'
       } else if (currentRange === monthRange) {
@@ -359,14 +359,14 @@ export default {
         this.timeType = ''
       }
     },
-    
+
     // 查询
-    handleQuery() {
+    handleQuery () {
       this.queryTrigger++
     },
-    
+
     // 跳转设置页
-    goToSetting() {
+    goToSetting () {
       this.$router.push({
         path: '/energy/sub-metering/detail/' + this.currentManagerId
       })
@@ -392,14 +392,14 @@ export default {
   border-radius: 4px;
   display: flex;
   flex-direction: column;
-  
+
   .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 16px;
     border-bottom: 1px solid #f0f0f0;
-    
+
     .panel-title {
       font-size: 16px;
       font-weight: 500;
@@ -407,11 +407,11 @@ export default {
       margin: 0;
     }
   }
-  
+
   .tree-search {
     padding: 12px 16px;
   }
-  
+
   .tree-content {
     flex: 1;
     overflow: auto;
@@ -423,26 +423,26 @@ export default {
 .tree-node-content {
   flex: 1;
   overflow: hidden;
-  
+
   .node-inner {
     display: flex;
     align-items: center;
     width: 100%;
   }
-  
+
   .node-icon {
     font-size: 16px;
     margin-right: 6px;
     flex-shrink: 0;
     color: #409EFF;
   }
-  
+
   .node-label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  
+
   .node-count {
     display: inline-flex;
     align-items: center;
@@ -450,7 +450,7 @@ export default {
     font-size: 12px;
     color: #999;
     flex-shrink: 0;
-    
+
     .count-icon {
       font-size: 14px;
       margin: 0 2px;
@@ -467,7 +467,7 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  
+
   .content-header {
     padding: 16px 24px;
     border-bottom: 1px solid #f0f0f0;
@@ -477,24 +477,24 @@ export default {
     flex-wrap: wrap;
     gap: 12px;
   }
-  
+
   .filter-bar {
     display: flex;
     align-items: center;
     gap: 16px;
-    
+
     .time-shortcuts {
       display: flex;
       gap: 8px;
     }
-    
+
     .time-picker {
       display: flex;
       align-items: center;
       gap: 8px;
     }
   }
-  
+
   .content-body {
     flex: 1;
     overflow: auto;
@@ -507,11 +507,11 @@ export default {
   .el-tree-node__content {
     height: 32px;
   }
-  
+
   .el-tree-node__expand-icon {
     font-size: 14px;
   }
-  
+
   .el-radio-button__inner {
     padding: 8px 20px;
   }

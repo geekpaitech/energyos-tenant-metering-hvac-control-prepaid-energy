@@ -4,7 +4,7 @@
         <h2>订单列表</h2>
         <p>订单管理页面</p>
       </div>
-  
+
       <el-card>
         <el-table :data="orderList" border style="width: 100%">
           <el-table-column prop="id" label="订单ID" width="120"></el-table-column>
@@ -22,47 +22,47 @@
       </el-card>
     </div>
   </template>
-  
-  <script>
-  export default {
-    name: 'OrderList',
-    data() {
-      return {
-        orderList: [
-          {
-            id: 'ORD001',
-            customerName: '张三',
-            amount: '￥299.00',
-            status: '待处理',
-            createTime: '2024-01-01 10:00:00'
-          },
-          {
-            id: 'ORD002',
-            customerName: '李四',
-            amount: '￥599.00',
-            status: '已完成',
-            createTime: '2024-01-02 14:30:00'
-          }
-        ]
-      }
+
+<script>
+export default {
+  name: 'OrderList',
+  data () {
+    return {
+      orderList: [
+        {
+          id: 'ORD001',
+          customerName: '张三',
+          amount: '￥299.00',
+          status: '待处理',
+          createTime: '2024-01-01 10:00:00'
+        },
+        {
+          id: 'ORD002',
+          customerName: '李四',
+          amount: '￥599.00',
+          status: '已完成',
+          createTime: '2024-01-02 14:30:00'
+        }
+      ]
     }
   }
-  </script>
-  
+}
+</script>
+
   <style scoped>
   .order-list-container {
     padding: 20px;
   }
-  
+
   .page-header {
     margin-bottom: 20px;
   }
-  
+
   .page-header h2 {
     color: #303133;
     margin-bottom: 8px;
   }
-  
+
   .page-header p {
     color: #606266;
     margin: 0;

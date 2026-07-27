@@ -30,17 +30,17 @@ export default {
 
   .switching-content {
     text-align: center;
-    
+
     .loading-spinner {
       font-size: 32px;
       color: var(--primary-color, #409eff);
       margin-bottom: 16px;
-      
+
       i {
         animation: rotating 2s linear infinite;
       }
     }
-    
+
     .loading-text {
       font-size: 16px;
       color: var(--text-primary, #333);

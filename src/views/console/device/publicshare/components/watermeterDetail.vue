@@ -9,7 +9,7 @@
     <el-card class="info-card" shadow="never">
       <div slot="header" class="card-header">
         <span class="header-title"><i class="el-icon-document"></i> 基本信息</span>
-        <el-button type="primary" size="small" icon="el-icon-edit" @click="handleModifyShare">修改</el-button>
+        <el-button v-if="canAdd" type="primary" size="small" icon="el-icon-edit" @click="handleModifyShare">修改</el-button>
       </div>
       <el-row :gutter="20">
         <el-col :span="8">
@@ -40,7 +40,7 @@
         <el-card class="tenant-card" shadow="never">
           <div slot="header" class="card-header">
             <span class="header-title">租户信息 ({{ tenantList.length }})</span>
-            <el-button type="primary" size="small" icon="el-icon-link" @click="handleBindTenant">关联/解绑租户</el-button>
+            <el-button v-if="canAdd" type="primary" size="small" icon="el-icon-link" @click="handleBindTenant">关联/解绑租户</el-button>
           </div>
           <el-table
             :data="tenantList"
@@ -64,7 +64,7 @@
               <template slot-scope="scope">
                 <div class="area-cell">
                   <span>{{ scope.row.area }}</span>
-                  <i class="el-icon-edit edit-icon" @click="handleEditArea(scope.row)"></i>
+                  <i v-if="canAdd" class="el-icon-edit edit-icon" @click="handleEditArea(scope.row)"></i>
                 </div>
               </template>
             </el-table-column>
@@ -85,7 +85,7 @@
         <el-card class="meter-card" shadow="never">
           <div slot="header" class="card-header">
             <span class="header-title">公摊水表 ({{ meterList.length }})</span>
-            <el-button type="primary" size="small" icon="el-icon-link" @click="handleBindMeter">关联/解绑水表</el-button>
+            <el-button v-if="canAdd" type="primary" size="small" icon="el-icon-link" @click="handleBindMeter">关联/解绑水表</el-button>
           </div>
           <div class="meter-list">
             <div v-for="item in meterList" :key="item.id" class="meter-item">
@@ -103,7 +103,7 @@
                 </span>
               </div>
               <div class="meter-action">
-                <el-button type="text" size="small" icon="el-icon-setting" @click="handleMeterSetting(item)">设置</el-button>
+                <el-button v-if="canAdd" type="text" size="small" icon="el-icon-setting" @click="handleMeterSetting(item)">设置</el-button>
               </div>
             </div>
             <div v-if="meterList.length === 0" class="empty-data">
@@ -128,7 +128,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="modifyDialog.visible = false">取 消</el-button>
-        <el-button type="primary" :loading="modifySubmitting" @click="handleModifySubmit">确 定</el-button>
+        <el-button v-if="canAdd" type="primary" :loading="modifySubmitting" @click="handleModifySubmit">确 定</el-button>
       </span>
     </el-dialog>
 
@@ -161,7 +161,7 @@
             <el-table-column label="实际公摊面积" width="120" align="center">
               <template slot-scope="scope">{{ scope.row.publicArea || 0 }}㎡</template>
             </el-table-column>
-            <el-table-column label="操作" width="150" align="center">
+            <el-table-column v-if="canAdd" label="操作" width="150" align="center">
               <template slot-scope="scope">
                 <el-button type="text" size="small" @click="handleTenantUnbind(scope.row)">解绑</el-button>
                 <el-button type="text" size="small" @click="handleTenantModifyArea(scope.row)">修改面积</el-button>
@@ -192,7 +192,7 @@
             <el-table-column label="实际公摊面积" width="120" align="center">
               <template slot-scope="scope">{{ scope.row.publicArea || 0 }}㎡</template>
             </el-table-column>
-            <el-table-column label="操作" width="80" align="center">
+            <el-table-column v-if="canAdd" label="操作" width="80" align="center">
               <template slot-scope="scope">
                 <el-button type="text" size="small" @click="handleTenantBind(scope.row)">绑定</el-button>
               </template>
@@ -227,7 +227,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="tenantOperateDialog.visible = false">取 消</el-button>
-        <el-button type="primary" :loading="tenantOperateSubmitting" @click="handleTenantOperateSubmit">确 认</el-button>
+        <el-button v-if="canAdd" type="primary" :loading="tenantOperateSubmitting" @click="handleTenantOperateSubmit">确 认</el-button>
       </span>
     </el-dialog>
 
@@ -270,7 +270,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="editAreaDialog.visible = false">取 消</el-button>
-        <el-button type="primary" :loading="editAreaSubmitting" @click="handleEditAreaSubmit">确 认</el-button>
+        <el-button v-if="canAdd" type="primary" :loading="editAreaSubmitting" @click="handleEditAreaSubmit">确 认</el-button>
       </span>
     </el-dialog>
 
@@ -304,14 +304,14 @@
       </el-form>
       <span slot="footer">
         <el-button @click="meterSettingDialog.visible = false">取 消</el-button>
-        <el-button type="primary" :loading="meterSettingSubmitting" @click="handleMeterSettingSubmit">确 定</el-button>
+        <el-button v-if="canAdd" type="primary" :loading="meterSettingSubmitting" @click="handleMeterSettingSubmit">确 定</el-button>
       </span>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex'
 // 使用正确的API文件和函数名
 import {
   waterShareGetShareDetail,
@@ -320,11 +320,11 @@ import {
   waterShareBindShareTenantdata,
   waterShareGetShareWaterBindEdit,
   waterShareBindShareWater
-} from '@/api/waterGroup';
+} from '@/api/waterGroup'
 
 export default {
   name: 'WatermeterSharingDetail',
-  data() {
+  data () {
     return {
       shareId: '',
       pageLoading: false,
@@ -397,146 +397,158 @@ export default {
         priceList: []
       },
       meterSettingSubmitting: false
-    };
+    }
   },
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
+    ...mapGetters(['kztMenuNos']),
+    hasKztPermission () {
+      const allow = new Set((this.kztMenuNos || []).map((v) => String(v)))
+      return (menuNo) => allow.has(String(menuNo))
+    },
+    canAdd () {
+      return this.hasKztPermission('630050')
+    },
     // 总面积
-    totalArea() {
-      return this.tenantList.reduce((sum, item) => sum + (item.area || 0), 0).toFixed(2);
+    totalArea () {
+      return this.tenantList.reduce((sum, item) => sum + (item.area || 0), 0).toFixed(2)
     }
   },
-  created() {
-    this.shareId = this.$route.query.id;
+  created () {
+    this.shareId = this.$route.query.id
     if (this.shareId) {
-      this.fetchDetailData();
+      this.fetchDetailData()
     } else {
-      this.$message.error('缺少公摊组ID');
-      this.goBack();
+      this.$message.error('缺少公摊组ID')
+      this.goBack()
     }
   },
   methods: {
     // 返回列表
-    goBack() {
-      this.$router.go(-1);
+    goBack () {
+      this.$router.go(-1)
     },
     // 获取详情数据
-    async fetchDetailData() {
-      if (!this.shareId) return;
-      
-      this.pageLoading = true;
+    async fetchDetailData () {
+      if (!this.shareId) return
+
+      this.pageLoading = true
       try {
-        const res = await waterShareGetShareDetail({ shareId: this.shareId });
+        const res = await waterShareGetShareDetail({ shareId: this.shareId })
         if (res.code === 200 && res.data) {
-          this.shareData = res.data.waterShareDto || {};
-          this.tenantList = res.data.tenantDtoList || [];
-          this.meterList = res.data.meterInfoDtoList || [];
+          this.shareData = res.data.waterShareDto || {}
+          this.tenantList = res.data.tenantDtoList || []
+          this.meterList = res.data.meterInfoDtoList || []
         } else {
-          this.$message.error(res.msg || '获取详情失败');
+          this.$message.error(res.msg || '获取详情失败')
         }
       } catch (e) {
-        console.error('获取详情失败:', e);
-        this.$message.error('获取详情失败');
+        console.error('获取详情失败:', e)
+        this.$message.error('获取详情失败')
       } finally {
-        this.pageLoading = false;
+        this.pageLoading = false
       }
     },
     // 打开修改公摊组弹窗
-    handleModifyShare() {
+    handleModifyShare () {
+      if (!this.canAdd) return
       this.modifyDialog = {
         visible: true,
         id: this.shareData.id,
         name: this.shareData.name
-      };
+      }
       this.$nextTick(() => {
-        this.$refs.modifyForm && this.$refs.modifyForm.clearValidate();
-      });
+        this.$refs.modifyForm && this.$refs.modifyForm.clearValidate()
+      })
     },
     // 提交修改公摊组
-    handleModifySubmit() {
+    handleModifySubmit () {
+      if (!this.canAdd) return
       this.$refs.modifyForm.validate(async (valid) => {
-        if (!valid) return;
+        if (!valid) return
         this.$confirm('确认修改公摊组信息?', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
         }).then(async () => {
-          this.modifySubmitting = true;
+          this.modifySubmitting = true
           try {
             const res = await waterShareUpdate({
               id: this.modifyDialog.id,
               name: this.modifyDialog.name,
               managerId: this.currentManagerId
-            });
+            })
             if (res.code === 200) {
-              this.$message.success(res.msg || '修改成功');
-              this.modifyDialog.visible = false;
-              this.fetchDetailData();
+              this.$message.success(res.msg || '修改成功')
+              this.modifyDialog.visible = false
+              this.fetchDetailData()
             } else {
-              this.$message.error(res.msg || '修改失败');
+              this.$message.error(res.msg || '修改失败')
             }
           } catch (e) {
-            this.$message.error('修改失败');
+            this.$message.error('修改失败')
           } finally {
-            this.modifySubmitting = false;
+            this.modifySubmitting = false
           }
-        }).catch(() => {});
-      });
+        }).catch(() => {})
+      })
     },
     // 跳转租户详情
-    handleTenantDetail(row) {
+    handleTenantDetail (row) {
       this.$router.push({
         path: `/metering/tenant/detail/${row.tenantId}`,
         query: { selectType: 3, deviceType: 3 }
-      });
+      })
     },
     // ========== 租户绑定相关 ==========
     // 打开租户绑定弹窗
-    async handleBindTenant() {
-      this.tenantBindDialog.visible = true;
-      this.tenantBindLoading = true;
-      this.tenantBindDialog.selectedSearch = '';
-      this.tenantBindDialog.selectableSearch = '';
+    async handleBindTenant () {
+      if (!this.canAdd) return
+      this.tenantBindDialog.visible = true
+      this.tenantBindLoading = true
+      this.tenantBindDialog.selectedSearch = ''
+      this.tenantBindDialog.selectableSearch = ''
       try {
         const res = await waterShareGetShareTenantBindEdit({
           managerId: this.currentManagerId,
           shareId: this.shareId
-        });
+        })
         if (res.code === 200 && res.data) {
           if (res.data.tenantSelectedList && res.data.tenantSelectableList) {
-            this.tenantBindDialog.selectedList = res.data.tenantSelectedList || [];
-            this.tenantBindDialog.selectableList = res.data.tenantSelectableList || [];
+            this.tenantBindDialog.selectedList = res.data.tenantSelectedList || []
+            this.tenantBindDialog.selectableList = res.data.tenantSelectableList || []
           } else {
-            const allTenants = res.data || [];
-            const boundIds = this.tenantList.map(t => t.tenantId);
-            this.tenantBindDialog.selectedList = allTenants.filter(t => boundIds.includes(t.id));
-            this.tenantBindDialog.selectableList = allTenants.filter(t => !boundIds.includes(t.id));
+            const allTenants = res.data || []
+            const boundIds = this.tenantList.map(t => t.tenantId)
+            this.tenantBindDialog.selectedList = allTenants.filter(t => boundIds.includes(t.id))
+            this.tenantBindDialog.selectableList = allTenants.filter(t => !boundIds.includes(t.id))
           }
-          this.tenantBindDialog.filteredSelectedList = [...this.tenantBindDialog.selectedList];
-          this.tenantBindDialog.filteredSelectableList = [...this.tenantBindDialog.selectableList];
+          this.tenantBindDialog.filteredSelectedList = [...this.tenantBindDialog.selectedList]
+          this.tenantBindDialog.filteredSelectableList = [...this.tenantBindDialog.selectableList]
         }
       } catch (e) {
-        this.$message.error('获取租户绑定信息失败');
+        this.$message.error('获取租户绑定信息失败')
       } finally {
-        this.tenantBindLoading = false;
+        this.tenantBindLoading = false
       }
     },
     // 搜索已选租户
-    filterSelectedTenant() {
-      const keyword = this.tenantBindDialog.selectedSearch;
+    filterSelectedTenant () {
+      const keyword = this.tenantBindDialog.selectedSearch
       this.tenantBindDialog.filteredSelectedList = keyword
         ? this.tenantBindDialog.selectedList.filter(i => i.name.includes(keyword))
-        : [...this.tenantBindDialog.selectedList];
+        : [...this.tenantBindDialog.selectedList]
     },
     // 搜索可选租户
-    filterSelectableTenant() {
-      const keyword = this.tenantBindDialog.selectableSearch;
+    filterSelectableTenant () {
+      const keyword = this.tenantBindDialog.selectableSearch
       this.tenantBindDialog.filteredSelectableList = keyword
         ? this.tenantBindDialog.selectableList.filter(i => i.name.includes(keyword))
-        : [...this.tenantBindDialog.selectableList];
+        : [...this.tenantBindDialog.selectableList]
     },
     // 绑定租户
-    handleTenantBind(row) {
+    handleTenantBind (row) {
+      if (!this.canAdd) return
       this.tenantOperateDialog = {
         visible: true,
         title: '绑定租户',
@@ -545,10 +557,11 @@ export default {
         id: row.id,
         area: row.publicArea || '',
         isModifyArea: false
-      };
+      }
     },
     // 解绑租户
-    handleTenantUnbind(row) {
+    handleTenantUnbind (row) {
+      if (!this.canAdd) return
       this.tenantOperateDialog = {
         visible: true,
         title: '解绑租户',
@@ -557,10 +570,11 @@ export default {
         id: row.id,
         area: row.publicArea,
         isModifyArea: false
-      };
+      }
     },
     // 修改租户面积（弹窗内）
-    handleTenantModifyArea(row) {
+    handleTenantModifyArea (row) {
+      if (!this.canAdd) return
       this.tenantOperateDialog = {
         visible: true,
         title: '修改面积',
@@ -569,11 +583,12 @@ export default {
         id: row.id,
         area: row.publicArea,
         isModifyArea: true
-      };
+      }
     },
     // 提交租户操作
-    async handleTenantOperateSubmit() {
-      this.tenantOperateSubmitting = true;
+    async handleTenantOperateSubmit () {
+      if (!this.canAdd) return
+      this.tenantOperateSubmitting = true
       try {
         const res = await waterShareBindShareTenantdata({
           tenantId: this.tenantOperateDialog.id,
@@ -581,33 +596,35 @@ export default {
           managerId: this.currentManagerId,
           type: this.tenantOperateDialog.type,
           area: this.tenantOperateDialog.area
-        });
+        })
         if (res.code === 200) {
-          this.$message.success(res.msg || '操作成功');
-          this.tenantOperateDialog.visible = false;
-          this.handleBindTenant();
-          this.fetchDetailData();
+          this.$message.success(res.msg || '操作成功')
+          this.tenantOperateDialog.visible = false
+          this.handleBindTenant()
+          this.fetchDetailData()
         } else {
-          this.$message.error(res.msg || '操作失败');
+          this.$message.error(res.msg || '操作失败')
         }
       } catch (e) {
-        this.$message.error('操作失败');
+        this.$apiError.notify(e, '操作失败')
       } finally {
-        this.tenantOperateSubmitting = false;
+        this.tenantOperateSubmitting = false
       }
     },
     // 修改面积（详情页表格内）
-    handleEditArea(row) {
+    handleEditArea (row) {
+      if (!this.canAdd) return
       this.editAreaDialog = {
         visible: true,
         id: row.tenantId,
         name: row.tenantName,
         area: row.area
-      };
+      }
     },
     // 提交修改面积
-    async handleEditAreaSubmit() {
-      this.editAreaSubmitting = true;
+    async handleEditAreaSubmit () {
+      if (!this.canAdd) return
+      this.editAreaSubmitting = true
       try {
         const res = await waterShareBindShareTenantdata({
           tenantId: this.editAreaDialog.id,
@@ -615,53 +632,55 @@ export default {
           managerId: this.currentManagerId,
           type: 'bind',
           area: this.editAreaDialog.area
-        });
+        })
         if (res.code === 200) {
-          this.$message.success(res.msg || '修改成功');
-          this.editAreaDialog.visible = false;
-          this.fetchDetailData();
+          this.$message.success(res.msg || '修改成功')
+          this.editAreaDialog.visible = false
+          this.fetchDetailData()
         } else {
-          this.$message.error(res.msg || '修改失败');
+          this.$message.error(res.msg || '修改失败')
         }
       } catch (e) {
-        this.$message.error('修改失败');
+        this.$message.error('修改失败')
       } finally {
-        this.editAreaSubmitting = false;
+        this.editAreaSubmitting = false
       }
     },
     // ========== 水表绑定相关 ==========
     // 打开水表绑定弹窗
-    async handleBindMeter() {
-      this.meterBindDialog.visible = true;
-      this.meterBindLoading = true;
+    async handleBindMeter () {
+      if (!this.canAdd) return
+      this.meterBindDialog.visible = true
+      this.meterBindLoading = true
       try {
         const res = await waterShareGetShareWaterBindEdit({
           managerId: this.currentManagerId,
           shareId: this.shareId
-        });
+        })
         if (res.code === 200 && res.data) {
-          const selectedList = res.data.meterSelectedList || [];
-          const selectableList = res.data.meterSelectableList || [];
+          const selectedList = res.data.meterSelectedList || []
+          const selectableList = res.data.meterSelectableList || []
 
           // 合并水表数据
           this.meterBindDialog.allMeterList = [
             ...selectableList,
             ...selectedList
-          ];
+          ]
 
           // 已绑定的水表ID
-          this.meterBindDialog.selectedIds = selectedList.map(item => item.id);
-          this.meterBindDialog.originalSelectedIds = [...this.meterBindDialog.selectedIds];
+          this.meterBindDialog.selectedIds = selectedList.map(item => item.id)
+          this.meterBindDialog.originalSelectedIds = [...this.meterBindDialog.selectedIds]
         }
       } catch (e) {
-        this.$message.error('获取水表绑定信息失败');
+        this.$message.error('获取水表绑定信息失败')
       } finally {
-        this.meterBindLoading = false;
+        this.meterBindLoading = false
       }
     },
     // 穿梭框变化事件
-    async handleMeterTransferChange(value, direction, movedKeys) {
-      const type = direction === 'right' ? 'bind' : 'unbind';
+    async handleMeterTransferChange (value, direction, movedKeys) {
+      if (!this.canAdd) return
+      const type = direction === 'right' ? 'bind' : 'unbind'
 
       for (const meterId of movedKeys) {
         try {
@@ -669,65 +688,67 @@ export default {
             meterId: meterId,
             shareId: this.shareId,
             type: type
-          });
+          })
 
           if (res.code === 200) {
-            this.$message.success(res.msg || '操作成功');
+            this.$message.success(res.msg || '操作成功')
           } else {
-            this.$message.error(res.msg || '操作失败');
+            this.$message.error(res.msg || '操作失败')
             // 操作失败，恢复原状态
             if (type === 'bind') {
-              this.meterBindDialog.selectedIds = this.meterBindDialog.selectedIds.filter(id => id !== meterId);
+              this.meterBindDialog.selectedIds = this.meterBindDialog.selectedIds.filter(id => id !== meterId)
             } else {
-              this.meterBindDialog.selectedIds.push(meterId);
+              this.meterBindDialog.selectedIds.push(meterId)
             }
           }
         } catch (e) {
-          this.$message.error('操作失败');
+          this.$apiError.notify(e, '操作失败')
           if (type === 'bind') {
-            this.meterBindDialog.selectedIds = this.meterBindDialog.selectedIds.filter(id => id !== meterId);
+            this.meterBindDialog.selectedIds = this.meterBindDialog.selectedIds.filter(id => id !== meterId)
           } else {
-            this.meterBindDialog.selectedIds.push(meterId);
+            this.meterBindDialog.selectedIds.push(meterId)
           }
         }
       }
 
       // 刷新详情数据
-      this.fetchDetailData();
+      this.fetchDetailData()
     },
     // 水表设置
-    handleMeterSetting(item) {
-      this.meterSettingDialog.visible = true;
+    handleMeterSetting (item) {
+      if (!this.canAdd) return
+      this.meterSettingDialog.visible = true
       this.meterSettingDialog.data = {
         id: item.id,
         serial: item.serial,
         meterName: item.meterName || item.name,
         priceId: item.priceId || ''
-      };
+      }
       // TODO: 加载水费方案列表
     },
     // 提交水表设置
-    async handleMeterSettingSubmit() {
+    async handleMeterSettingSubmit () {
+      if (!this.canAdd) return
       this.$confirm('确认修改水表设置?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(async () => {
-        this.meterSettingSubmitting = true;
+        this.meterSettingSubmitting = true
         try {
           // TODO: 调用水表设置接口
-          this.$message.success('设置成功');
-          this.meterSettingDialog.visible = false;
-          this.fetchDetailData();
+          this.$message.success('设置成功')
+          this.meterSettingDialog.visible = false
+          this.fetchDetailData()
         } catch (e) {
-          this.$message.error('设置失败');
+          this.$message.error('设置失败')
         } finally {
-          this.meterSettingSubmitting = false;
+          this.meterSettingSubmitting = false
         }
-      }).catch(() => {});
+      }).catch(() => {})
     }
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>

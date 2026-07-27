@@ -212,47 +212,47 @@
           :row-key="getRowKey"
         >
           <!-- 选择列：只在未申请状态显示 -->
-          <el-table-column 
+          <el-table-column
             v-if="showSelectionColumn"
-            type="selection" 
-            width="55" 
+            type="selection"
+            width="55"
             align="center"
             :selectable="checkSelectable"
           />
-          
+
           <!-- 流水号 -->
           <el-table-column prop="id" label="流水号" width="100" align="center" />
-          
+
           <!-- 账单日期 -->
           <el-table-column prop="occurDate" label="账单日期" width="160" align="center" />
-          
+
           <!-- 结算日期：在不同状态下显示位置不同 -->
-          <el-table-column 
+          <el-table-column
             v-if="queryData.status === 3 || queryData.status === 4"
-            prop="createTime" 
-            label="结算日期" 
-            width="160" 
-            align="center" 
+            prop="createTime"
+            label="结算日期"
+            width="160"
+            align="center"
           />
-          
+
           <!-- 提现日期：只在已申请状态显示 -->
-          <el-table-column 
+          <el-table-column
             v-if="queryData.status === 3 || queryData.status === 4"
-            prop="updateTime" 
-            label="提现日期" 
-            width="160" 
+            prop="updateTime"
+            label="提现日期"
+            width="160"
             align="center"
           >
             <template slot-scope="scope">
               {{ scope.row.updateTime || '-' }}
             </template>
           </el-table-column>
-          
+
           <!-- 结算金额 -->
-          <el-table-column 
-            prop="withdAmount" 
-            label="结算金额" 
-            :width="queryData.status === 3 || queryData.status === 4 ? 160 : 120" 
+          <el-table-column
+            prop="withdAmount"
+            label="结算金额"
+            :width="queryData.status === 3 || queryData.status === 4 ? 160 : 120"
             :align="queryData.status === 3 || queryData.status === 4 ? 'center' : 'right'"
           >
             <template slot-scope="scope">
@@ -262,12 +262,12 @@
               <span v-else>-</span>
             </template>
           </el-table-column>
-          
+
           <!-- 费率 -->
-          <el-table-column 
-            prop="tariff" 
-            label="费率" 
-            :width="queryData.status === 3 || queryData.status === 4 ? 100 : 80" 
+          <el-table-column
+            prop="tariff"
+            label="费率"
+            :width="queryData.status === 3 || queryData.status === 4 ? 100 : 80"
             align="center"
           >
             <template slot-scope="scope">
@@ -275,12 +275,12 @@
               <span v-else>-</span>
             </template>
           </el-table-column>
-          
+
           <!-- 提现金额 -->
-          <el-table-column 
-            prop="balance" 
-            label="提现金额" 
-            :width="queryData.status === 3 || queryData.status === 4 ? 160 : 120" 
+          <el-table-column
+            prop="balance"
+            label="提现金额"
+            :width="queryData.status === 3 || queryData.status === 4 ? 160 : 120"
             :align="queryData.status === 3 || queryData.status === 4 ? 'center' : 'right'"
           >
             <template slot-scope="scope">
@@ -290,32 +290,32 @@
               <span v-else>-</span>
             </template>
           </el-table-column>
-          
+
           <!-- 银行开户行 -->
-          <el-table-column 
-            prop="openingBank" 
-            label="银行开户行" 
-            :width="queryData.status === 3 || queryData.status === 4 ? 200 : 280" 
-            show-overflow-tooltip 
+          <el-table-column
+            prop="openingBank"
+            label="银行开户行"
+            :width="queryData.status === 3 || queryData.status === 4 ? 200 : 280"
+            show-overflow-tooltip
           />
-          
+
           <!-- 银行账户：关键修复点 -->
-          <el-table-column 
-            prop="bankNumber" 
-            label="银行账户" 
-            :width="queryData.status === 3 || queryData.status === 4 ? 180 : 200" 
+          <el-table-column
+            prop="bankNumber"
+            label="银行账户"
+            :width="queryData.status === 3 || queryData.status === 4 ? 180 : 200"
             align="center"
           >
             <template slot-scope="scope">
               <span>{{ scope.row.bankNumber || '-' }}</span>
             </template>
           </el-table-column>
-          
+
           <!-- 提现方式：关键修复点 -->
-          <el-table-column 
-            prop="withdType" 
-            label="提现方式" 
-            width="100" 
+          <el-table-column
+            prop="withdType"
+            label="提现方式"
+            width="100"
             align="center"
           >
             <template slot-scope="scope">
@@ -324,35 +324,35 @@
               </el-tag>
             </template>
           </el-table-column>
-          
+
           <!-- 结算日期：只在未申请状态显示 -->
-          <el-table-column 
+          <el-table-column
             v-if="!(queryData.status === 3 || queryData.status === 4)"
-            prop="createTime" 
-            label="结算日期" 
-            width="160" 
-            align="center" 
+            prop="createTime"
+            label="结算日期"
+            width="160"
+            align="center"
           />
-          
+
           <!-- 提现日期：在未申请状态也显示 -->
-          <el-table-column 
+          <el-table-column
             v-if="!(queryData.status === 3 || queryData.status === 4)"
-            prop="updateTime" 
-            label="提现日期" 
-            width="160" 
+            prop="updateTime"
+            label="提现日期"
+            width="160"
             align="center"
           >
             <template slot-scope="scope">
               {{ scope.row.updateTime || '-' }}
             </template>
           </el-table-column>
-          
+
           <!-- 资金类型：只在未申请状态显示 -->
-          <el-table-column 
+          <el-table-column
             v-if="!(queryData.status === 3 || queryData.status === 4)"
-            prop="payType" 
-            label="资金类型" 
-            width="100" 
+            prop="payType"
+            label="资金类型"
+            width="100"
             align="center"
           >
             <template slot-scope="scope">
@@ -361,7 +361,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          
+
           <!-- 状态 -->
           <el-table-column prop="status" label="状态" width="100" align="center">
             <template slot-scope="scope">
@@ -371,7 +371,7 @@
               </div>
             </template>
           </el-table-column>
-          
+
           <!-- 操作 -->
           <el-table-column label="操作" width="100" fixed="right" align="center">
             <template slot-scope="scope">
@@ -435,11 +435,11 @@ export default {
     ApplyWithdrawDialog,
     WithdrawDetailDialog
   },
-  data() {
+  data () {
     return {
       // 关键修复：添加表格key用于强制重新渲染
       tableKey: 0,
-      
+
       // 查询参数
       queryData: {
         timeRange: null,
@@ -541,23 +541,23 @@ export default {
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
     // 是否显示统计卡片
-    showStats() {
+    showStats () {
       return this.queryData.status === 0 || this.queryData.status === ''
     },
     // 是否显示申请按钮
-    showApplyButton() {
+    showApplyButton () {
       return this.queryData.status === 0
     },
     // 关键修复：是否显示选择列
-    showSelectionColumn() {
+    showSelectionColumn () {
       return !(this.queryData.status === 3 || this.queryData.status === 4)
     },
     // 关键修复：动态表格引用名
-    tableRef() {
+    tableRef () {
       return this.queryData.status === 3 || this.queryData.status === 4 ? 'withdrawTable' : 'applyTable'
     },
     // 表格最大高度
-    tableMaxHeight() {
+    tableMaxHeight () {
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
@@ -566,7 +566,7 @@ export default {
   },
   watch: {
     currentManagerId: {
-      handler(newVal) {
+      handler (newVal) {
         if (newVal) {
           this.managerData = this.$store.state.manager && this.$store.state.manager.managerInfo || {}
           this.init()
@@ -575,7 +575,7 @@ export default {
       immediate: true
     },
     // 监听状态变化，直接调用接口
-    'queryData.status'(newVal, oldVal) {
+    'queryData.status' (newVal, oldVal) {
       // 避免初始化时触发
       if (oldVal !== undefined && newVal !== oldVal) {
         this.handleStatusChange()
@@ -584,12 +584,12 @@ export default {
   },
   methods: {
     // 关键修复：获取行唯一标识
-    getRowKey(row) {
+    getRowKey (row) {
       return row.id || Math.random().toString(36).substr(2, 9)
     },
 
     // 关键修复：强制刷新表格
-    forceRefreshTable() {
+    forceRefreshTable () {
       this.tableKey += 1
       this.$nextTick(() => {
         // 强制表格重新布局
@@ -600,7 +600,7 @@ export default {
     },
 
     // 初始化
-    async init() {
+    async init () {
       // 从路由获取状态参数
       if (this.$route.query.dash !== undefined) {
         this.queryData.status = Number(this.$route.query.dash)
@@ -611,7 +611,7 @@ export default {
           ]
         }
       }
-      
+
       // 初始化标签数据
       this.initTabs()
       // 加载初始数据
@@ -619,7 +619,7 @@ export default {
     },
 
     // 初始化标签
-    initTabs() {
+    initTabs () {
       // 使用写死的标签数据，不调用接口
       if (this.tabList.length > 0) {
         // 设置第一个标签为默认选中
@@ -630,55 +630,55 @@ export default {
     },
 
     // 加载初始数据
-    async loadInitialData() {
+    async loadInitialData () {
       // 并行加载统计数据和抵用券信息
       const promises = []
-      
+
       if (this.showStats) {
         promises.push(this.loadStats())
       }
       promises.push(this.loadVoucher())
       promises.push(this.loadNoApplyRecords())
-      
+
       await Promise.all(promises)
-      
+
       // 最后加载表格数据
       await this.fetchTableData()
     },
 
     // 关键修复：处理状态切换
-    async handleStatusChange() {
+    async handleStatusChange () {
       this.isStatusChanging = true
       this.pageData.current = 1
-      
+
       // 清空选择状态
       this.selectedIds = []
       this.selectIndex = null
-      
+
       // 先清空表格数据
       this.tableData = []
-      
+
       // 等待DOM更新
       await this.$nextTick()
-      
+
       // 强制刷新表格
       this.forceRefreshTable()
-      
+
       // 重新加载数据
       await this.fetchTableDataSmooth()
-      
+
       // 如果状态切换影响统计显示，重新加载统计
       if (this.showStats) {
         this.loadStats()
       }
-      
+
       this.isStatusChanging = false
     },
 
     // 加载统计数据
-    async loadStats() {
+    async loadStats () {
       if (!this.showStats) return
-      
+
       try {
         const response = await getWithdrawStats({
           managerId: this.currentManagerId
@@ -692,7 +692,7 @@ export default {
     },
 
     // 加载手续费抵用券
-    async loadVoucher() {
+    async loadVoucher () {
       try {
         const response = await getVoucherInfo({
           managerId: this.currentManagerId,
@@ -708,7 +708,7 @@ export default {
     },
 
     // 加载不可选择记录
-    async loadNoApplyRecords() {
+    async loadNoApplyRecords () {
       try {
         const response = await getNoApplyRecords({
           withdCostType: this.queryData.withdCostType,
@@ -723,17 +723,17 @@ export default {
     },
 
     // 获取表格数据（普通版本）
-    async fetchTableData() {
+    async fetchTableData () {
       this.loading = true
       this.tableData = []
-      
+
       try {
         const data = await this.requestTableData()
         if (data) {
           this.tableData = this.formatTableData(data.dataList || [])
           this.pageData.total = data.total || 0
           this.pageData.current = data.current || 1
-          
+
           // 强制刷新表格
           this.forceRefreshTable()
         }
@@ -749,9 +749,9 @@ export default {
     },
 
     // 获取表格数据（平滑切换版本）
-    async fetchTableDataSmooth() {
+    async fetchTableDataSmooth () {
       this.loading = true
-      
+
       try {
         const data = await this.requestTableData()
         if (data) {
@@ -760,7 +760,7 @@ export default {
           this.tableData = this.formatTableData(data.dataList || [])
           this.pageData.total = data.total || 0
           this.pageData.current = data.current || 1
-          
+
           // 关键修复：数据更新后强制刷新表格
           await this.$nextTick()
           this.forceRefreshTable()
@@ -778,7 +778,7 @@ export default {
     },
 
     // 请求表格数据（抽取公共逻辑）
-    async requestTableData() {
+    async requestTableData () {
       // 处理日期范围
       let startDate = ''
       let endDate = ''
@@ -786,7 +786,7 @@ export default {
         startDate = this.queryData.timeRange[0] || ''
         endDate = this.queryData.timeRange[1] || ''
       }
-      
+
       const params = {
         managerId: this.currentManagerId,
         status: this.queryData.status,
@@ -817,7 +817,7 @@ export default {
     },
 
     // 格式化表格数据
-    formatTableData(data) {
+    formatTableData (data) {
       let notNum = 0
       const formatted = data.map(item => {
         const isDisabled = this.noApplyIds.includes(item.id)
@@ -840,12 +840,12 @@ export default {
     },
 
     // 查询
-    handleSearch() {
+    handleSearch () {
       this.pageData.current = 1
       this.summaryData = {
         totalSettleAmt: 0
       }
-      
+
       // 重新加载所有数据
       this.loading = true
       Promise.all([
@@ -857,7 +857,7 @@ export default {
     },
 
     // 重置
-    handleReset() {
+    handleReset () {
       this.$refs.searchForm.resetFields()
       this.queryData.timeRange = null
       this.queryData.status = 0
@@ -866,19 +866,19 @@ export default {
     },
 
     // 关键修复：切换标签
-    handleTabChange(index, item) {
+    handleTabChange (index, item) {
       if (this.activeTab === index) return
-      
+
       this.activeTab = index
       this.queryData.billingRole = item.billingRole
       this.queryData.withdCostType = item.withdCostType
       this.pageData.current = 1
-      
+
       // 清空数据并强制刷新表格
       this.tableData = []
       this.selectedIds = []
       this.forceRefreshTable()
-      
+
       // 切换标签时重新加载数据
       this.loading = true
       this.loadNoApplyRecords().then(() => {
@@ -887,7 +887,7 @@ export default {
     },
 
     // 选择变化
-    async handleSelectionChange(selection) {
+    async handleSelectionChange (selection) {
       // 水电费类型特殊处理（withdCostType === 0）
       if (this.queryData.withdCostType === 0) {
         await this.handleWaterElectricSelection(selection)
@@ -909,22 +909,22 @@ export default {
     },
 
     // 水电费选择处理
-    async handleWaterElectricSelection(selection) {
+    async handleWaterElectricSelection (selection) {
       const validSelection = selection.filter(item => !item.isDisabled)
       const isAll = validSelection.length === this.tableData.length - this.notNum
-      
+
       if (validSelection.length === 0) {
         this.selectedIds = []
         this.selectIndex = null
         this.resetSummaryData()
         return
       }
-      
+
       const query = {
         date: '',
         isAll: false
       }
-      
+
       if (validSelection.length && isAll) {
         // 全选
         query.isAll = true
@@ -951,7 +951,7 @@ export default {
     },
 
     // 获取选择的数据
-    async getSelectedData(params) {
+    async getSelectedData (params) {
       try {
         const response = await getSelectedWithdrawData({
           managerId: this.currentManagerId,
@@ -959,7 +959,7 @@ export default {
           billingRole: this.queryData.billingRole,
           date: params.date
         })
-        
+
         if (response.code === 200) {
           this.selectedIds = response.data || []
           await this.loadSummaryData(this.selectedIds)
@@ -970,16 +970,16 @@ export default {
     },
 
     // 加载汇总数据
-    async loadSummaryData(ids) {
+    async loadSummaryData (ids) {
       if (!ids || ids.length === 0) return
-      
+
       try {
         const response = await getWithdrawSummary({
           withdApplyIds: ids.join(','),
           managerId: this.currentManagerId,
           auditSumyId: ''
         })
-        
+
         if (response.code === 200) {
           this.summaryData = response.data || {}
         }
@@ -989,7 +989,7 @@ export default {
     },
 
     // 重置汇总数据
-    resetSummaryData() {
+    resetSummaryData () {
       this.summaryData = {
         totalSettleAmt: 0,
         realSettleAmt: 0,
@@ -999,32 +999,32 @@ export default {
     },
 
     // 判断行是否可选
-    checkSelectable(row, index) {
+    checkSelectable (row, index) {
       // 不为水电费
       if (this.queryData.withdCostType !== 0) {
         return !row.isDisabled
       }
-      
+
       // 水电费连续选择逻辑
       if (this.selectIndex !== null && this.selectIndex !== undefined) {
         return index <= this.selectIndex && !row.isDisabled
       }
-      
+
       return !row.isDisabled
     },
 
     // 表格行样式
-    tableRowClassName({ row }) {
+    tableRowClassName ({ row }) {
       return row.isDisabled ? 'disabled-row' : ''
     },
 
     // 申请提现
-    handleApplyWithdraw() {
+    handleApplyWithdraw () {
       if (this.selectedIds.length === 0) {
         this.$message.warning('请选择提现数据')
         return
       }
-      
+
       this.applyDialogData = {
         ...this.summaryData,
         managerId: this.currentManagerId,
@@ -1036,24 +1036,24 @@ export default {
     },
 
     // 申请成功
-    handleApplySuccess() {
+    handleApplySuccess () {
       this.selectedIds = []
       this.handleSearch()
     },
 
     // 导出
-    async handleExport() {
+    async handleExport () {
       if (this.selectedIds.length === 0) {
         this.$message.warning('请选择要导出的数据')
         return
       }
-      
-      let isExport = Cookies.get('isExport')
+
+      const isExport = Cookies.get('isExport')
       if (isExport && isExport !== 'detail') {
         this.$message.info('导出数据查询中...')
         return
       }
-      
+
       if (!isExport) {
         try {
           const response = await exportWithdrawDetails({
@@ -1061,10 +1061,10 @@ export default {
             withdApplyIds: this.selectedIds.join(','),
             auditSumyId: ''
           })
-          
+
           this.$message.success(response.msg || '导出任务已提交')
           Cookies.set('isExport', 'detail')
-          
+
           setTimeout(() => {
             // 这里可以调用查询导出结果的方法
             Cookies.remove('isExport')
@@ -1077,7 +1077,7 @@ export default {
     },
 
     // 详情
-    handleDetail(row) {
+    handleDetail (row) {
       this.detailData = {
         ...row,
         withdCostType: this.queryData.withdCostType
@@ -1086,77 +1086,77 @@ export default {
     },
 
     // 查看余额
-    handleViewBalance() {
+    handleViewBalance () {
       // 可以跳转到余额详情页面
       // this.$router.push('/balance-detail')
       this.$message.info('查看余额功能开发中')
     },
 
     // 分页变化
-    handleSizeChange(val) {
+    handleSizeChange (val) {
       this.pageData.size = val
       this.pageData.current = 1
       this.fetchTableDataSmooth()
     },
 
-    handleCurrentChange(val) {
+    handleCurrentChange (val) {
       this.pageData.current = val
       this.fetchTableDataSmooth()
     },
 
     // 工具方法
-    formatMoney(value) {
+    formatMoney (value) {
       if (!value && value !== 0) return '0.00'
       return Number(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
     },
 
-    getStatusLabel(status) {
+    getStatusLabel (status) {
       const option = this.withdrawStatusOptions.find(item => item.value === status)
       return option ? option.label : '-'
     },
 
     // 关键修复：修复提现方式标签获取
-    getWithdrawTypeLabel(type) {
+    getWithdrawTypeLabel (type) {
       // 添加调试日志
       console.log('获取提现方式标签:', type, typeof type)
-      
+
       if (type === null || type === undefined) {
         return '-'
       }
-      
+
       // 确保类型转换正确
       const numType = Number(type)
       if (isNaN(numType)) {
         console.warn('提现方式类型转换失败:', type)
         return '-'
       }
-      
+
       const option = this.withdrawTypeOptions.find(item => item.value === numType)
       const result = option ? option.label : '-'
-      
+
       console.log('提现方式标签结果:', result)
       return result
     },
 
     // 关键修复：修复资金类型标签获取
-    getPayTypeLabel(type) {
+    getPayTypeLabel (type) {
       // 添加调试日志
       console.log('获取资金类型标签:', type, typeof type)
-      
+
       if (type === null || type === undefined) {
         return '-'
       }
-      
+
       // 确保类型转换正确
       const numType = Number(type)
       if (isNaN(numType)) {
         console.warn('资金类型转换失败:', type)
         return '-'
       }
-      
+
       const option = this.payTypeOptions.find(item => item.value === numType)
       const result = option ? option.label : '-'
-      
+
       console.log('资金类型标签结果:', result)
       return result
     }
@@ -1172,19 +1172,19 @@ export default {
   background: #fff;
   border-radius: 6px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  
+
   .tab-wrapper {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 20px;
     height: 56px;
-    
+
     .tab-list {
       display: flex;
       align-items: center;
       height: 100%;
-      
+
       .tab-item {
         position: relative;
         display: flex;
@@ -1194,14 +1194,14 @@ export default {
         margin-right: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
-        
+
         .tab-title {
           font-size: 14px;
           color: #666;
           font-weight: 400;
           transition: all 0.3s ease;
         }
-        
+
         .tab-indicator {
           position: absolute;
           bottom: 0;
@@ -1213,26 +1213,26 @@ export default {
           border-radius: 2px;
           transition: all 0.3s ease;
         }
-        
+
         &:hover {
           .tab-title {
             color: #409EFF;
           }
         }
-        
+
         &.active {
           .tab-title {
             color: #409EFF;
             font-weight: 500;
           }
-          
+
           .tab-indicator {
             width: calc(100% - 32px);
           }
         }
       }
     }
-    
+
     .tab-actions {
       display: flex;
       align-items: center;
@@ -1245,7 +1245,7 @@ export default {
   font-weight: 500;
   color: #333;
   font-family: 'DIN Alternate', 'Helvetica Neue', sans-serif;
-  
+
   &.primary {
     color: #F64C4C;
   }
@@ -1256,23 +1256,23 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     margin-right: 6px;
-    
+
     &.status-0 {
       background: #909399;
       box-shadow: 0 0 0 2px rgba(144, 147, 153, 0.2);
     }
-    
+
     &.status-3 {
       background: #E6A23C;
       box-shadow: 0 0 0 2px rgba(230, 162, 60, 0.2);
     }
-    
+
     &.status-4 {
       background: #409EFF;
       box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
@@ -1284,7 +1284,7 @@ export default {
 ::v-deep .disabled-row {
   background-color: #f5f7fa !important;
   opacity: 0.6;
-  
+
   td {
     color: #999 !important;
   }
@@ -1297,25 +1297,25 @@ export default {
       width: 8px;
       height: 8px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: #dcdfe6;
       border-radius: 4px;
-      
+
       &:hover {
         background: #c0c4cc;
       }
     }
-    
+
     &::-webkit-scrollbar-track {
       background: #f5f7fa;
     }
   }
-  
+
   ::v-deep .el-table__fixed-right {
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.08);
   }
-  
+
   // 表格行悬停效果
   ::v-deep .el-table__row {
     &:hover {
@@ -1333,12 +1333,12 @@ export default {
     margin-top: 0 !important;
     padding-top: 0 !important;
     border-top: none !important;
-    
+
     .action-left {
       display: flex;
       gap: 8px;
     }
-    
+
     .action-right {
       display: flex;
       gap: 8px;
@@ -1354,52 +1354,52 @@ export default {
   justify-content: flex-end;
   margin-top: -1px;
   border-top: 1px solid #ebeef5;
-  
+
   ::v-deep .el-pagination {
     font-weight: normal;
-    
+
     .el-pager li {
       min-width: 32px;
       height: 32px;
       line-height: 32px;
       border-radius: 4px;
       margin: 0 4px;
-      
+
       &:hover {
         color: #409EFF;
       }
-      
+
       &.active {
         background: #409EFF;
         color: #fff;
-        
+
         &:hover {
           background: #66b1ff;
         }
       }
     }
-    
+
     .el-pagination__sizes {
       .el-input__inner {
         height: 32px;
         border-radius: 4px;
       }
     }
-    
+
     .el-pagination__jump {
       .el-input__inner {
         height: 32px;
         border-radius: 4px;
       }
     }
-    
+
     .btn-prev,
     .btn-next {
       width: 32px;
       height: 32px;
       line-height: 32px;
       border-radius: 4px;
-      
+
       &:hover {
         color: #409EFF;
       }
@@ -1410,33 +1410,33 @@ export default {
 // 标签样式增强
 ::v-deep .el-tag {
   border-radius: 4px;
-  
+
   &.el-tag--small {
     height: 22px;
     line-height: 20px;
     padding: 0 8px;
   }
-  
+
   // 线上/线下提现方式
   &.el-tag--primary {
     background-color: rgba(64, 158, 255, 0.1);
     border-color: rgba(64, 158, 255, 0.2);
     color: #409EFF;
   }
-  
+
   &.el-tag--info {
     background-color: rgba(144, 147, 153, 0.1);
     border-color: rgba(144, 147, 153, 0.2);
     color: #909399;
   }
-  
+
   // 公账/私账类型
   &.el-tag--success {
     background-color: rgba(103, 194, 58, 0.1);
     border-color: rgba(103, 194, 58, 0.2);
     color: #67C23A;
   }
-  
+
   &.el-tag--warning {
     background-color: rgba(230, 162, 60, 0.1);
     border-color: rgba(230, 162, 60, 0.2);
@@ -1451,11 +1451,11 @@ export default {
       flex-direction: column;
       height: auto;
       padding: 12px;
-      
+
       .tab-list {
         width: 100%;
         margin-bottom: 12px;
-        
+
         .tab-item {
           flex: 1;
           justify-content: center;
@@ -1464,23 +1464,23 @@ export default {
           height: 40px;
         }
       }
-      
+
       .tab-actions {
         width: 100%;
         justify-content: flex-end;
       }
     }
   }
-  
+
   .form-actions.compact-actions {
     flex-direction: column;
-    
+
     .action-left,
     .action-right {
       width: 100%;
       justify-content: center;
       margin-bottom: 8px;
-      
+
       &:last-child {
         margin-bottom: 0;
       }
@@ -1519,13 +1519,13 @@ export default {
 // 加载效果优化
 ::v-deep .el-loading-mask {
   background-color: rgba(255, 255, 255, 0.95);
-  
+
   .el-loading-spinner {
     .circular {
       width: 36px;
       height: 36px;
     }
-    
+
     .el-loading-text {
       color: #409EFF;
       margin-top: 12px;
@@ -1538,16 +1538,16 @@ export default {
 .search-form {
   ::v-deep .el-form-item {
     margin-bottom: 0;
-    
+
     .el-form-item__label {
       font-size: 13px;
       color: #606266;
     }
   }
-  
+
   ::v-deep .el-date-editor {
     width: 100% !important;
-    
+
     .el-range-separator {
       line-height: 32px;
     }
@@ -1558,13 +1558,13 @@ export default {
 .empty-data {
   padding: 80px 0;
   text-align: center;
-  
+
   .empty-icon {
     font-size: 64px;
     color: #c0c4cc;
     margin-bottom: 16px;
   }
-  
+
   .empty-text {
     font-size: 14px;
     color: #909399;
@@ -1575,34 +1575,34 @@ export default {
 ::v-deep .el-button {
   border-radius: 4px;
   font-weight: 400;
-  
+
   &--small {
     padding: 7px 15px;
-    
+
     &.is-circle {
       padding: 7px;
     }
   }
-  
+
   &--primary {
     background: #409EFF;
     border-color: #409EFF;
-    
+
     &:hover {
       background: #66b1ff;
       border-color: #66b1ff;
     }
-    
+
     &:active {
       background: #3a8ee6;
       border-color: #3a8ee6;
     }
   }
-  
+
   &--text {
     color: #409EFF;
     padding: 5px 8px;
-    
+
     &:hover {
       color: #66b1ff;
       background: rgba(64, 158, 255, 0.08);
@@ -1614,7 +1614,7 @@ export default {
 .search-card,
 .table-card {
   transition: box-shadow 0.3s ease;
-  
+
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }

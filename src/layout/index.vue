@@ -5,24 +5,26 @@
       <!-- Logo区域 - 只保留logo，移除标题 -->
       <div class="sidebar-logo-container" :class="{ collapse: !sidebar.opened }">
         <div class="sidebar-logo-link">
-          <div class="logo-placeholder">物</div>
+          <img class="sidebar-logo-image" src="@/assets/images/wyy-logo.png" alt="logo" />
         </div>
       </div>
 
-      <!-- 菜单区域 -->
-      <el-scrollbar wrap-class="scrollbar-wrapper">
+      <!-- 菜单区域：原生纵向滚动，避免 el-scrollbar 负 margin 挤压窄栏宽度、裁切激活态圆角与左侧指示条 -->
+      <div class="sidebar-menu-scroll-host">
         <div class="menu-container">
           <!-- 动态渲染菜单 -->
           <sidebar-item v-for="route in permission_routes" :key="route.path" :item="route" :base-path="route.path"
             ref="sidebarItems" />
         </div>
-      </el-scrollbar>
+      </div>
     </div>
 
     <!-- 右侧子菜单面板 - 支持下拉展开 -->
     <transition name="submenu-slide">
-      <div v-if="currentSubmenu && sidebar.opened" class="submenu-panel">
-
+      <div
+        v-if="currentSubmenu && sidebar.opened && !(isHomePageRoute($route.path) && currentSubmenu.path === '/metering')"
+        class="submenu-panel"
+      >
 
         <div class="submenu-content">
           <!-- 渲染子菜单项 -->
@@ -38,7 +40,7 @@
                 @click="toggleGroup(child.meta.parentGroup)">
                 <div class="group-header-content">
                   <i class="group-icon el-icon-s-data"></i>
-                  <span class="group-title">{{ child.meta.parentGroup }}</span>
+                  <span class="group-title">{{ $localeText(child.meta.parentGroup) }}</span>
                   <i class="group-toggle-icon el-icon-arrow-down" :class="{
                     'is-collapsed': collapsedGroups[child.meta.parentGroup],
                   }"></i>
@@ -56,7 +58,7 @@
                 'has-bg': index !== 0  /* 全部沿用样式*/
               }">
                 <span v-if="child.meta.dividerLabel" class="divider-label">
-                  {{ child.meta.dividerLabel }}
+                  {{ $localeText(child.meta.dividerLabel) }}
                 </span>
               </div>
 
@@ -69,7 +71,7 @@
                   <i v-if="child.meta && child.meta.icon" :class="['iconfont', child.meta.icon]"
                     class="submenu-item-icon" />
                   <span class="submenu-item-title">{{
-                    child.meta ? child.meta.title : ""
+                    child.meta ? $localeText(child.meta.title) : ""
                   }}</span>
                   <i class="expand-icon el-icon-arrow-right"></i>
                 </div>
@@ -82,7 +84,7 @@
                       <div v-if="subChild.meta && subChild.meta.isDivider" :key="subChild.path"
                         class="submenu-child-divider" :class="{ 'with-label': subChild.meta.dividerLabel }">
                         <span v-if="subChild.meta.dividerLabel" class="divider-label">
-                          {{ subChild.meta.dividerLabel }}
+                          {{ $localeText(subChild.meta.dividerLabel) }}
                         </span>
                       </div>
 
@@ -102,7 +104,7 @@
                           <i v-if="subChild.meta && subChild.meta.icon" :class="['iconfont', subChild.meta.icon]"
                             class="submenu-child-icon" />
                           <span class="submenu-child-title">{{
-                            subChild.meta ? subChild.meta.title : ""
+                            subChild.meta ? $localeText(subChild.meta.title) : ""
                           }}</span>
                         </div>
                       </router-link>
@@ -118,7 +120,7 @@
                   <i v-if="child.meta && child.meta.icon" :class="['iconfont', child.meta.icon]"
                     class="submenu-item-icon" />
                   <span class="submenu-item-title">{{
-                    child.meta ? child.meta.title : ""
+                    child.meta ? $localeText(child.meta.title) : ""
                   }}</span>
                 </div>
               </router-link>
@@ -136,41 +138,65 @@
         <div class="navbar-left">
           <!-- 管理方切换器 - 只在控制台且有多个管理方时显示 -->
           <div class="manager-switcher" v-if="shouldShowManagerSwitcher">
-            <div class="switcher-label">管理方</div>
-            <el-dropdown @command="handleManagerSwitch" trigger="click" :disabled="platformSwitching">
+            <div class="switcher-label">{{ $t('layout.manager') }}</div>
+            <el-dropdown @command="handleManagerSwitch" @visible-change="handleManagerDropdownVisible" trigger="click" :disabled="platformSwitching">
               <div class="current-manager">
                 <div class="manager-avatar">
-                  {{ currentManagerDisplayName.charAt(0) }}
+                  {{ managerAvatarInitial(currentManager ? currentManager.managerName : '') }}
                 </div>
                 <div class="manager-info">
-                  <span class="manager-name">{{
+                  <span class="manager-name" :title="currentManager ? currentManager.managerName : ''">{{
                     currentManagerDisplayName
                   }}</span>
-                  <span v-if="currentManager && currentManager.isDefault === 1" class="default-badge">默认</span>
+                  <span v-if="currentManager && currentManager.isDefault === 1" class="default-badge">{{ $t('layout.defaultBadge') }}</span>
                 </div>
                 <i class="el-icon-arrow-down manager-arrow"></i>
               </div>
               <el-dropdown-menu slot="dropdown" class="manager-dropdown">
                 <div class="dropdown-header">
-                  <span class="header-title">选择管理方</span>
+                  <span class="header-title">{{ $t('layout.selectManagerTitle') }}</span>
                 </div>
-                <el-dropdown-item v-for="manager in managerList" :key="manager.managerId" :command="manager.managerId"
-                  :disabled="manager.managerId === currentManagerId" class="manager-option">
-                  <div class="option-avatar">
-                    {{ manager.managerName.charAt(0) }}
-                  </div>
-                  <div class="option-info">
-                    <div class="option-name">{{ manager.managerName }}</div>
-                    <div class="option-address">{{ manager.address }}</div>
-                  </div>
-                  <div class="option-badges">
-                    <span v-if="manager.isDefault === 1" class="default-badge">默认</span>
+                <div class="dropdown-search" @click.stop>
+                  <el-input
+                    v-model="managerSearchKeyword"
+                    size="small"
+                    clearable
+                    prefix-icon="el-icon-search"
+                    :placeholder="$t('layout.managerSearchPlaceholder')"
+                    @click.native.stop
+                  />
+                </div>
+                <div class="dropdown-list">
+                  <el-dropdown-item v-for="manager in filteredManagerList" :key="manager.managerId" :command="manager.managerId"
+                    class="manager-option">
+                    <div class="option-avatar">
+                      {{ managerAvatarInitial(manager.managerName) }}
+                    </div>
+                    <div class="option-info">
+                      <div class="option-name" :title="manager.managerName">
+                        {{ $displayDynamicName(manager.managerName, 30) }}
+                      </div>
+                      <div class="option-address" :title="manager.address">
+                        {{ $displayDynamicName(manager.address, 52) }}
+                      </div>
+                    </div>
+                    <div class="option-badges">
+                    <span v-if="manager.isDefault === 1" class="default-badge">{{ $t('layout.defaultBadge') }}</span>
                     <span v-if="
                       manager.managerId === currentManagerId &&
                       manager.isDefault !== 1
-                    " class="current-badge">当前</span>
+                    " class="current-badge">{{ $t('layout.currentBadge') }}</span>
+                    <span
+                      v-if="manager.isDefault !== 1"
+                      class="set-default-action"
+                      @click.stop="handleSetDefaultManager(manager, $event)"
+                    >{{ $t('layout.setAsDefault') }}</span>
                   </div>
-                </el-dropdown-item>
+                  </el-dropdown-item>
+                  <div v-if="filteredManagerList.length === 0" class="dropdown-empty">
+                    {{ $t('layout.managerSearchEmpty') }}
+                  </div>
+                </div>
               </el-dropdown-menu>
             </el-dropdown>
           </div>
@@ -178,6 +204,19 @@
 
         <!-- 右侧用户区域 -->
         <div class="navbar-right">
+          <!-- 综合能源大屏：跟随当前部署环境，在新标签页打开 -->
+          <div class="openapi-container">
+            <a
+              href="/#/group/energy-screen"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="openapi-link"
+            >
+              <i class="el-icon-monitor"></i>
+              <span>{{ $t('layout.energyScreen') }}</span>
+            </a>
+          </div>
+
           <!-- OpenAPI 链接 -->
           <div class="openapi-container">
             <router-link to="/api-docs" target="_blank" class="openapi-link">
@@ -186,13 +225,27 @@
             </router-link>
           </div>
 
+          <div class="openapi-container">
+            <a
+              href="https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/glfcz.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="openapi-link"
+            >
+              <i class="el-icon-document"></i>
+              <span>{{ $t('layout.manual') }}</span>
+            </a>
+          </div>
+
+          <lang-switch />
+
           <!-- 平台切换器 - 只有多个平台权限时显示/单一平台显示 - 只有一个平台权限时显示 -->
-          <!-- <div class="platform-switcher" v-if="canSwitchPlatform">
-            <div class="switcher-label">切换至</div>
+           <div class="platform-switcher" v-if="canSwitchPlatform && isSysAdmin">
+            <div class="switcher-label">{{ $t('layout.switchTo') }}</div>
             <el-dropdown @command="handlePlatformSwitch" trigger="click">
               <div class="current-platform">
                 <i :class="currentPlatform.icon" class="platform-icon"></i>
-                <span class="platform-name">{{ currentPlatform.name }}</span>
+                <span class="platform-name">{{ $localeText(currentPlatform.name) }}</span>
                 <i class="el-icon-arrow-down platform-arrow"></i>
               </div>
               <el-dropdown-menu slot="dropdown" class="platform-dropdown">
@@ -204,34 +257,34 @@
                   class="platform-option"
                 >
                   <i :class="platform.icon" class="option-icon"></i>
-                  <span class="option-name">{{ platform.name }}</span>
+                  <span class="option-name">{{ $localeText(platform.name) }}</span>
                   <span
                     v-if="platform.key === currentPlatform.key"
                     class="current-badge"
-                    >当前</span
+                    >{{ $t('layout.currentBadge') }}</span
                   >
                 </el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </div>
 
-          <div v-else-if="hasSinglePlatform" class="single-platform">
-            <div class="platform-label">当前平台</div>
+          <div v-else-if="hasSinglePlatform && isSysAdmin" class="single-platform">
+            <div class="platform-label">{{ $t('layout.currentPlatform') }}</div>
             <div class="platform-info">
               <i :class="currentPlatform.icon" class="platform-icon"></i>
-              <span class="platform-name">{{ currentPlatform.name }}</span>
+              <span class="platform-name">{{ $localeText(currentPlatform.name) }}</span>
             </div>
-          </div> -->
+          </div>
 
           <!-- 全屏切换按钮 -->
-          <div class="fullscreen-container" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏' : '进入全屏'">
+          <div class="fullscreen-container" @click="toggleFullscreen" :title="isFullscreen ? $t('layout.exitFullscreen') : $t('layout.enterFullscreen')">
             <i :class="isFullscreen ? 'el-icon-copy-document' : 'el-icon-full-screen'
               "></i>
           </div>
 
           <!-- 个性设置按钮 -->
           <div class="settings-container" :class="{ 'is-active': showSettingsPanel }" @click="toggleSettingsPanel"
-            title="个性设置">
+            :title="$t('layout.settings')">
             <i class="el-icon-setting"></i>
           </div>
 
@@ -241,16 +294,16 @@
               <div class="user-avatar-static">
                 <i class="el-icon-user"></i>
               </div>
-              <span class="user-name">{{ userName }}</span>
+              <span class="user-name">{{ $displayDynamicName(userName, 28) }}</span>
               <i class="el-icon-caret-bottom" />
             </div>
             <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item>个人中心</el-dropdown-item>
+              <el-dropdown-item>{{ $t('layout.profile') }}</el-dropdown-item>
               <el-dropdown-item @click.native="showPasswordModal">
-                <span style="display: block">修改密码</span>
+                <span style="display: block">{{ $t('layout.changePassword') }}</span>
               </el-dropdown-item>
               <el-dropdown-item divided @click.native="logout">
-                <span style="display: block">退出登录</span>
+                <span style="display: block">{{ $t('layout.logout') }}</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
@@ -261,7 +314,7 @@
       <div class="breadcrumb-toolbar">
         <div class="toolbar-left">
           <!-- 折叠按钮 -->
-          <div class="hamburger-container" @click="toggleSideBar">
+          <div class="hamburger-container" @mousedown.stop.prevent @click.stop.prevent="toggleSideBar">
             <i :class="sidebar.opened ? 'el-icon-s-fold' : 'el-icon-s-unfold'"></i>
           </div>
           <!-- 面包屑 -->
@@ -279,7 +332,7 @@
             <div class="tree-header">
               <div class="tree-title">
                 <i class="el-icon-folder tree-icon"></i>
-                <span>区域层级</span>
+                <span>租户层级</span>
               </div>
               <div class="tree-actions">
                 <!-- 刷新按钮 -->
@@ -324,36 +377,50 @@
         </div>
 
         <!-- 页面内容区域 -->
-        <div class="app-main" :class="{ 'with-tree': finalShowTreePanel }">
+        <div class="app-main" ref="appMain" :class="{ 'with-tree': finalShowTreePanel }">
           <router-view />
         </div>
       </div>
     </div>
     <!-- 个性设置面板 - 通过props控制显示 -->
     <SettingsPanel :visible="showSettingsPanel" @close="handleSettingsPanelClose" />
-    
+
     <!-- 修改密码弹窗 -->
     <PasswordChangeModal :visible.sync="passwordModalVisible" />
   </div>
 </template>
 
 <script>
-import { mapGetters, mapActions } from "vuex";
-import TagsView from "@/components/TagsView";
-import SidebarItem from "./components/Sidebar/SidebarItem";
-import SettingsPanel from "@/components/SettingsPanel";
+import { mapGetters, mapActions } from 'vuex'
+import TagsView from '@/components/TagsView'
+import SidebarItem from './components/Sidebar/SidebarItem'
+import LangSwitch from './components/LangSwitch.vue'
+import SettingsPanel from '@/components/SettingsPanel'
 // import PasswordChangeModal from "@/components/PasswordChangeModal/index.vue";
-import path from "path";
+import path from 'path'
+import {
+  canAccessSmartDeviceMenus,
+  SMART_DEVICE_MENU_PATHS,
+  SMART_DEVICE_DIVIDER_PATH
+} from '@/config/smartDeviceAccess'
+import {
+  canAccessMonitoringMenus,
+  MONITORING_MENU_PATHS,
+  MONITORING_DIVIDER_PATH,
+  MONITORING_ROOT_PATH
+} from '@/config/monitoringAccess'
+import { avatarInitial } from '@/utils/localeDisplayText'
 
 export default {
-  name: "Layout",
+  name: 'Layout',
   components: {
     TagsView,
     SidebarItem,
+    LangSwitch,
     SettingsPanel,
-    PasswordChangeModal: () => import("@/components/PasswordChangeModal/index.vue"),
+    PasswordChangeModal: () => import('@/components/PasswordChangeModal/index.vue')
   },
-  data() {
+  data () {
     return {
       originalSelectedItem: null, // 记录打开子菜单前的选中项
       currentRouteItem: null, // 记录当前路由对应的菜单项
@@ -362,70 +429,76 @@ export default {
       currentSubmenu: null, // 当前展开的子菜单
       expandedItem: null, // 当前展开的菜单路径
       selectedItem: null, // 当前选中的菜单项
-      basePath: "", // 当前菜单的基础路径
+      basePath: '', // 当前菜单的基础路径
       previousSelectedItem: null, // 之前选中的菜单项
       expandedSubmenuItems: {}, // 记录展开的子菜单项
       collapsedGroups: {}, // 新增：记录分组的折叠状态
       // 当前管理平台
-      currentPlatformKey: "console", // 默认控制台
+      currentPlatformKey: 'console', // 默认控制台
       // 平台配置
       platformConfig: {
         console: {
-          key: "console",
-          name: "控制台",
-          icon: "el-icon-monitor",
-          description: "数据监控与分析",
+          key: 'console',
+          name: '控制台',
+          icon: 'el-icon-monitor',
+          description: '数据监控与分析'
         },
         admin: {
-          key: "admin",
-          name: "管理后台",
-          icon: "el-icon-setting",
-          description: "系统管理与配置",
-        },
+          key: 'admin',
+          name: '管理后台',
+          icon: 'el-icon-setting',
+          description: '系统管理与配置'
+        }
       },
 
       // ========== 树形面板相关数据 ==========
       showTreePanel: false, // 是否显示树形面板
-      treeFilterText: "", // 树形搜索文本
+      treeFilterText: '', // 树形搜索文本
       treeProps: {
-        children: "tenantTierDtoList",
-        label: "name",
+        children: 'tenantTierDtoList',
+        label: 'name'
       },
 
       // ========== 树形面板路由控制相关数据 ==========
-      // 需要显示树形面板的路由列表
+      // 精确匹配：需要显示树形面板的路由列表（预留，按需添加）
+      treeVisibleExactRoutes: [],
+      // 前缀匹配：需要显示树形面板的路由列表（保持现有行为）
       treeVisibleRoutes: [
-        "/device/electricity",
-        "/device/watermeter",
-        "/metering/fee/electricitySharing",
-        "/metering/fee/watermeterSharing",
-        "/metering/fee/conditioningSharing",
-        "/energy/electricity-report",
-        "/energy/electricity-sankey",
-        "/energy/water-report",
-        "/energy/water-sankey",
-        "/metering/fee/electricity-plan",
-        "/metering/fee/water-plan",
-        "/metering/fee/service-plan",
-        "/metering/fee/electricity-adjustment",
-        "/metering/tenant/list",
-        "/metering/bill/floating-bill",
-        "/metering/bill/energy-bill",
-        "/metering/bill/floating-price",
-        "/metering/bill/manual-bill",
-        "/metering/finance/withdrawal",
-        "/metering/finance/fund-flow",
-        "/metering/finance/tenant-refund",
-        "/device/conditioning",
-        "/device/lighting",
-        "/device/doorlock",
-        "/metering/invoice/tenant-invoice",
-        "/metering/invoice/invoice-quota",
-        "/metering/invoice/quota-flow",
-        "/device/parking",
-        "/device/charging",
-        "/console/visualization",
+        '/device/electricity',
+        '/device/watermeter',
+        '/metering/fee/electricitySharing',
+        '/metering/fee/watermeterSharing',
+        '/metering/fee/conditioningSharing',
+        '/energy/electricity-report',
+        '/energy/electricity-sankey',
+        '/energy/water-report',
+        '/energy/water-sankey',
+        '/metering/fee/electricity-plan',
+        '/metering/fee/water-plan',
+        '/metering/fee/service-plan',
+        '/metering/fee/electricity-adjustment',
+        '/metering/tenant/list',
+        '/metering/bill/floating-bill',
+        '/metering/bill/energy-bill',
+        '/metering/bill/floating-price',
+        '/metering/bill/manual-bill',
+        '/metering/finance/withdrawal',
+        '/metering/finance/fund-flow',
+        '/metering/finance/tenant-refund',
+        '/device/conditioning',
+        '/device/lighting',
+        '/device/doorlock',
+        '/metering/invoice/tenant-invoice',
+        '/metering/invoice/invoice-quota',
+        '/metering/invoice/quota-flow',
+        '/device/parking',
+        '/device/charging',
+        '/console/visualization'
         // 可以根据需要添加更多路由
+      ],
+      // 精确匹配：强制隐藏树形面板的路由列表
+      treeHiddenExactRoutes: [
+        '/metering/bill/floating-price-tenant'
       ],
 
       // 强制隐藏树形面板的标志（用于用户手动关闭）
@@ -445,698 +518,796 @@ export default {
 
       // 个性设置面板显示状态
       showSettingsPanel: false,
-      
+
       // 修改密码弹窗显示状态
       passwordModalVisible: false,
-    };
+
+      // 管理方下拉搜索（仅 UI 过滤，不改权限与列表来源）
+      managerSearchKeyword: ''
+    }
   },
 
   computed: {
     ...mapGetters([
-      "name",
-      "avatar",
-      "sidebar",
-      "permission_routes",
-      "roles",
-      "managerList",
-      "currentManagerId",
-      "currentManager",
-      "isInitPassword",
+      'name',
+      'avatar',
+      'sidebar',
+      'permission_routes',
+      'roles',
+      'managerList',
+      'currentManagerId',
+      'currentManager',
+      'isInitPassword'
     ]),
-    ...mapGetters("treeSelection", [
-      "selectedIds",
-      "selectedCount",
-      "selectedNodes",
-      "selectedTenantIds",
-      "selectedTierIds",
+    ...mapGetters('treeSelection', [
+      'selectedIds',
+      'selectedCount',
+      'selectedNodes',
+      'selectedTenantIds',
+      'selectedTierIds'
     ]),
-    classObj() {
+    classObj () {
       return {
         hideSidebar: !this.sidebar.opened,
         openSidebar: this.sidebar.opened,
-        withoutAnimation: this.sidebar.withoutAnimation,
-      };
-    },
-
-    activeMenu() {
-      const route = this.$route;
-      const { meta, path } = route;
-      if (meta.activeMenu) {
-        return meta.activeMenu;
+        withoutAnimation: this.sidebar.withoutAnimation
       }
-      return path;
     },
 
-    userName() {
-      return this.name || "管理员";
+    activeMenu () {
+      const route = this.$route
+      const { meta, path } = route
+      if (meta.activeMenu) {
+        return meta.activeMenu
+      }
+      return path
     },
 
-    userAvatar() {
+    userName () {
+      return this.name || this.$t('layout.defaultUser')
+    },
+
+    userAvatar () {
       return (
         this.avatar ||
-        "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif"
-      );
+        'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
+      )
     },
 
     // 获取可见的子菜单项
-    visibleSubmenuChildren() {
-      if (!this.currentSubmenu || !this.currentSubmenu.children) return [];
-      return this.currentSubmenu.children.filter((child) => !child.hidden);
+    visibleSubmenuChildren () {
+      if (!this.currentSubmenu || !this.currentSubmenu.children) return []
+      return this.getFilteredMenuChildren(this.currentSubmenu.children)
     },
 
     // 当前平台信息
-    currentPlatform() {
+    currentPlatform () {
       return (
         this.platformConfig[this.currentPlatformKey] ||
         this.platformConfig.console
-      );
+      )
     },
 
     // 用户可用的平台列表（基于权限）
-    availablePlatforms() {
-      const userPermissions = this.getUserPlatformPermissions();
+    availablePlatforms () {
+      const userPermissions = this.getUserPlatformPermissions()
       const platforms = Object.values(this.platformConfig).filter((platform) =>
         userPermissions.includes(platform.key)
-      );
+      )
 
-      return platforms;
+      return platforms
+    },
+
+    isSysAdmin () {
+      const role =
+        this.$store.getters.role ||
+        (Array.isArray(this.roles) ? this.roles[0] : null) ||
+        this.$store.state.user.role ||
+        (Array.isArray(this.$store.state.user.roles)
+          ? this.$store.state.user.roles[0]
+          : null)
+      return role === 'SYS_ADMIN'
     },
 
     // 是否可以切换平台（有多个平台权限时才显示切换器）
-    canSwitchPlatform() {
-      return this.availablePlatforms.length > 1;
+    canSwitchPlatform () {
+      return this.isSysAdmin && this.availablePlatforms.length > 1
     },
 
     // 是否只有单一平台权限
-    hasSinglePlatform() {
-      return this.availablePlatforms.length === 1;
+    hasSinglePlatform () {
+      return this.availablePlatforms.length === 1
     },
 
     // 是否为控制台平台
-    isConsolePlatform() {
-      return this.currentPlatformKey === "console";
+    isConsolePlatform () {
+      return this.currentPlatformKey === 'console'
     },
 
     // 是否应该显示管理方切换器（只在控制台且有多个管理方时显示）
-    shouldShowManagerSwitcher() {
-      return this.isConsolePlatform && this.managerList.length > 1;
+    shouldShowManagerSwitcher () {
+      return this.isConsolePlatform && this.managerList.length > 1
     },
 
-    // 当前管理方显示名称
-    currentManagerDisplayName() {
-      return this.currentManager
-        ? this.currentManager.managerName
-        : "未选择管理方";
+    // 当前管理方显示名称（英文界面：拼音+省略；中文界面：原文）
+    currentManagerDisplayName () {
+      if (!this.currentManager) return this.$t('layout.managerNotSelected')
+      return this.$displayDynamicName(this.currentManager.managerName, 28)
+    },
+
+    filteredManagerList () {
+      const kw = (this.managerSearchKeyword || '').trim().toLowerCase()
+      if (!kw) return this.managerList
+      return this.managerList.filter((m) => {
+        const name = String(m.managerName || '').toLowerCase()
+        const addr = String(m.address || '').toLowerCase()
+        return name.includes(kw) || addr.includes(kw)
+      })
     },
 
     // ========== 新增：树形面板显示控制 ==========
 
     // 判断当前路由是否应该显示树形面板
-    shouldShowTreeByRoute() {
-      const currentPath = this.$route.path;
+    shouldShowTreeByRoute () {
+      const currentPath = this.$route.path
+      // 先走精确隐藏黑名单
+      if (this.treeHiddenExactRoutes.includes(currentPath)) {
+        return false
+      }
       // ========== 新增：排除所有详情页 ==========
       // 如果路径包含 /detail/ 或以 /detail 结尾，不显示树形面板
-      if (currentPath.includes("/detail/") || currentPath.endsWith("/detail")) {
-        return false;
+      if (currentPath.includes('/detail/') || currentPath.endsWith('/detail')) {
+        return false
       }
 
-      // 精确匹配
-      if (this.treeVisibleRoutes.includes(currentPath)) {
-        return true;
+      // 精确匹配白名单
+      if (this.treeVisibleExactRoutes.includes(currentPath)) {
+        return true
       }
 
       // 前缀匹配（支持子路由）
       return this.treeVisibleRoutes.some((route) => {
-        return currentPath.startsWith(route);
-      });
+        return currentPath.startsWith(route)
+      })
     },
 
     // 最终的树形面板显示状态
-    finalShowTreePanel() {
+    finalShowTreePanel () {
       // 如果路由不匹配，则不显示
       if (!this.shouldShowTreeByRoute) {
-        return false;
+        return false
       }
 
       // 如果用户强制隐藏，则不显示
       if (this.forceHideTreePanel) {
-        return false;
+        return false
       }
 
       // 否则使用原来的showTreePanel状态
-      return this.showTreePanel;
+      return this.showTreePanel
     },
 
-    processedTreeData() {
-      return this.processTreeData(this.treeData);
-    },
+    processedTreeData () {
+      return this.processTreeData(this.treeData)
+    }
   },
 
- watch: {
+  watch: {
     isInitPassword: {
-      handler(val) {
+      handler (val) {
         // 兼容数字1和字符串'1'
         if (val === 1 || val === '1') {
-          this.checkInitPassword();
+          this.checkInitPassword()
         }
       },
-      immediate: true,
+      immediate: true
     },
     // 🔥 修改：路由变化时统一处理子菜单展开
     $route: {
-    handler(newRoute, oldRoute) {
-      // 🔥 保留：树形面板自动显示逻辑（可随时开启）
-      // if (this.shouldShowTreeByRoute && !this.showTreePanel) {
-      //   this.showTreePanel = true;
-      //   this.forceHideTreePanel = false; // 重置强制隐藏状态
-      // }
+      handler (newRoute, oldRoute) {
+        this.$nextTick(() => {
+          const el = this.$refs.appMain
+          if (el) el.scrollTop = 0
+        })
+        if (newRoute.path === '/device/dashboard') {
+          if (this.sidebar.opened) {
+            this.$store.dispatch('app/closeSideBar', { withoutAnimation: true })
+          }
+          this.handleCollapseSubmenu()
+          this.emitResizeBurst()
+          return
+        }
+        // 🔥 保留：树形面板自动显示逻辑（可随时开启）
+        // if (this.shouldShowTreeByRoute && !this.showTreePanel) {
+        //   this.showTreePanel = true;
+        //   this.forceHideTreePanel = false; // 重置强制隐藏状态
+        // }
 
-      // 如果新路由不需要显示树形面板，则自动隐藏
-      if (!this.shouldShowTreeByRoute && this.showTreePanel) {
-        this.showTreePanel = false;
-      }
+        // 如果新路由不需要显示树形面板，则自动隐藏
+        if (!this.shouldShowTreeByRoute && this.showTreePanel) {
+          this.showTreePanel = false
+        }
 
-      // 🔥 子菜单展开逻辑：只在侧边栏展开时才处理
-      if (this.sidebar.opened) {
-        const isDetailPage = newRoute.path.includes('/detail/') || newRoute.path.endsWith('/detail');
-        
-        if (isDetailPage) {
-          console.log('🔄 详情页路由变化，自动展开父菜单');
-          
-          const parentPath = this.getParentPathFromDetail(newRoute.path);
-          if (parentPath) {
-            const parentMenu = this.findMenuByPath(this.permission_routes, parentPath);
-            
-            if (parentMenu) {
-              console.log('✅ 找到并展开父菜单:', parentMenu);
-              this.expandedItem = parentMenu.path;
-              this.currentSubmenu = parentMenu;
-              this.basePath = parentMenu.path;
-              this.selectedItem = parentMenu.path;
+        // 🔥 子菜单展开逻辑：只在侧边栏展开时才处理
+        if (this.sidebar.opened) {
+          const isDetailPage = newRoute.path.includes('/detail/') || newRoute.path.endsWith('/detail')
+
+          if (isDetailPage) {
+            console.log('🔄 详情页路由变化，自动展开父菜单')
+
+            const parentPath = this.getParentPathFromDetail(newRoute.path)
+            if (parentPath) {
+              const parentMenu = this.findMenuByPath(this.permission_routes, parentPath)
+
+              if (parentMenu) {
+                console.log('✅ 找到并展开父菜单:', parentMenu)
+                this.expandedItem = parentMenu.path
+                this.currentSubmenu = parentMenu
+                this.basePath = parentMenu.path
+                this.selectedItem = parentMenu.path
+              }
             }
+          } else {
+          // 非详情页，使用原有逻辑
+            this.updateSelectionFromRoute(newRoute.path)
           }
         } else {
-          // 非详情页，使用原有逻辑
-          this.updateSelectionFromRoute(newRoute.path);
-        }
-      } else {
         // 侧边栏收起时，只更新选中状态
-        this.updateSelectionFromRoute(newRoute.path);
+          this.updateSelectionFromRoute(newRoute.path)
+        }
+      },
+      immediate: true
+    },
+
+    visible (value) {
+      if (value) {
+        document.body.addEventListener('click', this.closeMenu)
+      } else {
+        document.body.removeEventListener('click', this.closeMenu)
       }
     },
-    immediate: true
-  },
-  
-  visible(value) {
-    if (value) {
-      document.body.addEventListener("click", this.closeMenu);
-    } else {
-      document.body.removeEventListener("click", this.closeMenu);
-    }
-  },
-  
-  currentPlatform: {
-    handler(newPlatform, oldPlatform) {
-      if (
-        this.isInitialized &&
+
+    currentPlatform: {
+      handler (newPlatform, oldPlatform) {
+        if (
+          this.isInitialized &&
         this.currentPlatformCache &&
         this.currentPlatformCache !== newPlatform &&
         this.isPlatformSwitch(this.currentPlatformCache, newPlatform)
-      ) {
-        this.handlePlatformSwitch(newPlatform);
-      }
+        ) {
+          this.handlePlatformSwitch(newPlatform)
+        }
 
-      this.currentPlatformCache = newPlatform;
+        this.currentPlatformCache = newPlatform
+      },
+      immediate: false
     },
-    immediate: false,
-  },
-  
-  currentManagerId: {
-    handler(newVal, oldVal) {
-      if (newVal && newVal !== oldVal) {
-        this.handleManagerChange();
-      }
-    },
-  },
-  
-  shouldShowTreeByRoute: {
-    handler(newVal) {
-      if (newVal && !this.treeData.length) {
-        this.initTreeData();
+
+    currentManagerId: {
+      handler (newVal, oldVal) {
+        if (newVal && newVal !== oldVal) {
+          this.handleManagerChange()
+          this.$nextTick(() => {
+            this.emitResizeBurst()
+          })
+        }
       }
     },
-    immediate: true,
-  },
-  
-  "sidebar.opened"(val) {
-    if (!val) {
-      this.closeSubmenu();
-    }
-  },
-  
-  currentPlatformKey: {
-    handler(newPlatform) {
-      if (newPlatform === "console") {
-        this.loadManagerList();
-      }
+
+    shouldShowTreeByRoute: {
+      handler (newVal) {
+        if (newVal && !this.treeData.length) {
+          this.initTreeData()
+        }
+      },
+      immediate: true
     },
-    immediate: true,
-  },
-  
-  treeFilterText(val) {
-    this.$refs.tree && this.$refs.tree.filter(val);
-  },
-  
-  finalShowTreePanel: {
-    handler(newVal, oldVal) {
-      if (this.shouldShowTreeByRoute) {
-        this.saveTreePanelState();
-      }
-    },
-  },
-},
 
- async mounted() {
-  // 动态导入 tier API
-  try {
-    const { tierSelectTenantTierList } = await import("@/api/tier");
-    this.tierSelectTenantTierListApi = tierSelectTenantTierList;
-  } catch (error) {
-    console.warn("动态导入 tier API 失败:", error);
-  }
+    'sidebar.opened' (val) {
+      if (!val) {
+        this.closeSubmenu()
+      } else {
+        const currentPath = this.$route.path
+        if (this.isHomePageRoute(currentPath)) {
+          this.handleCollapseSubmenu()
+          this.updateSelectionFromRoute(currentPath)
+          return
+        }
+        const isDetailPage =
+          currentPath.includes('/detail/') || currentPath.endsWith('/detail')
 
-  // 监听全屏状态变化
-  this.addFullscreenListeners();
-
-  // 初始化平台权限
-  this.initializePlatform();
-
-  // 如果是控制台平台，初始化管理方数据
-  if (this.isConsolePlatform) {
-    await this.loadManagerList();
-  }
-
-  // 初始化 TagsView
-  if (this.$store.hasModule("tagsView")) {
-    const routes = this.permission_routes || [];
-    await this.$store.dispatch("tagsView/initAffixTags", routes);
-  }
-
-  // 初始化树形数据
-  if (this.shouldShowTreeByRoute) {
-    await this.initTreeData();
-  }
-
-  // 恢复分组折叠状态
-  this.restoreCollapsedState();
-
-  // ESC键关闭弹窗
-  document.addEventListener("keydown", this.handleKeydown);
-
-  // 🔥 新增：刷新后自动恢复子菜单状态
-  this.$nextTick(() => {
-    console.log('🔄 mounted: 检查是否需要恢复子菜单');
-    console.log('🔄 sidebar.opened:', this.sidebar.opened);
-    console.log('🔄 当前路由:', this.$route.path);
-    
-    // 如果侧边栏是展开的，处理子菜单展开
-    if (this.sidebar.opened) {
-      const currentPath = this.$route.path;
-      const isDetailPage = currentPath.includes('/detail/') || currentPath.endsWith('/detail');
-      
-      if (isDetailPage) {
-        console.log('🔄 详情页且侧边栏展开，自动恢复父菜单');
-        
-        const parentPath = this.getParentPathFromDetail(currentPath);
-        if (parentPath) {
-          const parentMenu = this.findMenuByPath(this.permission_routes, parentPath);
-          
-          if (parentMenu) {
-            console.log('✅ 自动恢复父菜单:', parentMenu);
-            this.expandedItem = parentMenu.path;
-            this.currentSubmenu = parentMenu;
-            this.basePath = parentMenu.path;
-            this.selectedItem = parentMenu.path;
-          } else {
-            console.warn('⚠️ 未找到父菜单:', parentPath);
+        if (isDetailPage) {
+          const parentPath = this.getParentPathFromDetail(currentPath)
+          if (parentPath) {
+            const parentMenu = this.findMenuByPath(
+              this.permission_routes,
+              parentPath
+            )
+            if (parentMenu) {
+              this.expandedItem = parentMenu.path
+              this.currentSubmenu = parentMenu
+              this.basePath = parentMenu.path
+              this.selectedItem = parentMenu.path
+            }
+          }
+        } else {
+          const matchingResult = this.findMatchingMenu(
+            this.permission_routes,
+            currentPath
+          )
+          if (
+            matchingResult &&
+            matchingResult.isChildRoute &&
+            matchingResult.parentItem
+          ) {
+            this.expandedItem = matchingResult.parentItem.path
+            this.currentSubmenu = matchingResult.parentItem
+            this.basePath = matchingResult.parentItem.path
+            this.selectedItem = matchingResult.parentItem.path
           }
         }
       }
+    },
+
+    currentPlatformKey: {
+      handler (newPlatform) {
+        if (newPlatform === 'console') {
+          this.loadManagerList()
+        }
+      },
+      immediate: true
+    },
+
+    treeFilterText (val) {
+      this.$refs.tree && this.$refs.tree.filter(val)
+    },
+
+    finalShowTreePanel: {
+      handler (newVal, oldVal) {
+        if (this.shouldShowTreeByRoute) {
+          this.saveTreePanelState()
+        }
+      }
     }
-    
-    // 标记初始化完成
-    this.isInitialized = true;
+  },
+
+  async mounted () {
+  // 动态导入 tier API
+    try {
+      const { tierSelectTenantTierList } = await import('@/api/tier')
+      this.tierSelectTenantTierListApi = tierSelectTenantTierList
+    } catch (error) {
+      console.warn('动态导入 tier API 失败:', error)
+    }
+
+    // 监听全屏状态变化
+    this.addFullscreenListeners()
+
+    // 初始化平台权限
+    this.initializePlatform()
+
+    // 如果是控制台平台，初始化管理方数据
+    if (this.isConsolePlatform) {
+      await this.loadManagerList()
+    }
+
+    // 初始化 TagsView
+    if (this.$store.hasModule('tagsView')) {
+      const routes = this.permission_routes || []
+      await this.$store.dispatch('tagsView/initAffixTags', routes)
+    }
+
+    // 初始化树形数据
+    if (this.shouldShowTreeByRoute) {
+      await this.initTreeData()
+    }
+
+    // 恢复分组折叠状态
+    this.restoreCollapsedState()
+
+    // ESC键关闭弹窗
+    document.addEventListener('keydown', this.handleKeydown)
+
+    // 🔥 新增：刷新后自动恢复子菜单状态
+    this.$nextTick(() => {
+      console.log('🔄 mounted: 检查是否需要恢复子菜单')
+      console.log('🔄 sidebar.opened:', this.sidebar.opened)
+      console.log('🔄 当前路由:', this.$route.path)
+
+      // 如果侧边栏是展开的，处理子菜单展开
+      if (this.sidebar.opened) {
+        const currentPath = this.$route.path
+        if (this.isHomePageRoute(currentPath)) {
+          this.handleCollapseSubmenu()
+          this.updateSelectionFromRoute(currentPath)
+          this.isInitialized = true
+          return
+        }
+        const isDetailPage = currentPath.includes('/detail/') || currentPath.endsWith('/detail')
+
+        if (isDetailPage) {
+          console.log('🔄 详情页且侧边栏展开，自动恢复父菜单')
+
+          const parentPath = this.getParentPathFromDetail(currentPath)
+          if (parentPath) {
+            const parentMenu = this.findMenuByPath(this.permission_routes, parentPath)
+
+            if (parentMenu) {
+              console.log('✅ 自动恢复父菜单:', parentMenu)
+              this.expandedItem = parentMenu.path
+              this.currentSubmenu = parentMenu
+              this.basePath = parentMenu.path
+              this.selectedItem = parentMenu.path
+            } else {
+              console.warn('⚠️ 未找到父菜单:', parentPath)
+            }
+          }
+        }
+      }
+
+      // 标记初始化完成
+      this.isInitialized = true
 
     // 过滤隐藏标签
     // this.filterHiddenTags();
-  });
+    })
 
-  // 恢复树形面板状态（如果需要）
-  if (this.shouldShowTreeByRoute && this.showTreePanel) {
-    await this.initTreeData();
-  }
-},
+    // 恢复树形面板状态（如果需要）
+    if (this.shouldShowTreeByRoute && this.showTreePanel) {
+      await this.initTreeData()
+    }
+  },
 
-  beforeDestroy() {
+  beforeDestroy () {
     // 清理全屏监听器
-    this.removeFullscreenListeners();
+    this.removeFullscreenListeners()
 
     // 保存树形面板状态
-    this.saveTreePanelState();
+    this.saveTreePanelState()
   },
 
   methods: {
-    ...mapActions("manager", ["getManagerList", "switchManager"]),
-    ...mapActions("treeSelection", [
-      "updateTreeSelection",
-      "clearSelection",
-      "saveSelection",
-      "restoreSelection",
+    managerAvatarInitial (name) {
+      return avatarInitial(name, this.$i18n.locale)
+    },
+
+    ...mapActions('manager', ['getManagerList', 'switchManager', 'setDefaultManager']),
+    ...mapActions('treeSelection', [
+      'updateTreeSelection',
+      'clearSelection',
+      'saveSelection',
+      'restoreSelection'
     ]),
 
-    earlyRestoreTreePanelState() {
-      const saved = localStorage.getItem("tree-panel-state");
+    earlyRestoreTreePanelState () {
+      const saved = localStorage.getItem('tree-panel-state')
       if (saved) {
         try {
-          const state = JSON.parse(saved);
-          const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000;
+          const state = JSON.parse(saved)
+          const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000
 
           // 先判断路由是否支持显示树形面板
-          const currentPath = this.$route.path;
-          const shouldShow = this.treeVisibleRoutes.some(
-            (route) =>
-              currentPath.includes(route) || currentPath.startsWith(route)
-          );
+          const currentPath = this.$route.path
+          const shouldShow = this.isTreeVisibleRoute(currentPath)
 
           if (isRecent && shouldShow) {
             // 直接设置状态，不等待
             this.showTreePanel =
-              state.showTreePanel !== undefined ? state.showTreePanel : false;
-            this.forceHideTreePanel = state.forceHideTreePanel || false;
+              state.showTreePanel !== undefined ? state.showTreePanel : false
+            this.forceHideTreePanel = state.forceHideTreePanel || false
           } else {
             // 默认不显示
-            this.showTreePanel = false;
-            this.forceHideTreePanel = false;
+            this.showTreePanel = false
+            this.forceHideTreePanel = false
           }
         } catch (e) {
           // 出错时默认不显示
-          this.showTreePanel = false;
-          this.forceHideTreePanel = false;
+          this.showTreePanel = false
+          this.forceHideTreePanel = false
         }
       } else {
         // 没有保存的状态时默认不显示
-        this.showTreePanel = false;
-        this.forceHideTreePanel = false;
+        this.showTreePanel = false
+        this.forceHideTreePanel = false
       }
     },
 
     // ========== 树形面板相关方法 ==========
-    async initTreeData() {
+    async initTreeData () {
       try {
-        await this.loadTreeData();
+        await this.loadTreeData()
       } catch (error) {
-        console.error("初始化树形数据失败:", error);
-        this.$message.error("加载树形数据失败");
+        console.error('初始化树形数据失败:', error)
+        this.$message.error('加载树形数据失败')
       }
     },
 
     // 加载树形数据
-    async loadTreeData() {
+    async loadTreeData () {
       if (!this.tierSelectTenantTierListApi || !this.currentManagerId) {
-        return;
+        return
       }
 
       try {
-        this.treeLoading = true;
+        this.treeLoading = true
 
         const response = await this.tierSelectTenantTierListApi({
-          managerId: this.currentManagerId,
-        });
+          managerId: this.currentManagerId
+        })
 
         if (response.code === 200) {
-          this.treeData = response.data || [];
+          this.treeData = response.data || []
 
           // 默认展开第一层
           this.$nextTick(() => {
             if (this.treeData.length > 0) {
-              this.defaultExpandedKeys = this.treeData.map((item) => item.id);
+              this.defaultExpandedKeys = this.treeData.map((item) => item.id)
             }
-          });
+          })
         } else {
-          this.$message.error(response.msg || "获取层级数据失败");
+          this.$message.error(response.msg || '获取层级数据失败')
         }
       } catch (error) {
-        console.error("加载树形数据失败:", error);
-        this.$message.error("加载树形数据失败");
+        console.error('加载树形数据失败:', error)
+        this.$message.error('加载树形数据失败')
       } finally {
-        this.treeLoading = false;
+        this.treeLoading = false
       }
     },
 
     // 处理树形数据，添加层级信息
-    processTreeData(data, level = 1) {
+    processTreeData (data, level = 1) {
       return data.map((item) => {
         const processedItem = {
           ...item,
-          level: level,
-        };
+          level: level
+        }
 
         if (item.tenantTierDtoList && item.tenantTierDtoList.length > 0) {
           processedItem.tenantTierDtoList = this.processTreeData(
             item.tenantTierDtoList,
             level + 1
-          );
+          )
         }
 
-        return processedItem;
-      });
+        return processedItem
+      })
     },
 
     // 切换树形面板显示/隐藏
-    toggleTreePanel() {
+    toggleTreePanel () {
       if (!this.shouldShowTreeByRoute) {
-        this.$message.warning("当前页面不支持显示树形面板");
-        return;
+        this.$message.warning('当前页面不支持显示树形面板')
+        return
       }
 
       if (this.finalShowTreePanel) {
         // 如果当前显示，则手动隐藏
-        this.forceHideTreePanel = true;
+        this.forceHideTreePanel = true
       } else {
         // 如果当前隐藏，则显示
-        this.forceHideTreePanel = false;
-        this.showTreePanel = true;
+        this.forceHideTreePanel = false
+        this.showTreePanel = true
       }
 
-      this.saveTreePanelState();
+      this.saveTreePanelState()
     },
 
     // 保存树形面板状态 - 修复：保持正确的显示状态
-    saveTreePanelState() {
+    saveTreePanelState () {
       const state = {
         showTreePanel: this.showTreePanel,
         forceHideTreePanel: this.forceHideTreePanel,
         lastRoute: this.$route.path,
-        timestamp: Date.now(),
-      };
+        timestamp: Date.now()
+      }
 
-      localStorage.setItem("tree-panel-state", JSON.stringify(state));
+      localStorage.setItem('tree-panel-state', JSON.stringify(state))
     },
 
     // 恢复树形面板状态 - 修复：正确恢复状态
     // 修改原有的 restoreTreePanelState 方法
-    restoreTreePanelState() {
+    restoreTreePanelState () {
       // 这个方法现在主要用于 mounted 时的二次校验
       // 实际恢复已经在 created 中完成
-      const saved = localStorage.getItem("tree-panel-state");
+      const saved = localStorage.getItem('tree-panel-state')
       if (saved) {
         try {
-          const state = JSON.parse(saved);
+          const state = JSON.parse(saved)
         } catch (e) {
-          console.error("恢复树形面板状态失败:", e);
+          console.error('恢复树形面板状态失败:', e)
         }
       }
     },
 
     // 树形搜索过滤方法
-    filterNode(value, data) {
-      if (!value) return true;
-      return data.name && data.name.indexOf(value) !== -1;
+    filterNode (value, data) {
+      if (!value) return true
+      return data.name && data.name.indexOf(value) !== -1
     },
 
     // 新增：判断节点是否有子节点
-    hasChildren(data) {
-      return data.tenantTierDtoList && data.tenantTierDtoList.length > 0;
+    hasChildren (data) {
+      return data.tenantTierDtoList && data.tenantTierDtoList.length > 0
     },
 
     // 新增：获取节点展开图标
-    getNodeExpandIcon(node) {
-      return node.expanded ? "el-icon-arrow-down" : "el-icon-arrow-right";
+    getNodeExpandIcon (node) {
+      return node.expanded ? 'el-icon-arrow-down' : 'el-icon-arrow-right'
     },
 
     // 新增：切换节点展开状态
-    toggleNodeExpand(node) {
-      node.expanded = !node.expanded;
+    toggleNodeExpand (node) {
+      node.expanded = !node.expanded
     },
 
     // 获取节点图标
-    getNodeIcon(data) {
+    getNodeIcon (data) {
       // 根据层级显示不同图标
       const iconMap = {
-        1: "el-icon-office-building", // 第一层级
-        2: "el-icon-menu", // 第二层级
-        3: "el-icon-folder", // 第三层级
-        4: "el-icon-document", // 第四层级及以下
-      };
+        1: 'el-icon-office-building', // 第一层级
+        2: 'el-icon-menu', // 第二层级
+        3: 'el-icon-folder', // 第三层级
+        4: 'el-icon-document' // 第四层级及以下
+      }
 
       // 如果有租户ID，说明是租户节点
       if (data.tenantId) {
-        return "el-icon-user";
+        return 'el-icon-user'
       }
 
-      return iconMap[data.level] || "el-icon-document";
+      return iconMap[data.level] || 'el-icon-document'
     },
 
-    getNodeColor(data) {
+    getNodeColor (data) {
       // 根据层级设置颜色
       const colorMap = {
-        1: "#409eff", // 第一层级 - 蓝色
-        2: "#67c23a", // 第二层级 - 绿色
-        3: "#e6a23c", // 第三层级 - 橙色
-        4: "#909399", // 第四层级及以下 - 灰色
-      };
+        1: '#409eff', // 第一层级 - 蓝色
+        2: '#67c23a', // 第二层级 - 绿色
+        3: '#e6a23c', // 第三层级 - 橙色
+        4: '#909399' // 第四层级及以下 - 灰色
+      }
 
       // 如果是租户节点，使用特殊颜色
       if (data.tenantId) {
-        return "#f56c6c";
+        return '#f56c6c'
       }
 
-      return colorMap[data.level] || "#909399";
+      return colorMap[data.level] || '#909399'
     },
 
     // 处理节点点击
-    handleNodeClick(data, node) {
+    handleNodeClick (data, node) {
       // 如果是租户节点
       if (data.tenantId) {
-        this.$message.info(`租户: ${data.name || data.tenantName}`);
+        this.$message.info(`租户: ${data.name || data.tenantName}`)
         // 可以触发相关事件或执行其他操作
-        this.$emit("tree-node-click", {
-          type: "tenant",
-          data: data,
-        });
+        this.$emit('tree-node-click', {
+          type: 'tenant',
+          data: data
+        })
       } else {
         // 层级节点
-        this.$message.info(`层级: ${data.name} (L${data.level})`);
-        this.$emit("tree-node-click", {
-          type: "tier",
-          data: data,
-        });
+        this.$message.info(`层级: ${data.name} (L${data.level})`)
+        this.$emit('tree-node-click', {
+          type: 'tier',
+          data: data
+        })
       }
     },
 
     // 处理复选框变化
-    handleCheckChange(data, checked, indeterminate) {
-      if (!this.$refs.tree) return;
+    handleCheckChange (data, checked, indeterminate) {
+      if (!this.$refs.tree) return
 
       // 获取选中的ID集合
-      const checkedKeys = this.$refs.tree.getCheckedKeys();
+      const checkedKeys = this.$refs.tree.getCheckedKeys()
+      const checkedNodes = this.$refs.tree.getCheckedNodes(false, false)
 
       // 存到 Vuex
-      this.$store.commit("treeSelection/SET_SELECTED_IDS", checkedKeys);
+      this.$store.commit('treeSelection/SET_SELECTED_IDS', checkedKeys)
+      this.$store.commit('treeSelection/SET_SELECTED_NODES', checkedNodes)
     },
 
     // 刷新树形数据
-    async refreshTreeData() {
-      this.$message.info("正在刷新层级数据...");
-      await this.loadTreeData();
-      this.$message.success("层级数据已刷新");
+    async refreshTreeData () {
+      this.$message.info('正在刷新层级数据...')
+      await this.loadTreeData()
+      this.$message.success('层级数据已刷新')
     },
 
     // 展开/折叠所有节点
-    toggleAllNodes(expand = true) {
+    toggleAllNodes (expand = true) {
       if (expand) {
         // 展开所有节点
         this.getAllNodeKeys(this.treeData).forEach((key) => {
-          this.$refs.tree.store.nodesMap[key].expanded = true;
-        });
+          this.$refs.tree.store.nodesMap[key].expanded = true
+        })
       } else {
         // 折叠所有节点
         this.getAllNodeKeys(this.treeData).forEach((key) => {
-          this.$refs.tree.store.nodesMap[key].expanded = false;
-        });
+          this.$refs.tree.store.nodesMap[key].expanded = false
+        })
       }
     },
 
-    async handleManagerChange() {
+    async handleManagerChange () {
       if (this.shouldShowTreeByRoute && this.currentManagerId) {
-        await this.initTreeData();
+        // 切换管理方时先清空树勾选，避免旧管理方的选中ID残留
+        this.clearSelection()
+        if (this.$refs.tree && typeof this.$refs.tree.setCheckedKeys === 'function') {
+          this.$refs.tree.setCheckedKeys([])
+        }
+        await this.initTreeData()
       }
     },
 
     // 获取所有节点的key
-    getAllNodeKeys(data, keys = []) {
+    getAllNodeKeys (data, keys = []) {
       data.forEach((item) => {
-        keys.push(item.id);
+        keys.push(item.id)
         if (item.tenantTierDtoList && item.tenantTierDtoList.length > 0) {
-          this.getAllNodeKeys(item.tenantTierDtoList, keys);
+          this.getAllNodeKeys(item.tenantTierDtoList, keys)
         }
-      });
-      return keys;
+      })
+      return keys
     },
 
     // ========== 路由相关辅助方法 ==========
 
     // 检查指定路由是否需要显示树形面板
-    isTreeVisibleRoute(routePath) {
-      if (!routePath) return false;
+    isTreeVisibleRoute (routePath) {
+      if (!routePath) return false
+      // 精确隐藏黑名单优先
+      if (this.treeHiddenExactRoutes.includes(routePath)) return false
 
       // 精确匹配
-      if (this.treeVisibleRoutes.includes(routePath)) {
-        return true;
+      if (this.treeVisibleExactRoutes.includes(routePath)) {
+        return true
       }
 
       // 前缀匹配
       return this.treeVisibleRoutes.some((route) => {
-        return routePath.startsWith(route);
-      });
+        return routePath.startsWith(route)
+      })
     },
 
     // 添加需要显示树形面板的路由
-    addTreeVisibleRoute(route) {
+    addTreeVisibleRoute (route) {
       if (!this.treeVisibleRoutes.includes(route)) {
-        this.treeVisibleRoutes.push(route);
+        this.treeVisibleRoutes.push(route)
       }
     },
 
     // 移除不需要显示树形面板的路由
-    removeTreeVisibleRoute(route) {
-      const index = this.treeVisibleRoutes.indexOf(route);
+    removeTreeVisibleRoute (route) {
+      const index = this.treeVisibleRoutes.indexOf(route)
       if (index > -1) {
-        this.treeVisibleRoutes.splice(index, 1);
+        this.treeVisibleRoutes.splice(index, 1)
       }
     },
 
     // 批量设置树形面板路由
-    setTreeVisibleRoutes(routes) {
-      this.treeVisibleRoutes = [...routes];
+    setTreeVisibleRoutes (routes) {
+      this.treeVisibleRoutes = [...routes]
 
       // 重新检查当前路由
       if (!this.shouldShowTreeByRoute && this.showTreePanel) {
-        this.showTreePanel = false;
+        this.showTreePanel = false
       }
     },
 
     // 重置树形面板状态
-    resetTreePanelState() {
-      this.showTreePanel = true;
-      this.forceHideTreePanel = false;
-      localStorage.removeItem("tree-panel-state");
+    resetTreePanelState () {
+      this.showTreePanel = true
+      this.forceHideTreePanel = false
+      localStorage.removeItem('tree-panel-state')
     },
 
     // ========== 调试辅助方法 ==========
 
     // 获取树形面板调试信息
-    getTreePanelDebugInfo() {
+    getTreePanelDebugInfo () {
       return {
         currentRoute: this.$route.path,
         shouldShowTreeByRoute: this.shouldShowTreeByRoute,
@@ -1145,550 +1316,690 @@ export default {
         finalShowTreePanel: this.finalShowTreePanel,
         treeVisibleRoutes: this.treeVisibleRoutes,
         savedState: JSON.parse(
-          localStorage.getItem("tree-panel-state") || "{}"
-        ),
-      };
+          localStorage.getItem('tree-panel-state') || '{}'
+        )
+      }
     },
 
     // ========== 原有方法保持不变 ==========
 
     // 判断是否是分组中的第一个项
-    isFirstOfGroup(child, index) {
+    isFirstOfGroup (child, index) {
       if (!child.meta || !child.meta.parentGroup) {
-        return false;
+        return false
       }
 
       // 如果是第一个项，直接返回 true
       if (index === 0) {
-        return true;
+        return true
       }
 
       // 检查前一个项是否属于同一个分组
-      const prevChild = this.visibleSubmenuChildren[index - 1];
+      const prevChild = this.visibleSubmenuChildren[index - 1]
       return (
         !prevChild.meta ||
         !prevChild.meta.parentGroup ||
         prevChild.meta.parentGroup !== child.meta.parentGroup
-      );
+      )
     },
 
     // 切换分组的折叠状态
-    toggleGroup(groupName) {
+    toggleGroup (groupName) {
       this.$set(
         this.collapsedGroups,
         groupName,
         !this.collapsedGroups[groupName]
-      );
+      )
 
       // 保存到 localStorage
-      this.saveCollapsedState();
+      this.saveCollapsedState()
     },
 
     // 判断菜单项是否属于已折叠的分组
-    isGroupCollapsed(menuItem) {
+    isGroupCollapsed (menuItem) {
       if (!menuItem.meta || !menuItem.meta.parentGroup) {
-        return false;
+        return false
       }
-      return this.collapsedGroups[menuItem.meta.parentGroup] || false;
+      return this.collapsedGroups[menuItem.meta.parentGroup] || false
     },
 
     // 保存折叠状态到 localStorage
-    saveCollapsedState() {
+    saveCollapsedState () {
       localStorage.setItem(
-        "submenu-collapsed-groups",
+        'submenu-collapsed-groups',
         JSON.stringify(this.collapsedGroups)
-      );
+      )
     },
 
     // 从 localStorage 恢复折叠状态
-    restoreCollapsedState() {
-      const saved = localStorage.getItem("submenu-collapsed-groups");
+    restoreCollapsedState () {
+      const saved = localStorage.getItem('submenu-collapsed-groups')
       if (saved) {
         try {
-          this.collapsedGroups = JSON.parse(saved);
+          this.collapsedGroups = JSON.parse(saved)
         } catch (e) {
-          console.error("恢复折叠状态失败:", e);
+          console.error('恢复折叠状态失败:', e)
         }
       }
     },
 
-   toggleSideBar() {
-  const wasOpened = this.sidebar.opened;
-  this.$store.dispatch("app/toggleSideBar");
+    toggleSideBar () {
+      const wasOpened = this.sidebar.opened
+      this.$store.dispatch('app/toggleSideBar')
 
-  this.$nextTick(() => {
-    if (!wasOpened && this.sidebar.opened) {
-      const currentPath = this.$route.path;
-      
-      // 🔥 详情页特殊处理：手动展开父菜单
-      if (currentPath.includes('/detail/') || currentPath.endsWith('/detail')) {
-   
-        
-        // 根据详情页路径推断父菜单路径
-        const parentPath = this.getParentPathFromDetail(currentPath);
-        
-        if (parentPath) {
-          // 查找父菜单
-          const parentMenu = this.findMenuByPath(this.permission_routes, parentPath);
-          
-          if (parentMenu) {
-       
-            this.expandedItem = parentMenu.path;
-            this.currentSubmenu = parentMenu;
-            this.basePath = parentMenu.path;
-            this.selectedItem = parentMenu.path;
-          } else {
-            console.warn('⚠️ 未找到父菜单:', parentPath);
+      this.$nextTick(() => {
+        if (!wasOpened && this.sidebar.opened) {
+          const currentPath = this.$route.path
+          if (this.isHomePageRoute(currentPath)) {
+            this.handleCollapseSubmenu()
+            this.updateSelectionFromRoute(currentPath)
+            this.emitResizeBurst()
+            return
           }
-        }
-        
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 350);
-        
-        return;
-      }
-      
-      // 非详情页的正常逻辑
-      const matchingResult = this.findMatchingMenu(
-        this.permission_routes,
-        currentPath
-      );
 
-      if (
-        matchingResult &&
+          // 🔥 详情页特殊处理：手动展开父菜单
+          if (currentPath.includes('/detail/') || currentPath.endsWith('/detail')) {
+            // 根据详情页路径推断父菜单路径
+            const parentPath = this.getParentPathFromDetail(currentPath)
+
+            if (parentPath) {
+              // 查找父菜单
+              const parentMenu = this.findMenuByPath(this.permission_routes, parentPath)
+
+              if (parentMenu) {
+                this.expandedItem = parentMenu.path
+                this.currentSubmenu = parentMenu
+                this.basePath = parentMenu.path
+                this.selectedItem = parentMenu.path
+              } else {
+                console.warn('⚠️ 未找到父菜单:', parentPath)
+              }
+            }
+
+            setTimeout(() => {
+              window.dispatchEvent(new Event('resize'))
+            }, 350)
+
+            return
+          }
+
+          // 非详情页的正常逻辑
+          const matchingResult = this.findMatchingMenu(
+            this.permission_routes,
+            currentPath
+          )
+
+          if (
+            matchingResult &&
         matchingResult.isChildRoute &&
         matchingResult.parentItem
-      ) {
-        this.expandedItem = matchingResult.parentItem.path;
-        this.currentSubmenu = matchingResult.parentItem;
-        this.basePath = matchingResult.parentItem.path;
-        this.selectedItem = matchingResult.parentItem.path;
+          ) {
+            this.expandedItem = matchingResult.parentItem.path
+            this.currentSubmenu = matchingResult.parentItem
+            this.basePath = matchingResult.parentItem.path
+            this.selectedItem = matchingResult.parentItem.path
 
-        if (matchingResult.isDeepChild && matchingResult.expandablePath) {
-          const expandPath = path.resolve(
-            matchingResult.parentItem.path,
-            matchingResult.expandablePath
-          );
-          this.$set(this.expandedSubmenuItems, expandPath, true);
+            if (matchingResult.isDeepChild && matchingResult.expandablePath) {
+              const expandPath = path.resolve(
+                matchingResult.parentItem.path,
+                matchingResult.expandablePath
+              )
+              this.$set(this.expandedSubmenuItems, expandPath, true)
+            }
+          }
+        } else if (wasOpened && !this.sidebar.opened) {
+          this.handleCollapseSubmenu()
+        }
+
+        this.emitResizeBurst()
+      })
+    },
+
+    emitResizeBurst () {
+      const times = [0, 180, 360, 720]
+      times.forEach((t) => {
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'))
+        }, t)
+      })
+    },
+
+    // 🔥 新增方法：从详情页路径推断父菜单路径
+    getParentPathFromDetail (detailPath) {
+      // 例如：/metering/tenant/detail/123 → /metering/tenant/list
+      // 或者：/device/electricity/detail/456 → /device/electricity
+
+      // 移除末尾的 /detail 和 ID
+      const pathWithoutDetail = detailPath
+        .replace(/\/detail\/[^/]+\/?$/, '') // 匹配 /detail/123 或 /detail/123/
+        .replace(/\/detail\/?$/, '') // 匹配 /detail 或 /detail/
+
+      // 尝试几种可能的父路径
+      const possiblePaths = [
+    `${pathWithoutDetail}/list`, // 最常见：/metering/tenant/list
+    pathWithoutDetail // 其次：/metering/tenant
+      ]
+
+      // 返回第一个存在的路径
+      for (const path of possiblePaths) {
+        const menu = this.findMenuByPath(this.permission_routes, path)
+        if (menu) {
+          return path
         }
       }
-    } else if (wasOpened && !this.sidebar.opened) {
-      this.handleCollapseSubmenu();
-    }
-    
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-    }, 350);
-  });
-},
 
-// 🔥 新增方法：从详情页路径推断父菜单路径
-getParentPathFromDetail(detailPath) {
-  // 例如：/metering/tenant/detail/123 → /metering/tenant/list
-  // 或者：/device/electricity/detail/456 → /device/electricity
-  
-  // 移除末尾的 /detail 和 ID
-  const pathWithoutDetail = detailPath
-    .replace(/\/detail\/[^/]+\/?$/, '')  // 匹配 /detail/123 或 /detail/123/
-    .replace(/\/detail\/?$/, '');         // 匹配 /detail 或 /detail/
-  
-  // 尝试几种可能的父路径
-  const possiblePaths = [
-    `${pathWithoutDetail}/list`,   // 最常见：/metering/tenant/list
-    pathWithoutDetail,              // 其次：/metering/tenant
-  ];
-  
+      return null
+    },
 
-  
-  // 返回第一个存在的路径
-  for (const path of possiblePaths) {
-    const menu = this.findMenuByPath(this.permission_routes, path);
-    if (menu) {
-      return path;
-    }
-  }
-  
-  return null;
-},
+    // 🔥 新增方法：根据路径查找菜单
+    findMenuByPath (routes, targetPath) {
+      for (const route of routes) {
+        // 检查当前路由
+        if (route.path === targetPath) {
+          return route
+        }
 
-// 🔥 新增方法：根据路径查找菜单
-findMenuByPath(routes, targetPath) {
-  for (const route of routes) {
-    // 检查当前路由
-    if (route.path === targetPath) {
-      return route;
-    }
-    
-    // 递归检查子路由
-    if (route.children) {
-      for (const child of route.children) {
-        if (!child.hidden) {
-          const childPath = path.resolve(route.path, child.path);
-          if (childPath === targetPath) {
-            return route; // 返回父级菜单
-          }
-          
-          // 继续递归
-          if (child.children) {
-            const found = this.findMenuByPath([child], targetPath);
-            if (found) return route;
+        // 递归检查子路由
+        if (route.children) {
+          for (const child of route.children) {
+            if (!child.hidden) {
+              const childPath = path.resolve(route.path, child.path)
+              if (childPath === targetPath) {
+                return route // 返回父级菜单
+              }
+
+              // 继续递归
+              if (child.children) {
+                const found = this.findMenuByPath([child], targetPath)
+                if (found) return route
+              }
+            }
           }
         }
       }
-    }
-  }
-  
-  return null;
-},
-    handleAvatarError(e) {
+
+      return null
+    },
+    handleAvatarError (e) {
       e.target.src =
-        "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif";
+        'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
     },
 
-    showPasswordModal() {
-      this.passwordModalVisible = true;
+    showPasswordModal () {
+      this.passwordModalVisible = true
     },
 
-    checkInitPassword() {
-      console.log('🔒 checkInitPassword triggered. isInitPassword:', this.isInitPassword, typeof this.isInitPassword);
+    checkInitPassword () {
+      console.log('🔒 checkInitPassword triggered. isInitPassword:', this.isInitPassword, typeof this.isInitPassword)
       // 兼容数字1和字符串'1'
       if (this.isInitPassword === 1 || this.isInitPassword === '1') {
-        const hasShown = sessionStorage.getItem("hasShownInitPasswordPrompt");
-        console.log('🔒 hasShownInitPasswordPrompt:', hasShown);
+        const hasShown = sessionStorage.getItem('hasShownInitPasswordPrompt')
+        console.log('🔒 hasShownInitPasswordPrompt:', hasShown)
         if (!hasShown) {
-          console.log('🔒 Showing password prompt...');
-          sessionStorage.setItem("hasShownInitPasswordPrompt", "true");
+          console.log('🔒 Showing password prompt...')
+          sessionStorage.setItem('hasShownInitPasswordPrompt', 'true')
           this.$confirm(
-            "当前账号使用的是初始密码，建议您修改密码以保障账号安全。",
-            "提示",
+            '当前账号使用的是初始密码，建议您修改密码以保障账号安全。',
+            '提示',
             {
-              confirmButtonText: "去修改",
-              cancelButtonText: "暂不修改",
-              type: "warning",
+              confirmButtonText: '去修改',
+              cancelButtonText: '暂不修改',
+              type: 'warning'
             }
           )
             .then(() => {
-              this.showPasswordModal();
+              this.showPasswordModal()
             })
-            .catch(() => {});
+            .catch(() => {})
         }
       }
     },
 
     // 在 Layout.vue 的 methods 中，替换 logout 方法为以下代码：
 
-    async logout() {
+    async logout () {
       try {
         // 显示加载状态
         const loading = this.$loading({
           lock: true,
-          text: "正在退出...",
-          spinner: "el-icon-loading",
-          background: "rgba(0, 0, 0, 0.7)",
-        });
+          text: '正在退出...',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
 
         // 步骤1: 重置管理方状态
-        if (this.$store.hasModule("manager")) {
-          await this.$store.dispatch("manager/resetManager");
+        if (this.$store.hasModule('manager')) {
+          await this.$store.dispatch('manager/resetManager')
         }
 
         // 步骤2: 清空 TagsView
-        if (this.$store.hasModule("tagsView")) {
-          await this.$store.dispatch("tagsView/clearAllForPlatformSwitch");
+        if (this.$store.hasModule('tagsView')) {
+          await this.$store.dispatch('tagsView/clearAllForPlatformSwitch')
         }
 
         // 步骤3: 调用用户退出（这会自动重置路由）
-        await this.$store.dispatch("user/logout");
+        await this.$store.dispatch('user/logout')
 
         // 步骤4: 清除本地存储的额外数据
-        localStorage.removeItem("selectedPlatform");
-        localStorage.removeItem("tree-panel-state");
-        localStorage.removeItem("submenu-collapsed-groups");
+        localStorage.removeItem('selectedPlatform')
+        localStorage.removeItem('tree-panel-state')
+        localStorage.removeItem('submenu-collapsed-groups')
 
-        loading.close();
+        loading.close()
 
         // 步骤5: 显示成功消息
         this.$message({
-          type: "success",
-          message: "退出登录成功",
-          duration: 1500,
-        });
+          type: 'success',
+          message: '退出登录成功',
+          duration: 1500
+        })
 
         // 步骤6: 强制跳转到登录页（避免路由问题）
         setTimeout(() => {
-          window.location.href = "/login";
-        }, 1000);
+          window.location.href = '/#/login'
+        }, 1000)
       } catch (error) {
-        console.error("退出登录失败:", error);
+        console.error('退出登录失败:', error)
 
         // 关闭加载状态
-        const loadingInstance = this.$loading.service();
+        const loadingInstance = this.$loading.service()
         if (loadingInstance) {
-          loadingInstance.close();
+          loadingInstance.close()
         }
 
         // 显示错误消息
-        this.$message.error(`退出登录失败：${error.message || "请稍后重试"}`);
+        this.$message.error(`退出登录失败：${error.message || '请稍后重试'}`)
 
         // 即使失败也尝试清理
         try {
-          await this.$store.dispatch("user/resetToken");
-          localStorage.clear(); // 强制清除所有本地存储
-          window.location.href = "/login"; // 强制跳转到登录页
+          await this.$store.dispatch('user/resetToken')
+          localStorage.clear() // 强制清除所有本地存储
+          window.location.href = '/#/login' // 强制跳转到登录页
         } catch (resetError) {
-          console.error("强制重置失败:", resetError);
-          window.location.reload(); // 最后手段：刷新页面
+          console.error('强制重置失败:', resetError)
+          window.location.reload() // 最后手段：刷新页面
         }
       }
     },
 
     // 处理子菜单关闭
-    handleCollapseSubmenu() {
+    handleCollapseSubmenu () {
       // 恢复到基于当前路由的选中状态
       if (this.originalSelectedItem) {
-        this.selectedItem = this.originalSelectedItem;
+        this.selectedItem = this.originalSelectedItem
       } else if (this.currentRouteItem) {
-        this.selectedItem = this.currentRouteItem;
+        this.selectedItem = this.currentRouteItem
       }
 
       // 清空子菜单相关状态
-      this.expandedItem = null;
-      this.currentSubmenu = null;
-      this.basePath = "";
-      this.originalSelectedItem = null;
+      this.expandedItem = null
+      this.currentSubmenu = null
+      this.basePath = ''
+      this.originalSelectedItem = null
 
       // 清空展开的子菜单项
-      this.expandedSubmenuItems = {};
+      this.expandedSubmenuItems = {}
 
       // 清空分组折叠状态
-      this.collapsedGroups = {};
+      this.collapsedGroups = {}
     },
 
     // 切换子菜单项的展开状态
-    toggleSubmenuItem(path) {
+    toggleSubmenuItem (path) {
       this.$set(
         this.expandedSubmenuItems,
         path,
         !this.expandedSubmenuItems[path]
-      );
+      )
     },
 
     // 获取可见的子项（过滤隐藏项）
-    getVisibleChildren(item) {
-      if (!item.children) return [];
-      return item.children.filter((child) => !child.hidden);
+    getVisibleChildren (item) {
+      if (!item.children) return []
+      return this.getFilteredMenuChildren(item.children)
+    },
+
+    canShowSmartDeviceMenus () {
+      return canAccessSmartDeviceMenus(this.currentManagerId)
+    },
+
+    canShowMonitoringMenus () {
+      return canAccessMonitoringMenus(this.currentManagerId)
+    },
+
+    matchesManagerVisibility (item) {
+      const mv = item && item.meta && item.meta.managerVisibility
+      if (!mv) return true
+
+      const managerId = this.currentManagerId
+      const manager = this.currentManager || {}
+      const managerName = String(manager.managerName || manager.name || '')
+
+      const ids = Array.isArray(mv.ids) ? mv.ids.map(v => String(v)) : []
+      const names = Array.isArray(mv.names) ? mv.names.map(v => String(v)) : []
+
+      const idMatch = ids.length > 0 && managerId !== null && managerId !== undefined && ids.includes(String(managerId))
+      const nameMatch = names.length > 0 && managerName && names.some(n => managerName.includes(n))
+
+      if (ids.length === 0 && names.length === 0) return true
+      return idMatch || nameMatch
+    },
+
+    isMenuItemVisible (item) {
+      if (!item || item.hidden) return false
+
+      // 🔥 通用：按管理方可见性过滤（生活水/直饮水/停车系统等）
+      if (!this.matchesManagerVisibility(item)) return false
+
+      if (!this.canShowMonitoringMenus()) {
+        if (item.path === MONITORING_ROOT_PATH) return false
+        if (item.path === MONITORING_DIVIDER_PATH) return false
+        if (MONITORING_MENU_PATHS.has(item.path)) return false
+      }
+
+      if (this.canShowSmartDeviceMenus()) return true
+      if (item.path === SMART_DEVICE_DIVIDER_PATH) return false
+      if (SMART_DEVICE_MENU_PATHS.has(item.path)) return false
+      return true
+    },
+
+    getFilteredMenuChildren (children) {
+      const src = Array.isArray(children) ? children : []
+      return src.filter((child) => this.isMenuItemVisible(child))
     },
 
     // 判断子菜单项是否激活（支持嵌套）
-    isSubmenuItemActive(parentPath, childPath) {
+    isSubmenuItemActive (parentPath, childPath) {
       const fullPath = childPath
         ? this.resolvePath(parentPath, childPath)
-        : this.resolvePath(parentPath);
-      return this.$route.path === fullPath;
+        : this.resolvePath(parentPath)
+      return this.$route.path === fullPath
     },
 
     // 解析路径（支持多级）
-    resolvePath(parentPath, childPath) {
-      const { isExternal } = require("@/utils/validate");
-      const path = require("path");
+    resolvePath (parentPath, childPath) {
+      const { isExternal } = require('@/utils/validate')
+      const path = require('path')
 
       if (!childPath) {
         // 处理单级路径
         if (isExternal(parentPath)) {
-          return parentPath;
+          return parentPath
         }
-        if (isExternal(this.basePath || "")) {
-          return this.basePath || "";
+        if (isExternal(this.basePath || '')) {
+          return this.basePath || ''
         }
-        return path.resolve(this.basePath || "/", parentPath);
+        return path.resolve(this.basePath || '/', parentPath)
       } else {
         // 处理嵌套路径
-        const parentFullPath = this.resolvePath(parentPath);
+        const parentFullPath = this.resolvePath(parentPath)
         if (isExternal(childPath)) {
-          return childPath;
+          return childPath
         }
-        return path.resolve(parentFullPath, childPath);
+        return path.resolve(parentFullPath, childPath)
       }
     },
 
     // 检查是否有激活的子项
-    hasActiveChild(item) {
-      if (!item.children) return false;
+    hasActiveChild (item) {
+      if (!item.children) return false
 
-      return item.children.some((child) => {
-        if (child.hidden) return false;
-        const childPath = this.resolvePath(item.path, child.path);
-        return this.$route.path === childPath;
-      });
+      return this.getFilteredMenuChildren(item.children).some((child) => {
+        const childPath = this.resolvePath(item.path, child.path)
+        return this.$route.path === childPath
+      })
     },
 
     // 加载管理方列表
-    async loadManagerList() {
+    async loadManagerList () {
       try {
-        await this.getManagerList();
+        await this.getManagerList()
       } catch (error) {
-        console.error("加载管理方列表失败:", error);
-        this.$message.error("获取管理方列表失败");
+        console.error('加载管理方列表失败:', error)
+        this.$message.error('获取管理方列表失败')
+      }
+    },
+
+    handleManagerDropdownVisible (visible) {
+      if (!visible) {
+        this.managerSearchKeyword = ''
+      }
+    },
+
+    // 设置默认管理方
+    async handleSetDefaultManager (manager, event) {
+      event.stopPropagation()
+      const managerName = this.$displayDynamicName(manager.managerName, 48)
+      try {
+        await this.$confirm(
+          this.$t('layout.setDefaultManagerConfirm', { name: managerName }),
+          this.$t('layout.setDefaultManagerHint'),
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        )
+        await this.setDefaultManager(manager.managerId)
+        this.$message.success(this.$t('layout.setDefaultManagerSuccess'))
+      } catch (e) {
+        // 用户取消或接口报错
+        if (e !== 'cancel' && e.message) {
+          this.$message.error(e.message || '设置默认管理方失败')
+        }
       }
     },
 
     // 企业切换（控制台内切换企业）
-async handleManagerSwitch(managerId) {
-  if (managerId === this.currentManagerId) {
-    return;
-  }
-
-  const targetManager = this.managerList.find(
-    (m) => m.managerId === managerId
-  );
-  if (!targetManager) {
-    return;
-  }
-
-  try {
-    const loading = this.$loading({
-      lock: true,
-      text: `正在切换到${targetManager.managerName}...`,
-      spinner: "el-icon-loading",
-      background: "rgba(0, 0, 0, 0.7)",
-    });
-
-    // 🔥 步骤1: 记录当前是否在详情页
-    const isOnDetailPage = 
-      this.$route.path.includes('/detail/') || 
-      this.$route.name === 'TenantDetail';
-    
-    const currentRoutePath = this.$route.path;
-
-    // 🔥 步骤2: 如果在详情页，先跳转到列表页
-    if (isOnDetailPage) {
-      console.log('🔄 检测到在详情页，先跳转到列表页');
-      
-      // 根据详情页类型确定目标列表页
-      let targetListPath = '/metering/dashboard'; // 默认首页
-      
-      if (currentRoutePath.includes('/metering/tenant/detail/')) {
-        targetListPath = '/metering/tenant/list';
-      } else if (currentRoutePath.includes('/device/electricity/detail/')) {
-        targetListPath = '/device/electricity';
-      } else if (currentRoutePath.includes('/device/watermeter/detail/')) {
-        targetListPath = '/device/watermeter';
+    async handleManagerSwitch (managerId) {
+      if (managerId === this.currentManagerId) {
+        return
       }
-      
-      // 先跳转，不带参数
-      await this.$router.replace(targetListPath).catch(() => {});
-      
-      // 等待跳转完成
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
 
-    const currentRoute = {
-      path: this.$route.path,
-      query: { ...this.$route.query },
-      params: { ...this.$route.params },
-      name: this.$route.name,
-      fullPath: this.$route.fullPath,
-    };
+      const targetManager = this.managerList.find(
+        (m) => m.managerId === managerId
+      )
+      if (!targetManager) {
+        return
+      }
 
-    // 步骤3: 清空页面缓存和详情页标签
-    if (this.$store.hasModule("tagsView")) {
-      await this.$store.dispatch("tagsView/clearCacheForManagerSwitch");
-    }
+      try {
+        const switchNameLabel = this.$displayDynamicName(
+          targetManager.managerName,
+          48
+        )
+        const loading = this.$loading({
+          lock: true,
+          text: this.$t('layout.switchingToManager', { name: switchNameLabel }),
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
 
-    // 步骤4: 调用store中的切换方法
-    await this.switchManager(managerId);
+        // 🔥 步骤1: 记录当前是否在详情页
+        const isOnDetailPage =
+      this.$route.path.includes('/detail/') ||
+      this.$route.name === 'TenantDetail'
 
-    // 步骤5: 触发企业切换事件
-    this.$bus &&
-      this.$bus.$emit("manager-switched", {
+        const currentRoutePath = this.$route.path
+
+        // 🔥 步骤2: 如果在详情页，先跳转到列表页
+        if (isOnDetailPage) {
+          console.log('🔄 检测到在详情页，先跳转到列表页')
+
+          // 根据详情页类型确定目标列表页
+          let targetListPath = '/metering/dashboard' // 默认首页
+
+          if (currentRoutePath.includes('/metering/tenant/detail/')) {
+            targetListPath = '/metering/tenant/list'
+          } else if (currentRoutePath.includes('/device/electricity/detail/')) {
+            targetListPath = '/device/electricity'
+          } else if (currentRoutePath.includes('/device/watermeter/detail/')) {
+            targetListPath = '/device/watermeter'
+          }
+
+          // 先跳转，不带参数
+          await this.$router.replace(targetListPath).catch(() => {})
+
+          // 等待跳转完成
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+
+        const currentRoute = {
+          path: this.$route.path,
+          query: { ...this.$route.query },
+          params: { ...this.$route.params },
+          name: this.$route.name,
+          fullPath: this.$route.fullPath
+        }
+
+        // 步骤3: 清空页面缓存和详情页标签
+        if (this.$store.hasModule('tagsView')) {
+          await this.$store.dispatch('tagsView/clearCacheForManagerSwitch')
+        }
+
+        // 步骤4: 调用store中的切换方法
+        await this.switchManager(managerId)
+
+        // 步骤4.1: 仅针对「其他智能设备」白名单路由做最小清理
+        // 当切换到不在白名单的管理方时，关闭对应标签，避免残留不可访问页面
+        const canAccessSmartDevices = canAccessSmartDeviceMenus(managerId)
+        if (!canAccessSmartDevices && this.$store.hasModule('tagsView')) {
+          const visitedViews = Array.isArray(this.$store.getters.visitedViews)
+            ? this.$store.getters.visitedViews
+            : []
+          const smartViews = visitedViews.filter((view) =>
+            view && SMART_DEVICE_MENU_PATHS.has(view.path)
+          )
+
+          for (const view of smartViews) {
+            // 顺序关闭标签，避免并发状态抖动
+            await this.$store.dispatch('tagsView/delView', view).catch(() => {})
+          }
+
+          // 若当前正停留在这三页，切到数据看板，避免用户还停在不可访问页
+          if (SMART_DEVICE_MENU_PATHS.has(this.$route.path)) {
+            await this.$router.replace('/metering/dashboard').catch(() => {})
+          }
+        }
+
+        const canAccessMonitoring = canAccessMonitoringMenus(managerId)
+        if (!canAccessMonitoring && this.$store.hasModule('tagsView')) {
+          const visitedViews = Array.isArray(this.$store.getters.visitedViews)
+            ? this.$store.getters.visitedViews
+            : []
+          const monitoringViews = visitedViews.filter(
+            (view) =>
+              view &&
+              (MONITORING_MENU_PATHS.has(view.path) ||
+                view.path === MONITORING_ROOT_PATH)
+          )
+          for (const view of monitoringViews) {
+            await this.$store.dispatch('tagsView/delView', view).catch(() => {})
+          }
+          if (
+            MONITORING_MENU_PATHS.has(this.$route.path) ||
+            this.$route.path === MONITORING_ROOT_PATH
+          ) {
+            await this.$router.replace('/metering/dashboard').catch(() => {})
+          }
+        }
+
+        // 步骤5: 触发企业切换事件
+        this.$bus &&
+      this.$bus.$emit('manager-switched', {
         managerId: managerId,
         managerInfo: targetManager,
         previousManagerId: this.currentManagerId,
         currentRoute: currentRoute,
-        type: "manager-switch",
+        type: 'manager-switch',
         clearTagsView: false,
-        timestamp: new Date().toISOString(),
-      });
+        timestamp: new Date().toISOString()
+      })
 
-    loading.close();
+        loading.close()
 
-    this.$message({
-      type: "success",
-      message: `已切换到${targetManager.managerName}`,
-      duration: 2000,
-    });
-
-    // 步骤6: 温和刷新当前页面（现在已经不在详情页了）
-    this.$nextTick(() => {
-      const newQuery = {
-        ...this.$route.query,
-        _t: Date.now(),
-        _m: managerId,
-      };
-
-      this.$router
-        .replace({
-          path: this.$route.path,
-          query: newQuery,
+        this.$message({
+          type: 'success',
+          message: this.$t('layout.switchedToManager', {
+            name: this.$displayDynamicName(targetManager.managerName, 48)
+          }),
+          duration: 2000
         })
-        .then(() => {})
-        .catch((err) => {});
-    });
-  } catch (error) {
-    console.error("企业切换失败:", error);
-    this.$message.error(`企业切换失败：${error.message || "请稍后重试"}`);
 
-    const loadingInstance = this.$loading.service();
-    if (loadingInstance) {
-      loadingInstance.close();
-    }
-  }
-},
+        // 步骤6: 温和刷新当前页面（现在已经不在详情页了）
+        this.$nextTick(() => {
+          const newQuery = {
+            ...this.$route.query,
+            _t: Date.now(),
+            _m: managerId
+          }
+
+          this.$router
+            .replace({
+              path: this.$route.path,
+              query: newQuery
+            })
+            .then(() => {
+              this.$nextTick(() => {
+                this.emitResizeBurst()
+              })
+            })
+            .catch((err) => {})
+        })
+      } catch (error) {
+        console.error('企业切换失败:', error)
+        this.$message.error(`企业切换失败：${error.message || '请稍后重试'}`)
+
+        const loadingInstance = this.$loading.service()
+        if (loadingInstance) {
+          loadingInstance.close()
+        }
+      }
+    },
 
     // 设置选中项
-    setSelectedItem(path) {
+    setSelectedItem (path) {
       // 如果当前没有展开的子菜单，记录原始选中项
       if (!this.expandedItem) {
-        this.originalSelectedItem = this.selectedItem;
+        this.originalSelectedItem = this.selectedItem
       }
 
-      this.previousSelectedItem = this.selectedItem;
-      this.selectedItem = path;
+      this.previousSelectedItem = this.selectedItem
+      this.selectedItem = path
     },
 
     // 根据路由更新选中状态 - 增强版
-    updateSelectionFromRoute(routePath) {
+    updateSelectionFromRoute (routePath) {
       // 检查是否为首页路由（不显示子菜单的路由）
-      const isHomePage = this.isHomePageRoute(routePath);
+      const isHomePage = this.isHomePageRoute(routePath)
 
       if (isHomePage) {
         // 如果是首页路由，直接关闭所有子菜单
 
-        this.handleCollapseSubmenu();
+        this.handleCollapseSubmenu()
 
         // 查找匹配的菜单项并设置选中状态
         const matchingResult = this.findMatchingMenu(
           this.permission_routes,
           routePath
-        );
+        )
         if (matchingResult) {
-          this.currentRouteItem = matchingResult.path;
-          this.setSelectedItem(matchingResult.path);
+          this.currentRouteItem = matchingResult.path
+          this.setSelectedItem(matchingResult.path)
         }
 
-        return;
+        return
       }
 
       // 查找匹配的菜单项
       const matchingResult = this.findMatchingMenu(
         this.permission_routes,
         routePath
-      );
+      )
 
       if (matchingResult) {
         // 记录当前路由对应的菜单项
-        this.currentRouteItem = matchingResult.path;
+        this.currentRouteItem = matchingResult.path
 
         // 如果是子路由，需要展开对应的父菜单
         if (matchingResult.isChildRoute && matchingResult.parentItem) {
@@ -1699,20 +2010,20 @@ async handleManagerSwitch(managerId) {
           ) {
             // 记录原始选中项（如果还没有记录的话）
             if (!this.expandedItem) {
-              this.originalSelectedItem = this.selectedItem;
+              this.originalSelectedItem = this.selectedItem
             }
 
             // 展开正确的父菜单
-            this.expandedItem = matchingResult.parentItem.path;
-            this.currentSubmenu = matchingResult.parentItem;
-            this.basePath = matchingResult.parentItem.path;
+            this.expandedItem = matchingResult.parentItem.path
+            this.currentSubmenu = matchingResult.parentItem
+            this.basePath = matchingResult.parentItem.path
 
             // 设置父菜单为选中状态
-            this.selectedItem = matchingResult.parentItem.path;
+            this.selectedItem = matchingResult.parentItem.path
           }
 
           // 无论如何都要更新当前路由项
-          this.currentRouteItem = matchingResult.path;
+          this.currentRouteItem = matchingResult.path
 
           // 处理深层嵌套的情况
           if (matchingResult.isDeepChild) {
@@ -1725,10 +2036,10 @@ async handleManagerSwitch(managerId) {
                 const expandPath = path.resolve(
                   matchingResult.parentItem.path,
                   matchingResult.expandablePath
-                );
-                this.$set(this.expandedSubmenuItems, expandPath, true);
+                )
+                this.$set(this.expandedSubmenuItems, expandPath, true)
               }
-            });
+            })
           } else {
             // 自动展开包含当前路由的菜单项
             if (this.currentSubmenu && this.currentSubmenu.children) {
@@ -1736,21 +2047,21 @@ async handleManagerSwitch(managerId) {
                 this.currentSubmenu.children.forEach((child) => {
                   if (child.children && !child.hidden) {
                     const hasActiveChild = child.children.some((subChild) => {
-                      if (subChild.hidden) return false;
+                      if (subChild.hidden) return false
                       const fullPath = this.resolvePath(
                         child.path,
                         subChild.path
-                      );
-                      return routePath === fullPath;
-                    });
+                      )
+                      return routePath === fullPath
+                    })
 
                     if (hasActiveChild) {
-                      const childPath = this.resolvePath(child.path);
-                      this.$set(this.expandedSubmenuItems, childPath, true);
+                      const childPath = this.resolvePath(child.path)
+                      this.$set(this.expandedSubmenuItems, childPath, true)
                     }
                   }
-                });
-              });
+                })
+              })
             }
           }
         } else {
@@ -1758,40 +2069,40 @@ async handleManagerSwitch(managerId) {
           if (this.expandedItem) {
             // 检查当前路由是否就是展开的父菜单本身
             if (matchingResult.path === this.expandedItem) {
-              this.selectedItem = matchingResult.path;
+              this.selectedItem = matchingResult.path
             } else {
-              this.handleCollapseSubmenu();
-              this.setSelectedItem(matchingResult.path);
+              this.handleCollapseSubmenu()
+              this.setSelectedItem(matchingResult.path)
             }
           } else {
             // 没有展开的子菜单，正常设置选中项
 
-            this.setSelectedItem(matchingResult.path);
+            this.setSelectedItem(matchingResult.path)
           }
         }
       }
     },
 
     // 判断是否为首页路由的方法
-    isHomePageRoute(routePath) {
+    isHomePageRoute (routePath) {
       // 定义不需要显示子菜单的首页路由
       const homePageRoutes = [
-        "/dashboard",
-        // "/metering/dashboard",
-        "/admin/dashboard",
-        "/",
-        "/home",
-      ];
+        '/dashboard',
+        '/metering',
+        '/metering/dashboard',
+        '/',
+        '/home'
+      ]
 
-      return homePageRoutes.includes(routePath);
+      return homePageRoutes.includes(routePath)
     },
 
     // 提取查找匹配菜单的逻辑 - 增强版，支持多级嵌套
-    findMatchingMenu(routes, targetPath, parentRoute = null) {
+    findMatchingMenu (routes, targetPath, parentRoute = null) {
       for (const route of routes) {
         const currentPath = parentRoute
           ? path.resolve(parentRoute.path, route.path)
-          : route.path;
+          : route.path
 
         // 检查当前路由
         if (currentPath === targetPath) {
@@ -1800,8 +2111,8 @@ async handleManagerSwitch(managerId) {
             isParent: false,
             parentItem: parentRoute,
             matchedRoute: route,
-            isChildRoute: !!parentRoute,
-          };
+            isChildRoute: !!parentRoute
+          }
         }
 
         // 递归检查子路由
@@ -1815,14 +2126,14 @@ async handleManagerSwitch(managerId) {
                   targetPath,
                   route,
                   child
-                );
+                )
                 if (deepResult) {
-                  return deepResult;
+                  return deepResult
                 }
               }
 
               // 检查直接子路由
-              const childPath = path.resolve(currentPath, child.path);
+              const childPath = path.resolve(currentPath, child.path)
               if (childPath === targetPath) {
                 return {
                   path: childPath,
@@ -1831,23 +2142,23 @@ async handleManagerSwitch(managerId) {
                   matchedRoute: child,
                   isChildRoute: true,
                   // 如果是嵌套路由，记录需要展开的中间层
-                  expandableParent: child.children ? child : null,
-                };
+                  expandableParent: child.children ? child : null
+                }
               }
             }
           }
         }
       }
-      return null;
+      return null
     },
 
     // 新增：深度查找嵌套菜单
-    findMatchingMenuDeep(routes, targetPath, topParent, immediateParent) {
+    findMatchingMenuDeep (routes, targetPath, topParent, immediateParent) {
       for (const route of routes) {
         const routePath = path.resolve(
           path.resolve(topParent.path, immediateParent.path),
           route.path
-        );
+        )
 
         if (routePath === targetPath) {
           return {
@@ -1859,230 +2170,296 @@ async handleManagerSwitch(managerId) {
             isDeepChild: true,
             immediateParent: immediateParent,
             // 需要展开的中间层路径
-            expandablePath: immediateParent.path,
-          };
+            expandablePath: immediateParent.path
+          }
         }
       }
-      return null;
+      return null
+    },
+
+    getDefaultRouteForMenu (menu) {
+      if (!menu) return null
+
+      const redirect =
+        typeof menu.redirect === 'string' && menu.redirect !== 'noRedirect'
+          ? menu.redirect
+          : null
+      if (redirect) return redirect
+
+      if (!menu.children || menu.children.length === 0) {
+        return menu.path || null
+      }
+
+      const firstChild = menu.children.find(
+        (child) =>
+          child &&
+          !child.hidden &&
+          !(child.meta && child.meta.isDivider) &&
+          typeof child.path === 'string'
+      )
+      if (!firstChild) return menu.path || null
+
+      const childRedirect =
+        typeof firstChild.redirect === 'string' &&
+        firstChild.redirect !== 'noRedirect'
+          ? firstChild.redirect
+          : null
+      if (childRedirect) return childRedirect
+
+      if (firstChild.children && firstChild.children.length > 0) {
+        const deepChild = firstChild.children.find(
+          (child) =>
+            child &&
+            !child.hidden &&
+            !(child.meta && child.meta.isDivider) &&
+            typeof child.path === 'string'
+        )
+        if (deepChild) {
+          return path.resolve(path.resolve(menu.path, firstChild.path), deepChild.path)
+        }
+      }
+
+      return path.resolve(menu.path, firstChild.path)
     },
 
     // 切换子菜单显示
-    toggleSubmenu(item) {
+    toggleSubmenu (item) {
+      const isFromDeviceDashboard = this.$route.path === '/device/dashboard'
+      const shouldNavigate = isFromDeviceDashboard || !this.sidebar.opened
+
       if (!this.sidebar.opened) {
-        this.$store.dispatch("app/toggleSideBar");
+        if (isFromDeviceDashboard) {
+          this.$store.dispatch('app/toggleSideBar', { withoutAnimation: true })
+          this.$nextTick(() => {
+            this.$store.dispatch('app/setWithoutAnimation', false)
+          })
+        } else {
+          this.$store.dispatch('app/toggleSideBar')
+        }
       }
       if (this.expandedItem === item.path) {
         // 如果点击的是当前展开的菜单，不做任何操作（需要手动收起）
 
-        return;
       } else {
         // 展开新的子菜单
 
         // 记录展开前的原始选中项（基于当前路由）
         if (!this.expandedItem) {
           this.originalSelectedItem =
-            this.currentRouteItem || this.selectedItem;
+            this.currentRouteItem || this.selectedItem
         }
 
-        this.expandedItem = item.path;
-        this.currentSubmenu = item;
-        this.basePath = item.path;
+        this.expandedItem = item.path
+        this.currentSubmenu = item
+        this.basePath = item.path
 
         // 立即高亮父菜单
-        this.selectedItem = item.path;
+        this.selectedItem = item.path
+      }
+
+      if (shouldNavigate) {
+        const targetPath = this.getDefaultRouteForMenu(item)
+        if (targetPath && targetPath !== this.$route.path) {
+          this.$router.push(targetPath).catch(() => {})
+        }
       }
     },
 
     // 关闭子菜单
-    closeSubmenu() {
+    closeSubmenu () {
       // 只在侧边栏收起时自动关闭，其他情况需要手动收起
       if (!this.sidebar.opened) {
-        this.expandedItem = null;
-        this.currentSubmenu = null;
-        this.basePath = "";
+        this.expandedItem = null
+        this.currentSubmenu = null
+        this.basePath = ''
 
         // 恢复原始选中状态
         if (this.originalSelectedItem) {
-          this.selectedItem = this.originalSelectedItem;
-          this.originalSelectedItem = null;
+          this.selectedItem = this.originalSelectedItem
+          this.originalSelectedItem = null
         }
       }
     },
 
     // 处理子菜单点击
-    handleSubmenuClick(childPath) {
-      const fullPath = this.resolvePath(childPath);
-      this.setSelectedItem(fullPath);
+    handleSubmenuClick (childPath) {
+      const fullPath = this.resolvePath(childPath)
+      this.setSelectedItem(fullPath)
       // 更新当前路由项
-      this.currentRouteItem = fullPath;
+      this.currentRouteItem = fullPath
     },
 
     // 全屏切换功能
-    toggleFullscreen() {
+    toggleFullscreen () {
       if (!document.fullscreenElement) {
         // 进入全屏
-        this.requestFullscreen();
+        this.requestFullscreen()
       } else {
         // 退出全屏
-        this.exitFullscreen();
+        this.exitFullscreen()
       }
     },
 
     // 请求全屏
-    requestFullscreen() {
-      const element = document.documentElement;
+    requestFullscreen () {
+      const element = document.documentElement
 
       if (element.requestFullscreen) {
-        element.requestFullscreen();
+        element.requestFullscreen()
       } else if (element.mozRequestFullScreen) {
         // Firefox
-        element.mozRequestFullScreen();
+        element.mozRequestFullScreen()
       } else if (element.webkitRequestFullscreen) {
         // Chrome, Safari and Opera
-        element.webkitRequestFullscreen();
+        element.webkitRequestFullscreen()
       } else if (element.msRequestFullscreen) {
         // IE/Edge
-        element.msRequestFullscreen();
+        element.msRequestFullscreen()
       }
     },
 
     // 退出全屏
-    exitFullscreen() {
+    exitFullscreen () {
       if (document.exitFullscreen) {
-        document.exitFullscreen();
+        document.exitFullscreen()
       } else if (document.mozCancelFullScreen) {
         // Firefox
-        document.mozCancelFullScreen();
+        document.mozCancelFullScreen()
       } else if (document.webkitExitFullscreen) {
         // Chrome, Safari and Opera
-        document.webkitExitFullscreen();
+        document.webkitExitFullscreen()
       } else if (document.msExitFullscreen) {
         // IE/Edge
-        document.msExitFullscreen();
+        document.msExitFullscreen()
       }
     },
 
     // 添加全屏事件监听器
-    addFullscreenListeners() {
+    addFullscreenListeners () {
       document.addEventListener(
-        "fullscreenchange",
+        'fullscreenchange',
         this.handleFullscreenChange
-      );
+      )
       document.addEventListener(
-        "mozfullscreenchange",
+        'mozfullscreenchange',
         this.handleFullscreenChange
-      );
+      )
       document.addEventListener(
-        "webkitfullscreenchange",
+        'webkitfullscreenchange',
         this.handleFullscreenChange
-      );
+      )
       document.addEventListener(
-        "msfullscreenchange",
+        'msfullscreenchange',
         this.handleFullscreenChange
-      );
+      )
     },
 
     // 移除全屏事件监听器
-    removeFullscreenListeners() {
+    removeFullscreenListeners () {
       document.removeEventListener(
-        "fullscreenchange",
+        'fullscreenchange',
         this.handleFullscreenChange
-      );
+      )
       document.removeEventListener(
-        "mozfullscreenchange",
+        'mozfullscreenchange',
         this.handleFullscreenChange
-      );
+      )
       document.removeEventListener(
-        "webkitfullscreenchange",
+        'webkitfullscreenchange',
         this.handleFullscreenChange
-      );
+      )
       document.removeEventListener(
-        "msfullscreenchange",
+        'msfullscreenchange',
         this.handleFullscreenChange
-      );
+      )
     },
 
     // 处理全屏状态变化
-    handleFullscreenChange() {
+    handleFullscreenChange () {
       this.isFullscreen = !!(
         document.fullscreenElement ||
         document.mozFullScreenElement ||
         document.webkitFullscreenElement ||
         document.msFullscreenElement
-      );
+      )
 
       // 全屏状态变化处理
       if (this.isFullscreen) {
-        this.$message.success("已进入全屏模式");
-        document.body.classList.add("fullscreen-mode");
+        this.$message.success('已进入全屏模式')
+        document.body.classList.add('fullscreen-mode')
       } else {
-        this.$message.info("已退出全屏模式");
-        document.body.classList.remove("fullscreen-mode");
+        this.$message.info('已退出全屏模式')
+        document.body.classList.remove('fullscreen-mode')
       }
     },
 
     // ========== 平台切换相关方法 ==========
 
     // 获取用户平台权限
-    getUserPlatformPermissions() {
-      const { getAvailablePlatforms } = require("@/utils/routeConfig");
+    getUserPlatformPermissions () {
+      const { getAvailablePlatforms } = require('@/utils/routeConfig')
       const userRole =
         this.$store.state.user.role ||
-        (this.$store.state.user.roles && this.$store.state.user.roles[0]);
+        (this.$store.state.user.roles && this.$store.state.user.roles[0])
 
       if (!userRole) {
-        console.warn("Layout: 无法获取用户角色");
-        return [];
+        console.warn('Layout: 无法获取用户角色')
+        return []
       }
 
-      const permissions = getAvailablePlatforms(userRole);
+      const permissions = getAvailablePlatforms(userRole)
 
-      return permissions;
+      return permissions
     },
 
     // 初始化平台设置
-    initializePlatform() {
+    initializePlatform () {
       // 获取用户可用平台
-      const userPermissions = this.getUserPlatformPermissions();
+      const userPermissions = this.getUserPlatformPermissions()
 
       if (userPermissions.length === 0) {
-        console.warn("用户没有任何平台权限");
-        return;
+        console.warn('用户没有任何平台权限')
+        return
       }
 
       // 从store获取当前平台信息
       const currentStorePlatform =
-        this.$store.getters["permission/currentPlatform"];
+        this.$store.getters['permission/currentPlatform']
 
       // 如果store中有平台信息且用户有权限，使用store中的
       if (
         currentStorePlatform &&
         userPermissions.includes(currentStorePlatform)
       ) {
-        this.currentPlatformKey = currentStorePlatform;
+        this.currentPlatformKey = currentStorePlatform
 
-        return;
+        return
       }
 
       // 否则从localStorage读取
-      const savedPlatform = localStorage.getItem("selectedPlatform");
+      const savedPlatform = localStorage.getItem('selectedPlatform')
 
       // 如果localStorage中的平台有效且用户有权限
       if (savedPlatform && userPermissions.includes(savedPlatform)) {
-        this.currentPlatformKey = savedPlatform;
+        this.currentPlatformKey = savedPlatform
       } else {
         // 使用用户有权限的第一个平台
-        this.currentPlatformKey = userPermissions[0];
+        this.currentPlatformKey = userPermissions[0]
       }
     },
 
     // 平台切换（管理系统 ↔ 控制台）
-    async handlePlatformSwitch(platformKey) {
+    async handlePlatformSwitch (platformKey) {
       if (platformKey === this.currentPlatformKey || this.platformSwitching) {
-        return;
+        return
       }
 
-      this.platformSwitching = true;
+      if (platformKey === 'admin' && !this.isSysAdmin) {
+        this.$message.warning('仅系统管理员允许切换到管理系统')
+        return
+      }
+
+      this.platformSwitching = true
 
       try {
         // 保存当前状态信息
@@ -2093,94 +2470,94 @@ async handleManagerSwitch(managerId) {
           visitedViewsCount:
             this.$store.state.tagsView?.visitedViews?.length || 0,
           cachedViewsCount:
-            this.$store.state.tagsView?.cachedViews?.length || 0,
-        };
+            this.$store.state.tagsView?.cachedViews?.length || 0
+        }
 
         // 先跳转到切换页面，避免在当前页面显示404
-        if (this.$route.path !== "/switching") {
-          await this.$router.push("/switching").catch(() => { });
+        if (this.$route.path !== '/switching') {
+          await this.$router.push('/switching').catch(() => { })
         }
 
         const loading = this.$loading({
           lock: true,
           text: `正在切换到${this.platformConfig[platformKey].name}...`,
-          spinner: "el-icon-loading",
-          background: "rgba(0, 0, 0, 0.7)",
-        });
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
 
         // 步骤1: 完全清空TagsView
 
-        if (this.$store.hasModule("tagsView")) {
-          await this.$store.dispatch("tagsView/clearAllForPlatformSwitch");
+        if (this.$store.hasModule('tagsView')) {
+          await this.$store.dispatch('tagsView/clearAllForPlatformSwitch')
         } else {
-          console.warn("TagsView模块不存在");
+          console.warn('TagsView模块不存在')
         }
 
         // 步骤2: 重置权限路由
 
-        await this.$store.dispatch("permission/resetRoutes");
+        await this.$store.dispatch('permission/resetRoutes')
 
         // 步骤3: 处理企业状态
 
-        if (platformKey === "admin") {
+        if (platformKey === 'admin') {
           // 切换到管理系统时重置企业状态
-          await this.$store.dispatch("manager/resetManager");
-        } else if (platformKey === "console") {
+          await this.$store.dispatch('manager/resetManager')
+        } else if (platformKey === 'console') {
           // 切换到控制台时重置企业状态，后续会重新加载
-          await this.$store.dispatch("manager/resetManager");
+          await this.$store.dispatch('manager/resetManager')
         }
 
         // 步骤4: 等待状态稳定
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200))
 
         // 步骤5: 切换平台路由
 
-        await this.$store.dispatch("permission/switchPlatform", platformKey);
+        await this.$store.dispatch('permission/switchPlatform', platformKey)
 
         // 步骤6: 如果切换到控制台，重新加载企业列表
-        if (platformKey === "console") {
-          await this.loadManagerList();
+        if (platformKey === 'console') {
+          await this.loadManagerList()
         }
 
         // 步骤7: 更新当前平台状态
-        this.currentPlatformKey = platformKey;
-        localStorage.setItem("selectedPlatform", platformKey);
+        this.currentPlatformKey = platformKey
+        localStorage.setItem('selectedPlatform', platformKey)
 
         // 步骤8: 等待所有状态更新完成
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100))
 
-        loading.close();
+        loading.close()
 
         // 步骤9: 触发平台切换事件通知TagsView组件
 
         this.$bus &&
-          this.$bus.$emit("platform-switched", {
+          this.$bus.$emit('platform-switched', {
             from: beforeSwitchInfo.fromPlatform,
             to: platformKey,
-            type: "platform-switch",
+            type: 'platform-switch',
             clearTagsView: true,
-            timestamp: new Date().toISOString(),
-          });
+            timestamp: new Date().toISOString()
+          })
 
         this.$message({
-          type: "success",
+          type: 'success',
           message: `已切换到${this.platformConfig[platformKey].name}`,
-          duration: 2000,
-        });
+          duration: 2000
+        })
 
         // 步骤10: 跳转到新平台的首页
-        let redirectPath = "/";
-        if (platformKey === "console") {
-          redirectPath = "/metering/dashboard";
-        } else if (platformKey === "admin") {
-          redirectPath = "/admin/dashboard";
+        let redirectPath = '/'
+        if (platformKey === 'console') {
+          redirectPath = '/metering/dashboard'
+        } else if (platformKey === 'admin') {
+          redirectPath = '/admin/dashboard'
         }
 
         // 使用replace跳转到新平台首页
         await this.$router.replace(redirectPath).catch((err) => {
-          console.error("路由跳转失败，使用强制跳转:", err);
-          window.location.href = redirectPath;
-        });
+          console.error('路由跳转失败，使用强制跳转:', err)
+          window.location.href = redirectPath
+        })
 
         // 步骤11: 验证切换结果
 
@@ -2191,8 +2568,8 @@ async handleManagerSwitch(managerId) {
             visitedViewsCount:
               this.$store.state.tagsView?.visitedViews?.length || 0,
             cachedViewsCount:
-              this.$store.state.tagsView?.cachedViews?.length || 0,
-          };
+              this.$store.state.tagsView?.cachedViews?.length || 0
+          }
 
           // 验证TagsView是否确实被清空
           if (
@@ -2201,31 +2578,31 @@ async handleManagerSwitch(managerId) {
           ) {
           } else {
             console.warn(
-              "⚠️ 平台切换警告：TagsView未完全清空",
+              '⚠️ 平台切换警告：TagsView未完全清空',
               afterSwitchInfo
-            );
+            )
           }
-        });
+        })
       } catch (error) {
-        console.error("平台切换失败:", error);
-        this.$message.error(`平台切换失败: ${error.message || "请稍后重试"}`);
+        console.error('平台切换失败:', error)
+        this.$message.error(`平台切换失败: ${error.message || '请稍后重试'}`)
 
         // 出错时的恢复逻辑
-        const loadingInstance = this.$loading.service();
+        const loadingInstance = this.$loading.service()
         if (loadingInstance) {
-          loadingInstance.close();
+          loadingInstance.close()
         }
 
         // 如果切换失败，尝试回到之前的页面
-        this.$router.go(-1);
+        this.$router.go(-1)
       } finally {
-        this.platformSwitching = false;
+        this.platformSwitching = false
       }
     },
 
     // 切换个性设置面板
-    toggleSettingsPanel() {
-      this.showSettingsPanel = !this.showSettingsPanel;
+    toggleSettingsPanel () {
+      this.showSettingsPanel = !this.showSettingsPanel
 
       if (this.showSettingsPanel) {
       } else {
@@ -2233,37 +2610,37 @@ async handleManagerSwitch(managerId) {
     },
 
     // 处理设置面板关闭
-    handleSettingsPanelClose() {
-      this.showSettingsPanel = false;
+    handleSettingsPanelClose () {
+      this.showSettingsPanel = false
     },
 
     // 判断当前操作是否为平台切换
-    isPlatformSwitch(fromPlatform, toPlatform) {
+    isPlatformSwitch (fromPlatform, toPlatform) {
       // 判断是否为不同平台之间的切换
       const platformMap = {
-        admin: "管理系统",
-        console: "控制台",
-      };
+        admin: '管理系统',
+        console: '控制台'
+      }
 
       return (
         fromPlatform !== toPlatform &&
         platformMap[fromPlatform] &&
         platformMap[toPlatform]
-      );
+      )
     },
 
     // 判断当前操作是否为企业切换
-    isManagerSwitch(fromManagerId, toManagerId, currentPlatform) {
+    isManagerSwitch (fromManagerId, toManagerId, currentPlatform) {
       // 只有在控制台平台内，且企业ID不同时，才是企业切换
       return (
-        currentPlatform === "console" &&
+        currentPlatform === 'console' &&
         fromManagerId !== toManagerId &&
         fromManagerId &&
         toManagerId
-      );
-    },
-  },
-};
+      )
+    }
+  }
+}
 </script>
 <style lang="scss" scoped>
 /* 基础布局 */
@@ -2293,8 +2670,11 @@ async handleManagerSwitch(managerId) {
   overflow: hidden;
   flex-shrink: 0;
   z-index: 1001;
+  display: flex;
+  flex-direction: column;
 
   .sidebar-logo-container {
+    flex-shrink: 0;
     height: 50px;
     background: rgba(255, 255, 255, 0.08);
     display: flex;
@@ -2308,35 +2688,42 @@ async handleManagerSwitch(managerId) {
       justify-content: center;
       text-decoration: none;
 
-      .logo-placeholder {
-        width: 28px;
-        height: 28px;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
+      .sidebar-logo-image {
+        width: 30px;
+        height: 30px;
+        object-fit: contain;
         border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        font-weight: 600;
-        font-size: 12px;
         transition: all 0.3s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.2);
           transform: scale(1.05);
         }
       }
     }
   }
 
-  .scrollbar-wrapper {
-    height: calc(100% - 50px);
-    overflow: hidden;
+  .sidebar-menu-scroll-host {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.32) transparent;
+    -ms-overflow-style: auto;
+  }
 
-    &::-webkit-scrollbar {
-      display: none;
-    }
+  .sidebar-menu-scroll-host::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar-menu-scroll-host::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 2px;
+  }
+
+  .sidebar-menu-scroll-host::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   .menu-container {
@@ -2825,7 +3212,8 @@ async handleManagerSwitch(managerId) {
 /* 主内容区 */
 .main-container {
   flex: 1;
-  min-height: 100vh;
+  min-height: 0;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: transparent;
@@ -3279,16 +3667,20 @@ async handleManagerSwitch(managerId) {
   align-items: center;
   padding: 0 24px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+  min-width: 0;
 
   .toolbar-left {
     display: flex;
     align-items: center;
     gap: 16px;
     width: 100%;
+    min-width: 0;
 
     .hamburger-container {
       width: 36px;
       height: 36px;
+      position: relative;
+      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -3326,6 +3718,8 @@ async handleManagerSwitch(managerId) {
       color: var(--text-secondary);
       font-weight: 500;
       flex: 1;
+      min-width: 0;
+      overflow: hidden;
     }
   }
 }
@@ -3333,6 +3727,7 @@ async handleManagerSwitch(managerId) {
 /* ========== 新增：内容区域容器样式 ========== */
 .content-wrapper {
   flex: 1;
+  min-height: 0;
   display: flex;
   position: relative;
   overflow: hidden;
@@ -3629,6 +4024,7 @@ async handleManagerSwitch(managerId) {
 /* 主内容区样式 */
 .app-main {
   flex: 1;
+  min-height: 0;
   background: transparent;
   overflow-y: auto;
   position: relative;
@@ -3870,6 +4266,28 @@ async handleManagerSwitch(managerId) {
     }
   }
 
+  .dropdown-search {
+    padding: 10px 16px 8px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+
+    ::v-deep .el-input__inner {
+      border-radius: 6px;
+    }
+  }
+
+  .dropdown-list {
+    max-height: calc(70vh - 108px);
+    overflow-y: auto;
+  }
+
+  .dropdown-empty {
+    padding: 28px 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
   .manager-option {
     color: var(--text-secondary) !important;
     font-weight: 500;
@@ -3978,6 +4396,21 @@ async handleManagerSwitch(managerId) {
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+      }
+
+      .set-default-action {
+        color: var(--primary-color);
+        font-size: 11px;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+
+        &:hover {
+          background: rgba(59, 130, 246, 0.1);
+          color: var(--primary-color);
+        }
       }
     }
   }

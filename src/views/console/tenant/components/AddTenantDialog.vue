@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    :title="isEdit ? '编辑租户' : '新增租户'"
+    :title="dialogTitle"
     :visible.sync="dialogVisible"
     width="800px"
     :close-on-click-modal="false"
@@ -11,32 +11,43 @@
       ref="tenantForm"
       :model="form"
       :rules="rules"
-      label-width="100px"
+      :label-width="dialogLabelWidth"
       size="small"
     >
       <!-- 基本信息卡片 -->
       <div class="form-section">
         <div class="section-header">
-          <span>基本信息</span>
+          <span>{{ $t('tenantDialogs.add.sectionBasic') }}</span>
         </div>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="租户名称" prop="name">
-              <el-input 
-                v-model="form.name" 
-                placeholder="请输入租户名称"
+            <el-form-item :label="$t('tenantDialogs.add.labelName')" prop="name">
+              <el-input
+                v-model="form.name"
+                :placeholder="$t('tenantDialogs.add.phName')"
                 maxlength="50"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="租占面积" prop="publicArea">
-              <el-input 
-                v-model="form.publicArea" 
-                placeholder="请输入租占面积"
+            <el-form-item :label="$t('tenantDialogs.add.labelArea')" prop="publicArea">
+              <el-input
+                v-model="form.publicArea"
+                :placeholder="$t('tenantDialogs.add.phArea')"
               >
                 <template slot="append">m²</template>
               </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16" style="margin-top: 8px;">
+          <el-col :span="12">
+            <el-form-item :label="$t('tenantDialogs.add.labelTenantType')" prop="tenantType" required>
+              <el-radio-group v-model="form.tenantType" size="small">
+                <el-radio :label="0">{{ $t('tenantDialogs.add.tenantType0') }}</el-radio>
+                <el-radio :label="1">{{ $t('tenantDialogs.add.tenantType1') }}</el-radio>
+                <el-radio :label="2">{{ $t('tenantDialogs.add.tenantType2') }}</el-radio>
+              </el-radio-group>
             </el-form-item>
           </el-col>
         </el-row>
@@ -45,51 +56,51 @@
       <!-- 收费设置卡片 -->
       <div class="form-section">
         <div class="section-header">
-          <span>收费设置</span>
+          <span>{{ $t('tenantDialogs.add.sectionFee') }}</span>
         </div>
 
         <!-- 收电费 -->
         <div class="fee-box">
           <div class="fee-title">
-            <span class="fee-label">收电费</span>
+            <span class="fee-label">{{ $t('tenantDialogs.add.collectMeter') }}</span>
             <el-radio-group v-model="form.meterStatus" size="small">
-              <el-radio :label="1">是</el-radio>
-              <el-radio :label="0">否</el-radio>
+              <el-radio :label="1">{{ $t('tenantDialogs.add.yes') }}</el-radio>
+              <el-radio :label="0">{{ $t('tenantDialogs.add.no') }}</el-radio>
             </el-radio-group>
           </div>
 
           <transition name="el-zoom-in-top">
             <el-row v-show="form.meterStatus === 1" :gutter="16" class="fee-fields">
               <el-col :span="8">
-                <el-form-item label="预警金额1">
+                <el-form-item :label="$t('tenantDialogs.add.alarm1')">
                   <el-input
                     v-model="form.meterAccount.alarmBalance1"
-                    placeholder="0.00"
+                    :placeholder="$t('tenantDialogs.add.phAmount')"
                     type="number"
                   >
-                    <template slot="append">元</template>
+                    <template slot="append">{{ $t('tenantDialogs.add.yuan') }}</template>
                   </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="预警金额2">
+                <el-form-item :label="$t('tenantDialogs.add.alarm2')">
                   <el-input
                     v-model="form.meterAccount.alarmBalance2"
-                    placeholder="0.00"
+                    :placeholder="$t('tenantDialogs.add.phAmount')"
                     type="number"
                   >
-                    <template slot="append">元</template>
+                    <template slot="append">{{ $t('tenantDialogs.add.yuan') }}</template>
                   </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="透支金额">
+                <el-form-item :label="$t('tenantDialogs.add.overdraw')">
                   <el-input
                     v-model="form.meterAccount.overdraw"
-                    placeholder="0.00"
+                    :placeholder="$t('tenantDialogs.add.phAmount')"
                     type="number"
                   >
-                    <template slot="append">元</template>
+                    <template slot="append">{{ $t('tenantDialogs.add.yuan') }}</template>
                   </el-input>
                 </el-form-item>
               </el-col>
@@ -100,45 +111,45 @@
         <!-- 收水费 -->
         <div class="fee-box">
           <div class="fee-title">
-            <span class="fee-label">收水费</span>
+            <span class="fee-label">{{ $t('tenantDialogs.add.collectWater') }}</span>
             <el-radio-group v-model="form.waterStatus" size="small">
-              <el-radio :label="1">是</el-radio>
-              <el-radio :label="0">否</el-radio>
+              <el-radio :label="1">{{ $t('tenantDialogs.add.yes') }}</el-radio>
+              <el-radio :label="0">{{ $t('tenantDialogs.add.no') }}</el-radio>
             </el-radio-group>
           </div>
 
           <transition name="el-zoom-in-top">
             <el-row v-show="form.waterStatus === 1" :gutter="16" class="fee-fields">
               <el-col :span="8">
-                <el-form-item label="预警金额1">
+                <el-form-item :label="$t('tenantDialogs.add.alarm1')">
                   <el-input
                     v-model="form.waterAccount.alarmBalance1"
-                    placeholder="0.00"
+                    :placeholder="$t('tenantDialogs.add.phAmount')"
                     type="number"
                   >
-                    <template slot="append">元</template>
+                    <template slot="append">{{ $t('tenantDialogs.add.yuan') }}</template>
                   </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="预警金额2">
+                <el-form-item :label="$t('tenantDialogs.add.alarm2')">
                   <el-input
                     v-model="form.waterAccount.alarmBalance2"
-                    placeholder="0.00"
+                    :placeholder="$t('tenantDialogs.add.phAmount')"
                     type="number"
                   >
-                    <template slot="append">元</template>
+                    <template slot="append">{{ $t('tenantDialogs.add.yuan') }}</template>
                   </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="透支金额">
+                <el-form-item :label="$t('tenantDialogs.add.overdraw')">
                   <el-input
                     v-model="form.waterAccount.overdraw"
-                    placeholder="0.00"
+                    :placeholder="$t('tenantDialogs.add.phAmount')"
                     type="number"
                   >
-                    <template slot="append">元</template>
+                    <template slot="append">{{ $t('tenantDialogs.add.yuan') }}</template>
                   </el-input>
                 </el-form-item>
               </el-col>
@@ -150,7 +161,7 @@
       <!-- 联系方式卡片 -->
       <div class="form-section">
         <div class="section-header">
-          <span>联系方式</span>
+          <span>{{ $t('tenantDialogs.add.sectionContact') }}</span>
         </div>
 
         <div
@@ -159,18 +170,18 @@
           class="phone-item"
         >
           <el-form-item
-            :label="`手机号${index + 1}`"
+            :label="$t('tenantDialogs.add.phoneLabel', { n: index + 1 })"
             :prop="`phoneList.${index}`"
             :rules="phoneRules"
           >
-            <el-input 
-              v-model="form.phoneList[index]" 
-              placeholder="请输入手机号"
+            <el-input
+              v-model="form.phoneList[index]"
+              :placeholder="$t('tenantDialogs.add.phPhone')"
               maxlength="11"
             >
               <template v-if="form.phoneList.length > 1" slot="suffix">
-                <i 
-                  class="el-icon-close delete-phone-icon" 
+                <i
+                  class="el-icon-close delete-phone-icon"
                   @click="removePhone(index)"
                 ></i>
               </template>
@@ -178,27 +189,27 @@
           </el-form-item>
         </div>
 
-        <div v-if="form.phoneList.length < 5" class="add-phone-btn">
+        <div class="add-phone-btn">
           <el-button
             type="text"
             icon="el-icon-circle-plus-outline"
             @click="addPhone"
           >
-            添加手机号
+            {{ $t('tenantDialogs.add.addPhone') }}
           </el-button>
         </div>
       </div>
     </el-form>
 
     <div slot="footer" class="dialog-footer">
-      <el-button @click="dialogVisible = false" size="medium">取 消</el-button>
-      <el-button 
-        type="primary" 
-        :loading="submitting" 
+      <el-button @click="dialogVisible = false" size="medium">{{ $t('tenantDialogs.add.cancel') }}</el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
         @click="handleSubmit"
         size="medium"
       >
-        {{ submitting ? '保存中...' : '确 定' }}
+        {{ submitting ? $t('tenantDialogs.add.saving') : $t('tenantDialogs.add.confirm') }}
       </el-button>
     </div>
   </el-dialog>
@@ -227,20 +238,7 @@ export default {
       default: ''
     }
   },
-  data() {
-    const validatePhone = (rule, value, callback) => {
-      if (!value) {
-        callback()
-        return
-      }
-      const phoneReg = /^1[3-9]\d{9}$/
-      if (!phoneReg.test(value)) {
-        callback(new Error('请输入正确的手机号'))
-      } else {
-        callback()
-      }
-    }
-
+  data () {
     return {
       submitting: false,
       form: {
@@ -250,6 +248,7 @@ export default {
         phoneList: [''],
         logoUrl: '',
         managerId: '',
+        tenantType: 0, // 租户类型：0-租户，1-公区，2-其他（默认租户）
         meterStatus: 1, // 电费开关：0-关闭，1-开启（默认开启）
         waterStatus: 0, // 水费开关：0-关闭，1-开启（默认关闭）
         // 电费账户对象
@@ -265,44 +264,70 @@ export default {
           overdraw: ''
         }
       },
-      rules: {
-        name: [
-          { required: true, message: '请输入租户名称', trigger: 'blur' },
-          { max: 50, message: '租户名称不能超过50个字符', trigger: 'blur' }
-        ],
-        publicArea: [
-          { required: true, message: '请输入租占面积', trigger: 'blur' }
-        ]
-      },
-      phoneRules: [
-        { validator: validatePhone, trigger: 'blur' }
-      ],
-      defaultLogo: 'https://ebc-cloud.oss-cn-shanghai.aliyuncs.com/ebc-img/618daafe525f79a3cf4bf80ef1424fc2_202509081044.png'
+      defaultLogo: 'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/wu-logo.png'
     }
   },
   computed: {
+    dialogTitle () {
+      return this.isEdit
+        ? this.$t('tenantDialogs.add.titleEdit')
+        : this.$t('tenantDialogs.add.titleCreate')
+    },
+    dialogLabelWidth () {
+      return this.$i18n.locale === 'en' ? '128px' : '100px'
+    },
+    rules () {
+      return {
+        name: [
+          { required: true, message: this.$t('tenantDialogs.add.ruleNameRequired'), trigger: 'blur' },
+          { max: 50, message: this.$t('tenantDialogs.add.ruleNameMax'), trigger: 'blur' }
+        ],
+        publicArea: [
+          { required: true, message: this.$t('tenantDialogs.add.ruleAreaRequired'), trigger: 'blur' }
+        ],
+        tenantType: [
+          { required: true, message: this.$t('tenantDialogs.add.ruleTenantTypeRequired'), trigger: 'change' }
+        ]
+      }
+    },
+    phoneRules () {
+      return [{ validator: this.validatePhoneRule, trigger: 'blur' }]
+    },
     dialogVisible: {
-      get() {
+      get () {
         return this.visible
       },
-      set(val) {
+      set (val) {
         this.$emit('update:visible', val)
       }
     },
-    isEdit() {
+    isEdit () {
       return !!this.form.id
     }
   },
   watch: {
-    visible(val) {
+    visible (val) {
       if (val) {
         this.initForm()
       }
     }
   },
   methods: {
+    validatePhoneRule (rule, value, callback) {
+      if (!value) {
+        callback()
+        return
+      }
+      const phoneReg = /^1[3-9]\d{9}$/
+      if (!phoneReg.test(value)) {
+        callback(new Error(this.$t('tenantDialogs.add.rulePhone')))
+      } else {
+        callback()
+      }
+    },
+
     // 初始化表单
-    initForm() {
+    initForm () {
       if (this.tenantData && this.tenantData.id) {
         // 编辑模式
         this.form = {
@@ -311,11 +336,14 @@ export default {
             ? this.tenantData.phoneList
             : [''],
           managerId: this.managerId,
-          meterStatus: this.tenantData.meterStatus !== undefined 
-            ? this.tenantData.meterStatus 
+          meterStatus: this.tenantData.meterStatus !== undefined
+            ? this.tenantData.meterStatus
             : 1,
-          waterStatus: this.tenantData.waterStatus !== undefined 
-            ? this.tenantData.waterStatus 
+          waterStatus: this.tenantData.waterStatus !== undefined
+            ? this.tenantData.waterStatus
+            : 0,
+          tenantType: this.tenantData.tenantType !== undefined
+            ? this.tenantData.tenantType
             : 0,
           // 电费账户
           meterAccount: {
@@ -339,6 +367,7 @@ export default {
           phoneList: [''],
           logoUrl: '',
           managerId: this.managerId,
+          tenantType: 0, // 默认租户
           meterStatus: 1, // 默认开启电费
           waterStatus: 0, // 默认关闭水费
           meterAccount: {
@@ -353,28 +382,24 @@ export default {
           }
         }
       }
-      
+
       this.$nextTick(() => {
         this.$refs.tenantForm && this.$refs.tenantForm.clearValidate()
       })
     },
-    
+
     // 添加手机号
-    addPhone() {
-      if (this.form.phoneList.length >= 5) {
-        this.$message.warning('最多只能添加5个手机号')
-        return
-      }
+    addPhone () {
       this.form.phoneList.push('')
     },
 
     // 删除手机号
-    removePhone(index) {
+    removePhone (index) {
       this.form.phoneList.splice(index, 1)
     },
-    
+
     // 关闭弹窗
-    handleClose() {
+    handleClose () {
       this.form = {
         id: '',
         name: '',
@@ -382,6 +407,7 @@ export default {
         phoneList: [''],
         logoUrl: '',
         managerId: '',
+        tenantType: 0,
         meterStatus: 1,
         waterStatus: 0,
         meterAccount: {
@@ -396,13 +422,13 @@ export default {
         }
       }
     },
-    
+
     // 提交表单
-    async handleSubmit() {
+    async handleSubmit () {
       this.$refs.tenantForm.validate(async (valid) => {
         if (valid) {
           this.submitting = true
-          
+
           try {
             // 设置默认logo
             if (!this.form.logoUrl) {
@@ -426,9 +452,9 @@ export default {
                 bizType: 1, // 1-电费（固定）
                 alarmBalance1: parseAmount(this.form.meterAccount.alarmBalance1),
                 alarmBalance2: parseAmount(this.form.meterAccount.alarmBalance2),
-                overdraw: parseAmount(this.form.meterAccount.overdraw),
+                overdraw: parseAmount(this.form.meterAccount.overdraw)
               }
-              
+
               // 编辑模式需要传 tenantId
               if (this.isEdit) {
                 meterAccountDto.tenantId = this.form.id
@@ -442,15 +468,15 @@ export default {
                 bizType: 2, // 2-水费（固定）
                 alarmBalance1: parseAmount(this.form.waterAccount.alarmBalance1),
                 alarmBalance2: parseAmount(this.form.waterAccount.alarmBalance2),
-                overdraw: parseAmount(this.form.waterAccount.overdraw),
+                overdraw: parseAmount(this.form.waterAccount.overdraw)
               }
-              
+
               // 编辑模式需要传 tenantId
               if (this.isEdit) {
                 waterAccountDto.tenantId = this.form.id
               }
             }
-            
+
             // 构建请求参数
             const params = {
               name: this.form.name,
@@ -458,6 +484,7 @@ export default {
               phoneList: phoneList,
               logoUrl: this.form.logoUrl,
               managerId: this.managerId,
+              tenantType: this.form.tenantType, // 租户类型
               meterStatus: this.form.meterStatus, // 电费开关在外层
               waterStatus: this.form.waterStatus, // 水费开关在外层
               meterAccountDto: meterAccountDto,
@@ -470,23 +497,20 @@ export default {
             }
 
             console.log('提交参数:', params)
-            
+
             let response
             if (this.isEdit) {
               response = await tenantUpdate(params)
             } else {
               response = await tenantAdd(params)
             }
-            
+
             if (response.code === 200) {
-              this.$message.success(this.isEdit ? '修改成功' : '新增成功')
+              this.$message.success(this.isEdit ? this.$t('tenantDialogs.add.msgEditOk') : this.$t('tenantDialogs.add.msgCreateOk'))
               this.$emit('success')
               this.dialogVisible = false
-            } else {
-              this.$message.error(response.msg || '操作失败')
             }
           } catch (error) {
-            this.$message.error('操作失败')
             console.error('保存失败:', error)
           } finally {
             this.submitting = false
@@ -562,12 +586,12 @@ export default {
     ::v-deep .el-radio-group {
       .el-radio {
         margin-right: 20px;
-        
+
         .el-radio__input.is-checked .el-radio__inner {
           border-color: #409eff;
           background: #409eff;
         }
-        
+
         .el-radio__input.is-checked + .el-radio__label {
           color: #606266;
         }
@@ -578,6 +602,17 @@ export default {
   .fee-fields {
     ::v-deep .el-form-item__label {
       font-size: 13px;
+      width: 80px !important;
+    }
+
+    ::v-deep .el-form-item__content {
+      margin-left: 80px !important;
+    }
+
+    ::v-deep .el-input-group__append {
+      min-width: 36px;
+      padding: 0 10px;
+      text-align: center;
     }
   }
 }
@@ -585,13 +620,13 @@ export default {
 // 手机号区域
 .phone-item {
   margin-bottom: 10px;
-  
+
   .delete-phone-icon {
     cursor: pointer;
     color: #f56c6c;
     font-size: 14px;
     padding: 0 8px;
-    
+
     &:hover {
       color: #f78989;
     }
@@ -613,10 +648,10 @@ export default {
     border-color: #409eff;
     box-shadow: none;
   }
-  
+
   .el-link {
     text-decoration: none !important;
-    
+
     &:hover {
       text-decoration: none !important;
     }
@@ -624,12 +659,12 @@ export default {
 
   .el-button--text {
     text-decoration: none !important;
-    
+
     &:hover {
       text-decoration: none !important;
     }
   }
-  
+
   a {
     text-decoration: none !important;
   }
@@ -640,7 +675,7 @@ export default {
     -webkit-appearance: none;
     margin: 0;
   }
-  
+
   input[type="number"] {
     -moz-appearance: textfield;
   }

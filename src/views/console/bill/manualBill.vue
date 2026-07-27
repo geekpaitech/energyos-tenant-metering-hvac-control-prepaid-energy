@@ -42,7 +42,7 @@
                     :value="item.id"
                   />
                 </el-select>
-                
+
                 <!-- 公摊类型选择 -->
                 <el-select
                   v-else-if="field.type === 'select' && field.prop === 'shareType'"
@@ -60,7 +60,7 @@
                     :value="item.value"
                   />
                 </el-select>
-                
+
                 <!-- 日期范围选择器 -->
                 <el-date-picker
                   v-else-if="field.type === 'daterange'"
@@ -293,21 +293,21 @@
 import {
   shareList,
   sharePageSettleShare,
-  shareGetSettleShareDetail,
-} from "@/api/share";
+  shareGetSettleShareDetail
+} from '@/api/share'
 
 import {
   waterShareList,
   waterSharePageWaterSettleShare,
-  waterShareGetSettleShareDetail,
-} from "@/api/waterShare";
+  waterShareGetSettleShareDetail
+} from '@/api/waterShare'
 
-import { mapGetters } from "vuex";
-import moment from 'moment';
-import * as XLSX from 'xlsx';
+import { mapGetters } from 'vuex'
+import moment from 'moment'
+import * as XLSX from 'xlsx'
 export default {
-  name: "ShareManagement",
-  data() {
+  name: 'ShareManagement',
+  data () {
     return {
       // 表格高度配置
       tableHeightConfig: {
@@ -315,223 +315,223 @@ export default {
         rowHeight: 47,
         minHeight: 200,
         maxRows: 10,
-        paginationHeight: 68,
+        paginationHeight: 68
       },
-      
+
       // 查询参数
       queryData: {
-        shareId: "",
-        shareType: "", // 默认全部
+        shareId: '',
+        shareType: '', // 默认全部
         timeRange: [
-        
-        ],
+
+        ]
       },
-      
+
       // 搜索字段配置
       searchFields: {
         basic: [
-          { prop: "shareId", label: "公摊组名", type: "select" },
-          { prop: "timeRange", label: "日期范围", type: "daterange" },
-          { prop: "shareType", label: "公摊类型", type: "select" },
+          { prop: 'shareId', label: '公摊组名', type: 'select' },
+          { prop: 'timeRange', label: '日期范围', type: 'daterange' },
+          { prop: 'shareType', label: '公摊类型', type: 'select' }
         ],
-        advanced: [],
+        advanced: []
       },
-      
+
       // 公摊组列表
       shareList: [],
-      
+
       // 公摊类型选项
       shareTypeOptions: [
-        { label: "全部", value: "" },
-        { label: "用电公摊", value: 1 },
-        { label: "用水公摊", value: 2 },
+        { label: '全部', value: '' },
+        { label: '用电公摊', value: 1 },
+        { label: '用水公摊', value: 2 }
       ],
-      
+
       // 表格数据
       tableData: [],
-      
+
       // 加载状态
       loading: false,
-      
+
       // 分页数据
       pageData: {
         current: 1,
         size: 15,
-        total: 0,
+        total: 0
       },
-      
+
       // 选中的数据
       selectedData: [],
-      
+
       // 详情抽屉
       detailDrawer: {
         show: false,
-        data: null,
+        data: null
       },
-      
+
       // 结算状态枚举
       settleStatusMap: {
-        0: { label: "未结算", type: "info" },
-        1: { label: "已结算", type: "success" },
-        2: { label: "结算中", type: "warning" },
-        3: { label: "结算失败", type: "danger" },
+        0: { label: '未结算', type: 'info' },
+        1: { label: '已结算', type: 'success' },
+        2: { label: '结算中', type: 'warning' },
+        3: { label: '结算失败', type: 'danger' }
       },
-      
+
       // 表格列配置
       tableKey: [
         {
-          label: "结算ID",
-          key: "rid",
-          width: "150",
+          label: '结算ID',
+          key: 'rid',
+          width: '150',
           checked: true,
-          disabled: true,
+          disabled: true
         },
         {
-          label: "结算日期",
-          key: "occurDate",
-          width: "150",
-          checked: true,
+          label: '结算日期',
+          key: 'occurDate',
+          width: '150',
+          checked: true
         },
         {
-          label: "公摊组ID",
-          key: "shareId",
-          width: "120",
-          checked: true,
+          label: '公摊组ID',
+          key: 'shareId',
+          width: '120',
+          checked: true
         },
         {
-          label: "公摊组名",
-          key: "shareName",
-          minWidth: "180",
+          label: '公摊组名',
+          key: 'shareName',
+          minWidth: '180',
           checked: true,
-          disabled: true,
+          disabled: true
         },
         {
-          label: "公摊类型",
-          key: "shareTypeLabel",
-          width: "120",
-          checked: true,
+          label: '公摊类型',
+          key: 'shareTypeLabel',
+          width: '120',
+          checked: true
         },
         {
-          label: "总结算金额",
-          key: "balance",
-          width: "150",
+          label: '总结算金额',
+          key: 'balance',
+          width: '150',
           checked: true,
-          type: "money",
+          type: 'money'
         },
         {
-          label: "总公摊面积",
-          key: "totalArea",
-          width: "150",
+          label: '总公摊面积',
+          key: 'totalArea',
+          width: '150',
           checked: true,
-          type: "area",
+          type: 'area'
         },
         {
-          label: "结算状态",
-          key: "settleStatus",
-          width: "120",
-          checked: true,
-        },
-      ],
-    };
+          label: '结算状态',
+          key: 'settleStatus',
+          width: '120',
+          checked: true
+        }
+      ]
+    }
   },
-  
+
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
-    
+    ...mapGetters('manager', ['currentManagerId']),
+
     // 显示的列
-    displayColumns() {
-      return this.tableKey.filter((col) => col.checked !== false);
+    displayColumns () {
+      return this.tableKey.filter((col) => col.checked !== false)
     },
-    
+
     // 显示的基础搜索字段
-    displayBasicFields() {
-      return this.searchFields.basic;
+    displayBasicFields () {
+      return this.searchFields.basic
     },
-    
+
     // 表格最大高度
-    tableMaxHeight() {
+    tableMaxHeight () {
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-      );
+      )
     },
-    
+
     // 抽屉标题
-    drawerTitle() {
-      let typeText = "公摊";
+    drawerTitle () {
+      let typeText = '公摊'
       if (this.queryData.shareType === 1) {
-        typeText = "用电公摊";
+        typeText = '用电公摊'
       } else if (this.queryData.shareType === 2) {
-        typeText = "用水公摊";
+        typeText = '用水公摊'
       }
-      return `${typeText}结算详情`;
-    },
+      return `${typeText}结算详情`
+    }
   },
-  
+
   watch: {
     currentManagerId: {
-      handler(newVal) {
+      handler (newVal) {
         if (newVal) {
-          this.getShareList();
-          this.fetchTableData();
+          this.getShareList()
+          this.fetchTableData()
         }
       },
-      immediate: true,
-    },
+      immediate: true
+    }
   },
-  
-  created() {
+
+  created () {
     // 如果路由带有managerId参数（从管理后台跳转）
     if (this.$route.query.managerId) {
       // 这里可以根据需要处理managerId
-      console.log('Route managerId:', this.$route.query.managerId);
+      console.log('Route managerId:', this.$route.query.managerId)
     }
   },
-  
+
   methods: {
     // 获取公摊组列表
-    async getShareList() {
+    async getShareList () {
       try {
         const params = {
-          managerId: this.currentManagerId,
-        };
-        
+          managerId: this.currentManagerId
+        }
+
         // 当选择全部时，获取用电公摊列表（或者你可以同时获取两种）
-        if (!this.queryData.shareType || this.queryData.shareType === "") {
+        if (!this.queryData.shareType || this.queryData.shareType === '') {
           // 获取用电公摊列表作为默认
-          const response = await shareList(params);
+          const response = await shareList(params)
           if (response.code === 200 && response.data) {
-            this.shareList = response.data || [];
+            this.shareList = response.data || []
           } else {
-            this.shareList = [];
+            this.shareList = []
           }
         } else if (this.queryData.shareType === 1) {
           // 用电公摊
-          const response = await shareList(params);
+          const response = await shareList(params)
           if (response.code === 200 && response.data) {
-            this.shareList = response.data || [];
+            this.shareList = response.data || []
           } else {
-            this.shareList = [];
+            this.shareList = []
           }
         } else if (this.queryData.shareType === 2) {
           // 用水公摊
-          const response = await waterShareList(params);
+          const response = await waterShareList(params)
           if (response.code === 200 && response.data) {
-            this.shareList = response.data || [];
+            this.shareList = response.data || []
           } else {
-            this.shareList = [];
+            this.shareList = []
           }
         }
       } catch (error) {
-        console.error("获取公摊组列表失败:", error);
-        this.$message.error("获取公摊组列表失败");
-        this.shareList = [];
+        console.error('获取公摊组列表失败:', error)
+        this.$message.error('获取公摊组列表失败')
+        this.shareList = []
       }
     },
-    
+
     // 获取表格数据
-    async fetchTableData() {
-      this.loading = true;
+    async fetchTableData () {
+      this.loading = true
       try {
         const params = {
           managerId: this.currentManagerId,
@@ -549,359 +549,358 @@ export default {
               }
             ]
           }
-        };
-        
+        }
+
         // 当选择全部时，需要合并两种数据
-        if (!this.queryData.shareType || this.queryData.shareType === "") {
+        if (!this.queryData.shareType || this.queryData.shareType === '') {
           // 同时请求两种数据
           const [elecResponse, waterResponse] = await Promise.all([
             sharePageSettleShare(params),
             waterSharePageWaterSettleShare(params)
-          ]);
-          
-          let elecData = [];
-          let waterData = [];
-          let totalCount = 0;
-          
+          ])
+
+          let elecData = []
+          let waterData = []
+          let totalCount = 0
+
           if (elecResponse.code === 200 && elecResponse.data) {
             elecData = (elecResponse.data.dataList || []).map(item => ({
               ...item,
               shareTypeLabel: '用电公摊'
-            }));
-            totalCount += elecResponse.data.total || 0;
+            }))
+            totalCount += elecResponse.data.total || 0
           }
-          
+
           if (waterResponse.code === 200 && waterResponse.data) {
             waterData = (waterResponse.data.dataList || []).map(item => ({
               ...item,
               shareTypeLabel: '用水公摊'
-            }));
-            totalCount += waterResponse.data.total || 0;
+            }))
+            totalCount += waterResponse.data.total || 0
           }
-          
+
           // 合并数据并按日期排序
           this.tableData = [...elecData, ...waterData].sort((a, b) => {
-            return new Date(b.occurDate) - new Date(a.occurDate);
-          });
-          
+            return new Date(b.occurDate) - new Date(a.occurDate)
+          })
+
           // 处理分页（这里简单处理，实际可能需要后端支持）
-          const startIndex = (this.pageData.current - 1) * this.pageData.size;
-          const endIndex = startIndex + this.pageData.size;
-          this.tableData = this.tableData.slice(startIndex, endIndex);
-          this.pageData.total = totalCount;
-          
+          const startIndex = (this.pageData.current - 1) * this.pageData.size
+          const endIndex = startIndex + this.pageData.size
+          this.tableData = this.tableData.slice(startIndex, endIndex)
+          this.pageData.total = totalCount
         } else if (this.queryData.shareType === 1) {
           // 用电公摊
-          const response = await sharePageSettleShare(params);
+          const response = await sharePageSettleShare(params)
           if (response.code === 200 && response.data) {
             this.tableData = (response.data.dataList || []).map(item => ({
               ...item,
               shareTypeLabel: '用电公摊'
-            }));
-            this.pageData.total = response.data.total || 0;
+            }))
+            this.pageData.total = response.data.total || 0
           } else {
-            this.tableData = [];
-            this.pageData.total = 0;
+            this.tableData = []
+            this.pageData.total = 0
           }
         } else if (this.queryData.shareType === 2) {
           // 用水公摊
-          const response = await waterSharePageWaterSettleShare(params);
+          const response = await waterSharePageWaterSettleShare(params)
           if (response.code === 200 && response.data) {
             this.tableData = (response.data.dataList || []).map(item => ({
               ...item,
               shareTypeLabel: '用水公摊'
-            }));
-            this.pageData.total = response.data.total || 0;
+            }))
+            this.pageData.total = response.data.total || 0
           } else {
-            this.tableData = [];
-            this.pageData.total = 0;
+            this.tableData = []
+            this.pageData.total = 0
           }
         }
       } catch (error) {
-        this.$message.error("获取公摊账单数据失败");
-        console.error("获取公摊账单数据失败:", error);
-        this.tableData = [];
-        this.pageData.total = 0;
+        this.$message.error('获取公摊账单数据失败')
+        console.error('获取公摊账单数据失败:', error)
+        this.tableData = []
+        this.pageData.total = 0
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
-    
+
     // 格式化金额
-    formatMoney(value) {
+    formatMoney (value) {
       if (value === null || value === undefined || value === '') {
-        return '-';
+        return '-'
       }
-      return `¥${parseFloat(value).toFixed(2)}`;
+      return `¥${parseFloat(value).toFixed(2)}`
     },
-    
+
     // 格式化面积
-    formatArea(value) {
+    formatArea (value) {
       if (value === null || value === undefined || value === '') {
-        return '-';
+        return '-'
       }
-      return `${value}㎡`;
+      return `${value}㎡`
     },
-    
+
     // 获取状态标签类型
-    getStatusType(status) {
-      return this.settleStatusMap[status]?.type || 'info';
+    getStatusType (status) {
+      return this.settleStatusMap[status]?.type || 'info'
     },
-    
+
     // 获取状态标签文本
-    getStatusLabel(status) {
-      return this.settleStatusMap[status]?.label || '未知';
+    getStatusLabel (status) {
+      return this.settleStatusMap[status]?.label || '未知'
     },
-    
+
     // 公摊类型变化
-    handleShareTypeChange(val) {
+    handleShareTypeChange (val) {
       // 切换类型时重新获取公摊组列表
-      this.queryData.shareId = "";
-      this.getShareList();
-      this.handleSearch();
+      this.queryData.shareId = ''
+      this.getShareList()
+      this.handleSearch()
     },
-    
+
     // 查询
-    handleSearch() {
-      this.pageData.current = 1;
-      this.fetchTableData();
+    handleSearch () {
+      this.pageData.current = 1
+      this.fetchTableData()
     },
-    
+
     // 重置
-    handleReset() {
+    handleReset () {
       this.queryData = {
-        shareId: "",
-        shareType: "", // 重置为全部
+        shareId: '',
+        shareType: '', // 重置为全部
         timeRange: [
           moment().subtract(1, 'months').format('YYYY-MM-DD'),
           moment().format('YYYY-MM-DD')
-        ],
-      };
-      this.getShareList();
-      this.handleSearch();
+        ]
+      }
+      this.getShareList()
+      this.handleSearch()
     },
-    
+
     // 处理下拉命令
-    handleCommand(command) {
+    handleCommand (command) {
       switch (command) {
-        case "export":
-          this.handleExport();
-          break;
+        case 'export':
+          this.handleExport()
+          break
       }
     },
-    
+
     // 查看详情
-    async handleView(row) {
+    async handleView (row) {
       try {
-        this.detailDrawer.data = row;
-        this.detailDrawer.show = true;
-        
+        this.detailDrawer.data = row
+        this.detailDrawer.show = true
+
         // 可以在这里调用详情接口获取更多信息
         const params = {
           rid: row.rid,
-          managerId: this.currentManagerId,
-        };
-        
-        let response;
-        if (this.queryData.shareType === 1) {
-          response = await shareGetSettleShareDetail(params);
-        } else {
-          response = await waterShareGetSettleShareDetail(params);
+          managerId: this.currentManagerId
         }
-        
+
+        let response
+        if (this.queryData.shareType === 1) {
+          response = await shareGetSettleShareDetail(params)
+        } else {
+          response = await waterShareGetSettleShareDetail(params)
+        }
+
         if (response.code === 200 && response.data) {
           // 更新详情数据
           this.detailDrawer.data = {
             ...row,
             ...response.data
-          };
+          }
         }
       } catch (error) {
-        console.error("获取详情失败:", error);
-        this.$message.error("获取详情失败");
+        console.error('获取详情失败:', error)
+        this.$message.error('获取详情失败')
       }
     },
-    
+
     // 关闭抽屉
-    handleDrawerClose(done) {
-      this.detailDrawer.show = false;
-      this.detailDrawer.data = null;
-      done();
+    handleDrawerClose (done) {
+      this.detailDrawer.show = false
+      this.detailDrawer.data = null
+      done()
     },
-    
+
     // 导出数据
-    handleExport() {
-  if (this.tableData.length === 0) {
-    this.$message.warning("暂无数据可导出");
-    return;
-  }
-
-  try {
-    // 确定要导出的数据：优先导出选中数据，无选中则导出当前页
-    const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData;
-    
-    // 构建导出的表头和数据
-    const headers = this.displayColumns.map(col => col.label);
-    const data = exportData.map(row => {
-      return this.displayColumns.map(col => {
-        const value = row[col.key];
-        
-        // 处理特殊字段的显示格式
-        switch (col.key) {
-          case 'shareTypeLabel':
-            return value || '公摊';
-          case 'settleStatus':
-            return this.getStatusLabel(value);
-          default:
-            if (col.type === 'money') {
-              return value ? parseFloat(value).toFixed(2) : '0.00';
-            } else if (col.type === 'area') {
-              return value ? `${value}` : '0';
-            }
-            return value || '';
-        }
-      });
-    });
-
-    // 创建工作表数据
-    const wsData = [headers, ...data];
-    
-    // 创建工作表
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
-    // 设置列宽
-    const colWidths = this.displayColumns.map(col => {
-      if (col.width) {
-        return { wch: Math.max(parseInt(col.width) / 8, col.label.length + 2) };
-      } else if (col.minWidth) {
-        return { wch: Math.max(parseInt(col.minWidth) / 8, col.label.length + 2) };
+    handleExport () {
+      if (this.tableData.length === 0) {
+        this.$message.warning('暂无数据可导出')
+        return
       }
-      return { wch: Math.max(15, col.label.length + 2) };
-    });
-    ws['!cols'] = colWidths;
 
-    // 设置表头样式
-    const headerRange = XLSX.utils.decode_range(ws['!ref']);
-    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-      if (!ws[cellAddress]) continue;
-      
-      ws[cellAddress].s = {
-        font: { bold: true, color: { rgb: "606266" } },
-        fill: { fgColor: { rgb: "F5F7FA" } },
-        alignment: { horizontal: "center", vertical: "center" }
-      };
-    }
+      try {
+        // 确定要导出的数据：优先导出选中数据，无选中则导出当前页
+        const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
 
-    // 创建工作簿
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "公摊组账单");
+        // 构建导出的表头和数据
+        const headers = this.displayColumns.map(col => col.label)
+        const data = exportData.map(row => {
+          return this.displayColumns.map(col => {
+            const value = row[col.key]
 
-    // 生成文件名
-    const fileName = this.generateFileName();
-    
-    // 导出文件（使用原生方法）
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-    // 创建下载链接
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.style.display = 'none';
-    
-    // 触发下载
-    document.body.appendChild(link);
-    link.click();
-    
-    // 清理
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    // 显示导出信息
-    const exportCount = exportData.length;
-    const isSelectedExport = this.selectedData.length > 0;
-    this.$message.success(`成功导出${exportCount}条${isSelectedExport ? '选中' : ''}数据！`);
-  } catch (error) {
-    console.error('导出失败:', error);
-    this.$message.error('导出失败，请重试');
-  }
-},
+            // 处理特殊字段的显示格式
+            switch (col.key) {
+              case 'shareTypeLabel':
+                return value || '公摊'
+              case 'settleStatus':
+                return this.getStatusLabel(value)
+              default:
+                if (col.type === 'money') {
+                  return value ? parseFloat(value).toFixed(2) : '0.00'
+                } else if (col.type === 'area') {
+                  return value ? `${value}` : '0'
+                }
+                return value || ''
+            }
+          })
+        })
 
-// 3. 添加生成文件名的方法
-generateFileName() {
-  const now = new Date();
-  const timeStr = now.getFullYear() + 
-    String(now.getMonth() + 1).padStart(2, '0') + 
+        // 创建工作表数据
+        const wsData = [headers, ...data]
+
+        // 创建工作表
+        const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+        // 设置列宽
+        const colWidths = this.displayColumns.map(col => {
+          if (col.width) {
+            return { wch: Math.max(parseInt(col.width) / 8, col.label.length + 2) }
+          } else if (col.minWidth) {
+            return { wch: Math.max(parseInt(col.minWidth) / 8, col.label.length + 2) }
+          }
+          return { wch: Math.max(15, col.label.length + 2) }
+        })
+        ws['!cols'] = colWidths
+
+        // 设置表头样式
+        const headerRange = XLSX.utils.decode_range(ws['!ref'])
+        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
+          if (!ws[cellAddress]) continue
+
+          ws[cellAddress].s = {
+            font: { bold: true, color: { rgb: '606266' } },
+            fill: { fgColor: { rgb: 'F5F7FA' } },
+            alignment: { horizontal: 'center', vertical: 'center' }
+          }
+        }
+
+        // 创建工作簿
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, '公摊组账单')
+
+        // 生成文件名
+        const fileName = this.generateFileName()
+
+        // 导出文件（使用原生方法）
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+        // 创建下载链接
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = fileName
+        link.style.display = 'none'
+
+        // 触发下载
+        document.body.appendChild(link)
+        link.click()
+
+        // 清理
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+
+        // 显示导出信息
+        const exportCount = exportData.length
+        const isSelectedExport = this.selectedData.length > 0
+        this.$message.success(`成功导出${exportCount}条${isSelectedExport ? '选中' : ''}数据！`)
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$message.error('导出失败，请重试')
+      }
+    },
+
+    // 3. 添加生成文件名的方法
+    generateFileName () {
+      const now = new Date()
+      const timeStr = now.getFullYear() +
+    String(now.getMonth() + 1).padStart(2, '0') +
     String(now.getDate()).padStart(2, '0') + '_' +
-    String(now.getHours()).padStart(2, '0') + 
-    String(now.getMinutes()).padStart(2, '0') + 
-    String(now.getSeconds()).padStart(2, '0');
-  
-  // 根据公摊类型生成不同的文件名
-  let typePrefix = "公摊账单";
-  if (this.queryData.shareType === 1) {
-    typePrefix = "用电公账单";
-  } else if (this.queryData.shareType === 2) {
-    typePrefix = "用水公账单";
-  }
-  
-  // 如果选择了特定公摊组，包含公摊组信息
-  if (this.queryData.shareId) {
-    const shareItem = this.shareList.find(item => item.id === this.queryData.shareId);
-    const shareName = shareItem ? shareItem.name : this.queryData.shareId;
-    return `${typePrefix}_${shareName}_${timeStr}.xlsx`;
-  }
-  
-  // 如果选择了时间范围，包含时间信息
-  if (this.queryData.timeRange && this.queryData.timeRange.length === 2) {
-    const startDate = this.queryData.timeRange[0].replace(/-/g, '');
-    const endDate = this.queryData.timeRange[1].replace(/-/g, '');
-    return `${typePrefix}_${startDate}-${endDate}_${timeStr}.xlsx`;
-  }
-  
-  return `${typePrefix}_${timeStr}.xlsx`;
-},
-    
+    String(now.getHours()).padStart(2, '0') +
+    String(now.getMinutes()).padStart(2, '0') +
+    String(now.getSeconds()).padStart(2, '0')
+
+      // 根据公摊类型生成不同的文件名
+      let typePrefix = '公摊账单'
+      if (this.queryData.shareType === 1) {
+        typePrefix = '用电公账单'
+      } else if (this.queryData.shareType === 2) {
+        typePrefix = '用水公账单'
+      }
+
+      // 如果选择了特定公摊组，包含公摊组信息
+      if (this.queryData.shareId) {
+        const shareItem = this.shareList.find(item => item.id === this.queryData.shareId)
+        const shareName = shareItem ? shareItem.name : this.queryData.shareId
+        return `${typePrefix}_${shareName}_${timeStr}.xlsx`
+      }
+
+      // 如果选择了时间范围，包含时间信息
+      if (this.queryData.timeRange && this.queryData.timeRange.length === 2) {
+        const startDate = this.queryData.timeRange[0].replace(/-/g, '')
+        const endDate = this.queryData.timeRange[1].replace(/-/g, '')
+        return `${typePrefix}_${startDate}-${endDate}_${timeStr}.xlsx`
+      }
+
+      return `${typePrefix}_${timeStr}.xlsx`
+    },
+
     // 选择变化
-    handleSelectionChange(selection) {
-      this.selectedData = selection;
+    handleSelectionChange (selection) {
+      this.selectedData = selection
     },
-    
+
     // 分页大小变化
-    handleSizeChange(val) {
-      this.pageData.size = val;
-      this.pageData.current = 1;
-      this.fetchTableData();
+    handleSizeChange (val) {
+      this.pageData.size = val
+      this.pageData.current = 1
+      this.fetchTableData()
     },
-    
+
     // 当前页变化
-    handleCurrentChange(val) {
-      this.pageData.current = val;
-      this.fetchTableData();
-    },
-  },
-};
+    handleCurrentChange (val) {
+      this.pageData.current = val
+      this.fetchTableData()
+    }
+  }
+}
 </script>
   <style lang="scss" scoped>
   // 引入表格页面公共样式
   @import "@/assets/styles/table-page.scss";
-  
+
   // 自定义样式补充
   .amount-text {
     font-weight: 500;
     color: #303133;
-    
+
     &.text-danger {
       color: #F56C6C;
     }
   }
-  
+
   .text-primary {
     color: #409EFF;
   }
-  
+
   .empty-data {
     display: flex;
     flex-direction: column;
@@ -909,16 +908,16 @@ generateFileName() {
     justify-content: center;
     padding: 60px 0;
   }
-  
+
   // 抽屉内容样式
   .drawer-content {
     padding: 20px;
-    
+
     .el-descriptions {
       margin-top: 20px;
     }
   }
-  
+
   // 状态标签样式（如果需要自定义）
   .el-tag {
     &.el-tag--plain {

@@ -16,9 +16,9 @@
     <div class="main-content">
       <!-- 筛选区域 -->
       <div class="filter-bar">
-        
+
         <div class="filter-left">
-          
+
           <el-input
             v-model="searchForm.keyword"
             placeholder="搜索设备编号、名称"
@@ -42,7 +42,7 @@
           <el-button icon="el-icon-refresh-left">重置</el-button>
         </div>
         <div class="filter-right">
-          
+
           <el-radio-group v-model="viewMode" size="small">
             <el-radio-button label="card">
               <i class="el-icon-s-grid"></i> 卡片
@@ -75,7 +75,7 @@
               </el-dropdown-menu>
             </el-dropdown>
           </div>
-          
+
           <div class="card-body">
             <div class="info-row">
               <span class="info-label">设备类型</span>
@@ -96,7 +96,7 @@
               </el-tag>
             </div>
           </div>
-          
+
           <div class="card-footer">
             <div class="stat-item">
               <div class="stat-num">{{ device.todayCharge || 0 }}</div>
@@ -119,12 +119,12 @@
           v-loading="loading"
           :header-cell-style="{background:'#f8f9fa', color:'#606266'}"
           class="device-table">
-          
+
           <el-table-column type="selection" width="50" fixed="left"></el-table-column>
-          
-          <el-table-column 
-            label="设备编号" 
-            prop="deviceCode" 
+
+          <el-table-column
+            label="设备编号"
+            prop="deviceCode"
             width="120"
             show-overflow-tooltip>
             <template slot-scope="scope">
@@ -134,16 +134,16 @@
               </el-link>
             </template>
           </el-table-column>
-          
-          <el-table-column 
-            label="设备名称" 
-            prop="deviceName" 
+
+          <el-table-column
+            label="设备名称"
+            prop="deviceName"
             width="180"
             show-overflow-tooltip>
           </el-table-column>
-          
-          <el-table-column 
-            label="设备类型" 
+
+          <el-table-column
+            label="设备类型"
             width="110"
             align="center">
             <template slot-scope="scope">
@@ -152,30 +152,30 @@
               </el-tag>
             </template>
           </el-table-column>
-          
-          <el-table-column 
-            label="功率" 
-            prop="power" 
-            width="90" 
+
+          <el-table-column
+            label="功率"
+            prop="power"
+            width="90"
             align="center">
             <template slot-scope="scope">
               <span class="power-text">{{ scope.row.power }}kW</span>
             </template>
           </el-table-column>
-          
-          <el-table-column 
-            label="所属区域" 
-            prop="stationName" 
+
+          <el-table-column
+            label="所属区域"
+            prop="stationName"
             min-width="140"
             show-overflow-tooltip>
             <template slot-scope="scope">
               <span class="station-name">{{ scope.row.stationName }}</span>
             </template>
           </el-table-column>
-          
-          <el-table-column 
-            label="状态" 
-            width="100" 
+
+          <el-table-column
+            label="状态"
+            width="100"
             align="center">
             <template slot-scope="scope">
               <el-badge :is-dot="scope.row.status === 'charging'" class="status-badge">
@@ -185,61 +185,61 @@
               </el-badge>
             </template>
           </el-table-column>
-          
-          <el-table-column 
-            label="今日充电" 
-            prop="todayCharge" 
-            width="90" 
+
+          <el-table-column
+            label="今日充电"
+            prop="todayCharge"
+            width="90"
             align="center">
             <template slot-scope="scope">
               <span class="number-text">{{ scope.row.todayCharge || 0 }}</span>
             </template>
           </el-table-column>
-          
-          <el-table-column 
-            label="累计次数" 
-            prop="totalCharge" 
-            width="90" 
+
+          <el-table-column
+            label="累计次数"
+            prop="totalCharge"
+            width="90"
             align="center">
             <template slot-scope="scope">
               <span class="number-text">{{ scope.row.totalCharge || 0 }}</span>
             </template>
           </el-table-column>
-          
-          <el-table-column 
-            label="添加时间" 
-            prop="createTime" 
+
+          <el-table-column
+            label="添加时间"
+            prop="createTime"
             width="160"
             show-overflow-tooltip>
           </el-table-column>
-          
+
           <!-- 操作列优化：自适应宽度 -->
-          <el-table-column 
-            label="操作" 
-            width="180" 
+          <el-table-column
+            label="操作"
+            width="180"
             fixed="right"
             class-name="table-operation-column">
             <template slot-scope="scope">
               <!-- 大屏显示：按钮组 -->
               <div class="operation-buttons">
-                <el-button 
-                  type="text" 
+                <el-button
+                  type="text"
                   size="small"
-                  icon="el-icon-edit" 
+                  icon="el-icon-edit"
                   @click="handleEdit(scope.row)"
                   class="operation-btn">
                   编辑
                 </el-button>
-                <el-button 
-                  type="text" 
+                <el-button
+                  type="text"
                   size="small"
-                  icon="el-icon-view" 
+                  icon="el-icon-view"
                   @click="handleDetail(scope.row)"
                   class="operation-btn">
                   详情
                 </el-button>
               </div>
-              
+
               <!-- 小屏显示：下拉菜单 -->
               <div class="operation-dropdown">
                 <el-dropdown trigger="click" @command="handleCommand($event, scope.row)">
@@ -289,7 +289,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="设备类型" prop="type">
@@ -306,7 +306,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="所属区域" prop="stationId">
@@ -326,11 +326,11 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-form-item label="设备位置" prop="location">
           <el-input v-model="deviceForm.location" placeholder="请输入设备安装位置"></el-input>
         </el-form-item>
-        
+
         <el-form-item label="备注信息">
           <el-input
             type="textarea"
@@ -340,7 +340,7 @@
           </el-input>
         </el-form-item>
       </el-form>
-      
+
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="handleSubmit">确 定</el-button>
@@ -352,7 +352,7 @@
 <script>
 export default {
   name: 'ChargingStationManagement',
-  data() {
+  data () {
     return {
       // 视图模式
       viewMode: 'table',
@@ -425,25 +425,25 @@ export default {
       editingId: null
     }
   },
-  mounted() {
+  mounted () {
     // this.loadData()
   },
   methods: {
     // 生成设备编号
-    generateDeviceCode() {
+    generateDeviceCode () {
       const typePrefix = {
-        'ac_slow': 'AC',
-        'dc_fast': 'DC', 
-        'super_fast': 'SF'
+        ac_slow: 'AC',
+        dc_fast: 'DC',
+        super_fast: 'SF'
       }
       const prefix = typePrefix[this.deviceForm.type] || 'DEV'
       const timestamp = Date.now().toString().slice(-6)
       const random = Math.floor(Math.random() * 100).toString().padStart(2, '0')
       this.deviceForm.deviceCode = `${prefix}${timestamp}${random}`
     },
-    
+
     // 设备类型改变时的处理
-    onTypeChange(type) {
+    onTypeChange (type) {
       // 清空功率选择
       this.deviceForm.power = null
       // 如果有设备编号，重新生成
@@ -451,15 +451,15 @@ export default {
         this.generateDeviceCode()
       }
     },
-    
+
     // 厂商改变时的处理
-    onManufacturerChange() {
+    onManufacturerChange () {
       // 清空型号选择
       this.deviceForm.model = ''
     },
 
     // 加载数据
-    loadData() {
+    loadData () {
       this.loading = true
       setTimeout(() => {
         // 生成更多测试数据，使用对应的层级结构
@@ -566,17 +566,17 @@ export default {
       }, 800)
     },
     // 搜索
-    handleSearch() {
+    handleSearch () {
       this.pagination.currentPage = 1
       this.loadData()
     },
     // 刷新数据
-    refreshData() {
+    refreshData () {
       this.$message.success('数据已刷新')
       this.loadData()
     },
     // 显示添加对话框 - 重新设计
-    showAddDialog() {
+    showAddDialog () {
       this.dialogTitle = '添加设备'
       this.editingId = null
       this.deviceForm = {
@@ -603,7 +603,7 @@ export default {
       })
     },
     // 编辑
-    handleEdit(row) {
+    handleEdit (row) {
       this.dialogTitle = '编辑设备'
       this.editingId = row.id
       this.deviceForm = {
@@ -619,18 +619,18 @@ export default {
       this.dialogVisible = true
     },
     // 查看详情
-    handleDetail(row) {
+    handleDetail (row) {
       this.$router.push({
         path: `/device/charging/detail/${row.id}`,
-        query: { 
+        query: {
           name: row.deviceName,
           code: row.deviceCode,
           deviceId: row.id
         }
-      });
+      })
     },
     // 删除
-    handleDelete(row) {
+    handleDelete (row) {
       this.$confirm('确定要删除设备 "' + row.deviceName + '" 吗？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -641,7 +641,7 @@ export default {
       }).catch(() => {})
     },
     // 提交表单
-    handleSubmit() {
+    handleSubmit () {
       this.$refs.deviceForm.validate((valid) => {
         if (valid) {
           const message = this.editingId ? '修改成功' : '添加成功'
@@ -652,8 +652,8 @@ export default {
       })
     },
     // 下拉菜单命令
-    handleCommand(command, device) {
-      switch(command) {
+    handleCommand (command, device) {
+      switch (command) {
         case 'edit':
           this.handleEdit(device)
           break
@@ -666,49 +666,49 @@ export default {
       }
     },
     // 分页
-    handleSizeChange(val) {
+    handleSizeChange (val) {
       this.pagination.pageSize = val
       this.loadData()
     },
-    handleCurrentChange(val) {
+    handleCurrentChange (val) {
       this.pagination.currentPage = val
       this.loadData()
     },
     // 获取类型标签
-    getTypeTag(type) {
+    getTypeTag (type) {
       const map = {
-        'dc_fast': '',
-        'ac_slow': 'success',
-        'super_fast': 'warning'
+        dc_fast: '',
+        ac_slow: 'success',
+        super_fast: 'warning'
       }
       return map[type] || 'info'
     },
     // 获取类型名称
-    getTypeName(type) {
+    getTypeName (type) {
       const map = {
-        'dc_fast': '直流快充',
-        'ac_slow': '交流慢充',
-        'super_fast': '超级快充'
+        dc_fast: '直流快充',
+        ac_slow: '交流慢充',
+        super_fast: '超级快充'
       }
       return map[type] || '未知'
     },
     // 获取状态标签
-    getStatusTag(status) {
+    getStatusTag (status) {
       const map = {
-        'online': 'success',
-        'charging': '',
-        'offline': 'info',
-        'fault': 'danger'
+        online: 'success',
+        charging: '',
+        offline: 'info',
+        fault: 'danger'
       }
       return map[status] || 'info'
     },
     // 获取状态名称
-    getStatusName(status) {
+    getStatusName (status) {
       const map = {
-        'online': '在线',
-        'charging': '充电中',
-        'offline': '离线',
-        'fault': '故障'
+        online: '在线',
+        charging: '充电中',
+        offline: '离线',
+        fault: '故障'
       }
       return map[status] || '未知'
     }
@@ -824,7 +824,7 @@ export default {
 }
 
 .card-status.status-online { background: #52c41a; }
-.card-status.status-charging { 
+.card-status.status-charging {
   background: linear-gradient(90deg, #1890ff 0%, #52c41a 100%);
   animation: pulse 2s infinite;
 }
@@ -1130,7 +1130,7 @@ export default {
   .operation-buttons {
     gap: 12px;
   }
-  
+
   .operation-btn {
     padding: 6px 12px !important;
   }
@@ -1141,12 +1141,12 @@ export default {
   .operation-buttons {
     gap: 6px;
   }
-  
+
   .operation-btn {
     padding: 4px 8px !important;
     font-size: 12px !important;
   }
-  
+
   .operation-btn i {
     margin-right: 2px !important;
   }
@@ -1158,17 +1158,17 @@ export default {
   .operation-buttons {
     gap: 4px;
   }
-  
+
   .operation-btn {
     padding: 3px 6px !important;
     font-size: 12px !important;
   }
-  
+
   /* 只显示图标 */
   .operation-btn span {
     display: none;
   }
-  
+
   .operation-btn i {
     margin-right: 0 !important;
   }
@@ -1180,17 +1180,17 @@ export default {
   .operation-buttons {
     display: none !important;
   }
-  
+
   .operation-dropdown {
     display: block !important;
   }
-  
+
   /* 调整表格列最小宽度 */
   .table-operation-column {
     width: 80px !important;
     min-width: 80px !important;
   }
-  
+
   /* 对话框适配 */
   .device-dialog {
     width: 90% !important;
@@ -1202,93 +1202,93 @@ export default {
   .charging-station-page {
     padding: 12px;
   }
-  
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
     padding: 16px;
   }
-  
+
   .page-title {
     font-size: 20px;
   }
-  
+
   .page-actions {
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .page-actions .el-button {
     flex: none;
   }
-  
+
   .filter-bar {
     flex-direction: column;
     gap: 16px;
     align-items: flex-start;
   }
-  
+
   .filter-left {
     flex-wrap: wrap;
     width: 100%;
   }
-  
+
   .filter-left .el-input,
   .filter-left .el-select {
     width: 100%;
   }
-  
+
   .card-view {
     grid-template-columns: 1fr;
   }
-  
+
   /* 表格在移动端使用下拉菜单 */
   .operation-buttons {
     display: none !important;
   }
-  
+
   .operation-dropdown {
     display: block !important;
   }
-  
+
   .table-operation-column {
     width: 60px !important;
     min-width: 60px !important;
   }
-  
+
   /* 移动端表格横向滚动 */
   .el-table {
     font-size: 12px;
   }
-  
+
   .el-table .cell {
     padding: 0 8px;
   }
-  
+
   /* 分页器响应式 */
   .pagination-wrapper {
     overflow-x: auto;
   }
-  
+
   .el-pagination {
     white-space: nowrap;
   }
-  
+
   /* 对话框移动端适配 */
   .el-dialog {
     width: 95% !important;
     margin: 10px auto !important;
   }
-  
+
   .el-dialog .el-dialog__body {
     max-height: 60vh;
   }
-  
+
   .el-dialog .el-row {
     display: block;
   }
-  
+
   .el-dialog .el-col {
     width: 100%;
     margin-bottom: 16px;
@@ -1300,32 +1300,32 @@ export default {
   .page-header {
     padding: 12px;
   }
-  
+
   .page-title {
     font-size: 18px;
   }
-  
+
   .page-title i {
     font-size: 22px;
     margin-right: 8px;
   }
-  
+
   .page-actions {
     flex-direction: column;
     width: 100%;
     gap: 8px;
   }
-  
+
   .page-actions .el-button {
     width: 100%;
   }
-  
+
   /* 对话框适配 */
   .device-dialog {
     width: 98% !important;
     margin: 5px auto !important;
   }
-  
+
   .device-dialog .el-dialog__body {
     padding: 16px;
     max-height: 55vh;

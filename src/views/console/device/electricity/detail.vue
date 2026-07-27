@@ -8,7 +8,7 @@
   >
     <!-- 抽屉标题 -->
     <div slot="title" class="drawer-title">
-      <span>详情</span>
+      <span>{{ $t('deviceElectricity.meterDrawerTitle') }}</span>
     </div>
 
     <!-- 抽屉内容 -->
@@ -19,17 +19,17 @@
         <div class="left-info">
           <!-- 电表名称和状态标签 -->
           <div class="meter-header">
-            <h2 class="meter-name">{{ meterInfo.meterName || '--' }}</h2>
+            <h2 class="meter-name">{{ displayMeterName || '--' }}</h2>
             <div class="status-tags">
-              <el-tag 
-                size="small" 
+              <el-tag
+                size="small"
                 :type="meterInfo.switchStatus == 1 ? 'success' : 'info'">
-                {{ meterInfo.switchStatus == 1 ? '合闸' : '分闸' }}
+                {{ meterInfo.switchStatus == 1 ? $t('deviceElectricity.switchOn') : $t('deviceElectricity.switchOff') }}
               </el-tag>
-              <el-tag 
-                size="small" 
+              <el-tag
+                size="small"
                 :type="meterInfo.onlineStatus == 1 ? 'success' : 'danger'">
-                {{ meterInfo.onlineStatus == 1 ? '在线' : '离线' }}
+                {{ meterInfo.onlineStatus == 1 ? $t('deviceElectricity.online') : $t('deviceElectricity.offline') }}
               </el-tag>
               <el-tag size="small" type="warning">
                 {{ getBindTypeLabel(meterInfo.bindType) }}
@@ -41,37 +41,37 @@
           <div class="info-grid">
             <div class="info-row">
               <div class="info-item">
-                <span class="label">序列号：</span>
+                <span class="label">{{ $t('deviceElectricity.colSerial') }}：</span>
                 <span class="value">{{ meterInfo.serial || '--' }}</span>
               </div>
               <div class="info-item">
-                <span class="label">创建时间：</span>
+                <span class="label">{{ $t('deviceElectricity.colCreateTime') }}：</span>
                 <span class="value">{{ meterInfo.createTime || '--' }}</span>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item">
-                <span class="label">编号：</span>
+                <span class="label">{{ $t('deviceElectricity.meterDrawerColId') }}：</span>
                 <span class="value">{{ meterInfo.id || '--' }}</span>
               </div>
               <div class="info-item">
-                <span class="label">数据更新：</span>
+                <span class="label">{{ $t('deviceElectricity.colSyncTime') }}：</span>
                 <span class="value">{{ meterInfo.syncTime || '--' }}</span>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item">
-                <span class="label">规格型号：</span>
+                <span class="label">{{ $t('deviceElectricity.colPhase') }}：</span>
                 <span class="value">{{ getPhaseLabel(meterInfo.phase) }}</span>
               </div>
               <div class="info-item">
-                <span class="label">安装位置：</span>
+                <span class="label">{{ $t('deviceElectricity.meterDrawerColInstallLoc') }}：</span>
                 <span class="value">--</span>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item full-width">
-                <span class="label">付费模式：</span>
+                <span class="label">{{ $t('deviceElectricity.colPayMode') }}：</span>
                 <span class="value">{{ getPayTypeLabel(meterInfo.logicPayType) }}</span>
               </div>
             </div>
@@ -81,54 +81,53 @@
         <!-- 右侧：已绑信息 + 操作按钮 -->
         <div class="right-info">
           <!-- 操作按钮 -->
-          <div class="action-buttons">
-            <el-button 
-              size="small" 
-              type="danger" 
-              plain
-              v-if="meterInfo.switchStatus == 1"
-              @click="handleSwitch(0)"
-              :loading="switchLoading">
-              分闸
-            </el-button>
-            <el-button 
-              size="small" 
-              type="success" 
-              plain
-              v-else
-              @click="handleSwitch(1)"
-              :loading="switchLoading">
-              合闸
-            </el-button>
-            <el-button size="small" plain @click="handleEdit">编辑</el-button>
+          <div v-if="hasActions" class="action-buttons">
+            <template v-if="canToggleSwitch">
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                v-if="meterInfo.switchStatus == 1"
+                @click="handleSwitch(0)"
+                :loading="switchLoading">
+                {{ $t('deviceElectricity.switchOff') }}
+              </el-button>
+              <el-button
+                size="small"
+                type="success"
+                plain
+                v-else
+                @click="handleSwitch(1)"
+                :loading="switchLoading">
+                {{ $t('deviceElectricity.switchOn') }}
+              </el-button>
+            </template>
+            <el-button v-if="canEdit" size="small" plain @click="handleEdit">{{ $t('deviceElectricity.opEdit') }}</el-button>
           </div>
 
           <!-- 已绑信息卡片 -->
           <div class="bind-card">
-            <h4 class="bind-title">已绑信息</h4>
+            <h4 class="bind-title">{{ $t('deviceElectricity.meterDrawerBindCardTitle') }}</h4>
             <div class="bind-content">
               <div v-if="meterInfo.bindId && meterInfo.bindName" class="bind-info">
                 <div class="bind-header">
-                  <!-- <el-tag size="small" type="info">
-                    {{ getBindTypeLabel(meterInfo.bindType) }}
-                  </el-tag> -->
-                  <span class="bind-text">({{ meterInfo.bindId }}){{ meterInfo.bindName }}</span>
+                  <span class="bind-text">({{ meterInfo.bindId }}){{ $displayBizHybrid(meterInfo.bindName, 200) }}</span>
                 </div>
               </div>
-              <div v-else class="no-bind">暂无绑定信息</div>
+              <div v-else class="no-bind">{{ $t('deviceElectricity.meterDrawerNoBind') }}</div>
 
               <!-- 电价方案 -->
               <div v-if="priceInfo.name" class="price-section">
-                <div class="price-name">电费方案：{{ priceInfo.name }}</div>
+                <div class="price-name">{{ $t('deviceElectricity.meterDrawerPricePlanLabel') }}：{{ $displayBizHybrid(priceInfo.name, 200) }}</div>
                 <div class="price-detail">
-                  <span>尖：{{ priceInfo.powerPeakPrice }}</span>
-                  <span>峰：{{ priceInfo.powerTopPrice }}</span>
-                  <span>平：{{ priceInfo.powerFlatPrice }}</span>
-                  <span>谷：{{ priceInfo.powerValleyPrice }}</span>
+                  <span>{{ $t('deviceElectricity.priceSharp') }}：{{ priceInfo.powerPeakPrice }}</span>
+                  <span>{{ $t('deviceElectricity.pricePeak') }}：{{ priceInfo.powerTopPrice }}</span>
+                  <span>{{ $t('deviceElectricity.priceFlat') }}：{{ priceInfo.powerFlatPrice }}</span>
+                  <span>{{ $t('deviceElectricity.priceValley') }}：{{ priceInfo.powerValleyPrice }}</span>
                 </div>
               </div>
               <div v-else class="price-section">
-                <div class="no-price">暂无电价方案</div>
+                <div class="no-price">{{ $t('deviceElectricity.meterDrawerNoPricePlan') }}</div>
               </div>
             </div>
           </div>
@@ -138,19 +137,19 @@
       <!-- 指标卡片 -->
       <div class="metrics-cards">
         <div class="metric-card">
-          <div class="metric-label">实时功率/kW</div>
+          <div class="metric-label">{{ $t('deviceElectricity.meterDrawerMetricRealtimeP') }}</div>
           <div class="metric-value">{{ simpleData.p || '--' }}</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">实时功率因数</div>
+          <div class="metric-label">{{ $t('deviceElectricity.meterDrawerMetricPf') }}</div>
           <div class="metric-value">{{ simpleData.pf || '--' }}</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">月功率峰值/kW</div>
+          <div class="metric-label">{{ $t('deviceElectricity.meterDrawerMetricMonthPeak') }}</div>
           <div class="metric-value">{{ simpleData.maxMonthP || '--' }}</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">昨日电量/度</div>
+          <div class="metric-label">{{ $t('deviceElectricity.meterDrawerMetricYesterdayKwh') }}</div>
           <div class="metric-value">{{ simpleData.yesterdayUseElec || '--' }}</div>
         </div>
       </div>
@@ -158,29 +157,29 @@
       <!-- 功率曲线 -->
       <div class="chart-section">
         <div class="section-header">
-          <h4>功率曲线</h4>
+          <h4>{{ $t('deviceElectricity.meterDrawerSectionPowerCurve') }}</h4>
           <div class="chart-controls">
             <el-date-picker
               v-model="queryData.date"
               type="date"
-              placeholder="选择日期"
+              :placeholder="$t('deviceElectricity.meterDrawerDatePlaceholder')"
               size="small"
               value-format="yyyy-MM-dd"
               :picker-options="pickerOptions"
               @change="handleDateChange"
             />
             <el-button-group class="view-toggle">
-              <el-button 
-                size="small" 
+              <el-button
+                size="small"
                 :type="viewMode === 'table' ? 'primary' : ''"
                 @click="viewMode = 'table'">
-                表格
+                {{ $t('deviceElectricity.meterDrawerViewTable') }}
               </el-button>
-              <el-button 
-                size="small" 
+              <el-button
+                size="small"
                 :type="viewMode === 'chart' ? 'primary' : ''"
                 @click="viewMode = 'chart'" style="margin-left: 10px;">
-                折线图
+                {{ $t('deviceElectricity.meterDrawerViewLineChart') }}
               </el-button>
             </el-button-group>
           </div>
@@ -194,7 +193,7 @@
             :data="chartData"
             height="350"
             style="width: 100%">
-            <el-table-column prop="occurTime" label="采集时间" width="180" />
+            <el-table-column prop="occurTime" :label="$t('deviceElectricity.meterDrawerColCollectTime')" width="180" />
             <el-table-column prop="pa" label="Pa(kW)" />
             <el-table-column prop="pb" label="Pb(kW)" />
             <el-table-column prop="pc" label="Pc(kW)" />
@@ -202,21 +201,21 @@
           </el-table>
           <div v-else-if="!chartLoading" class="empty-state">
             <i class="el-icon-data-line"></i>
-            <p>暂无功率数据</p>
+            <p>{{ $t('deviceElectricity.meterDrawerEmptyPower') }}</p>
           </div>
         </div>
 
         <!-- 折线图视图 -->
         <div v-show="viewMode === 'chart'" class="chart-view">
-          <div 
+          <div
             v-if="chartData.length > 0"
             v-loading="chartLoading"
-            ref="powerChart" 
+            ref="powerChart"
             class="power-chart">
           </div>
           <div v-else-if="!chartLoading" class="empty-state">
             <i class="el-icon-data-line"></i>
-            <p>暂无功率数据</p>
+            <p>{{ $t('deviceElectricity.meterDrawerEmptyPower') }}</p>
           </div>
         </div>
       </div>
@@ -224,9 +223,9 @@
       <!-- 近期用电统计 -->
       <div class="usage-section">
         <div class="section-header">
-          <h4>近期用电统计</h4>
+          <h4>{{ $t('deviceElectricity.meterDrawerSectionUsage') }}</h4>
           <el-button type="text" @click="goToDetailReport">
-            查看详细报表 >
+            {{ $t('deviceElectricity.meterDrawerLinkFullReport') }} &gt;
           </el-button>
         </div>
 
@@ -236,66 +235,66 @@
           :data="usageData"
           max-height="400"
           style="width: 100%">
-          <el-table-column prop="occurDate" label="日期" width="120" fixed="left" />
-          <el-table-column label="总电费(元)" width="110" align="right">
+          <el-table-column prop="occurDate" :label="$t('deviceElectricity.meterDrawerColDate')" width="120" fixed="left" />
+          <el-table-column :label="$t('deviceElectricity.meterDrawerColTotalFee')" width="110" align="right">
             <template slot-scope="scope">
               {{ scope.row.balance || '--' }}
             </template>
           </el-table-column>
-          <el-table-column label="总电量(度)" width="110" align="right">
+          <el-table-column :label="$t('deviceElectricity.meterDrawerColTotalKwh')" width="110" align="right">
             <template slot-scope="scope">
               {{ scope.row.useElec || '--' }}
             </template>
           </el-table-column>
-          <el-table-column label="尖(度)" width="100" align="right">
+          <el-table-column :label="$t('deviceElectricity.meterDrawerColTierSharp')" width="100" align="right">
             <template slot-scope="scope">
               {{ scope.row.useElecPeak || '--' }}
             </template>
           </el-table-column>
-          <el-table-column label="峰(度)" width="100" align="right">
+          <el-table-column :label="$t('deviceElectricity.meterDrawerColTierPeak')" width="100" align="right">
             <template slot-scope="scope">
               {{ scope.row.useElecTop || '--' }}
             </template>
           </el-table-column>
-          <el-table-column label="平(度)" width="100" align="right">
+          <el-table-column :label="$t('deviceElectricity.meterDrawerColTierFlat')" width="100" align="right">
             <template slot-scope="scope">
               {{ scope.row.useElecFlat || '--' }}
             </template>
           </el-table-column>
-          <el-table-column label="谷(度)" width="100" align="right">
+          <el-table-column :label="$t('deviceElectricity.meterDrawerColTierValley')" width="100" align="right">
             <template slot-scope="scope">
               {{ scope.row.useElecValley || '--' }}
             </template>
           </el-table-column>
 
           <!-- 起始读数 -->
-          <el-table-column label="起始读数" align="center">
-            <el-table-column label="时间" width="160">
+          <el-table-column :label="$t('deviceElectricity.meterDrawerGroupStartReading')" align="center">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubTime')" width="160">
               <template slot-scope="scope">
                 {{ scope.row.startUseDto ? scope.row.startUseDto.occurTime : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="总电量" width="100" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubTotal')" width="100" align="right">
               <template slot-scope="scope">
                 {{ scope.row.startUseDto ? scope.row.startUseDto.powerAll : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="尖" width="80" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubSharp')" width="80" align="right">
               <template slot-scope="scope">
                 {{ scope.row.startUseDto ? scope.row.startUseDto.powerPeak : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="峰" width="80" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubPeak')" width="80" align="right">
               <template slot-scope="scope">
                 {{ scope.row.startUseDto ? scope.row.startUseDto.powerTop : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="平" width="80" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubFlat')" width="80" align="right">
               <template slot-scope="scope">
                 {{ scope.row.startUseDto ? scope.row.startUseDto.powerFlat : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="谷" width="80" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubValley')" width="80" align="right">
               <template slot-scope="scope">
                 {{ scope.row.startUseDto ? scope.row.startUseDto.powerValley : '-' }}
               </template>
@@ -303,33 +302,33 @@
           </el-table-column>
 
           <!-- 截止读数 -->
-          <el-table-column label="截止读数" align="center">
-            <el-table-column label="时间" width="160">
+          <el-table-column :label="$t('deviceElectricity.meterDrawerGroupEndReading')" align="center">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubTime')" width="160">
               <template slot-scope="scope">
                 {{ scope.row.stopUseDto ? scope.row.stopUseDto.occurTime : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="总电量" width="100" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubTotal')" width="100" align="right">
               <template slot-scope="scope">
                 {{ scope.row.stopUseDto ? scope.row.stopUseDto.powerAll : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="尖" width="80" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubSharp')" width="80" align="right">
               <template slot-scope="scope">
                 {{ scope.row.stopUseDto ? scope.row.stopUseDto.powerPeak : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="峰" width="80" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubPeak')" width="80" align="right">
               <template slot-scope="scope">
                 {{ scope.row.stopUseDto ? scope.row.stopUseDto.powerTop : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="平" width="80" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubFlat')" width="80" align="right">
               <template slot-scope="scope">
                 {{ scope.row.stopUseDto ? scope.row.stopUseDto.powerFlat : '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="谷" width="80" align="right">
+            <el-table-column :label="$t('deviceElectricity.meterDrawerColSubValley')" width="80" align="right">
               <template slot-scope="scope">
                 {{ scope.row.stopUseDto ? scope.row.stopUseDto.powerValley : '-' }}
               </template>
@@ -339,53 +338,96 @@
 
         <div v-else-if="!usageLoading" class="empty-state">
           <i class="el-icon-document"></i>
-          <p>暂无用电统计数据</p>
+          <p>{{ $t('deviceElectricity.meterDrawerEmptyUsage') }}</p>
         </div>
       </div>
     </div>
 
     <!-- 编辑弹窗 -->
     <el-dialog
-      title="编辑电表"
+      :title="$t('deviceElectricity.dialogEditTitle')"
       :visible.sync="editDialog.visible"
       width="600px"
       append-to-body>
-      <el-form ref="editForm" :model="editForm" :rules="editRules" label-width="100px">
-        <el-form-item label="电表名称" prop="meterName">
+      <el-form ref="editForm" :model="editForm" :rules="editFormRules" :label-width="editDialogLabelWidth">
+        <el-form-item :label="$t('deviceElectricity.labelMeterName')" prop="meterName">
           <el-input v-model="editForm.meterName" />
         </el-form-item>
-        <el-form-item label="电表类型" prop="bindType">
+        <el-form-item :label="$t('deviceElectricity.labelMeterType')" prop="bindType">
           <el-select v-model="editForm.bindType" style="width: 100%">
-            <el-option label="专用表" :value="1" />
-            <el-option label="公摊表" :value="2" />
-            <el-option label="公式表" :value="3" />
+            <el-option :label="$t('deviceElectricity.bindTypeDedicated')" :value="1" />
+            <el-option :label="$t('deviceElectricity.bindTypePublic')" :value="2" />
+            <el-option :label="$t('deviceElectricity.bindTypeFormula')" :value="3" />
+            <el-option :label="$t('deviceElectricity.bindTypeAc')" :value="4" />
           </el-select>
         </el-form-item>
-        <el-form-item label="付费模式" prop="logicPayType">
+        <el-form-item :label="$t('deviceElectricity.labelPayMode')" prop="logicPayType">
           <el-select v-model="editForm.logicPayType" style="width: 100%">
-            <el-option label="预付费" :value="0" />
-            <el-option label="强控" :value="1" />
+            <el-option :label="$t('deviceElectricity.prepaid')" :value="0" />
+            <el-option :label="$t('deviceElectricity.prepaidStrong')" :value="1" />
           </el-select>
         </el-form-item>
       </el-form>
       <span slot="footer">
-        <el-button @click="editDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="saveEdit">确定</el-button>
+        <el-button @click="editDialog.visible = false">{{ $t('deviceElectricity.btnCancel') }}</el-button>
+        <el-button type="primary" :loading="submitting" @click="saveEdit">{{ $t('deviceElectricity.btnConfirm') }}</el-button>
+      </span>
+    </el-dialog>
+
+    <el-dialog
+      :title="switchVerifyTitle"
+      :visible.sync="switchVerifyDialog.visible"
+      width="520px"
+      :close-on-click-modal="false"
+      append-to-body
+      @close="closeSwitchVerifyDialog"
+    >
+      <el-form :label-width="switchVerifyLabelWidth">
+        <el-form-item :label="$t('deviceElectricity.switchVerifyMeter')">
+          <span>{{ $displayDynamicName(meterInfo.meterName, 200) || '--' }}</span>
+        </el-form-item>
+        <el-form-item :label="$t('deviceElectricity.switchVerifyAction')">
+          <span>{{ Number(switchVerifyDialog.targetStatus) === 1 ? $t('deviceElectricity.switchOn') : $t('deviceElectricity.switchOff') }}</span>
+        </el-form-item>
+        <el-form-item :label="$t('deviceElectricity.switchVerifyPhone')">
+          <span>{{ maskedPhone || '--' }}</span>
+        </el-form-item>
+        <el-form-item :label="$t('deviceElectricity.switchVerifyCode')">
+          <el-input
+            v-model="switchVerifyForm.code"
+            :placeholder="$t('deviceElectricity.placeholderVerifyCode')"
+            maxlength="6"
+            autocomplete="off"
+          >
+            <el-button
+              slot="append"
+              type="primary"
+              class="sms-code-btn"
+              :disabled="!smsCountdownIdle || !userPhone"
+              @click="sendSwitchVerifyCode"
+            >{{ switchVerifySmsButtonLabel }}</el-button>
+          </el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer">
+        <el-button :disabled="switchSubmitting" @click="switchVerifyDialog.visible = false">{{ $t('deviceElectricity.btnCancel') }}</el-button>
+        <el-button type="primary" :loading="switchSubmitting" @click="confirmSwitchOperation">{{ $t('deviceElectricity.btnConfirm') }}</el-button>
       </span>
     </el-dialog>
   </el-drawer>
 </template>
 
 <script>
-import moment from 'moment';
+import moment from 'moment'
 import {
   meterPageMeterInfoByAdmin,
   tenantDoMeterSwitchOffOn,
   meterUpdateMeterBase,
   getSimpleMeterInfo,
   getMeterPList
-} from '@/api/meter';
-import { getMeterDaySettleList } from '@/api/useReport';
+} from '@/api/meter'
+import { getMeterDaySettleList } from '@/api/useReport'
+import { authSendSmsCode } from '@/api/meterPrice'
 
 export default {
   name: 'MeterDetailDrawer',
@@ -407,7 +449,7 @@ export default {
       default: () => ({})
     }
   },
-  data() {
+  data () {
     return {
       pageLoading: false,
       chartLoading: false,
@@ -441,49 +483,116 @@ export default {
         visible: false
       },
       editForm: {},
-      editRules: {
-        meterName: [{ required: true, message: '请输入电表名称', trigger: 'blur' }],
-        bindType: [{ required: true, message: '请选择电表类型', trigger: 'change' }],
-        logicPayType: [{ required: true, message: '请选择付费模式', trigger: 'change' }]
-      },
 
+      switchVerifyDialog: { visible: false, targetStatus: null },
+      switchVerifyForm: { code: '' },
+      switchVerifyCountDownSeconds: null,
+      switchVerifyCountDownTimer: null,
+      switchSubmitting: false,
       powerChart: null,
 
       pickerOptions: {
-        disabledDate(time) {
-          return time.getTime() > Date.now();
+        disabledDate (time) {
+          return time.getTime() > Date.now()
         }
-      }
-    };
-  },
-  watch: {
-    visible(val) {
-      if (val) {
-        this.loadData();
-      } else {
-        this.resetData();
-      }
-    },
-    viewMode(val) {
-      if (val === 'chart' && this.chartData.length > 0) {
-        this.$nextTick(() => {
-          this.renderChart();
-        });
       }
     }
   },
-  beforeDestroy() {
+  computed: {
+    kztMenuNos () {
+      const list = this.$store.getters.kztMenuNos
+      return Array.isArray(list) ? list : []
+    },
+    hasKztPermission () {
+      const allow = new Set(this.kztMenuNos.map((v) => String(v)))
+      return (menuNo) => allow.has(String(menuNo))
+    },
+    canEdit () {
+      return this.hasKztPermission('630011')
+    },
+    canToggleSwitch () {
+      return this.hasKztPermission('630013')
+    },
+    hasActions () {
+      return this.canEdit || this.canToggleSwitch
+    },
+    displayMeterName () {
+      return this.$displayDynamicName(this.meterInfo.meterName, 200)
+    },
+    editFormRules () {
+      return {
+        meterName: [{ required: true, message: this.$t('deviceElectricity.ruleMeterName'), trigger: 'blur' }],
+        bindType: [{ required: true, message: this.$t('deviceElectricity.ruleBindType'), trigger: 'change' }],
+        logicPayType: [{ required: true, message: this.$t('deviceElectricity.rulePayMode'), trigger: 'change' }]
+      }
+    },
+    editDialogLabelWidth () {
+      return this.$i18n.locale === 'en' ? '128px' : '100px'
+    },
+    switchVerifyLabelWidth () {
+      return this.$i18n.locale === 'en' ? '108px' : '90px'
+    },
+    smsCountdownIdle () {
+      return this.switchVerifyCountDownSeconds === null || this.switchVerifyCountDownSeconds === undefined
+    },
+    switchVerifySmsButtonLabel () {
+      const s = this.switchVerifyCountDownSeconds
+      if (this.smsCountdownIdle) return this.$t('deviceElectricity.sendSmsCode')
+      return `${s}s`
+    },
+    userPhone () {
+      return this.$store.state.user.phone || ''
+    },
+    maskedPhone () {
+      if (!this.userPhone) return ''
+      return this.userPhone.substr(0, 3) + '****' + this.userPhone.substr(7)
+    },
+    switchVerifyTitle () {
+      const t = this.switchVerifyDialog.targetStatus
+      if (t === null || t === undefined) return this.$t('deviceElectricity.switchVerifyTitleBase')
+      const action = Number(t) === 1
+        ? this.$t('deviceElectricity.switchOn')
+        : this.$t('deviceElectricity.switchOff')
+      return this.$t('deviceElectricity.switchVerifyTitleFmt', { action })
+    }
+  },
+  watch: {
+    visible (val) {
+      if (val) {
+        this.loadData()
+      } else {
+        this.resetData()
+      }
+    },
+    viewMode (val) {
+      if (val === 'chart' && this.chartData.length > 0) {
+        this.$nextTick(() => {
+          this.renderChart()
+        })
+      }
+    },
+    '$i18n.locale' () {
+      if (this.viewMode === 'chart' && this.chartData.length > 0) {
+        this.$nextTick(() => this.renderChart())
+      }
+    }
+  },
+  beforeDestroy () {
     if (this.powerChart) {
-      this.powerChart.dispose();
+      this.powerChart.dispose()
+    }
+    if (this.switchVerifyCountDownTimer) {
+      clearInterval(this.switchVerifyCountDownTimer)
+      this.switchVerifyCountDownTimer = null
     }
   },
   methods: {
-    async loadData() {
-      this.pageLoading = true;
+    async loadData () {
+      this.pageLoading = true
       try {
         if (this.rowData && this.rowData.id) {
-          this.meterInfo = { ...this.rowData };
-          
+          this.meterInfo = { ...this.rowData }
+
           if (this.rowData.meterPriceDto) {
             this.priceInfo = {
               name: this.rowData.meterPriceDto.name || '',
@@ -491,34 +600,34 @@ export default {
               powerTopPrice: this.rowData.meterPriceDto.powerTopPrice ?? '--',
               powerFlatPrice: this.rowData.meterPriceDto.powerFlatPrice ?? '--',
               powerValleyPrice: this.rowData.meterPriceDto.powerValleyPrice ?? '--'
-            };
+            }
           }
         } else {
-          await this.getMeterInfo();
+          await this.getMeterInfo()
         }
 
         await Promise.all([
           this.getSimpleInfo(),
           this.getChartData(),
           this.getUsageData()
-        ]);
+        ])
       } catch (error) {
-        console.error('加载数据失败:', error);
+        console.error('加载数据失败:', error)
       } finally {
-        this.pageLoading = false;
+        this.pageLoading = false
       }
     },
 
-    async getMeterInfo() {
+    async getMeterInfo () {
       try {
         const params = {
           serial: this.serial,
           page: { size: 1, current: 1 }
-        };
-        const response = await meterPageMeterInfoByAdmin(params);
+        }
+        const response = await meterPageMeterInfoByAdmin(params)
         if (response.code === 200 && response.data && response.data.dataList.length > 0) {
-          this.meterInfo = response.data.dataList[0];
-          
+          this.meterInfo = response.data.dataList[0]
+
           if (this.meterInfo.meterPriceDto) {
             this.priceInfo = {
               name: this.meterInfo.meterPriceDto.name || '',
@@ -526,85 +635,88 @@ export default {
               powerTopPrice: this.meterInfo.meterPriceDto.powerTopPrice ?? '--',
               powerFlatPrice: this.meterInfo.meterPriceDto.powerFlatPrice ?? '--',
               powerValleyPrice: this.meterInfo.meterPriceDto.powerValleyPrice ?? '--'
-            };
+            }
           }
         }
       } catch (error) {
-        console.error('获取电表信息失败:', error);
+        console.error('获取电表信息失败:', error)
       }
     },
 
-    async getSimpleInfo() {
+    async getSimpleInfo () {
       try {
-        const response = await getSimpleMeterInfo({ meterId: this.meterId });
+        const response = await getSimpleMeterInfo({ meterId: this.meterId })
         if (response.code === 200 && response.data) {
-          this.simpleData = response.data;
+          this.simpleData = response.data
         }
       } catch (error) {
-        console.error('获取仪表数据失败:', error);
+        console.error('获取仪表数据失败:', error)
       }
     },
 
-    async getChartData() {
-      this.chartLoading = true;
+    async getChartData () {
+      this.chartLoading = true
       try {
         const response = await getMeterPList({
           meterId: this.meterId,
           date: this.queryData.date
-        });
+        })
         if (response.code === 200 && response.data) {
-          this.chartData = response.data;
+          this.chartData = response.data
           if (this.viewMode === 'chart' && this.chartData.length > 0) {
             this.$nextTick(() => {
-              this.renderChart();
-            });
+              this.renderChart()
+            })
           }
         }
       } catch (error) {
-        console.error('获取功率数据失败:', error);
+        console.error('获取功率数据失败:', error)
       } finally {
-        this.chartLoading = false;
+        this.chartLoading = false
       }
     },
 
-    async getUsageData() {
-      this.usageLoading = true;
+    async getUsageData () {
+      this.usageLoading = true
       try {
         const response = await getMeterDaySettleList({
           serial: this.serial,
           startDate: moment().subtract(7, 'days').format('YYYY-MM-DD'),
           endDate: moment().format('YYYY-MM-DD')
-        });
+        })
         if (response.code === 200 && response.data) {
-          this.usageData = response.data;
+          this.usageData = response.data
         }
       } catch (error) {
-        console.error('获取用电数据失败:', error);
+        console.error('获取用电数据失败:', error)
       } finally {
-        this.usageLoading = false;
+        this.usageLoading = false
       }
     },
 
-    renderChart() {
-      if (!this.$refs.powerChart || this.chartData.length === 0) return;
+    renderChart () {
+      if (!this.$refs.powerChart || this.chartData.length === 0) return
 
       if (!this.powerChart) {
-        this.powerChart = this.$echarts.init(this.$refs.powerChart);
+        this.powerChart = this.$echarts.init(this.$refs.powerChart)
       }
 
-      const timeArr = [];
-      const paArr = [];
-      const pbArr = [];
-      const pcArr = [];
-      const pArr = [];
+      const timeArr = []
+      const paArr = []
+      const pbArr = []
+      const pcArr = []
+      const pArr = []
+
+      const mpMax = this.$t('deviceElectricity.meterDrawerChartMax')
+      const mpMin = this.$t('deviceElectricity.meterDrawerChartMin')
 
       this.chartData.forEach(item => {
-        timeArr.push(moment(item.occurTime).format('HH:mm:ss'));
-        paArr.push(item.pa);
-        pbArr.push(item.pb);
-        pcArr.push(item.pc);
-        pArr.push(item.p);
-      });
+        timeArr.push(moment(item.occurTime).format('HH:mm:ss'))
+        paArr.push(item.pa)
+        pbArr.push(item.pb)
+        pcArr.push(item.pc)
+        pArr.push(item.p)
+      })
 
       const option = {
         title: {
@@ -651,8 +763,8 @@ export default {
             itemStyle: { color: '#2251f5' },
             markPoint: {
               data: [
-                { type: 'max', name: '最大值' },
-                { type: 'min', name: '最小值' }
+                { type: 'max', name: mpMax },
+                { type: 'min', name: mpMin }
               ]
             }
           },
@@ -664,8 +776,8 @@ export default {
             itemStyle: { color: '#a243f3' },
             markPoint: {
               data: [
-                { type: 'max', name: '最大值' },
-                { type: 'min', name: '最小值' }
+                { type: 'max', name: mpMax },
+                { type: 'min', name: mpMin }
               ]
             }
           },
@@ -677,8 +789,8 @@ export default {
             itemStyle: { color: '#25ddd1' },
             markPoint: {
               data: [
-                { type: 'max', name: '最大值' },
-                { type: 'min', name: '最小值' }
+                { type: 'max', name: mpMax },
+                { type: 'min', name: mpMin }
               ]
             }
           },
@@ -690,61 +802,141 @@ export default {
             itemStyle: { color: '#f0b65b' },
             markPoint: {
               data: [
-                { type: 'max', name: '最大值' },
-                { type: 'min', name: '最小值' }
+                { type: 'max', name: mpMax },
+                { type: 'min', name: mpMin }
               ]
             }
           }
         ]
-      };
-
-      this.powerChart.setOption(option);
-    },
-
-    handleDateChange() {
-      this.getChartData();
-    },
-
-    async handleSwitch(targetStatus) {
-      if (this.meterInfo.logicPayType === 0) {
-        this.$message.warning('预付费模式下不能直接操作分合闸');
-        return;
       }
 
-      const actionText = targetStatus == 1 ? '合闸' : '分闸';
+      this.powerChart.setOption(option)
+    },
 
+    handleDateChange () {
+      this.getChartData()
+    },
+
+    async handleSwitch (targetStatus) {
+      if (!this.canToggleSwitch) return
+      if (this.meterInfo.logicPayType === 0) {
+        this.$message.warning(this.$t('deviceElectricity.meterDrawerWarnPrepaidNoSwitch'))
+        return
+      }
+      this.openSwitchVerifyDialog(targetStatus)
+    },
+
+    openSwitchVerifyDialog (targetStatus) {
+      this.closeSwitchVerifyDialog()
+      this.switchVerifyDialog.visible = true
+      this.switchVerifyDialog.targetStatus = targetStatus
+    },
+
+    closeSwitchVerifyDialog () {
+      this.switchVerifyDialog.visible = false
+      this.switchVerifyDialog.targetStatus = null
+      this.switchVerifyForm.code = ''
+      this.switchSubmitting = false
+      if (this.switchVerifyCountDownTimer) {
+        clearInterval(this.switchVerifyCountDownTimer)
+        this.switchVerifyCountDownTimer = null
+      }
+      this.switchVerifyCountDownSeconds = null
+    },
+
+    async sendSwitchVerifyCode () {
+      if (!this.smsCountdownIdle) return
+      if (!this.userPhone) {
+        this.$message.warning(this.$t('deviceElectricity.warnNoPhone'))
+        return
+      }
       try {
-        await this.$confirm(`确定要执行${actionText}操作吗？`, '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        });
+        const { msg } = await authSendSmsCode({
+          phone: this.userPhone,
+          eventType: 'METER_SWITCH_OFF_ON'
+        })
+        this.$message.success(msg || this.$t('deviceElectricity.successCodeSent'))
+      } catch (error) {
+        try {
+          const { msg } = await authSendSmsCode({
+            phone: this.userPhone,
+            eventType: 'METER_PRICE_MODIFY'
+          })
+          this.$message.success(msg || this.$t('deviceElectricity.successCodeSent'))
+        } catch (error2) {
+          this.$message.error(error2?.msg || error?.msg || this.$t('deviceElectricity.errSendCode'))
+          return
+        }
+      }
 
-        this.switchLoading = true;
-        const response = await tenantDoMeterSwitchOffOn({
+      let seconds = 60
+      this.switchVerifyCountDownSeconds = seconds
+      this.switchVerifyCountDownTimer = setInterval(() => {
+        seconds -= 1
+        if (seconds <= 0) {
+          clearInterval(this.switchVerifyCountDownTimer)
+          this.switchVerifyCountDownTimer = null
+          this.switchVerifyCountDownSeconds = null
+          return
+        }
+        this.switchVerifyCountDownSeconds = seconds
+      }, 1000)
+    },
+
+    async confirmSwitchOperation () {
+      const targetStatus = this.switchVerifyDialog.targetStatus
+      if (targetStatus === null || targetStatus === undefined) return
+      const code = (this.switchVerifyForm.code || '').trim()
+      if (!code) {
+        this.$message.warning(this.$t('deviceElectricity.warnEnterCode'))
+        return
+      }
+      if (!this.userPhone) {
+        this.$message.warning(this.$t('deviceElectricity.warnNoPhone'))
+        return
+      }
+
+      const actionLabel = Number(targetStatus) === 1
+        ? this.$t('deviceElectricity.switchOn')
+        : this.$t('deviceElectricity.switchOff')
+      this.switchSubmitting = true
+      try {
+        await this.$confirm(
+          this.$t('deviceElectricity.confirmSwitchMsg', {
+            name: this.meterInfo.meterName || '',
+            action: actionLabel
+          }),
+          this.$t('deviceElectricity.confirmSwitchTitle'),
+          {
+            confirmButtonText: this.$t('deviceElectricity.btnOk'),
+            cancelButtonText: this.$t('deviceElectricity.btnCancelShort'),
+            type: 'warning'
+          }
+        )
+
+        this.switchLoading = true
+        await tenantDoMeterSwitchOffOn({
           meterId: this.meterId,
           switchStatus: targetStatus,
-          verifyCode: '',
-          verifyPhone: ''
-        });
-
-        if (response.code === 200) {
-          this.$message.success(`${actionText}操作成功`);
-          this.getMeterInfo();
-          this.$emit('refresh');
-        } else {
-          this.$message.error(response.msg || `${actionText}操作失败`);
-        }
+          verifyCode: code,
+          verifyPhone: this.userPhone
+        })
+        this.$message.success(this.$t('deviceElectricity.successSwitch', { action: actionLabel }))
+        this.closeSwitchVerifyDialog()
+        this.getMeterInfo()
+        this.$emit('refresh')
       } catch (error) {
         if (error !== 'cancel') {
-          this.$message.error(`${actionText}操作失败`);
+          this.$message.error(error?.msg || this.$t('deviceElectricity.errSwitch', { action: actionLabel }))
         }
       } finally {
-        this.switchLoading = false;
+        this.switchLoading = false
+        this.switchSubmitting = false
       }
     },
 
-    handleEdit() {
+    handleEdit () {
+      if (!this.canEdit) return
       this.editForm = {
         id: this.meterInfo.id,
         serial: this.meterInfo.serial,
@@ -752,96 +944,117 @@ export default {
         bindType: this.meterInfo.bindType,
         logicPayType: this.meterInfo.logicPayType,
         managerId: this.meterInfo.managerId
-      };
-      this.editDialog.visible = true;
+      }
+      this.editDialog.visible = true
     },
 
-    async saveEdit() {
+    async saveEdit () {
+      if (!this.canEdit) return
       try {
-        await this.$refs.editForm.validate();
-        
-        this.submitting = true;
-        const response = await meterUpdateMeterBase(this.editForm);
+        await this.$refs.editForm.validate()
+
+        this.submitting = true
+        const response = await meterUpdateMeterBase(this.editForm)
 
         if (response.code === 200) {
-          this.$message.success('修改成功');
-          this.editDialog.visible = false;
-          this.getMeterInfo();
-          this.$emit('refresh');
+          this.$message.success(this.$t('deviceElectricity.successSaveUpdate'))
+          this.editDialog.visible = false
+          this.getMeterInfo()
+          this.$emit('refresh')
         } else {
-          this.$message.error(response.msg || '修改失败');
+          this.$message.error(response.msg || this.$t('deviceElectricity.errUpdate'))
         }
       } catch (error) {
         if (error !== false) {
-          this.$message.error('修改失败');
+          this.$message.error(this.$t('deviceElectricity.errUpdate'))
         }
       } finally {
-        this.submitting = false;
+        this.submitting = false
       }
     },
 
-goToDetailReport() {
-  this.$router.push({
-    path: '/energy/equipmentPower',
-    query: { 
-      serial: this.serial,
-      startDate: moment().subtract(7, 'days').format('YYYY-MM-DD'),
-      endDate: moment().format('YYYY-MM-DD')
-    }
-  });
-  this.handleClose();
-},
-
-    handleClose() {
-      this.$emit('update:visible', false);
+    goToDetailReport () {
+      this.$router.push({
+        path: '/energy/equipmentPower',
+        query: {
+          serial: this.serial,
+          startDate: moment().subtract(7, 'days').format('YYYY-MM-DD'),
+          endDate: moment().format('YYYY-MM-DD')
+        }
+      })
+      this.handleClose()
     },
 
-    resetData() {
-      this.meterInfo = {};
+    handleClose () {
+      this.$emit('update:visible', false)
+    },
+
+    resetData () {
+      this.meterInfo = {}
       this.priceInfo = {
         name: '',
         powerPeakPrice: '--',
         powerTopPrice: '--',
         powerFlatPrice: '--',
         powerValleyPrice: '--'
-      };
+      }
       this.simpleData = {
         p: null,
         pf: null,
         maxMonthP: null,
         yesterdayUseElec: null
-      };
-      this.chartData = [];
-      this.usageData = [];
-      this.viewMode = 'chart';
-      this.queryData.date = moment().format('YYYY-MM-DD');
-      
-      if (this.powerChart) {
-        this.powerChart.dispose();
-        this.powerChart = null;
       }
+      this.chartData = []
+      this.usageData = []
+      this.viewMode = 'chart'
+      this.queryData.date = moment().format('YYYY-MM-DD')
+
+      if (this.powerChart) {
+        this.powerChart.dispose()
+        this.powerChart = null
+      }
+      this.closeSwitchVerifyDialog()
     },
 
-    getBindTypeLabel(type) {
-      const map = { 1: '专用表', 2: '公摊表', 3: '公式表' };
-      return map[type] || '--';
+    getBindTypeLabel (type) {
+      const map = {
+        1: 'bindTypeDedicated',
+        2: 'bindTypePublic',
+        3: 'bindTypeFormula',
+        4: 'bindTypeAc'
+      }
+      const k = map[type]
+      return k ? this.$t(`deviceElectricity.${k}`) : '--'
     },
 
-    getPayTypeLabel(type) {
-      const map = { 0: '预付费', 1: '强控' };
-      return map[type] || '--';
+    getPayTypeLabel (type) {
+      const map = {
+        0: 'prepaid',
+        1: 'prepaidStrong'
+      }
+      const k = map[type]
+      return k ? this.$t(`deviceElectricity.${k}`) : '--'
     },
 
-    getPhaseLabel(phase) {
-      const map = { 5: '三相一次', 6: '三相二次', 7: '单相一次' };
-      return map[phase] || '--';
+    getPhaseLabel (phase) {
+      const map = {
+        5: 'phaseThreePrimary',
+        6: 'phaseThreeSecondary',
+        7: 'phaseSinglePrimary'
+      }
+      const k = map[phase]
+      return k ? this.$t(`deviceElectricity.${k}`) : '--'
     }
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>
 .meter-detail-drawer {
+  ::v-deep .sms-code-btn.el-button--primary {
+    color: #ffffff !important;
+  }
+
   ::v-deep .el-drawer__header {
     margin-bottom: 0;
     padding: 20px;
@@ -871,6 +1084,7 @@ goToDetailReport() {
 
   .left-info {
     flex: 1;
+    min-width: 0;
 
     .meter-header {
       margin-bottom: 20px;
@@ -919,8 +1133,10 @@ goToDetailReport() {
   }
 
   .right-info {
+    flex: 0 1 360px;
     width: 360px;
-    flex-shrink: 0;
+    min-width: 0;
+    max-width: 100%;
 
     .action-buttons {
       display: flex;
@@ -980,13 +1196,15 @@ goToDetailReport() {
 
           .price-detail {
             display: flex;
-            justify-content: space-between;
-            gap: 8px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 8px 12px;
             font-size: 13px;
             color: #606266;
-            
+
             span {
-              flex: 1;
+              flex: 1 1 40%;
+              min-width: 0;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
@@ -1106,7 +1324,7 @@ goToDetailReport() {
 
     .el-table__body-wrapper {
       overflow-x: auto !important;
-      
+
       &::-webkit-scrollbar {
         height: 8px;
       }

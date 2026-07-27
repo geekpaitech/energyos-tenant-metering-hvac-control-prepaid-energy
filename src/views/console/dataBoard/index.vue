@@ -39,6 +39,7 @@
                     <div class="device-detail">
                       <span><i class="dot private"></i>专用 {{ meterData?.privateMeter || 0 }}</span>
                       <span><i class="dot public"></i>公用 {{ meterData?.publicMeter || 0 }}</span>
+                      <span><i class="dot air"></i>空调 {{ meterData?.airMeter || 0 }}</span>
                     </div>
                     <div class="device-status">
                       <span class="online">在线 {{ meterData?.onlineMeter || 0 }}</span>
@@ -67,12 +68,12 @@
               <!-- 图表区域 - 关键修改 -->
               <div class="chart-area-wrapper" v-loading="sankeyLoading">
                 <!-- 使用 v-show 而不是 v-if,避免 DOM 销毁 -->
-                <div 
-                  ref="sankeyChart" 
+                <div
+                  ref="sankeyChart"
                   class="chart-area"
                   v-show="!shouldShowEmpty"
                 ></div>
-                
+
                 <!-- 空状态提示 -->
                 <div v-show="shouldShowEmpty" class="chart-empty">
                   <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -232,82 +233,82 @@
 </template>
 
 <script>
-import * as echarts from "echarts";
-import { mapGetters } from "vuex";
+import * as echarts from 'echarts'
+import { mapGetters } from 'vuex'
 import {
   getTenantPList,
   getTenantStatusList,
   getMeterOverview,
-  getElecStatistics,
-} from "@/api/dashboard";
-import { getSimpleTenantList } from "@/api/useReport";
-import request from "@/utils/request";
-import moment from "moment";
+  getElecStatistics
+} from '@/api/dashboard'
+import { getSimpleTenantList } from '@/api/useReport'
+import request from '@/utils/request'
+import moment from 'moment'
 
 // 桑基图API
-function queryTenantSankey(data) {
+function queryTenantSankey (data) {
   return request({
-    url: "/api/ebc-content/useReport/queryTenantSankey",
-    method: "POST",
+    url: '/api/ebc-content/useReport/queryTenantSankey',
+    method: 'POST',
     headers: {
-      userDeviceType: "PC",
-      "Content-Type": "application/json",
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
     },
-    data,
-  });
+    data
+  })
 }
 
 // 桑基图配色
 const SANKEY_COLORS = [
-  "#5B8FF9",
-  "#61DDAA",
-  "#F6BD16",
-  "#7262FD",
-  "#78D3F8",
-  "#9661BC",
-  "#F6903D",
-  "#008685",
-];
+  '#5B8FF9',
+  '#61DDAA',
+  '#F6BD16',
+  '#7262FD',
+  '#78D3F8',
+  '#9661BC',
+  '#F6903D',
+  '#008685'
+]
 
 const AnimatedNumber = {
   props: {
     value: { type: Number, default: 0 },
-    format: { type: Function, default: (v) => Math.round(v).toLocaleString() },
+    format: { type: Function, default: (v) => Math.round(v).toLocaleString() }
   },
   data: () => ({ current: 0 }),
   watch: {
     value: {
-      handler() {
-        this.run();
+      handler () {
+        this.run()
       },
-      immediate: true,
-    },
+      immediate: true
+    }
   },
   methods: {
-    run() {
-      const start = performance.now();
-      const from = this.current;
-      const to = this.value;
-      const duration = 800;
+    run () {
+      const start = performance.now()
+      const from = this.current
+      const to = this.value
+      const duration = 800
       const step = () => {
-        const t = Math.min((performance.now() - start) / duration, 1);
-        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-        this.current = from + (to - from) * ease;
-        if (t < 1) requestAnimationFrame(step);
-      };
-      step();
-    },
+        const t = Math.min((performance.now() - start) / duration, 1)
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+        this.current = from + (to - from) * ease
+        if (t < 1) requestAnimationFrame(step)
+      }
+      step()
+    }
   },
-  render(h) {
-    return h("span", this.format(this.current));
-  },
-};
+  render (h) {
+    return h('span', this.format(this.current))
+  }
+}
 
 export default {
-  name: "Dashboard",
+  name: 'Dashboard',
   components: { AnimatedNumber },
   data: () => ({
-    datePeriod: "day",
+    datePeriod: 'day',
     tenantRanking: [],
     meterData: null,
     debtList: [],
@@ -316,45 +317,46 @@ export default {
       elecUsage: [],
       waterUsage: [],
       elecIncome: [],
-      waterIncome: [],
+      waterIncome: []
     },
     vis: {
       elecUsage: true,
       waterUsage: true,
       elecIncome: true,
-      waterIncome: true,
+      waterIncome: true
     },
     charts: {},
     sankeyLoading: false,
     sankeyData: null,
     tenantList: [],
-    maxDisplayTenants: 6,
+    maxDisplayTenants: 6
   }),
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
-    totalMeterCount() {
-      return (this.meterData?.privateMeter || 0) + (this.meterData?.publicMeter || 0);
+    ...mapGetters('manager', ['currentManagerId']),
+    totalMeterCount () {
+      return (this.meterData?.privateMeter || 0) + (this.meterData?.publicMeter || 0) + (this.meterData?.airMeter || 0)
     },
-    onlineRate() {
-      return this.totalMeterCount
-        ? ((this.meterData?.onlineMeter || 0) / this.totalMeterCount) * 100
-        : 0;
+    onlineRate () {
+      if (!this.totalMeterCount) return 0
+      const rate = ((this.meterData?.onlineMeter || 0) / this.totalMeterCount) * 100
+      return Math.min(Math.max(rate, 0), 100)
     },
-    offlineCount() {
-      return this.totalMeterCount - (this.meterData?.onlineMeter || 0);
+    offlineCount () {
+      if (typeof this.meterData?.offlineMeter === 'number') return this.meterData.offlineMeter
+      return Math.max(this.totalMeterCount - (this.meterData?.onlineMeter || 0), 0)
     },
-    periodLabel() {
-      return this.datePeriod === "day" ? "昨日" : "本月";
+    periodLabel () {
+      return this.datePeriod === 'day' ? '昨日' : '本月'
     },
-    currentStats() {
-      const { elecUsage, waterUsage, elecIncome, waterIncome } = this.compareData;
-      const lastIndex = elecUsage.length - 1;
-      const prevIndex = lastIndex - 1;
+    currentStats () {
+      const { elecUsage, waterUsage, elecIncome, waterIncome } = this.compareData
+      const lastIndex = elecUsage.length - 1
+      const prevIndex = lastIndex - 1
 
       const calcChange = (current, previous) => {
-        if (!previous || previous === 0) return 0;
-        return ((current - previous) / previous) * 100;
-      };
+        if (!previous || previous === 0) return 0
+        return ((current - previous) / previous) * 100
+      }
 
       return {
         elecUsage: lastIndex >= 0 ? elecUsage[lastIndex] : 0,
@@ -364,220 +366,219 @@ export default {
         elecUsageChange: prevIndex >= 0 ? calcChange(elecUsage[lastIndex], elecUsage[prevIndex]) : 0,
         waterUsageChange: prevIndex >= 0 ? calcChange(waterUsage[lastIndex], waterUsage[prevIndex]) : 0,
         elecIncomeChange: prevIndex >= 0 ? calcChange(elecIncome[lastIndex], elecIncome[prevIndex]) : 0,
-        waterIncomeChange: prevIndex >= 0 ? calcChange(waterIncome[lastIndex], waterIncome[prevIndex]) : 0,
-      };
+        waterIncomeChange: prevIndex >= 0 ? calcChange(waterIncome[lastIndex], waterIncome[prevIndex]) : 0
+      }
     },
     // ✅ 关键:判断是否显示空状态
-    shouldShowEmpty() {
-      return !this.sankeyLoading && (!this.sankeyData || !this.sankeyData.links || this.sankeyData.links.length === 0);
-    },
+    shouldShowEmpty () {
+      return !this.sankeyLoading && (!this.sankeyData || !this.sankeyData.links || this.sankeyData.links.length === 0)
+    }
   },
   watch: {
     currentManagerId: {
-      handler(newVal, oldVal) {
+      handler (newVal, oldVal) {
         if (newVal && newVal !== oldVal) {
-          console.log('管理方切换:', oldVal, '->', newVal);
+          console.log('管理方切换:', oldVal, '->', newVal)
 
           // 清空所有数据
-          this.tenantList = [];
-          this.sankeyData = null;
-          this.tenantRanking = [];
-          this.meterData = null;
-          this.debtList = [];
+          this.tenantList = []
+          this.sankeyData = null
+          this.tenantRanking = []
+          this.meterData = null
+          this.debtList = []
 
           // 销毁所有图表
-          Object.values(this.charts).forEach((c) => c?.dispose?.());
-          this.charts = {};
+          Object.values(this.charts).forEach((c) => c?.dispose?.())
+          this.charts = {}
 
           // 重新初始化
-          this.init();
+          this.init()
         }
       },
-      immediate: true,
-    },
+      immediate: true
+    }
   },
-  mounted() {
-    window.addEventListener("resize", this.resize);
+  mounted () {
+    window.addEventListener('resize', this.resize)
   },
-  beforeDestroy() {
-    window.removeEventListener("resize", this.resize);
-    Object.values(this.charts).forEach((c) => c?.dispose?.());
+  beforeDestroy () {
+    window.removeEventListener('resize', this.resize)
+    Object.values(this.charts).forEach((c) => c?.dispose?.())
   },
   methods: {
-    async init() {
+    async init () {
       await Promise.all([
         this.loadRanking(),
         this.loadMeter(),
         this.loadDebt(),
         this.loadCompare(),
-        this.loadTenantList(),
-      ]);
+        this.loadTenantList()
+      ])
       this.$nextTick(() => {
-        this.initRadarChart();
-      });
+        this.initRadarChart()
+      })
     },
 
-    async loadTenantList() {
+    async loadTenantList () {
       // 先清空数据
-      this.tenantList = [];
-      this.sankeyData = null;
-      this.sankeyLoading = true;
+      this.tenantList = []
+      this.sankeyData = null
+      this.sankeyLoading = true
 
       // ✅ 关键:先销毁旧图表
       if (this.charts.sankey) {
-        this.charts.sankey.dispose();
-        this.charts.sankey = null;
+        this.charts.sankey.dispose()
+        this.charts.sankey = null
       }
 
       try {
         const { data } = await getSimpleTenantList({
           managerId: this.currentManagerId,
-          tenantStatus: 0,
-        });
-        this.tenantList = data || [];
+          tenantStatus: 0
+        })
+        this.tenantList = data || []
 
         // 等待 DOM 更新
-        await this.$nextTick();
-        await this.loadSankeyData();
+        await this.$nextTick()
+        await this.loadSankeyData()
       } catch (error) {
-        console.error("获取租户列表失败:", error);
-        this.tenantList = [];
-        this.sankeyData = null;
+        console.error('获取租户列表失败:', error)
+        this.tenantList = []
+        this.sankeyData = null
       } finally {
-        this.sankeyLoading = false;
+        this.sankeyLoading = false
       }
     },
 
-    async loadSankeyData() {
+    async loadSankeyData () {
       // 如果没有租户,直接设置为 null
       if (!this.tenantList.length) {
-        this.sankeyData = null;
-        
+        this.sankeyData = null
+
         // ✅ 确保销毁图表
         if (this.charts.sankey) {
-          this.charts.sankey.dispose();
-          this.charts.sankey = null;
+          this.charts.sankey.dispose()
+          this.charts.sankey = null
         }
-        
-        console.log('无租户数据,显示空状态');
-        return;
+
+        console.log('无租户数据,显示空状态')
+        return
       }
 
       try {
         const params = {
           managerId: this.currentManagerId,
           tenantIdList: this.tenantList.map((item) => item.tenantId),
-          queryDate: moment().subtract(1, "days").format("YYYY-MM-DD"),
-        };
+          queryDate: moment().subtract(1, 'days').format('YYYY-MM-DD')
+        }
 
-        const response = await queryTenantSankey(params);
-        const data = response.data || response;
-        const processedData = this.processSankeyData(data);
+        const response = await queryTenantSankey(params)
+        const data = response.data || response
+        const processedData = this.processSankeyData(data)
 
         // ✅ 关键:先销毁旧图表再设置新数据
         if (this.charts.sankey) {
-          console.log('销毁旧桑基图实例');
-          this.charts.sankey.dispose();
-          this.charts.sankey = null;
+          console.log('销毁旧桑基图实例')
+          this.charts.sankey.dispose()
+          this.charts.sankey = null
         }
 
         // 检查处理后的数据
         if (!processedData || !processedData.links || processedData.links.length === 0) {
-          console.log('处理后无数据,显示空状态');
-          this.sankeyData = null;
+          console.log('处理后无数据,显示空状态')
+          this.sankeyData = null
         } else {
-          console.log('有数据,准备绘制桑基图');
-          this.sankeyData = processedData;
+          console.log('有数据,准备绘制桑基图')
+          this.sankeyData = processedData
         }
 
         // 等待数据更新
-        await this.$nextTick();
-        await this.$nextTick(); // 双重确保
-        
-        // 绘制图表
-        this.drawSankeyChart();
+        await this.$nextTick()
+        await this.$nextTick() // 双重确保
 
+        // 绘制图表
+        this.drawSankeyChart()
       } catch (error) {
-        console.error("获取桑基图数据失败:", error);
-        this.sankeyData = null;
+        console.error('获取桑基图数据失败:', error)
+        this.sankeyData = null
         if (this.charts.sankey) {
-          this.charts.sankey.dispose();
-          this.charts.sankey = null;
+          this.charts.sankey.dispose()
+          this.charts.sankey = null
         }
       }
     },
 
     // 三层桑基图:园区总用电 -> 专用/公摊 -> 租户
-    processSankeyData(data) {
-      if (!data) return null;
+    processSankeyData (data) {
+      if (!data) return null
 
-      const nodes = [];
-      const links = [];
+      const nodes = []
+      const links = []
 
-      const totalNodeName = data.managerName || "园区总用电";
-      const privateTotalElec = data.privateTotalElec || 0;
-      const shareTotalElec = data.shareTotalElec || 0;
+      const totalNodeName = data.managerName || '园区总用电'
+      const privateTotalElec = data.privateTotalElec || 0
+      const shareTotalElec = data.shareTotalElec || 0
 
       // 第一层:园区总用电
       nodes.push({
         name: totalNodeName,
-        itemStyle: { color: "#1890ff" },
-      });
+        itemStyle: { color: '#1890ff' }
+      })
 
       // 第二层:专用设备、公摊设备
       if (privateTotalElec > 0) {
         nodes.push({
-          name: "专用设备",
-          itemStyle: { color: "#52c41a" },
-        });
+          name: '专用设备',
+          itemStyle: { color: '#52c41a' }
+        })
         links.push({
           source: totalNodeName,
-          target: "专用设备",
-          value: privateTotalElec,
-        });
+          target: '专用设备',
+          value: privateTotalElec
+        })
       }
 
       if (shareTotalElec > 0) {
         nodes.push({
-          name: "公摊设备",
-          itemStyle: { color: "#faad14" },
-        });
+          name: '公摊设备',
+          itemStyle: { color: '#faad14' }
+        })
         links.push({
           source: totalNodeName,
-          target: "公摊设备",
-          value: shareTotalElec,
-        });
+          target: '公摊设备',
+          value: shareTotalElec
+        })
       }
 
       // 收集租户用电数据
-      const tenantPrivateMap = new Map();
-      const tenantShareMap = new Map();
+      const tenantPrivateMap = new Map()
+      const tenantShareMap = new Map()
 
       if (data.tenantInfoDtoList && Array.isArray(data.tenantInfoDtoList)) {
         data.tenantInfoDtoList.forEach((tenant) => {
           tenantPrivateMap.set(tenant.tenantId, {
             tenantId: tenant.tenantId,
             tenantName: tenant.tenantName,
-            totalElec: 0,
-          });
+            totalElec: 0
+          })
           tenantShareMap.set(tenant.tenantId, {
             tenantId: tenant.tenantId,
             tenantName: tenant.tenantName,
-            totalElec: 0,
-          });
-        });
+            totalElec: 0
+          })
+        })
       }
 
       // 统计专用设备用电
       if (data.meterUseDtoList && Array.isArray(data.meterUseDtoList)) {
         data.meterUseDtoList.forEach((meter) => {
           if (meter.bindType === 1 && meter.bindId) {
-            const tenantData = tenantPrivateMap.get(meter.bindId);
+            const tenantData = tenantPrivateMap.get(meter.bindId)
             if (tenantData) {
-              tenantData.totalElec += meter.meterElec || 0;
+              tenantData.totalElec += meter.meterElec || 0
             }
           }
-        });
+        })
       }
 
       // 统计公摊用电
@@ -585,246 +586,246 @@ export default {
         data.shareUseDtoList.forEach((share) => {
           if (share.shareTenantDtoList && Array.isArray(share.shareTenantDtoList)) {
             share.shareTenantDtoList.forEach((tenantShare) => {
-              const tenantData = tenantShareMap.get(tenantShare.tenantId);
+              const tenantData = tenantShareMap.get(tenantShare.tenantId)
               if (tenantData && tenantShare.tenantShareElec > 0) {
-                tenantData.totalElec += tenantShare.tenantShareElec;
+                tenantData.totalElec += tenantShare.tenantShareElec
               }
-            });
+            })
           }
-        });
+        })
       }
 
       // 第三层:租户节点(专用部分)
-      let privateArray = Array.from(tenantPrivateMap.values())
+      const privateArray = Array.from(tenantPrivateMap.values())
         .filter((t) => t.totalElec > 0)
-        .sort((a, b) => b.totalElec - a.totalElec);
+        .sort((a, b) => b.totalElec - a.totalElec)
 
-      let displayPrivate = privateArray;
-      let othersPrivateElec = 0;
+      let displayPrivate = privateArray
+      let othersPrivateElec = 0
 
       if (privateArray.length > this.maxDisplayTenants) {
-        displayPrivate = privateArray.slice(0, this.maxDisplayTenants - 1);
-        const others = privateArray.slice(this.maxDisplayTenants - 1);
-        othersPrivateElec = others.reduce((sum, t) => sum + t.totalElec, 0);
+        displayPrivate = privateArray.slice(0, this.maxDisplayTenants - 1)
+        const others = privateArray.slice(this.maxDisplayTenants - 1)
+        othersPrivateElec = others.reduce((sum, t) => sum + t.totalElec, 0)
       }
 
       displayPrivate.forEach((tenant, index) => {
-        const color = SANKEY_COLORS[index % SANKEY_COLORS.length];
-        const nodeName = tenant.tenantName;
+        const color = SANKEY_COLORS[index % SANKEY_COLORS.length]
+        const nodeName = tenant.tenantName
 
         if (!nodes.find(n => n.name === nodeName)) {
           nodes.push({
             name: nodeName,
-            itemStyle: { color },
-          });
+            itemStyle: { color }
+          })
         }
 
         links.push({
-          source: "专用设备",
+          source: '专用设备',
           target: nodeName,
-          value: tenant.totalElec,
-        });
-      });
+          value: tenant.totalElec
+        })
+      })
 
       if (othersPrivateElec > 0) {
-        if (!nodes.find(n => n.name === "其他租户")) {
+        if (!nodes.find(n => n.name === '其他租户')) {
           nodes.push({
-            name: "其他租户",
-            itemStyle: { color: "#c0c4cc" },
-          });
+            name: '其他租户',
+            itemStyle: { color: '#c0c4cc' }
+          })
         }
         links.push({
-          source: "专用设备",
-          target: "其他租户",
-          value: othersPrivateElec,
-        });
+          source: '专用设备',
+          target: '其他租户',
+          value: othersPrivateElec
+        })
       }
 
       // 第三层:租户节点(公摊部分)
-      let shareArray = Array.from(tenantShareMap.values())
+      const shareArray = Array.from(tenantShareMap.values())
         .filter((t) => t.totalElec > 0)
-        .sort((a, b) => b.totalElec - a.totalElec);
+        .sort((a, b) => b.totalElec - a.totalElec)
 
       if (shareTotalElec > 0 && shareArray.length > 0) {
-        let displayShare = shareArray;
-        let othersShareElec = 0;
+        let displayShare = shareArray
+        let othersShareElec = 0
 
         if (shareArray.length > this.maxDisplayTenants) {
-          displayShare = shareArray.slice(0, this.maxDisplayTenants - 1);
-          const others = shareArray.slice(this.maxDisplayTenants - 1);
-          othersShareElec = others.reduce((sum, t) => sum + t.totalElec, 0);
+          displayShare = shareArray.slice(0, this.maxDisplayTenants - 1)
+          const others = shareArray.slice(this.maxDisplayTenants - 1)
+          othersShareElec = others.reduce((sum, t) => sum + t.totalElec, 0)
         }
 
         displayShare.forEach((tenant, index) => {
-          const color = SANKEY_COLORS[index % SANKEY_COLORS.length];
-          const nodeName = tenant.tenantName;
+          const color = SANKEY_COLORS[index % SANKEY_COLORS.length]
+          const nodeName = tenant.tenantName
 
           if (!nodes.find(n => n.name === nodeName)) {
             nodes.push({
               name: nodeName,
-              itemStyle: { color },
-            });
+              itemStyle: { color }
+            })
           }
 
           links.push({
-            source: "公摊设备",
+            source: '公摊设备',
             target: nodeName,
-            value: tenant.totalElec,
-          });
-        });
+            value: tenant.totalElec
+          })
+        })
 
         if (othersShareElec > 0) {
-          if (!nodes.find(n => n.name === "其他租户")) {
+          if (!nodes.find(n => n.name === '其他租户')) {
             nodes.push({
-              name: "其他租户",
-              itemStyle: { color: "#c0c4cc" },
-            });
+              name: '其他租户',
+              itemStyle: { color: '#c0c4cc' }
+            })
           }
           links.push({
-            source: "公摊设备",
-            target: "其他租户",
-            value: othersShareElec,
-          });
+            source: '公摊设备',
+            target: '其他租户',
+            value: othersShareElec
+          })
         }
       }
 
       if (links.length === 0) {
-        return null;
+        return null
       }
 
-      return { nodes, links };
+      return { nodes, links }
     },
 
-    initRadarChart() {
-      const el = this.$refs.radarChart;
-      if (!el) return;
-      if (this.charts.radar) this.charts.radar.dispose();
+    initRadarChart () {
+      const el = this.$refs.radarChart
+      if (!el) return
+      if (this.charts.radar) this.charts.radar.dispose()
 
-      const chart = echarts.init(el);
-      this.charts.radar = chart;
+      const chart = echarts.init(el)
+      this.charts.radar = chart
 
       const option = {
-        backgroundColor: "transparent",
+        backgroundColor: 'transparent',
         radar: {
           indicator: [
-            { name: "运行效率", max: 100 },
-            { name: "响应速度", max: 100 },
-            { name: "稳定性", max: 100 },
-            { name: "能效比", max: 100 },
-            { name: "安全性", max: 100 },
+            { name: '运行效率', max: 100 },
+            { name: '响应速度', max: 100 },
+            { name: '稳定性', max: 100 },
+            { name: '能效比', max: 100 },
+            { name: '安全性', max: 100 }
           ],
-          center: ["50%", "50%"],
-          radius: "70%",
+          center: ['50%', '50%'],
+          radius: '70%',
           axisName: {
-            color: "#6b7280",
-            fontSize: 11,
+            color: '#6b7280',
+            fontSize: 11
           },
           splitLine: {
-            lineStyle: { color: "#e5e7eb" },
+            lineStyle: { color: '#e5e7eb' }
           },
           splitArea: {
             show: true,
-            areaStyle: { color: ["#fafafa", "#f5f5f5"] },
+            areaStyle: { color: ['#fafafa', '#f5f5f5'] }
           },
           axisLine: {
-            lineStyle: { color: "#d1d5db" },
-          },
+            lineStyle: { color: '#d1d5db' }
+          }
         },
         series: [
           {
-            type: "radar",
+            type: 'radar',
             data: [
               {
                 value: [92, 88, 95, 85, 96],
-                name: "优秀",
-                itemStyle: { color: "#67c23a" },
-                areaStyle: { color: "rgba(103, 194, 58, 0.15)" },
-                lineStyle: { width: 2 },
+                name: '优秀',
+                itemStyle: { color: '#67c23a' },
+                areaStyle: { color: 'rgba(103, 194, 58, 0.15)' },
+                lineStyle: { width: 2 }
               },
               {
                 value: [78, 75, 80, 72, 85],
-                name: "良好",
-                itemStyle: { color: "#409eff" },
-                areaStyle: { color: "rgba(64, 158, 255, 0.15)" },
-                lineStyle: { width: 2 },
+                name: '良好',
+                itemStyle: { color: '#409eff' },
+                areaStyle: { color: 'rgba(64, 158, 255, 0.15)' },
+                lineStyle: { width: 2 }
               },
               {
                 value: [55, 50, 58, 48, 60],
-                name: "预警",
-                itemStyle: { color: "#e6a23c" },
-                areaStyle: { color: "rgba(230, 162, 60, 0.15)" },
-                lineStyle: { width: 2 },
-              },
-            ],
-          },
-        ],
-      };
+                name: '预警',
+                itemStyle: { color: '#e6a23c' },
+                areaStyle: { color: 'rgba(230, 162, 60, 0.15)' },
+                lineStyle: { width: 2 }
+              }
+            ]
+          }
+        ]
+      }
 
-      chart.setOption(option);
+      chart.setOption(option)
     },
 
-    drawSankeyChart() {
+    drawSankeyChart () {
       // ✅ 延迟执行,确保 DOM 完全准备好
       this.$nextTick(() => {
-        const el = this.$refs.sankeyChart;
-        
+        const el = this.$refs.sankeyChart
+
         // 如果没有数据,不需要初始化图表
         if (!this.sankeyData || !this.sankeyData.links || !this.sankeyData.links.length) {
-          console.log('桑基图无数据,跳过绘制');
+          console.log('桑基图无数据,跳过绘制')
           // ✅ 确保图表被销毁
           if (this.charts.sankey) {
-            this.charts.sankey.dispose();
-            this.charts.sankey = null;
+            this.charts.sankey.dispose()
+            this.charts.sankey = null
           }
-          return;
+          return
         }
 
         if (!el) {
-          console.warn('桑基图容器不存在');
-          return;
+          console.warn('桑基图容器不存在')
+          return
         }
 
         // ✅ 检查容器是否可见
-        const rect = el.getBoundingClientRect();
+        const rect = el.getBoundingClientRect()
         if (rect.width === 0 || rect.height === 0) {
-          console.warn('桑基图容器尺寸为0,延迟初始化');
-          setTimeout(() => this.drawSankeyChart(), 100);
-          return;
+          console.warn('桑基图容器尺寸为0,延迟初始化')
+          setTimeout(() => this.drawSankeyChart(), 100)
+          return
         }
 
         // ✅ 再次确保旧图表被销毁
         if (this.charts.sankey) {
-          console.log('绘制前销毁旧图表');
-          this.charts.sankey.dispose();
-          this.charts.sankey = null;
+          console.log('绘制前销毁旧图表')
+          this.charts.sankey.dispose()
+          this.charts.sankey = null
         }
 
         try {
-          console.log('开始初始化桑基图, 容器尺寸:', rect.width, 'x', rect.height);
-          const chart = echarts.init(el);
-          this.charts.sankey = chart;
+          console.log('开始初始化桑基图, 容器尺寸:', rect.width, 'x', rect.height)
+          const chart = echarts.init(el)
+          this.charts.sankey = chart
 
           const option = {
-            backgroundColor: "transparent",
+            backgroundColor: 'transparent',
             tooltip: {
-              trigger: "item",
-              backgroundColor: "rgba(255, 255, 255, 0.96)",
-              borderColor: "#eee",
+              trigger: 'item',
+              backgroundColor: 'rgba(255, 255, 255, 0.96)',
+              borderColor: '#eee',
               borderWidth: 1,
               padding: [10, 14],
-              textStyle: { color: "#333", fontSize: 12 },
+              textStyle: { color: '#333', fontSize: 12 },
               formatter: (params) => {
-                if (params.dataType === "node") {
-                  return `<b>${params.name}</b><br/>${(params.value || 0).toFixed(2)} kWh`;
+                if (params.dataType === 'node') {
+                  return `<b>${params.name}</b><br/>${(params.value || 0).toFixed(2)} kWh`
                 }
-                return `${params.data.source} → ${params.data.target}<br/>${(params.value || 0).toFixed(2)} kWh`;
-              },
+                return `${params.data.source} → ${params.data.target}<br/>${(params.value || 0).toFixed(2)} kWh`
+              }
             },
             series: [
               {
-                type: "sankey",
-                layout: "none",
-                emphasis: { focus: "adjacency" },
+                type: 'sankey',
+                layout: 'none',
+                emphasis: { focus: 'adjacency' },
                 data: this.sankeyData.nodes,
                 links: this.sankeyData.links,
                 left: 20,
@@ -835,263 +836,263 @@ export default {
                 nodeGap: 14,
                 draggable: false,
                 lineStyle: {
-                  color: "gradient",
+                  color: 'gradient',
                   opacity: 0.5,
-                  curveness: 0.5,
+                  curveness: 0.5
                 },
                 label: {
                   show: true,
-                  position: "right",
+                  position: 'right',
                   fontSize: 12,
-                  color: "#555",
+                  color: '#555',
                   formatter: (params) => {
-                    const name = params.name;
-                    return name.length > 8 ? name.slice(0, 8) + "…" : name;
-                  },
+                    const name = params.name
+                    return name.length > 8 ? name.slice(0, 8) + '…' : name
+                  }
                 },
-                itemStyle: { borderWidth: 0 },
-              },
-            ],
-          };
+                itemStyle: { borderWidth: 0 }
+              }
+            ]
+          }
 
-          chart.setOption(option);
-          console.log('桑基图渲染成功');
+          chart.setOption(option)
+          console.log('桑基图渲染成功')
         } catch (error) {
-          console.error('桑基图初始化失败:', error);
+          console.error('桑基图初始化失败:', error)
           if (this.charts.sankey) {
-            this.charts.sankey.dispose();
-            this.charts.sankey = null;
+            this.charts.sankey.dispose()
+            this.charts.sankey = null
           }
         }
-      });
+      })
     },
 
-    async loadRanking() {
+    async loadRanking () {
       const res = await getTenantPList({
-        managerId: this.currentManagerId,
-      }).catch(() => ({}));
-      if (res.code === 200) this.tenantRanking = res.data || [];
+        managerId: this.currentManagerId
+      }).catch(() => ({}))
+      if (res.code === 200) this.tenantRanking = res.data || []
     },
 
-    async loadMeter() {
+    async loadMeter () {
       const res = await getMeterOverview({
-        managerId: this.currentManagerId,
-      }).catch(() => ({}));
-      if (res.code === 200) this.meterData = res.data || {};
+        managerId: this.currentManagerId
+      }).catch(() => ({}))
+      if (res.code === 200) this.meterData = res.data || {}
     },
 
-    async loadDebt() {
+    async loadDebt () {
       const res = await getTenantStatusList({
-        managerId: this.currentManagerId,
-      }).catch(() => ({}));
+        managerId: this.currentManagerId
+      }).catch(() => ({}))
       if (res.code === 200) {
-         console.log(res,'res')
+        console.log(res, 'res')
         // 兼容处理：如果 data 直接是数组则使用 data，否则尝试获取 tenantStatusList
-        const list = Array.isArray(res.data) ? res.data : (res.data?.tenantStatusList || []);
+        const list = Array.isArray(res.data) ? res.data : (res.data?.tenantStatusList || [])
         this.debtList = list
           .filter((i) => i.tenantBalance < 0)
-          .sort((a, b) => a.tenantBalance - b.tenantBalance);
+          .sort((a, b) => a.tenantBalance - b.tenantBalance)
       }
       // console.log(this.debtList ,'this.debtList ')
     },
 
-    async loadCompare() {
-      const type = this.datePeriod === "day" ? 2 : 3;
+    async loadCompare () {
+      const type = this.datePeriod === 'day' ? 2 : 3
       const [e, w] = await Promise.all([
         getElecStatistics({ type, useType: 1, managerId: this.currentManagerId }),
-        getElecStatistics({ type, useType: 2, managerId: this.currentManagerId }),
-      ]).catch(() => [{}, {}]);
+        getElecStatistics({ type, useType: 2, managerId: this.currentManagerId })
+      ]).catch(() => [{}, {}])
 
-      const sort = (arr) => [...(arr || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
-      const elec = e.code === 200 ? sort(e.data) : [];
-      const water = w.code === 200 ? sort(w.data) : [];
+      const sort = (arr) => [...(arr || [])].sort((a, b) => new Date(a.date) - new Date(b.date))
+      const elec = e.code === 200 ? sort(e.data) : []
+      const water = w.code === 200 ? sort(w.data) : []
 
-      const limit = this.datePeriod === "day" ? 7 : 6;
-      const sliceElec = elec.slice(-limit);
-      const sliceWater = water.slice(-limit);
-      const base = sliceElec.length >= sliceWater.length ? sliceElec : sliceWater;
+      const limit = this.datePeriod === 'day' ? 7 : 6
+      const sliceElec = elec.slice(-limit)
+      const sliceWater = water.slice(-limit)
+      const base = sliceElec.length >= sliceWater.length ? sliceElec : sliceWater
 
       this.compareData = {
         dates: base.map((i) => this.fmtDate(i.date)),
         elecUsage: sliceElec.map((i) => +(i.useElec || 0)),
         waterUsage: sliceWater.map((i) => +(i.useElec || 0)),
         elecIncome: sliceElec.map((i) => +(i.balance || 0)),
-        waterIncome: sliceWater.map((i) => +(i.balance || 0)),
-      };
+        waterIncome: sliceWater.map((i) => +(i.balance || 0))
+      }
 
-      this.$nextTick(() => this.drawMain());
+      this.$nextTick(() => this.drawMain())
     },
 
-    fmtDate(s) {
-      const d = new Date(s);
-      return this.datePeriod === "month"
+    fmtDate (s) {
+      const d = new Date(s)
+      return this.datePeriod === 'month'
         ? `${d.getMonth() + 1}月`
-        : `${d.getMonth() + 1}/${d.getDate()}`;
+        : `${d.getMonth() + 1}/${d.getDate()}`
     },
 
-    drawMain() {
-      const el = this.$refs.mainChart;
-      if (!el) return;
-      if (this.charts.main) this.charts.main.dispose();
-      const chart = echarts.init(el);
-      this.charts.main = chart;
+    drawMain () {
+      const el = this.$refs.mainChart
+      if (!el) return
+      if (this.charts.main) this.charts.main.dispose()
+      const chart = echarts.init(el)
+      this.charts.main = chart
 
-      const { dates, elecUsage, waterUsage, elecIncome, waterIncome } = this.compareData;
-      const v = this.vis;
+      const { dates, elecUsage, waterUsage, elecIncome, waterIncome } = this.compareData
+      const v = this.vis
 
       chart.setOption({
         tooltip: {
-          trigger: "axis",
-          backgroundColor: "#fff",
-          borderColor: "#e5eaef",
+          trigger: 'axis',
+          backgroundColor: '#fff',
+          borderColor: '#e5eaef',
           borderWidth: 1,
           padding: [10, 14],
-          textStyle: { color: "#455a64", fontSize: 12 },
-          extraCssText: "box-shadow: 0 4px 12px rgba(0,0,0,0.08);",
+          textStyle: { color: '#455a64', fontSize: 12 },
+          extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.08);',
           formatter: (p) => {
-            let s = `<div style="font-weight:500;margin-bottom:6px;color:#37474f">${p[0].axisValue}</div>`;
+            let s = `<div style="font-weight:500;margin-bottom:6px;color:#37474f">${p[0].axisValue}</div>`
             p.forEach((i) => {
-              const u = i.seriesName.includes("用电") ? "kWh" : i.seriesName.includes("用水") ? "m³" : "元";
+              const u = i.seriesName.includes('用电') ? 'kWh' : i.seriesName.includes('用水') ? 'm³' : '元'
               s += `<div style="display:flex;justify-content:space-between;gap:20px;margin:3px 0">
                 <span style="color:#78909c">${i.marker} ${i.seriesName}</span>
                 <b style="color:#37474f">${i.value.toFixed(2)} ${u}</b>
-              </div>`;
-            });
-            return s;
-          },
+              </div>`
+            })
+            return s
+          }
         },
         grid: { left: 50, right: 50, top: 16, bottom: 32 },
         xAxis: {
-          type: "category",
+          type: 'category',
           data: dates,
-          axisLine: { lineStyle: { color: "#e5eaef" } },
+          axisLine: { lineStyle: { color: '#e5eaef' } },
           axisTick: { show: false },
-          axisLabel: { color: "#90a4ae", fontSize: 11, margin: 10 },
+          axisLabel: { color: '#90a4ae', fontSize: 11, margin: 10 }
         },
         yAxis: [
           {
-            type: "value",
+            type: 'value',
             axisLine: { show: false },
             axisTick: { show: false },
-            axisLabel: { color: "#90a4ae", fontSize: 10 },
-            splitLine: { lineStyle: { color: "#f0f4f7" } },
+            axisLabel: { color: '#90a4ae', fontSize: 10 },
+            splitLine: { lineStyle: { color: '#f0f4f7' } }
           },
           {
-            type: "value",
+            type: 'value',
             axisLine: { show: false },
             axisTick: { show: false },
-            axisLabel: { color: "#90a4ae", fontSize: 10 },
-            splitLine: { show: false },
-          },
+            axisLabel: { color: '#90a4ae', fontSize: 10 },
+            splitLine: { show: false }
+          }
         ],
         series: [
           {
-            name: "用电量",
-            type: "line",
+            name: '用电量',
+            type: 'line',
             yAxisIndex: 0,
             data: v.elecUsage ? elecUsage : [],
             smooth: 0.4,
-            symbol: "circle",
+            symbol: 'circle',
             symbolSize: 6,
-            lineStyle: { width: 2.5, color: "#4db6ac" },
-            itemStyle: { color: "#4db6ac", borderColor: "#fff", borderWidth: 2 },
+            lineStyle: { width: 2.5, color: '#4db6ac' },
+            itemStyle: { color: '#4db6ac', borderColor: '#fff', borderWidth: 2 },
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: "rgba(77,182,172,0.2)" },
-                { offset: 1, color: "rgba(77,182,172,0)" },
-              ]),
-            },
+                { offset: 0, color: 'rgba(77,182,172,0.2)' },
+                { offset: 1, color: 'rgba(77,182,172,0)' }
+              ])
+            }
           },
           {
-            name: "用水量",
-            type: "line",
+            name: '用水量',
+            type: 'line',
             yAxisIndex: 0,
             data: v.waterUsage ? waterUsage : [],
             smooth: 0.4,
-            symbol: "circle",
+            symbol: 'circle',
             symbolSize: 6,
-            lineStyle: { width: 2.5, color: "#64b5f6" },
-            itemStyle: { color: "#64b5f6", borderColor: "#fff", borderWidth: 2 },
+            lineStyle: { width: 2.5, color: '#64b5f6' },
+            itemStyle: { color: '#64b5f6', borderColor: '#fff', borderWidth: 2 },
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: "rgba(100,181,246,0.2)" },
-                { offset: 1, color: "rgba(100,181,246,0)" },
-              ]),
-            },
+                { offset: 0, color: 'rgba(100,181,246,0.2)' },
+                { offset: 1, color: 'rgba(100,181,246,0)' }
+              ])
+            }
           },
           {
-            name: "电费",
-            type: "bar",
+            name: '电费',
+            type: 'bar',
             yAxisIndex: 1,
             data: v.elecIncome ? elecIncome : [],
-            barWidth: "28%",
+            barWidth: '28%',
             barMaxWidth: 24,
-            barGap: "15%",
+            barGap: '15%',
             itemStyle: {
-              color: "rgba(77,182,172,0.45)",
-              borderRadius: [4, 4, 0, 0],
-            },
+              color: 'rgba(77,182,172,0.45)',
+              borderRadius: [4, 4, 0, 0]
+            }
           },
           {
-            name: "水费",
-            type: "bar",
+            name: '水费',
+            type: 'bar',
             yAxisIndex: 1,
             data: v.waterIncome ? waterIncome : [],
-            barWidth: "28%",
+            barWidth: '28%',
             barMaxWidth: 24,
             itemStyle: {
-              color: "rgba(100,181,246,0.45)",
-              borderRadius: [4, 4, 0, 0],
-            },
-          },
-        ],
-      });
+              color: 'rgba(100,181,246,0.45)',
+              borderRadius: [4, 4, 0, 0]
+            }
+          }
+        ]
+      })
     },
 
-    toggle(key) {
-      this.vis[key] = !this.vis[key];
-      this.drawMain();
+    toggle (key) {
+      this.vis[key] = !this.vis[key]
+      this.drawMain()
     },
 
-    async setPeriod(p) {
-      if (this.datePeriod === p) return;
-      this.datePeriod = p;
-      await this.loadCompare();
+    async setPeriod (p) {
+      if (this.datePeriod === p) return
+      this.datePeriod = p
+      await this.loadCompare()
     },
 
-    getRankClass(idx) {
-      if (idx === 0) return "gold";
-      if (idx === 1) return "silver";
-      if (idx === 2) return "bronze";
-      return "";
+    getRankClass (idx) {
+      if (idx === 0) return 'gold'
+      if (idx === 1) return 'silver'
+      if (idx === 2) return 'bronze'
+      return ''
     },
 
-    getChangeClass(change) {
-      if (change > 0) return "up";
-      if (change < 0) return "down";
-      return "neutral";
+    getChangeClass (change) {
+      if (change > 0) return 'up'
+      if (change < 0) return 'down'
+      return 'neutral'
     },
 
-    formatChange(change) {
-      if (change === 0) return "-";
-      const abs = Math.abs(change);
-      const arrow = change > 0 ? "↑" : "↓";
-      return `${arrow}${abs.toFixed(1)}%`;
+    formatChange (change) {
+      if (change === 0) return '-'
+      const abs = Math.abs(change)
+      const arrow = change > 0 ? '↑' : '↓'
+      return `${arrow}${abs.toFixed(1)}%`
     },
 
-    goDetail(item) {
-      this.$router.push({ name: "TenantDetail", params: { id: item.tenantId } });
+    goDetail (item) {
+      this.$router.push('/metering/tenant/list')
     },
 
-    remind(item) {
-      this.$message.info(`已向 ${item.tenantName} 发送催缴通知`);
+    remind (item) {
+      this.$message.info(`已向 ${item.tenantName} 发送催缴通知`)
     },
 
-    resize() {
-      Object.values(this.charts).forEach((c) => c?.resize?.());
-    },
-  },
-};
+    resize () {
+      Object.values(this.charts).forEach((c) => c?.resize?.())
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -1355,6 +1356,10 @@ export default {
 
 .device-detail .dot.public {
   background: var(--teal);
+}
+
+.device-detail .dot.air {
+  background: var(--blue);
 }
 
 .device-status {
@@ -1808,7 +1813,6 @@ export default {
   height: 28px;
   opacity: 0.5;
 }
-
 
 /* ========================
      响应式媒体查询

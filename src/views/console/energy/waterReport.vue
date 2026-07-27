@@ -3,15 +3,15 @@
     <!-- 顶部操作栏 -->
     <div class="dashboard-header">
       <div class="header-left">
-        <h1 class="dashboard-title">用水报表</h1>
+        <h1 class="dashboard-title">{{ $t('waterReport.dashboardTitle') }}</h1>
 
         <!-- Tab切换 -->
         <div class="tab-switcher">
           <button :class="['tab-btn', { active: reportType === 'statistics' }]" @click="switchReportType('statistics')">
-            租户用水统计
+            {{ $t('waterReport.tabStatistics') }}
           </button>
           <button :class="['tab-btn', { active: reportType === 'detail' }]" @click="switchReportType('detail')">
-            租户用水明细
+            {{ $t('waterReport.tabDetail') }}
           </button>
         </div>
       </div>
@@ -21,8 +21,8 @@
           <svg v-if="!exportLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
           </svg>
-          <span v-if="exportLoading">导出中...</span>
-          <span v-else>导出报表</span>
+          <span v-if="exportLoading">{{ $t('waterReport.exportLoading') }}</span>
+          <span v-else>{{ $t('waterReport.exportReport') }}</span>
         </button>
       </div>
     </div>
@@ -30,51 +30,75 @@
     <!-- 筛选器 -->
     <div class="filter-container">
       <div class="filter-item date-filter">
-        <label class="filter-label">统计时间</label>
+        <label class="filter-label">{{ $t('waterReport.filterStatPeriod') }}</label>
         <el-date-picker v-model="queryParams.dateRange" type="daterange" format="yyyy-MM-dd" value-format="yyyy-MM-dd"
-          range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" :picker-options="currentPickerOptions"
+          range-separator="-" :start-placeholder="$t('waterReport.phDateStart')" :end-placeholder="$t('waterReport.phDateEnd')" :picker-options="currentPickerOptions"
           class="custom-date-picker" popper-class="elegant-date-picker" @change="handleDateRangeChange" />
       </div>
 
       <!-- 租户选择 -->
       <div class="filter-item tenant-filter">
-        <label class="filter-label">选择租户</label>
+        <label class="filter-label">{{ $t('waterReport.filterTenant') }}</label>
         <!-- 单选 - 租户用水统计 -->
-        <el-select v-show="reportType === 'statistics'" v-model="queryParams.tenantId" filterable clearable
-          placeholder="请选择租户" class="custom-select" :loading="tenantLoading" @change="handleTenantChange">
-          <el-option v-for="tenant in tenantList" :key="tenant.tenantId" :label="tenant.name"
-            :value="tenant.tenantId" />
+        <el-select v-show="reportType === 'statistics'" v-model="queryParams.tenantId" filterable
+          :placeholder="$t('waterReport.phTenant')" class="custom-select" :loading="tenantLoading" @change="handleTenantChange">
+          <el-option v-for="tenant in (switchDeviceDetail ? realTenantList : tenantList)" :key="tenant.tenantId"
+            :label="tenantOptionLabel(tenant)" :value="tenant.tenantId" />
         </el-select>
         <!-- 多选 - 租户用水明细 -->
         <el-select v-show="reportType === 'detail'" v-model="queryParams.tenantIds" multiple collapse-tags filterable
-          placeholder="请选择租户" class="custom-select" :loading="tenantLoading" @change="handleTenantChange">
-          <el-option v-for="tenant in tenantList" :key="tenant.tenantId" :label="tenant.name"
+          :placeholder="$t('waterReport.phTenant')" class="custom-select" :loading="tenantLoading" @change="handleDetailTenantChange">
+          <el-option
+            v-if="realTenantList.length > 0 && !isAllDetailTenantsSelected"
+            :key="TENANT_SELECT_SELECT_ALL"
+            :label="$t('waterReport.btnSelectAll')"
+            :value="TENANT_SELECT_SELECT_ALL"
+            class="tenant-select-action-option"
+          />
+          <el-option
+            v-if="queryParams.tenantIds.length > 0"
+            :key="TENANT_SELECT_CLEAR_ALL"
+            :label="$t('waterReport.btnDeselectAll')"
+            :value="TENANT_SELECT_CLEAR_ALL"
+            class="tenant-select-action-option tenant-select-action-option--clear"
+          />
+          <el-option v-for="tenant in realTenantList" :key="tenant.tenantId" :label="tenantOptionLabel(tenant)"
             :value="tenant.tenantId" />
+        </el-select>
+      </div>
+
+      <!-- 租户类型 -->
+      <div class="filter-item tenant-type-filter">
+        <label class="filter-label">{{ $t('waterReport.filterTenantType') }}</label>
+        <el-select v-model="queryParams.tenantType" class="custom-select" @change="handleTenantTypeChange">
+          <el-option :label="$t('waterReport.tenantType0')" :value="0" />
+          <el-option :label="$t('waterReport.tenantType1')" :value="1" />
+          <el-option :label="$t('waterReport.tenantType2')" :value="2" />
         </el-select>
       </div>
 
       <div class="filter-actions">
         <!-- <button class="search-btn" @click="handleSearch">查询</button> -->
-        <button class="reset-btn" @click="handleReset">重置</button>
+        <button class="reset-btn" @click="handleReset">{{ $t('waterReport.btnReset') }}</button>
 
         <!-- 第一个tab的设备明细 -->
-        <el-tooltip v-if="reportType === 'statistics'" effect="dark" content="设备明细仅支持单一租户查询" placement="top"
+        <el-tooltip v-if="reportType === 'statistics'" effect="dark"
+          :content="$t('waterReport.tooltipDeviceDetail')" placement="top"
           :disabled="!!queryParams.tenantId">
-          <div class="detail-switch">
-            <span class="switch-text">设备明细</span>
+          <div class="detail-switch" :class="{ 'is-disabled': realTenantList.length === 0 }">
+            <label class="switch-text" for="waterDeviceDetailSwitch">{{ $t('waterReport.deviceDetailSwitch') }}</label>
             <label class="toggle-switch">
-              <input type="checkbox" v-model="switchDeviceDetail" @change="handleSwitchChange"
-                :disabled="!queryParams.tenantId" />
+              <input
+                id="waterDeviceDetailSwitch"
+                type="checkbox"
+                v-model="switchDeviceDetail"
+                @change="handleSwitchChange"
+                :disabled="realTenantList.length === 0"
+              />
               <span class="toggle-slider"></span>
             </label>
           </div>
         </el-tooltip>
-
-        <!-- 第二个tab的全选按钮 -->
-        <button v-if="reportType === 'detail'" class="reset-btn" @click="toggleSelectAll"
-          :disabled="tenantLoading || tenantList.length === 0">
-          {{ isAllSelected ? "取消全选" : "全选" }}
-        </button>
       </div>
     </div>
     <!-- 主内容区 -->
@@ -83,27 +107,27 @@
       <div class="chart-section" v-if="reportType === 'statistics' && chartData.length > 0">
         <div class="chart-container-full">
           <div class="chart-header">
-            <h2 class="chart-title">用水趋势分析</h2>
+            <h2 class="chart-title">{{ $t('waterReport.chartTrendTitle') }}</h2>
             <div class="chart-date-range">{{ formatDateRange }}</div>
           </div>
           <div class="chart-info">
             <div class="chart-legends">
-              <div class="legend-item active" @click="toggleSeries('总水费')">
+              <div class="legend-item active" @click="toggleSeriesByKey('totalFee')">
                 <span class="legend-dot" style="background: #52c41a"></span>
-                <span class="legend-text">总水费</span>
+                <span class="legend-text">{{ chartSeriesNames.totalFee }}</span>
               </div>
-              <div class="legend-item active" @click="toggleSeries('总水量')">
+              <div class="legend-item active" @click="toggleSeriesByKey('totalWater')">
                 <span class="legend-dot" style="background: #5b9bd5"></span>
-                <span class="legend-text">总水量</span>
+                <span class="legend-text">{{ chartSeriesNames.totalWater }}</span>
               </div>
             </div>
             <div class="chart-summary">
               <div class="summary-item">
-                <span class="summary-label">总水费</span>
+                <span class="summary-label">{{ $t('waterReport.summaryTotalFee') }}</span>
                 <span class="summary-value">¥{{ formatNumber(totalStats.amount) }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">总水量</span>
+                <span class="summary-label">{{ $t('waterReport.summaryTotalWater') }}</span>
                 <span class="summary-value">{{ formatNumber(totalStats.water) }} m³</span>
               </div>
             </div>
@@ -115,61 +139,61 @@
       <!-- 租户用水统计 - 详细数据表格区域 -->
       <div class="table-section" v-if="reportType === 'statistics'">
         <div class="section-header">
-          <h2 class="section-title">详细数据</h2>
+          <h2 class="section-title">{{ $t('waterReport.detailedData') }}</h2>
         </div>
 
         <!-- 普通统计表格 -->
         <el-table v-show="!switchDeviceDetail" v-if="tableData.length > 0" ref="statisticsTable" :data="tableData"
           show-summary :summary-method="getStatisticsSummaries" height="70vh" :highlight-current-row="true">
-          <el-table-column min-width="140" label="日期">
+          <el-table-column min-width="140" :label="$t('waterReport.colDate')">
             <template slot-scope="scope">
-              {{ scope.row.occurDate ? scope.row.occurDate : "总计" }}
+              {{ scope.row.occurDate ? scope.row.occurDate : $t('waterReport.summaryTotal') }}
             </template>
           </el-table-column>
-          <el-table-column min-width="140" label="水费（元）" prop="useAmount" align="right" />
-          <el-table-column min-width="140" label="水量（m³）" prop="waterUse" align="right" />
+          <el-table-column min-width="140" :label="$t('waterReport.colWaterFeeYuan')" prop="useAmount" align="right" />
+          <el-table-column min-width="140" :label="$t('waterReport.colWaterVolumeM3')" prop="waterUse" align="right" />
         </el-table>
 
         <!-- 设备明细表格 -->
         <el-table v-show="switchDeviceDetail" v-if="deviceDetailData.length > 0" ref="deviceDetailTable"
           :data="deviceDetailData" :span-method="deviceDetailSpanMethod" :summary-method="getDeviceDetailSummaries"
           show-summary height="70vh" :highlight-current-row="true" style="width: 100%">
-          <el-table-column min-width="140" label="日期">
+          <el-table-column min-width="140" :label="$t('waterReport.colDate')">
             <template slot-scope="scope">{{ scope.row.occurDate }}</template>
           </el-table-column>
-          <el-table-column min-width="120" label="水费（元）" prop="useAmount" align="right" />
-          <el-table-column min-width="120" label="水量（m³）" prop="waterUse" align="right" />
-          <el-table-column label="设备" width="160">
+          <el-table-column min-width="120" :label="$t('waterReport.colWaterFeeYuan')" prop="useAmount" align="right" />
+          <el-table-column min-width="120" :label="$t('waterReport.colWaterVolumeM3')" prop="waterUse" align="right" />
+          <el-table-column :label="$t('waterReport.colDevice')" width="160">
             <template slot-scope="scope">{{
-              scope.row.deviceUseDtoList.waterName || "-"
+              $displayBizHybrid(scope.row.deviceUseDtoList.waterName) || "-"
             }}</template>
           </el-table-column>
-          <el-table-column label="结算方式" width="120">
+          <el-table-column :label="$t('waterReport.colSettleWay')" width="120">
             <template slot-scope="scope">{{
               getSettleWayLabel(scope.row.deviceUseDtoList.settleWay)
             }}</template>
           </el-table-column>
-          <el-table-column label="费用" width="120" align="right">
+          <el-table-column :label="$t('waterReport.colFee')" width="120" align="right">
             <template slot-scope="scope">{{
               scope.row.deviceUseDtoList.balance !== undefined
                 ? scope.row.deviceUseDtoList.balance
                 : "-"
             }}</template>
           </el-table-column>
-          <el-table-column label="水量（m³）" width="120" align="right">
+          <el-table-column :label="$t('waterReport.colWaterVolumeM3')" width="120" align="right">
             <template slot-scope="scope">{{
               scope.row.deviceUseDtoList.consumption !== undefined
                 ? scope.row.deviceUseDtoList.consumption
                 : "-"
             }}</template>
           </el-table-column>
-          <el-table-column label="起始读数" align="center">
-            <el-table-column label="时间" width="160">
+          <el-table-column :label="$t('waterReport.colStartReading')" align="center">
+            <el-table-column :label="$t('waterReport.colTime')" width="160">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.startTime || "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="累计读数" width="120" align="right">
+            <el-table-column :label="$t('waterReport.colCumulativeRead')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.startRead !== undefined
                   ? scope.row.deviceUseDtoList.startRead
@@ -177,13 +201,13 @@
               }}</template>
             </el-table-column>
           </el-table-column>
-          <el-table-column label="截止读数" align="center">
-            <el-table-column label="时间" width="160">
+          <el-table-column :label="$t('waterReport.colEndReading')" align="center">
+            <el-table-column :label="$t('waterReport.colTime')" width="160">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.endTime || "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="累计读数" width="120" align="right">
+            <el-table-column :label="$t('waterReport.colCumulativeRead')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.endRead !== undefined
                   ? scope.row.deviceUseDtoList.endRead
@@ -198,32 +222,32 @@
             <path d="M9 17V7m0 10l-3-3m3 3l3-3m5-1V7m0 10l-3-3m3 3l3-3" />
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
-          <p>暂无数据</p>
+          <p>{{ $t('waterReport.emptyNoData') }}</p>
         </div>
         <div class="empty-state" v-if="!loading && deviceDetailData.length === 0 && switchDeviceDetail">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="7" width="18" height="14" rx="2" />
             <path d="M8 3v4m8-4v4M3 11h18" />
           </svg>
-          <p>暂无设备明细数据</p>
+          <p>{{ $t('waterReport.emptyNoDeviceDetail') }}</p>
         </div>
       </div>
 
       <!-- 租户用水明细 - 租户列表表格 -->
       <div class="table-section" v-if="reportType === 'detail'">
         <div class="section-header">
-          <h2 class="section-title">租户用水明细</h2>
+          <h2 class="section-title">{{ $t('waterReport.sectionDetailTitle') }}</h2>
         </div>
         <el-table v-if="tenantDetailData.length > 0" :data="tenantDetailData" height="calc(100vh - 400px)"
           :highlight-current-row="true" :row-class-name="tableRowClassName">
-          <el-table-column label="租户编号" width="120">
+          <el-table-column :label="$t('waterReport.colTenantId')" width="120">
             <template slot-scope="scope">{{
-              scope.row.tenantId !== -1 ? scope.row.tenantId : "总计"
+              scope.row.tenantId !== -1 ? scope.row.tenantId : $t('waterReport.summaryTotal')
             }}</template>
           </el-table-column>
-          <el-table-column label="租户名称" min-width="200">
+          <el-table-column :label="$t('waterReport.colTenantName')" min-width="200">
             <template slot-scope="scope">{{
-              scope.row.tenantName || "-"
+              $displayBizHybrid(scope.row.tenantName) || "-"
             }}</template>
           </el-table-column>
           <!-- <el-table-column label="区域标签" width="180">
@@ -236,12 +260,12 @@
               <div v-else>-</div>
             </template>
           </el-table-column> -->
-          <el-table-column label="水费(元)" width="140" align="right">
+          <el-table-column :label="$t('waterReport.colWaterFeeParen')" width="140" align="right">
             <template slot-scope="scope">{{
               formatNumber(scope.row.useAmount)
             }}</template>
           </el-table-column>
-          <el-table-column label="水量(m³)" width="140" align="right">
+          <el-table-column :label="$t('waterReport.colWaterVolumeParen')" width="140" align="right">
             <template slot-scope="scope">{{
               formatNumber(scope.row.waterUse)
             }}</template>
@@ -252,7 +276,7 @@
             <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
             <path d="M8 14s.5 2 4 2 4-2 4-2" />
           </svg>
-          <p>暂无数据</p>
+          <p>{{ $t('waterReport.emptyNoData') }}</p>
         </div>
       </div>
     </div>
@@ -260,25 +284,31 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import { getSimpleTenantList, queryTenantWaterUseStatis, queryTenantWaterUse } from '@/api/useReport';
-import moment from 'moment';
-import * as XLSX from 'xlsx';
+import { mapGetters } from 'vuex'
+import { getSimpleTenantList, queryTenantWaterUseStatis, queryTenantWaterUse } from '@/api/useReport'
+import moment from 'moment'
+import * as XLSX from 'xlsx'
+
+/** 明细 Tab 多选下拉内「全选 / 取消全选」哨兵值 */
+const TENANT_SELECT_CLEAR_ALL = '__CLEAR_ALL__'
+const TENANT_SELECT_SELECT_ALL = '__SELECT_ALL__'
 
 export default {
   name: 'WaterReport',
-  data() {
+  data () {
     return {
+      TENANT_SELECT_CLEAR_ALL,
+      TENANT_SELECT_SELECT_ALL,
       reportType: 'statistics',
       queryParams: {
         dateRange: [],
-        tenantId: null,
-        tenantIds: []
+        tenantId: '',
+        tenantIds: [],
+        tenantType: 0
       },
       tenantList: [],
       tenantLoading: false,
       loading: false,
-      loadingText: '数据加载中...',
       exportLoading: false,
       chartData: [],
       tableData: [],
@@ -286,403 +316,447 @@ export default {
       tenantDetailData: [],
       switchDeviceDetail: false,
       mainChartInstance: null,
-      settleWayMap: {
-        0: '普通结算',
-        1: '手动扣款',
-        2: '系统补单',
-        3: '浮动电价',
-        4: '分摊结算',
-        5: '设备扣款'
-      },
       pickerOptions: {
-        disabledDate(time) {
-          return time.getTime() > Date.now();
+        disabledDate (time) {
+          return time.getTime() > Date.now()
         }
       },
       resizeObserver: null
-    };
+    }
   },
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
-    currentPickerOptions() {
+    currentPickerOptions () {
+      const t = (k) => this.$t(`waterReport.${k}`)
       const shortcuts = [
         {
-          text: '昨天',
-          onClick(picker) {
-            const start = new Date();
-            start.setTime(start.getTime() - 3600 * 1000 * 24);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date();
-            end.setTime(end.getTime() - 3600 * 1000 * 24);
-            end.setHours(23, 59, 59, 999);
-            picker.$emit('pick', [start, end]);
+          text: t('pickerYesterday'),
+          onClick (picker) {
+            const start = new Date()
+            start.setTime(start.getTime() - 3600 * 1000 * 24)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date()
+            end.setTime(end.getTime() - 3600 * 1000 * 24)
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
           }
         },
         {
-          text: '本周',
-          onClick(picker) {
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const start = new Date(now);
-            const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-            start.setDate(now.getDate() + diff);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date();
-            end.setHours(23, 59, 59, 999);
-            picker.$emit('pick', [start, end]);
+          text: t('pickerThisWeek'),
+          onClick (picker) {
+            const now = new Date()
+            const dayOfWeek = now.getDay()
+            const start = new Date(now)
+            const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+            start.setDate(now.getDate() + diff)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date()
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
           }
         },
         {
-          text: '上周',
-          onClick(picker) {
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const start = new Date(now);
-            const diff = dayOfWeek === 0 ? -13 : -6 - dayOfWeek;
-            start.setDate(now.getDate() + diff);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(start);
-            end.setDate(start.getDate() + 6);
-            end.setHours(23, 59, 59, 999);
-            picker.$emit('pick', [start, end]);
+          text: t('pickerLastWeek'),
+          onClick (picker) {
+            const now = new Date()
+            const dayOfWeek = now.getDay()
+            const start = new Date(now)
+            const diff = dayOfWeek === 0 ? -13 : -6 - dayOfWeek
+            start.setDate(now.getDate() + diff)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date(start)
+            end.setDate(start.getDate() + 6)
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
           }
         },
         {
-          text: '本月',
-          onClick(picker) {
-            const start = new Date();
-            start.setDate(1);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date();
-            end.setHours(23, 59, 59, 999);
-            picker.$emit('pick', [start, end]);
+          text: t('pickerThisMonth'),
+          onClick (picker) {
+            const start = new Date()
+            start.setDate(1)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date()
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
           }
         },
         {
-          text: '上月',
-          onClick(picker) {
-            const start = new Date();
-            start.setMonth(start.getMonth() - 1);
-            start.setDate(1);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date();
-            end.setDate(0);
-            end.setHours(23, 59, 59, 999);
-            picker.$emit('pick', [start, end]);
+          text: t('pickerLastMonth'),
+          onClick (picker) {
+            const start = new Date()
+            start.setMonth(start.getMonth() - 1)
+            start.setDate(1)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date()
+            end.setDate(0)
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
           }
         },
         {
-          text: '近三个月',
-          onClick(picker) {
-            const end = new Date();
-            end.setHours(23, 59, 59, 999);
-            const start = new Date();
-            start.setMonth(start.getMonth() - 3);
-            start.setHours(0, 0, 0, 0);
-            picker.$emit('pick', [start, end]);
+          text: t('pickerLast3Months'),
+          onClick (picker) {
+            const end = new Date()
+            end.setHours(23, 59, 59, 999)
+            const start = new Date()
+            start.setMonth(start.getMonth() - 3)
+            start.setHours(0, 0, 0, 0)
+            picker.$emit('pick', [start, end])
           }
         }
-      ];
+      ]
 
-      // 如果不是统计模式（即租户明细模式），添加“近一年”选项
       if (this.reportType !== 'statistics') {
         shortcuts.push({
-          text: '近一年',
-          onClick(picker) {
-            const end = new Date();
-            end.setHours(23, 59, 59, 999);
-            const start = new Date();
-            start.setFullYear(start.getFullYear() - 1);
-            start.setHours(0, 0, 0, 0);
-            picker.$emit('pick', [start, end]);
+          text: t('pickerLastYear'),
+          onClick (picker) {
+            const end = new Date()
+            end.setHours(23, 59, 59, 999)
+            const start = new Date()
+            start.setFullYear(start.getFullYear() - 1)
+            start.setHours(0, 0, 0, 0)
+            picker.$emit('pick', [start, end])
           }
-        });
+        })
       }
 
       return {
         shortcuts,
         disabledDate: this.pickerOptions.disabledDate
-      };
-    },
-    formatDateRange() {
-      if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) {
-        return '';
       }
-      const [start, end] = this.queryParams.dateRange;
-      return `${start} - ${end}`;
     },
-    totalStats() {
-      const stats = { amount: 0, water: 0 };
+    formatDateRange () {
+      if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) {
+        return ''
+      }
+      const [start, end] = this.queryParams.dateRange
+      return `${start} - ${end}`
+    },
+    totalStats () {
+      const stats = { amount: 0, water: 0 }
       this.tableData.forEach(item => {
-        stats.amount += Number(item.useAmount) || 0;
-        stats.water += Number(item.waterUse) || 0;
-      });
-      return stats;
+        stats.amount += Number(item.useAmount) || 0
+        stats.water += Number(item.waterUse) || 0
+      })
+      return stats
     },
-    detailTotalStats() {
-      const stats = { totalWater: 0, totalAmount: 0 };
+    detailTotalStats () {
+      const stats = { totalWater: 0, totalAmount: 0 }
       this.tenantDetailData.forEach(item => {
-        stats.totalWater += Number(item.waterUse) || 0;
-        stats.totalAmount += Number(item.useAmount) || 0;
-      });
-      return stats;
+        stats.totalWater += Number(item.waterUse) || 0
+        stats.totalAmount += Number(item.useAmount) || 0
+      })
+      return stats
     },
-    avgDailyAmount() {
-      if (this.tableData.length === 0) return 0;
-      return (this.totalStats.amount / this.tableData.length).toFixed(2);
+    avgDailyAmount () {
+      if (this.tableData.length === 0) return 0
+      return (this.totalStats.amount / this.tableData.length).toFixed(2)
     },
-    avgDailyWater() {
-      if (this.tableData.length === 0) return 0;
-      return (this.totalStats.water / this.tableData.length).toFixed(2);
+    avgDailyWater () {
+      if (this.tableData.length === 0) return 0
+      return (this.totalStats.water / this.tableData.length).toFixed(2)
     },
-    avgUnitPrice() {
-      if (this.detailTotalStats.totalWater === 0) return '0.00';
-      return (this.detailTotalStats.totalAmount / this.detailTotalStats.totalWater).toFixed(2);
+    avgUnitPrice () {
+      if (this.detailTotalStats.totalWater === 0) return '0.00'
+      return (this.detailTotalStats.totalAmount / this.detailTotalStats.totalWater).toFixed(2)
     },
-    isAllSelected() {
-      return this.tenantList.length > 0 && this.queryParams.tenantIds.length === this.tenantList.length;
+    realTenantList () {
+      return this.tenantList.filter(item => item.tenantId !== '')
+    },
+    isAllDetailTenantsSelected () {
+      return (
+        this.realTenantList.length > 0 &&
+        this.queryParams.tenantIds.length === this.realTenantList.length
+      )
+    },
+    loadingText () {
+      return this.$t('waterReport.loadingText')
+    },
+    chartSeriesNames () {
+      const t = (k) => this.$t(`waterReport.${k}`)
+      return {
+        totalFee: t('seriesTotalFee'),
+        totalWater: t('seriesTotalWater')
+      }
     }
   },
   watch: {
     currentManagerId: {
-      handler(val) {
+      handler (val) {
         if (val) {
-          this.initializeData();
+          this.initializeData()
         }
       },
       immediate: true
+    },
+    '$i18n.locale' () {
+      this.$nextTick(() => {
+        if (this.mainChartInstance && this.chartData.length) this.updateMainChart()
+      })
     }
   },
-  mounted() {
-    window.addEventListener('resize', this.handleResize);
+  mounted () {
+    window.addEventListener('resize', this.handleResize)
     this.$nextTick(() => {
       if (window.ResizeObserver) {
-        this.resizeObserver = new ResizeObserver(this.handleResize);
-        const mainContent = this.$el.querySelector('.main-content');
+        this.resizeObserver = new ResizeObserver(this.handleResize)
+        const mainContent = this.$el.querySelector('.main-content')
         if (mainContent) {
-          this.resizeObserver.observe(mainContent);
+          this.resizeObserver.observe(mainContent)
         }
       }
-    });
+    })
   },
-  beforeDestroy() {
-    window.removeEventListener('resize', this.handleResize);
+  beforeDestroy () {
+    window.removeEventListener('resize', this.handleResize)
     if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-      this.resizeObserver = null;
+      this.resizeObserver.disconnect()
+      this.resizeObserver = null
     }
     if (this.mainChartInstance) {
-      this.mainChartInstance.dispose();
+      this.mainChartInstance.dispose()
     }
   },
   methods: {
-    async initializeData() {
-      this.setDefaultDateRange();
+    tenantOptionLabel (tenant) {
+      if (!tenant || tenant.tenantId === '') return this.$t('waterReport.tenantAll')
+      return this.$displayBizHybrid(tenant.name)
+    },
+
+    toggleSeriesByKey (key) {
+      const name = this.chartSeriesNames[key]
+      if (name) this.toggleSeries(name)
+    },
+
+    async initializeData () {
+      this.setDefaultDateRange()
 
       // 从 URL 获取参数
-      const { tenantId, startDate, endDate, showDetail } = this.$route.query;
+      const { tenantId, startDate, endDate, showDetail } = this.$route.query
 
       // 如果有日期参数，使用传入的日期
       if (startDate && endDate) {
-        this.queryParams.dateRange = [startDate, endDate];
+        this.queryParams.dateRange = [startDate, endDate]
       }
 
-      await this.getTenantList();
+      this.queryParams.tenantType = 0
+      await this.getTenantList()
 
       // 如果有租户参数，使用传入的租户ID
       if (tenantId) {
-        const targetTenantId = Number(tenantId) || tenantId;
-        const tenant = this.tenantList.find(t => t.tenantId == targetTenantId);
+        const targetTenantId = Number(tenantId) || tenantId
+        const tenant = this.tenantList.find(t => t.tenantId == targetTenantId)
         if (tenant) {
-          this.queryParams.tenantId = tenant.tenantId;
+          this.queryParams.tenantId = tenant.tenantId
+          this.clearTenantType()
         } else {
-          if (this.tenantList.length > 0) {
-            this.queryParams.tenantId = this.tenantList[0].tenantId;
-          }
+          this.queryParams.tenantId = ''
         }
-      } else if (this.tenantList.length > 0) {
-        this.queryParams.tenantId = this.tenantList[0].tenantId;
+      } else {
+        this.queryParams.tenantId = ''
       }
 
       // 如果有显示明细参数，打开设备明细
       if (showDetail === '1') {
-        this.switchDeviceDetail = true;
+        this.switchDeviceDetail = true
       }
 
-      // 初始化明细tab的租户选择
-      this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId);
+      // 明细 Tab 默认不预选租户
+      this.clearDetailTenants()
 
-      this.handleSearch();
+      if (this.reportType === 'statistics') {
+        this.handleSearch()
+      }
     },
 
-    setDefaultDateRange() {
+    setDefaultDateRange () {
       this.queryParams.dateRange = [
         moment().subtract(30, 'days').format('YYYY-MM-DD'),
         moment().format('YYYY-MM-DD')
-      ];
+      ]
     },
 
-    async getTenantList() {
-      this.tenantLoading = true;
+    async getTenantList () {
+      this.tenantLoading = true
       try {
         const { data } = await getSimpleTenantList({
           managerId: this.currentManagerId,
-          tenantStatus: 0
-        });
-        this.tenantList = data || [];
+          tenantStatus: 0,
+          tenantType: this.getTenantListTenantType()
+        })
+        this.tenantList = [
+          { tenantId: '', name: this.$t('waterReport.tenantAll') },
+          ...(data || [])
+        ]
       } catch (error) {
-        this.$message.error('获取租户列表失败');
-        console.error('获取租户列表失败:', error);
+        this.$apiError.notify(error, this.$t('waterReport.msgTenantListFail'))
+        console.error('getTenantList:', error)
       } finally {
-        this.tenantLoading = false;
+        this.tenantLoading = false
       }
     },
 
-    handleDateRangeChange(val) {
+    handleDateRangeChange (val) {
       if (val && val.length === 2 && val[0] && val[1]) {
-        const [start, end] = val;
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000));
+        const [start, end] = val
+        const startDate = new Date(start)
+        const endDate = new Date(end)
+        const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000))
 
         // 租户用水统计模式(Tab 1)下限制100天
         // 租户用水明细模式(Tab 2)下限制1年(366天)
-        const limitDays = this.reportType === 'statistics' ? 100 : 366;
-        const limitText = this.reportType === 'statistics' ? '100天' : '1年';
+        const limitDays = this.reportType === 'statistics' ? 100 : 366
+        const limitSpanKey = this.reportType === 'statistics' ? 'dateSpan100Days' : 'dateSpan1Year'
 
         if (diffDays > limitDays) {
-          this.$message.warning(`最多只能选择${limitText}的数据`);
-          const newEndDate = new Date(startDate.getTime() + limitDays * 24 * 3600 * 1000);
-          this.queryParams.dateRange = [start, moment(newEndDate).format('YYYY-MM-DD')];
-          return;
+          this.$message.warning(
+            this.$t('waterReport.msgDateRangeLimit', { span: this.$t(`waterReport.${limitSpanKey}`) })
+          )
+          const newEndDate = new Date(startDate.getTime() + limitDays * 24 * 3600 * 1000)
+          this.queryParams.dateRange = [start, moment(newEndDate).format('YYYY-MM-DD')]
+          return
         }
-        this.handleSearch();
+        this.handleSearch()
       }
     },
 
-    toggleSelectAll() {
-      if (this.isAllSelected) {
-        this.queryParams.tenantIds = [];
-      } else {
-        this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId);
-      }
-    },
+    switchReportType (type) {
+      if (this.reportType === type) return
+      this.reportType = type
 
-    switchReportType(type) {
-      if (this.reportType === type) return;
-      this.reportType = type;
-
-      this.switchDeviceDetail = false;
+      this.switchDeviceDetail = false
 
       // 如果切换回统计模式，且当前选择的时间范围超过100天，则重置为默认时间
       if (type === 'statistics' && this.queryParams.dateRange && this.queryParams.dateRange.length === 2) {
-        const [start, end] = this.queryParams.dateRange;
-        const diffDays = Math.floor((new Date(end) - new Date(start)) / (24 * 3600 * 1000));
+        const [start, end] = this.queryParams.dateRange
+        const diffDays = Math.floor((new Date(end) - new Date(start)) / (24 * 3600 * 1000))
         if (diffDays > 100) {
-          this.setDefaultDateRange();
+          this.setDefaultDateRange()
         }
       }
 
-      this.tableData = [];
-      this.chartData = [];
-      this.deviceDetailData = [];
-      this.tenantDetailData = [];
+      this.tableData = []
+      this.chartData = []
+      this.deviceDetailData = []
+      this.tenantDetailData = []
 
-      this.handleSearch();
+      if (type === 'detail') {
+        this.initDetailTenantQueryMode()
+        this.handleSearch()
+        return
+      }
+      this.handleSearch()
     },
 
-    toggleSeries(seriesName) {
+    toggleSeries (seriesName) {
       if (this.mainChartInstance) {
         this.mainChartInstance.dispatchAction({
           type: 'legendToggleSelect',
           name: seriesName
-        });
+        })
       }
     },
 
-    async handleSearch() {
+    async handleSearch () {
       if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) {
-        this.$message.warning('请选择统计时间');
-        return;
+        this.$message.warning(this.$t('waterReport.msgPickPeriod'))
+        return
       }
 
       if (this.reportType === 'statistics') {
-        if (!this.queryParams.tenantId) {
-          this.$message.warning('请选择租户');
-          return;
+        if (this.queryParams.tenantId === null || this.queryParams.tenantId === undefined) {
+          this.$message.warning(this.$t('waterReport.msgPickTenant'))
+          return
+        }
+        if (this.queryParams.tenantId === '' && this.realTenantList.length === 0) {
+          this.$message.warning(this.$t('waterReport.msgNoTenantData'))
+          return
         }
       } else {
-        if (this.queryParams.tenantIds.length === 0) {
-          this.$message.warning('请选择租户');
-          return;
+        const tenantIdList = this.buildDetailTenantIdList()
+        const canQueryWithoutTenantIds =
+          this.isDetailQueryByTenantTypeOnly() && this.queryParams.tenantIds.length === 0
+        if (tenantIdList.length === 0 && !canQueryWithoutTenantIds) {
+          this.$message.warning(this.$t('waterReport.msgPickTenant'))
+          return
         }
       }
 
-      this.loading = true;
+      this.loading = true
       try {
         if (this.reportType === 'statistics') {
-          await this.getStatisticsData();
+          await this.getStatisticsData()
           if (this.switchDeviceDetail) {
-            await this.getDeviceDetailData();
+            await this.getDeviceDetailData()
           }
         } else {
-          await this.getTenantDetailData();
+          await this.getTenantDetailData()
         }
       } catch (error) {
-        this.$message.error('获取数据失败');
-        console.error('获取数据失败:', error);
+        this.$apiError.notify(error, this.$t('waterReport.msgFetchFail'))
+        console.error('handleSearch:', error)
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
-    async getStatisticsData() {
+    /** 统计 Tab：选具体租户传 tenantIdList；否则仅传 tenantType */
+    appendStatisticsTenantParams (params) {
+      if (this.queryParams.tenantId) {
+        params.tenantIdList = [this.queryParams.tenantId]
+      } else if (this.hasTenantTypeFilter()) {
+        params.tenantType = this.queryParams.tenantType
+      }
+    },
+
+    async getStatisticsData () {
       const params = {
         managerId: this.currentManagerId,
         startDate: this.queryParams.dateRange[0],
         endDate: this.queryParams.dateRange[1],
         dataType: 2,
-        useType: 0,
-        tenantIdList: [this.queryParams.tenantId]
-      };
-      const { data } = await queryTenantWaterUseStatis(params);
+        useType: 0
+      }
+      this.appendStatisticsTenantParams(params)
+      const { data } = await queryTenantWaterUseStatis(params)
 
       // 原始数据
-      const originalData = data || [];
+      const originalData = data || []
 
       // 图表数据: 保持正序(时间从早到晚,用于图表展示)
       this.chartData = [...originalData].sort((a, b) => {
-        return new Date(a.occurDate) - new Date(b.occurDate);
-      });
+        return new Date(a.occurDate) - new Date(b.occurDate)
+      })
 
       // 表格数据: 倒序(最新日期在前,用于表格展示)
       this.tableData = [...originalData].sort((a, b) => {
-        return new Date(b.occurDate) - new Date(a.occurDate);
-      });
+        return new Date(b.occurDate) - new Date(a.occurDate)
+      })
 
       this.$nextTick(() => {
-        this.initializeMainChart();
-        this.updateCharts();
-      });
+        this.initializeMainChart()
+        this.updateCharts()
+      })
     },
 
-    async getDeviceDetailData() {
+    async getDeviceDetailData () {
       const params = {
         managerId: this.currentManagerId,
         startDate: this.queryParams.dateRange[0],
         endDate: this.queryParams.dateRange[1],
         dataType: 2,
-        useType: 0,
-        tenantIdList: [this.queryParams.tenantId]
-      };
-      const { data } = await queryTenantWaterUseStatis(params);
+        useType: 0
+      }
+      this.appendStatisticsTenantParams(params)
+      const { data } = await queryTenantWaterUseStatis(params)
 
       // 先对原始数据按日期倒序排序
       const sortedData = (data || []).sort((a, b) => {
-        return new Date(b.occurDate) - new Date(a.occurDate);
-      });
+        return new Date(b.occurDate) - new Date(a.occurDate)
+      })
 
-      const detailArray = [];
+      const detailArray = []
       if (sortedData && sortedData.length > 0) {
         sortedData.forEach(item => {
           if (item.deviceUseDtoList && item.deviceUseDtoList.length > 0) {
@@ -690,14 +764,14 @@ export default {
               occurDate: item.occurDate,
               useAmount: item.useAmount,
               waterUse: item.waterUse
-            };
+            }
             item.deviceUseDtoList.forEach((device, idx) => {
               detailArray.push({
                 ...baseObj,
                 col: idx === 0 ? item.deviceUseDtoList.length : 0,
                 deviceUseDtoList: device
-              });
-            });
+              })
+            })
           } else {
             detailArray.push({
               occurDate: item.occurDate,
@@ -705,149 +779,265 @@ export default {
               waterUse: item.waterUse,
               col: 1,
               deviceUseDtoList: {}
-            });
+            })
           }
-        });
+        })
       }
-      this.deviceDetailData = detailArray;
+      this.deviceDetailData = detailArray
     },
 
-    async getTenantDetailData() {
+    async getTenantDetailData () {
       const params = {
         managerId: this.currentManagerId,
         startDate: this.queryParams.dateRange[0],
         endDate: this.queryParams.dateRange[1],
         dataType: 1,
-        useType: 0,
-        tenantIdList: this.queryParams.tenantIds
-      };
-      const { data } = await queryTenantWaterUse(params);
-      this.tenantDetailData = data || [];
-    },
-
-    handleTenantChange() {
-      this.handleSearch();
-    },
-
-    handleReset() {
-      this.setDefaultDateRange();
-      this.switchDeviceDetail = false;
-      if (this.reportType === 'statistics') {
-        if (this.tenantList.length > 0) {
-          this.queryParams.tenantId = this.tenantList[0].tenantId;
-        }
-      } else {
-        this.queryParams.tenantIds = this.tenantList.map(item => item.tenantId);
+        useType: 0
       }
-      this.handleSearch();
+      this.appendDetailTenantParams(params)
+      const { data } = await queryTenantWaterUse(params)
+      this.tenantDetailData = data || []
     },
 
-    handleExport() {
+    /** 租户类型、租户选择二选一 */
+    hasTenantTypeFilter () {
+      const t = this.queryParams.tenantType
+      return t === 0 || t === 1 || t === 2
+    },
+
+    getTenantListTenantType () {
+      return this.hasTenantTypeFilter() ? this.queryParams.tenantType : 0
+    },
+
+    clearTenantType () {
+      this.queryParams.tenantType = null
+    },
+
+    resetTenantTypeDefault () {
+      this.queryParams.tenantType = 0
+    },
+
+    isDetailQueryByTenantTypeOnly () {
+      return this.queryParams.tenantIds.length === 0 && this.hasTenantTypeFilter()
+    },
+
+    buildDetailTenantIdList () {
+      if (this.queryParams.tenantIds.length > 0) {
+        return [...this.queryParams.tenantIds]
+      }
+      return []
+    },
+
+    appendDetailTenantParams (params) {
+      const tenantIdList = this.buildDetailTenantIdList()
+      if (tenantIdList.length > 0) {
+        params.tenantIdList = tenantIdList
+      } else if (this.hasTenantTypeFilter()) {
+        params.tenantType = this.queryParams.tenantType
+      }
+    },
+
+    initDetailTenantQueryMode () {
+      this.clearDetailTenants()
+      if (!this.hasTenantTypeFilter()) {
+        this.resetTenantTypeDefault()
+      }
+    },
+
+    selectAllDetailTenants () {
+      this.queryParams.tenantIds = this.realTenantList.map(item => item.tenantId)
+    },
+
+    clearDetailTenants () {
+      this.queryParams.tenantIds = []
+    },
+
+    clearDetailTableData () {
+      this.tenantDetailData = []
+    },
+
+    handleTenantChange (tenantId) {
+      if (tenantId) {
+        this.clearTenantType()
+      } else {
+        this.resetTenantTypeDefault()
+      }
+      this.handleSearch()
+    },
+
+    handleDetailTenantChange (val) {
+      if (!Array.isArray(val)) return
+      if (val.includes(TENANT_SELECT_CLEAR_ALL)) {
+        this.clearDetailTenants()
+        this.resetTenantTypeDefault()
+        this.clearDetailTableData()
+        return
+      }
+      if (val.includes(TENANT_SELECT_SELECT_ALL)) {
+        this.selectAllDetailTenants()
+        this.clearTenantType()
+        this.handleSearch()
+        return
+      }
+      this.queryParams.tenantIds = val.filter(
+        (id) => id !== TENANT_SELECT_CLEAR_ALL && id !== TENANT_SELECT_SELECT_ALL
+      )
+      this.clearTenantType()
+      this.handleSearch()
+    },
+
+    async handleTenantTypeChange () {
+      this.queryParams.tenantId = ''
+      this.clearDetailTenants()
+      await this.getTenantList()
+      this.handleSearch()
+    },
+
+    async handleReset () {
+      this.setDefaultDateRange()
+      this.switchDeviceDetail = false
+      this.queryParams.tenantType = 0
+      this.queryParams.tenantId = ''
+      await this.getTenantList()
+      if (this.reportType === 'detail') {
+        this.initDetailTenantQueryMode()
+        this.handleSearch()
+      } else {
+        this.clearDetailTenants()
+        this.handleSearch()
+      }
+    },
+
+    handleExport () {
       if (this.reportType === 'statistics') {
         if (!this.switchDeviceDetail && (!this.tableData || this.tableData.length === 0)) {
-          this.$message.warning('暂无数据可导出');
-          return;
+          this.$message.warning(this.$t('waterReport.msgExportEmpty'))
+          return
         }
         if (this.switchDeviceDetail && (!this.deviceDetailData || this.deviceDetailData.length === 0)) {
-          this.$message.warning('暂无设备明细数据可导出');
-          return;
+          this.$message.warning(this.$t('waterReport.msgExportEmptyDevice'))
+          return
         }
       } else {
         if (!this.tenantDetailData || this.tenantDetailData.length === 0) {
-          this.$message.warning('暂无数据可导出');
-          return;
+          this.$message.warning(this.$t('waterReport.msgExportEmpty'))
+          return
         }
       }
 
-      this.exportLoading = true;
+      this.exportLoading = true
 
       setTimeout(() => {
         try {
           if (this.reportType === 'statistics') {
             if (this.switchDeviceDetail) {
-              this.exportStatisticsDeviceDetail();
+              this.exportStatisticsDeviceDetail()
             } else {
-              this.exportStatisticsNormal();
+              this.exportStatisticsNormal()
             }
           } else {
-            this.exportDetailNormal();
+            this.exportDetailNormal()
           }
 
-          this.$message.success('导出成功！');
+          this.$message.success(this.$t('waterReport.msgExportOk'))
         } catch (error) {
-          console.error('导出失败:', error);
-          this.$message.error(`导出失败: ${error.message || '请重试'}`);
+          console.error('export:', error)
+          this.$message.error(
+            `${this.$t('waterReport.msgExportFail')}: ${error.message || this.$t('waterReport.msgExportRetry')}`
+          )
         } finally {
-          this.exportLoading = false;
+          this.exportLoading = false
         }
-      }, 100);
+      }, 100)
     },
 
-    exportStatisticsNormal() {
-      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId);
-      const tenantName = tenant ? tenant.name : this.queryParams.tenantId;
+    exportStatisticsNormal () {
+      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId)
+      const tenantName = tenant ? this.$displayBizHybrid(tenant.name) : this.queryParams.tenantId
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}`,
-        `租户: ${tenantName}`
-      ];
+        this.$t('waterReport.expFilterTime', {
+          start: this.queryParams.dateRange[0],
+          end: this.queryParams.dateRange[1]
+        }),
+        this.$t('waterReport.expFilterTenant', { tenant: tenantName })
+      ]
 
-      const headers = ['日期', '水费（元）', '水量（m³）'];
+      const headers = [
+        this.$t('waterReport.expColDate'),
+        this.$t('waterReport.expColWaterFee'),
+        this.$t('waterReport.expColWaterVolume')
+      ]
 
       const dataRows = this.tableData.map(row => [
         row.occurDate || '',
         this.formatExportNumber(row.useAmount),
         this.formatExportNumber(row.waterUse)
-      ]);
+      ])
 
       const totalRow = [
-        '总计',
+        this.$t('waterReport.summaryTotal'),
         this.formatExportNumber(this.totalStats.amount),
         this.formatExportNumber(this.totalStats.water)
-      ];
+      ]
 
-      const wsData = [filterRow, [], headers, ...dataRows, totalRow];
+      const wsData = [filterRow, [], headers, ...dataRows, totalRow]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
-      ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 15 }];
+      ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 15 }]
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '租户用水统计');
+      const wb = XLSX.utils.book_new()
+      const sheet = this.$t('waterReport.expSheetStat')
+      XLSX.utils.book_append_sheet(wb, ws, sheet)
 
-      const fileName = this.generateFileName('租户用水统计');
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(sheet)
+      XLSX.writeFile(wb, fileName)
     },
 
-    exportStatisticsDeviceDetail() {
-      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId);
-      const tenantName = tenant ? tenant.name : this.queryParams.tenantId;
+    exportStatisticsDeviceDetail () {
+      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId)
+      const tenantName = tenant ? this.$displayBizHybrid(tenant.name) : this.queryParams.tenantId
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}  |  租户: ${tenantName}  |  设备明细`
-      ];
+        `${this.$t('waterReport.expFilterTime', {
+          start: this.queryParams.dateRange[0],
+          end: this.queryParams.dateRange[1]
+        })}  |  ${this.$t('waterReport.expFilterTenant', { tenant: tenantName })}  |  ${this.$t(
+          'waterReport.expFilterDeviceDetail'
+        )}`
+      ]
 
       const header1 = [
-        '日期', '水费（元）', '水量（m³）',
-        '设备', '结算方式', '费用', '水量（m³）',
-        '起始读数', '',
-        '截止读数', ''
-      ];
+        this.$t('waterReport.expColDate'),
+        this.$t('waterReport.expColWaterFee'),
+        this.$t('waterReport.expColWaterVolume'),
+        this.$t('waterReport.expColDevice'),
+        this.$t('waterReport.expColSettleWay'),
+        this.$t('waterReport.expColFee'),
+        this.$t('waterReport.expColWaterVolume'),
+        this.$t('waterReport.colStartReading'),
+        '',
+        this.$t('waterReport.colEndReading'),
+        ''
+      ]
 
       const header2 = [
         '', '', '',
         '', '', '', '',
-        '时间', '累计读数',
-        '时间', '累计读数'
-      ];
+        this.$t('waterReport.colTime'),
+        this.$t('waterReport.colCumulativeRead'),
+        this.$t('waterReport.colTime'),
+        this.$t('waterReport.colCumulativeRead')
+      ]
 
       if (!this.deviceDetailData || this.deviceDetailData.length === 0) {
-        throw new Error('没有可导出的设备明细数据');
+        throw new Error(this.$t('waterReport.errNoDeviceExport'))
       }
 
-      const dateGroups = {};
+      const dateGroups = {}
       this.deviceDetailData.forEach(row => {
-        const date = row.occurDate;
+        const date = row.occurDate
         if (!dateGroups[date]) {
           dateGroups[date] = {
             summary: {
@@ -856,17 +1046,17 @@ export default {
               waterUse: row.waterUse
             },
             devices: []
-          };
+          }
         }
         if (row.deviceUseDtoList && Object.keys(row.deviceUseDtoList).length > 0) {
-          dateGroups[date].devices.push(row.deviceUseDtoList);
+          dateGroups[date].devices.push(row.deviceUseDtoList)
         }
-      });
+      })
 
-      const dataRows = [];
+      const dataRows = []
       Object.keys(dateGroups).sort().forEach(date => {
-        const group = dateGroups[date];
-        const deviceCount = group.devices.length;
+        const group = dateGroups[date]
+        const deviceCount = group.devices.length
 
         if (deviceCount === 0) {
           dataRows.push([
@@ -874,7 +1064,7 @@ export default {
             this.formatExportNumber(group.summary.useAmount),
             this.formatExportNumber(group.summary.waterUse),
             '', '', '', '', '', '', '', ''
-          ]);
+          ])
         } else {
           group.devices.forEach((device, idx) => {
             if (idx === 0) {
@@ -882,7 +1072,7 @@ export default {
                 group.summary.occurDate,
                 this.formatExportNumber(group.summary.useAmount),
                 this.formatExportNumber(group.summary.waterUse),
-                device.waterName || '',
+                this.$displayBizHybrid(device.waterName) || '',
                 this.getSettleWayLabel(device.settleWay) || '',
                 this.formatExportNumber(device.balance),
                 this.formatExportNumber(device.consumption),
@@ -890,11 +1080,11 @@ export default {
                 this.formatExportNumber(device.startRead),
                 device.endTime || '',
                 this.formatExportNumber(device.endRead)
-              ]);
+              ])
             } else {
               dataRows.push([
                 '', '', '',
-                device.waterName || '',
+                this.$displayBizHybrid(device.waterName) || '',
                 this.getSettleWayLabel(device.settleWay) || '',
                 this.formatExportNumber(device.balance),
                 this.formatExportNumber(device.consumption),
@@ -902,31 +1092,31 @@ export default {
                 this.formatExportNumber(device.startRead),
                 device.endTime || '',
                 this.formatExportNumber(device.endRead)
-              ]);
+              ])
             }
-          });
+          })
         }
-      });
+      })
 
       const totalRow = [
-        '总计',
+        this.$t('waterReport.summaryTotal'),
         this.formatExportNumber(this.totalStats.amount),
         this.formatExportNumber(this.totalStats.water)
-      ];
+      ]
       while (totalRow.length < 11) {
-        totalRow.push('');
+        totalRow.push('')
       }
 
-      const wsData = [filterRow, [], header1, header2, ...dataRows, totalRow];
+      const wsData = [filterRow, [], header1, header2, ...dataRows, totalRow]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
       ws['!cols'] = [
         { wch: 15 }, { wch: 12 }, { wch: 12 },
         { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
         { wch: 18 }, { wch: 12 },
         { wch: 18 }, { wch: 12 }
-      ];
+      ]
 
       const merges = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },
@@ -939,58 +1129,70 @@ export default {
         { s: { r: 2, c: 6 }, e: { r: 3, c: 6 } },
         { s: { r: 2, c: 7 }, e: { r: 2, c: 8 } },
         { s: { r: 2, c: 9 }, e: { r: 2, c: 10 } }
-      ];
+      ]
 
-      let currentRow = 4;
+      let currentRow = 4
       Object.keys(dateGroups).sort().forEach(date => {
-        const group = dateGroups[date];
-        const deviceCount = group.devices.length;
+        const group = dateGroups[date]
+        const deviceCount = group.devices.length
 
         if (deviceCount > 1) {
           for (let col = 0; col <= 2; col++) {
             merges.push({
               s: { r: currentRow, c: col },
               e: { r: currentRow + deviceCount - 1, c: col }
-            });
+            })
           }
         }
 
-        currentRow += deviceCount > 0 ? deviceCount : 1;
-      });
+        currentRow += deviceCount > 0 ? deviceCount : 1
+      })
 
-      ws['!merges'] = merges;
+      ws['!merges'] = merges
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '租户用水统计-设备明细');
+      const wb = XLSX.utils.book_new()
+      const sheet = this.$t('waterReport.expSheetStatDevice')
+      XLSX.utils.book_append_sheet(wb, ws, sheet)
 
-      const fileName = this.generateFileName('租户用水统计-设备明细');
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(sheet)
+      XLSX.writeFile(wb, fileName)
     },
 
-    exportDetailNormal() {
+    exportDetailNormal () {
       const selectedTenants = this.tenantList
         .filter(t => this.queryParams.tenantIds.includes(t.tenantId))
-        .map(t => t.name)
-        .join('、');
+        .map(t => this.$displayBizHybrid(t.name))
+        .join(this.$t('waterReport.listSep'))
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}`,
-        `租户: ${selectedTenants || '全部'}`
-      ];
+        this.$t('waterReport.expFilterTime', {
+          start: this.queryParams.dateRange[0],
+          end: this.queryParams.dateRange[1]
+        }),
+        this.$t('waterReport.expFilterTenant', {
+          tenant: selectedTenants || this.$t('waterReport.tenantAll')
+        })
+      ]
 
-      const headers = ['租户编号', '租户名称', '区域标签', '水费(元)', '水量(m³)'];
+      const headers = [
+        this.$t('waterReport.expColTenantId'),
+        this.$t('waterReport.expColTenantName'),
+        this.$t('waterReport.expColRegion'),
+        this.$t('waterReport.colWaterFeeParen'),
+        this.$t('waterReport.colWaterVolumeParen')
+      ]
 
       const dataRows = this.tenantDetailData.map(row => [
-        row.tenantId !== -1 ? row.tenantId : '总计',
-        row.tenantName || '',
+        row.tenantId !== -1 ? row.tenantId : this.$t('waterReport.summaryTotal'),
+        this.$displayBizHybrid(row.tenantName) || '',
         row.labelNames && row.labelNames.length ? row.labelNames[0] : '',
         this.formatExportNumber(row.useAmount),
         this.formatExportNumber(row.waterUse)
-      ]);
+      ])
 
-      const wsData = [filterRow, [], headers, ...dataRows];
+      const wsData = [filterRow, [], headers, ...dataRows]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
       ws['!cols'] = [
         { wch: 12 },
@@ -998,17 +1200,18 @@ export default {
         { wch: 15 },
         { wch: 15 },
         { wch: 15 }
-      ];
+      ]
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '租户用水明细');
+      const wb = XLSX.utils.book_new()
+      const sheet = this.$t('waterReport.expSheetDetail')
+      XLSX.utils.book_append_sheet(wb, ws, sheet)
 
-      const fileName = this.generateFileName('租户用水明细');
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(sheet)
+      XLSX.writeFile(wb, fileName)
     },
 
-    generateFileName(prefix) {
-      const now = new Date();
+    generateFileName (prefix) {
+      const now = new Date()
       const timeStr =
         now.getFullYear() +
         String(now.getMonth() + 1).padStart(2, '0') +
@@ -1016,120 +1219,131 @@ export default {
         '_' +
         String(now.getHours()).padStart(2, '0') +
         String(now.getMinutes()).padStart(2, '0') +
-        String(now.getSeconds()).padStart(2, '0');
+        String(now.getSeconds()).padStart(2, '0')
 
-      return `${prefix}_${timeStr}.xlsx`;
+      return `${prefix}_${timeStr}.xlsx`
     },
 
-    formatExportNumber(num) {
+    formatExportNumber (num) {
       if (num === undefined || num === null || num === '' || num === '-') {
-        return 0;
+        return 0
       }
 
-      const numValue = typeof num === 'string' ? parseFloat(num) : num;
+      const numValue = typeof num === 'string' ? parseFloat(num) : num
 
       if (isNaN(numValue)) {
-        return 0;
+        return 0
       }
 
-      return numValue;
+      return numValue
     },
 
-    handleSwitchChange() {
-      this.handleSearch();
+    handleSwitchChange () {
+      if (this.switchDeviceDetail && !this.queryParams.tenantId) {
+        if (this.realTenantList.length > 0) {
+          this.queryParams.tenantId = this.realTenantList[0].tenantId
+          this.clearTenantType()
+          this.$message.info(this.$t('waterReport.msgDeviceAutoTenant'))
+        } else {
+          this.$message.warning(this.$t('waterReport.msgNoTenantAvailable'))
+          this.switchDeviceDetail = false
+          return
+        }
+      }
+      this.handleSearch()
     },
 
-    tableRowClassName({ row }) {
+    tableRowClassName ({ row }) {
       if (row.tenantId === -1) {
-        return 'total-row';
+        return 'total-row'
       }
-      return '';
+      return ''
     },
 
-    deviceDetailSpanMethod({ row, columnIndex }) {
+    deviceDetailSpanMethod ({ row, columnIndex }) {
       if (columnIndex < 3) {
         return {
           rowspan: row.col,
           colspan: row.col > 0 ? 1 : 0
-        };
+        }
       }
     },
 
-    getStatisticsSummaries(param) {
-      const { columns, data } = param;
-      const sums = [];
+    getStatisticsSummaries (param) {
+      const { columns, data } = param
+      const sums = []
       columns.forEach((column, index) => {
         if (index === 0) {
-          sums[index] = '总计';
-          return;
+          sums[index] = this.$t('waterReport.summaryTotal')
+          return
         }
-        const values = data.map(item => Number(item[column.property]));
+        const values = data.map(item => Number(item[column.property]))
         if (!values.every(value => isNaN(value))) {
           sums[index] = values
             .reduce((prev, curr) => {
-              const value = Number(curr);
+              const value = Number(curr)
               if (!isNaN(value)) {
-                return prev + curr;
+                return prev + curr
               }
-              return prev;
+              return prev
             }, 0)
-            .toFixed(2);
+            .toFixed(2)
         } else {
-          sums[index] = '';
+          sums[index] = ''
         }
-      });
-      return sums;
+      })
+      return sums
     },
 
-    getDeviceDetailSummaries(param) {
-      const { columns, data } = param;
-      const sums = [];
-      const uniqueData = [];
-      const dateSet = [];
+    getDeviceDetailSummaries (param) {
+      const { columns, data } = param
+      const sums = []
+      const uniqueData = []
+      const dateSet = []
       data.forEach(item => {
         if (dateSet.indexOf(item.occurDate) === -1) {
-          uniqueData.push(item);
-          dateSet.push(item.occurDate);
+          uniqueData.push(item)
+          dateSet.push(item.occurDate)
         }
-      });
+      })
       columns.forEach((column, index) => {
         if (index === 0) {
-          sums[index] = '总计';
-          return;
+          sums[index] = this.$t('waterReport.summaryTotal')
+          return
         }
-        const values = uniqueData.map(item => Number(item[column.property]));
+        const values = uniqueData.map(item => Number(item[column.property]))
         if (!values.every(value => isNaN(value))) {
           sums[index] = values
             .reduce((prev, curr) => {
-              const value = Number(curr);
+              const value = Number(curr)
               if (!isNaN(value)) {
-                return prev + curr;
+                return prev + curr
               }
-              return prev;
+              return prev
             }, 0)
-            .toFixed(2);
+            .toFixed(2)
         } else {
-          sums[index] = '';
+          sums[index] = ''
         }
-      });
-      return sums;
+      })
+      return sums
     },
 
-    initializeMainChart() {
-      if (!this.$refs.mainChartContainer) return;
+    initializeMainChart () {
+      if (!this.$refs.mainChartContainer) return
       if (this.mainChartInstance) {
-        this.mainChartInstance.dispose();
+        this.mainChartInstance.dispose()
       }
-      this.mainChartInstance = this.$echarts.init(this.$refs.mainChartContainer);
+      this.mainChartInstance = this.$echarts.init(this.$refs.mainChartContainer)
     },
 
-    updateCharts() {
-      this.updateMainChart();
+    updateCharts () {
+      this.updateMainChart()
     },
 
-    updateMainChart() {
-      if (!this.mainChartInstance || this.chartData.length === 0) return;
-      const xAxisData = this.chartData.map(item => moment(item.occurDate).format('MM-DD'));
+    updateMainChart () {
+      if (!this.mainChartInstance || this.chartData.length === 0) return
+      const xAxisData = this.chartData.map(item => moment(item.occurDate).format('MM-DD'))
       const option = {
         color: ['#52c41a', '#5b9bd5'],
         tooltip: {
@@ -1141,36 +1355,34 @@ export default {
           textStyle: { color: '#333', fontSize: 14 },
           axisPointer: { type: 'cross', crossStyle: { color: '#999' } },
           formatter: params => {
-            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`;
+            const feeName = this.chartSeriesNames.totalFee
+            const unitYuan = this.$t('waterReport.unitYuan')
+            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`
             params.forEach(item => {
-              let suffix = '';
-              if (item.seriesName === '总水费') {
-                suffix = ' 元';
-              } else {
-                suffix = ' m³';
-              }
+              const suffix =
+                item.seriesName === feeName ? ` ${unitYuan}` : ' m³'
               html += `<div style="display: flex; align-items: center; margin-bottom: 4px">
                 <span style="display: inline-block; width: 10px; height: 10px; background: ${item.color
                 }; border-radius: 50%; margin-right: 8px"></span>
                 <span style="flex: 1">${item.seriesName}</span>
                 <span style="font-weight: 500">${this.formatNumber(item.value)}${suffix}</span>
-              </div>`;
-            });
-            return html;
+              </div>`
+            })
+            return html
           }
         },
         legend: {
-          data: ['总水费', '总水量'],
+          data: [this.chartSeriesNames.totalFee, this.chartSeriesNames.totalWater],
           bottom: 35,
           itemGap: 20,
           textStyle: { color: '#666' }
         },
         grid: { top: 30, left: 50, right: 50, bottom: 75, containLabel: true },
         dataZoom: [
-          { type: 'inside', start: 0, end: 100 },  // ← 改为 0-100
+          { type: 'inside', start: 0, end: 100 }, // ← 改为 0-100
           {
             type: 'slider',
-            start: 0,                                // ← 改为 0
+            start: 0, // ← 改为 0
             end: 100,
             height: 8,
             bottom: 5,
@@ -1193,7 +1405,7 @@ export default {
         yAxis: [
           {
             type: 'value',
-            name: '水费 (元)',
+            name: this.$t('waterReport.yAxisWaterFee'),
             nameTextStyle: { color: '#666', padding: [0, 0, 0, 20] },
             splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
             axisLine: { show: false },
@@ -1206,7 +1418,7 @@ export default {
           },
           {
             type: 'value',
-            name: '水量 (m³)',
+            name: this.$t('waterReport.yAxisWaterVolume'),
             nameTextStyle: { color: '#666', padding: [0, 20, 0, 0] },
             splitLine: { show: false },
             axisLine: { show: false },
@@ -1220,7 +1432,7 @@ export default {
         ],
         series: [
           {
-            name: '总水费',
+            name: this.chartSeriesNames.totalFee,
             type: 'line',
             data: this.chartData.map(item => item.useAmount),
             smooth: true,
@@ -1242,7 +1454,7 @@ export default {
             }
           },
           {
-            name: '总水量',
+            name: this.chartSeriesNames.totalWater,
             type: 'bar',
             yAxisIndex: 1,
             data: this.chartData.map(item => item.waterUse),
@@ -1253,28 +1465,29 @@ export default {
             }
           }
         ]
-      };
-      this.mainChartInstance.setOption(option);
+      }
+      this.mainChartInstance.setOption(option)
     },
 
-    handleResize() {
+    handleResize () {
       this.$nextTick(() => {
-        if (this.mainChartInstance) this.mainChartInstance.resize();
-      });
+        if (this.mainChartInstance) this.mainChartInstance.resize()
+      })
     },
 
-    formatNumber(num) {
-      if (num === undefined || num === null) return '-';
-      if (num === 0) return '0.00';
-      return Number(num).toFixed(2);
+    formatNumber (num) {
+      if (num === undefined || num === null) return '-'
+      if (num === 0) return '0.00'
+      return Number(num).toFixed(2)
     },
 
-    getSettleWayLabel(settleWay) {
-      if (settleWay === undefined || settleWay === null) return '';
-      return this.settleWayMap[settleWay] || '';
+    getSettleWayLabel (settleWay) {
+      if (settleWay === undefined || settleWay === null) return ''
+      const key = `settleWay${settleWay}`
+      return this.$te(`waterReport.${key}`) ? this.$t(`waterReport.${key}`) : ''
     }
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1391,8 +1604,18 @@ export default {
     max-width: 320px;
   }
 
-  &.tenant-filter {
+  &.tenant-filter,
+  &.tenant-type-filter {
     max-width: 360px;
+  }
+}
+
+::v-deep .tenant-select-action-option {
+  color: #409eff;
+  font-weight: 500;
+
+  &.tenant-select-action-option--clear {
+    border-bottom: 1px solid #ebeef5;
   }
 }
 
@@ -1462,6 +1685,11 @@ export default {
   color: #6b7280;
   font-weight: 500;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.detail-switch.is-disabled .switch-text {
+  cursor: not-allowed;
 }
 
 .toggle-switch {

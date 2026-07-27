@@ -1,293 +1,282 @@
 <template>
-  <div class="table-page-container">
-    <!-- 搜索区域 -->
-    <div class="search-container">
-      <el-card class="search-card" shadow="never">
+  <div class="table-page-container electricity-adjustment-page">
+    <template v-if="canView">
+      <div class="search-box">
         <el-form
           :model="queryData"
           ref="searchForm"
-          class="search-form compact-form"
-          label-position="left"
-          label-width="100px"
+          class="search-form"
+          @submit.native.prevent
+          @keyup.enter.native="handleSearch"
         >
-          <!-- 基础筛选 -->
-          <el-row :gutter="16" class="search-row">
-            <el-col
+          <!-- 与租户账单闭环一致：时间筛选项首位（同 energyBill / floatingPrice），search-main-grid + search-actions -->
+          <div class="search-main-grid">
+            <div
               v-for="field in displayBasicFields"
               :key="field.prop"
-              :xs="24"
-              :sm="12"
-              :md="8"
-              :lg="6"
+              class="field-item"
             >
-              <el-form-item
-                :label="field.label"
-                :prop="field.prop"
-                class="compact-form-item"
+              <el-input
+                v-if="field.type === 'input'"
+                v-model="queryData[field.prop]"
+                :placeholder="field.placeholder"
+                clearable
+                size="small"
+                @blur="handleSearch"
+                @clear="handleSearch"
+              />
+              <el-select
+                v-else-if="field.type === 'select'"
+                v-model="queryData[field.prop]"
+                :placeholder="field.placeholder"
+                clearable
+                size="small"
+                style="width: 100%"
+                @change="handleSearch"
               >
-                <!-- 输入框 -->
-                <el-input
-                  v-if="field.type === 'input'"
-                  v-model="queryData[field.prop]"
-                  :placeholder="field.placeholder"
-                  clearable
-                  size="small"
+                <el-option
+                  v-for="item in field.options"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
                 />
-                <!-- 选择框 -->
-                <el-select
-                  v-else-if="field.type === 'select'"
-                  v-model="queryData[field.prop]"
-                  :placeholder="field.placeholder"
-                  clearable
-                  size="small"
-                  style="width: 100%"
-                >
-                  <el-option
-                    v-for="item in field.options"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  />
-                </el-select>
-                <!-- 日期时间范围 -->
-                <el-date-picker
-                  v-else-if="field.type === 'datetimerange'"
-                  v-model="queryData[field.prop]"
-                  type="datetimerange"
-                  range-separator="-"
-                  start-placeholder="开始时间"
-                  end-placeholder="结束时间"
-                  value-format="yyyy-MM-dd HH:mm:ss"
-                  size="small"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <!-- 操作按钮行 -->
-          <div class="form-actions compact-actions">
-            <div class="action-left">
-              <!-- 左侧操作按钮预留 -->
+              </el-select>
+              <el-date-picker
+                v-else-if="field.type === 'datetimerange'"
+                v-model="queryData[field.prop]"
+                type="datetimerange"
+                range-separator="-"
+                :start-placeholder="$t('electricityAdjustmentPage.phStartDate')"
+                :end-placeholder="$t('electricityAdjustmentPage.phEndDate')"
+                value-format="yyyy-MM-dd HH:mm:ss"
+                size="small"
+                style="width: 100%"
+                @change="handleSearch"
+                @clear="handleSearch"
+              />
             </div>
-            <div class="action-right">
-              <el-button
-                type="primary"
-                icon="el-icon-search"
-                size="small"
-                @click="handleSearch"
-              >
-                查询
+
+            <div class="field-item field-spacer" aria-hidden="true">
+              <span class="field-spacer-inner" />
+            </div>
+
+            <div class="search-actions">
+              <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">
+                {{ $t('electricityAdjustmentPage.btnSearch') }}
+              </el-button>
+              <el-button size="small" icon="el-icon-refresh" @click="handleReset">
+                {{ $t('electricityAdjustmentPage.btnReset') }}
               </el-button>
               <el-button
-                icon="el-icon-refresh"
+                v-if="canOperate"
+                type="success"
                 size="small"
-                @click="handleReset"
+                icon="el-icon-download"
+                @click="handleExport"
               >
-                重置
+                {{ $t('electricityAdjustmentPage.btnExport') }}
               </el-button>
-              <el-divider direction="vertical" style="margin: 0 8px"></el-divider>
-              <el-dropdown trigger="click" @command="handleCommand">
-                <el-button size="small" type="text" style="padding: 7px 12px">
-                  更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
-                </el-button>
-                <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item command="export" icon="el-icon-download">
-                    导出数据
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </el-dropdown>
             </div>
           </div>
         </el-form>
-      </el-card>
-    </div>
+      </div>
 
-    <!-- 数据表格区域 -->
-    <div class="table-container">
-      <div class="table-card" shadow="never">
-        <!-- 表格工具栏 -->
-        <div class="table-toolbar" v-if="selectedData.length > 0">
+      <div class="content-box">
+        <div class="content-toolbar ea-toolbar">
           <div class="toolbar-left">
-            <span class="selection-info">
-              已选择 <span class="count">{{ selectedData.length }}</span> 条数据
+            <span class="section-title">
+              <span class="title-bar" />
+              {{ $t('electricityAdjustmentPage.sectionTitle') }}
             </span>
           </div>
         </div>
 
-        <!-- 数据表格 -->
-        <el-table
-          v-loading="loading"
-          :data="tableData"
-          :max-height="tableMaxHeight"
-          stripe
-          style="width: 100%"
-          class="custom-table"
-          @selection-change="handleSelectionChange"
-          :header-cell-style="{
-            background: '#f5f7fa',
-            color: '#606266',
-            fontWeight: '600',
-          }"
-        >
-          <!-- 选择列 -->
-          <el-table-column type="selection" width="55" align="center" />
-
-          <!-- 流水号 -->
-          <el-table-column
-            label="流水号"
-            prop="rid"
-            width="100"
-            align="center"
-          />
-
-          <!-- 电表(ID) -->
-          <el-table-column
-            label="电表(ID)"
-            align="center"
-            min-width="200"
-          >
-            <template slot-scope="scope">
-              {{ scope.row.meterName }}({{ scope.row.meterId }})
-            </template>
-          </el-table-column>
-
-          <!-- 电表序列号 -->
-          <el-table-column
-            label="电表序列号"
-            prop="serial"
-            align="center"
-            width="150"
-          />
-
-          <!-- 计费方案(ID) -->
-          <el-table-column
-            label="计费方案(ID)"
-            align="center"
-            width="240"
-          >
-            <template slot-scope="scope">
-              {{ scope.row.priceName }}({{ scope.row.priceId }})
-            </template>
-          </el-table-column>
-
-          <!-- 电价(尖/峰/平/谷) -->
-          <el-table-column
-            label="电价(尖/峰/平/谷)"
-            align="center"
-            width="210"
-          >
-            <template slot-scope="scope">
-              {{ scope.row.powerPeakPrice }}/{{ scope.row.powerTopPrice }}/{{
-                scope.row.powerFlatPrice
-              }}/{{ scope.row.powerValleyPrice }}
-            </template>
-          </el-table-column>
-
-          <!-- 时间 -->
-          <el-table-column
-            label="时间"
-            prop="occurTime"
-            align="center"
-            width="160"
-          />
-
-          <!-- 改价结果 -->
-          <el-table-column
-            label="改价结果"
-            align="center"
-            width="120"
-          >
-            <template slot-scope="scope">
-              <el-tag
-                v-if="scope.row.result === 'SUCCESS'"
-                type="success"
-                size="small"
-              >
-                调价成功
-              </el-tag>
-              <el-tag
-                v-else-if="scope.row.result === 'FAIL'"
-                type="danger"
-                size="small"
-              >
-                调价失败
-              </el-tag>
-              <el-tag
-                v-else
-                type="info"
-                size="small"
-              >
-                已失效
-              </el-tag>
-            </template>
-          </el-table-column>
-
-          <!-- 操作列 -->
-          <el-table-column
-            label="操作"
-            width="160"
-            fixed="right"
-            align="center"
-          >
-            <template slot-scope="scope">
-              <template v-if="scope.row.result === 'FAIL'">
-                <el-button type="text" size="mini" @click="handleDetail(scope.row)">详情</el-button>
-                <span style="color: #dcdfe6; margin: 0 4px;">|</span>
-                <el-button type="text" size="mini" @click="handleRetry(scope.row)" style="color: #E6A23C;">重试</el-button>
+        <div class="list-view ea-list-view">
+          <div v-if="canOperate && selectedData.length > 0" class="table-toolbar">
+            <span class="selection-info">
+              <template v-if="selectionCountFirst">
+                <span class="count">{{ selectedData.length }}</span>{{ $t('electricityAdjustmentPage.selectionAfter') }}
               </template>
               <template v-else>
-                <el-button type="text" size="mini" @click="handleDetail(scope.row)">详情</el-button>
+                {{ $t('electricityAdjustmentPage.selectionBefore') }}<span class="count">{{ selectedData.length }}</span>{{ $t('electricityAdjustmentPage.selectionAfter') }}
               </template>
-            </template>
-          </el-table-column>
-        </el-table>
+            </span>
+          </div>
 
-        <!-- 空数据提示 -->
-        <div v-if="!loading && tableData.length === 0" style="text-align: center; padding: 40px 0;">
-          <el-empty description="暂无数据" />
+          <el-table
+            ref="table"
+            v-loading="loading"
+            :data="tableData"
+            :max-height="tableMaxHeight"
+            border
+            stripe
+            class="ea-table light-border-table"
+            style="width: 100%"
+            @selection-change="handleSelectionChange"
+            :header-cell-style="{
+              background: '#f5f7fa',
+              color: '#606266',
+              fontWeight: '600',
+            }"
+          >
+            <template slot="empty">
+              <el-empty :description="$t('electricityAdjustmentPage.emptyTable')" />
+            </template>
+
+            <el-table-column v-if="canOperate" type="selection" width="55" align="center" />
+
+            <el-table-column
+              :label="$t('electricityAdjustmentPage.colRid')"
+              prop="rid"
+              width="100"
+              align="center"
+            />
+
+            <el-table-column
+              :label="$t('electricityAdjustmentPage.colMeter')"
+              align="center"
+              min-width="200"
+            >
+              <template slot-scope="scope">
+                {{ $displayBizHybrid(scope.row.meterName || '') }}({{ scope.row.meterId }})
+              </template>
+            </el-table-column>
+
+            <el-table-column
+              :label="$t('electricityAdjustmentPage.colSerial')"
+              prop="serial"
+              align="center"
+              width="150"
+            />
+
+            <el-table-column
+              :label="$t('electricityAdjustmentPage.colPricePlan')"
+              align="center"
+              width="240"
+            >
+              <template slot-scope="scope">
+                {{ $displayBizHybrid(scope.row.priceName || '') }}({{ scope.row.priceId }})
+              </template>
+            </el-table-column>
+
+            <el-table-column
+              :label="$t('electricityAdjustmentPage.colPrices')"
+              align="center"
+              width="210"
+            >
+              <template slot-scope="scope">
+                {{ scope.row.powerPeakPrice }}/{{ scope.row.powerTopPrice }}/{{
+                  scope.row.powerFlatPrice
+                }}/{{ scope.row.powerValleyPrice }}
+              </template>
+            </el-table-column>
+
+            <el-table-column
+              :label="$t('electricityAdjustmentPage.colTime')"
+              prop="occurTime"
+              align="center"
+              width="160"
+            />
+
+            <el-table-column
+              :label="$t('electricityAdjustmentPage.colResult')"
+              align="center"
+              width="120"
+            >
+              <template slot-scope="scope">
+                <el-tag
+                  v-if="scope.row.result === 'SUCCESS'"
+                  type="success"
+                  size="small"
+                >
+                  {{ $t('electricityAdjustmentPage.resultSuccess') }}
+                </el-tag>
+                <el-tag
+                  v-else-if="scope.row.result === 'FAIL'"
+                  type="danger"
+                  size="small"
+                >
+                  {{ $t('electricityAdjustmentPage.resultFail') }}
+                </el-tag>
+                <el-tag
+                  v-else
+                  type="info"
+                  size="small"
+                >
+                  {{ $t('electricityAdjustmentPage.resultExpired') }}
+                </el-tag>
+              </template>
+            </el-table-column>
+
+            <el-table-column
+              :label="$t('electricityAdjustmentPage.colAction')"
+              width="160"
+              fixed="right"
+              align="center"
+            >
+              <template slot-scope="scope">
+                <div class="adjustment-action-cell">
+                  <template v-if="scope.row.result === 'FAIL'">
+                    <el-button type="text" size="mini" @click="handleDetail(scope.row)">{{ $t('electricityAdjustmentPage.btnDetail') }}</el-button>
+                    <el-button
+                      v-if="canOperate"
+                      type="text"
+                      size="mini"
+                      class="action-retry"
+                      @click="handleRetry(scope.row)"
+                    >
+                      {{ $t('electricityAdjustmentPage.btnRetry') }}
+                    </el-button>
+                  </template>
+                  <template v-else>
+                    <el-button type="text" size="mini" @click="handleDetail(scope.row)">{{ $t('electricityAdjustmentPage.btnDetail') }}</el-button>
+                  </template>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <div v-if="tableData.length > 0" class="pagination-container compact-pagination">
+            <el-pagination
+              :current-page="pageData.current"
+              :page-sizes="[15, 30, 60, 100]"
+              :page-size="pageData.size"
+              :total="pageData.total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+            />
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- 分页 -->
-    <div v-if="tableData.length > 0" class="pagination-container">
-      <el-pagination
-        :current-page="pageData.current"
-        :page-sizes="[15, 30, 60, 100]"
-        :page-size="pageData.size"
-        :total="pageData.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
-    </div>
 
     <!-- 详情弹窗 -->
     <el-dialog
-      title="调价详情"
+      :title="$t('electricityAdjustmentPage.dialogDetailTitle')"
       :visible.sync="dialogVisible"
       width="500px"
       :close-on-click-modal="false"
       class="custom-dialog"
     >
       <div slot="title">
-        调价详情
+        {{ $t('electricityAdjustmentPage.dialogDetailTitle') }}
       </div>
       <div class="dialog-content">
         <el-form label-width="100px">
-          <el-form-item label="操作描述：">
-            {{ detailData.message || '-' }}
+          <el-form-item :label="$t('electricityAdjustmentPage.labelOpDesc')">
+            {{ detailMessageDisplay }}
           </el-form-item>
-          <el-form-item label="备注：">
-            {{ detailData.comment || '-' }}
+          <el-form-item :label="$t('electricityAdjustmentPage.labelRemark')">
+            {{ detailCommentDisplay }}
           </el-form-item>
         </el-form>
       </div>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">关闭</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('electricityAdjustmentPage.btnClose') }}</el-button>
       </span>
     </el-dialog>
+    </template>
+    <el-empty v-else :description="$t('electricityAdjustmentPage.emptyNoPermission')" />
   </div>
 </template>
 
@@ -302,8 +291,8 @@ import { mapGetters } from 'vuex'
 import moment from 'moment'
 
 export default {
-  name: 'PriceModifyRecord',
-  data() {
+  name: 'ElectricityAdjustmentPage',
+  data () {
     return {
       // 表格高度配置
       tableHeightConfig: {
@@ -311,9 +300,9 @@ export default {
         rowHeight: 47,
         minHeight: 200,
         maxRows: 10,
-        paginationHeight: 68,
+        paginationHeight: 68
       },
-      
+
       // 查询参数
       queryData: {
         result: '',
@@ -325,47 +314,18 @@ export default {
         managerId: ''
       },
 
-      // 搜索字段配置
-      searchFields: {
-        basic: [
-          {
-            prop: 'result',
-            label: '改价结果',
-            type: 'select',
-            placeholder: '请选择改价结果',
-            options: [
-              { value: '', label: '全部' },
-              { value: 'SUCCESS', label: '成功' },
-              { value: 'FAIL', label: '失败' }
-            ]
-          },
-          {
-            prop: 'serial',
-            label: '电表序列号',
-            type: 'input',
-            placeholder: '请输入电表序列号'
-          },
-          {
-            prop: 'timeRange',
-            label: '日期',
-            type: 'datetimerange',
-            placeholder: '请选择时间范围'
-          }
-        ]
-      },
-
       // 表格数据
       tableData: [],
       // 选中的数据
       selectedData: [],
       // 加载状态
       loading: false,
-      
+
       // 分页数据
       pageData: {
         current: 1,
         size: 15,
-        total: 0,
+        total: 0
       },
 
       // 详情弹窗
@@ -379,40 +339,96 @@ export default {
 
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
-    
+    ...mapGetters(['kztMenuNos']),
+    hasKztPermission () {
+      const allow = new Set((this.kztMenuNos || []).map(v => String(v)))
+      return menuNo => allow.has(String(menuNo))
+    },
+    canOperate () {
+      return this.hasKztPermission('660080')
+    },
+    canView () {
+      return this.hasKztPermission('660081')
+    },
+
+    selectionCountFirst () {
+      return this.$i18n.locale === 'en'
+    },
+
+    detailMessageDisplay () {
+      const m = this.detailData.message
+      if (m == null || String(m).trim() === '') return '-'
+      return this.$displayBizHybrid(String(m)) || '-'
+    },
+
+    detailCommentDisplay () {
+      const c = this.detailData.comment
+      if (c == null || String(c).trim() === '') return '-'
+      return this.$displayBizHybrid(String(c)) || '-'
+    },
+
+    displayBasicFields () {
+      return [
+        {
+          prop: 'timeRange',
+          type: 'datetimerange',
+          placeholder: ''
+        },
+        {
+          prop: 'result',
+          type: 'select',
+          placeholder: this.$t('electricityAdjustmentPage.phResult'),
+          options: [
+            { value: '', label: this.$t('electricityAdjustmentPage.optAll') },
+            { value: 'SUCCESS', label: this.$t('electricityAdjustmentPage.optSuccess') },
+            { value: 'FAIL', label: this.$t('electricityAdjustmentPage.optFail') }
+          ]
+        },
+        {
+          prop: 'serial',
+          type: 'input',
+          placeholder: this.$t('electricityAdjustmentPage.phSerial')
+        }
+      ]
+    },
+
     // 数据长度
-    dataLength() {
+    dataLength () {
       return this.tableData.length
     },
 
-    // 获取显示的基础搜索字段
-    displayBasicFields() {
-      return this.searchFields.basic
-    },
-
     // 动态计算表格高度
-    tableMaxHeight() {
+    tableMaxHeight () {
       // 始终返回最大高度（9行 + 表头）
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-      );
-    },
+      )
+    }
   },
 
   watch: {
     currentManagerId: {
-      handler(newVal) {
-        if (newVal) {
+      handler (newVal) {
+        if (newVal && this.canView) {
           this.queryData.managerId = newVal
           this.fetchTableData()
         }
       },
-      immediate: true,
+      immediate: true
     },
+    canView: {
+      handler (val) {
+        if (val && this.currentManagerId) {
+          this.queryData.managerId = this.currentManagerId
+          this.fetchTableData()
+        }
+      },
+      immediate: true
+    }
   },
 
-  created() {
+  created () {
     // 埋点统计
     if (this.$store.dispatch) {
       this.$store.dispatch('methods/buriedPoint', '调价日志')
@@ -421,7 +437,8 @@ export default {
 
   methods: {
     // 获取表格数据
-    async fetchTableData() {
+    async fetchTableData () {
+      if (!this.canView) return
       this.loading = true
       try {
         // 处理时间范围参数
@@ -461,12 +478,12 @@ export default {
           this.tableData = response.data.dataList || []
           this.pageData.total = response.data.total || 0
         } else {
-          this.$message.error(response.msg || '获取数据失败')
+          this.$message.error(response.msg || this.$t('electricityAdjustmentPage.msgLoadFail'))
           this.tableData = []
           this.pageData.total = 0
         }
       } catch (error) {
-        this.$message.error('获取调价记录失败')
+        this.$apiError.notify(error, this.$t('electricityAdjustmentPage.msgFetchFail'))
         console.error('获取调价记录失败:', error)
         this.tableData = []
         this.pageData.total = 0
@@ -476,13 +493,15 @@ export default {
     },
 
     // 查询
-    handleSearch() {
+    handleSearch () {
+      if (!this.canView) return
       this.pageData.current = 1
       this.fetchTableData()
     },
 
     // 重置
-    handleReset() {
+    handleReset () {
+      if (!this.canView) return
       this.queryData = {
         result: '',
         serial: '',
@@ -495,26 +514,17 @@ export default {
       this.handleSearch()
     },
 
-    // 处理顶部下拉命令
-    handleCommand(command) {
-      switch (command) {
-        case 'export':
-          this.handleExport()
-          break
-      }
-    },
-
     // 查看详情
-    handleDetail(row) {
+    handleDetail (row) {
       try {
         const resultDesc = row.resultDesc ? JSON.parse(row.resultDesc) : {}
         this.detailData = {
-          message: resultDesc.msg || '无',
+          message: resultDesc.msg || this.$t('electricityAdjustmentPage.detailNoDesc'),
           comment: row.comment || '-'
         }
       } catch (error) {
         this.detailData = {
-          message: '解析失败',
+          message: this.$t('electricityAdjustmentPage.detailParseFail'),
           comment: row.comment || '-'
         }
       }
@@ -522,11 +532,15 @@ export default {
     },
 
     // 重试改价
-    async handleRetry(row) {
+    async handleRetry (row) {
+      if (!this.canOperate) {
+        this.$message.warning(this.$t('electricityAdjustmentPage.msgNoOperate'))
+        return
+      }
       try {
-        await this.$confirm('确认重新修改?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+        await this.$confirm(this.$t('electricityAdjustmentPage.confirmRetry'), this.$t('electricityAdjustmentPage.titleTip'), {
+          confirmButtonText: this.$t('electricityAdjustmentPage.btnOk'),
+          cancelButtonText: this.$t('electricityAdjustmentPage.btnCancel'),
           type: 'warning'
         })
 
@@ -536,68 +550,438 @@ export default {
 
         if (response.code === 200) {
           if (response.data && response.data.result === 'SUCCESS') {
-            this.$message.success(response.msg || '重试成功')
+            this.$message.success(response.msg || this.$t('electricityAdjustmentPage.msgRetryOk'))
           } else {
-            this.$message.error('操作失败')
+            this.$message.error(this.$t('electricityAdjustmentPage.msgOpFail'))
           }
         } else {
-          this.$message.error(response.msg || '重试失败')
+          this.$message.error(response.msg || this.$t('electricityAdjustmentPage.msgRetryFail'))
         }
 
         // 刷新数据
         this.fetchTableData()
       } catch (error) {
         if (error !== 'cancel') {
-          this.$message.error('重试操作失败')
+          this.$message.error(this.$t('electricityAdjustmentPage.msgRetryError'))
           console.error('重试失败:', error)
         }
       }
     },
 
     // 选择变化
-    handleSelectionChange(selection) {
+    handleSelectionChange (selection) {
       this.selectedData = selection
     },
 
     // 导出数据
-    handleExport() {
-      const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-      
-      if (exportData.length === 0) {
-        this.$message.warning('没有可导出的数据')
+    handleExport () {
+      if (!this.canOperate) {
+        this.$message.warning(this.$t('electricityAdjustmentPage.msgNoOperate'))
         return
       }
-      
+      const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
+
+      if (exportData.length === 0) {
+        this.$message.warning(this.$t('electricityAdjustmentPage.msgNoExport'))
+        return
+      }
+
       // 这里实现导出功能
       if (this.$store.dispatch) {
         const params = {
           ele: this.$refs.table?.$el,
-          name: '调价记录.xlsx',
+          name: this.$t('electricityAdjustmentPage.exportFileName'),
           data: exportData
         }
         this.$store.dispatch('export/export', params)
       } else {
-        this.$message.info('导出功能开发中...')
+        this.$message.info(this.$t('electricityAdjustmentPage.msgExportDev'))
       }
     },
 
     // 分页大小变化
-    handleSizeChange(val) {
+    handleSizeChange (val) {
       this.pageData.size = val
       this.pageData.current = 1
       this.fetchTableData()
     },
 
     // 当前页变化
-    handleCurrentChange(val) {
+    handleCurrentChange (val) {
       this.pageData.current = val
       this.fetchTableData()
-    },
-  },
+    }
+  }
 }
 </script>
 
 <style lang="scss" scoped>
-// 引入表格页面公共样式
-@import "@/assets/styles/table-page.scss";
+/* 列表区与租户闭环页 /metering/bill/floating-price-tenant、/metering/bill/energy-bill-tenant 对齐（floatingPrice.vue / energyBill.vue） */
+.table-page-container.electricity-adjustment-page {
+  padding: 16px;
+  background: #f0f2f5;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.search-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+}
+
+.search-form {
+  margin: 0;
+
+  .search-main-grid {
+    width: 100%;
+    display: grid;
+    align-items: center;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    gap: 10px;
+  }
+
+  .field-item {
+    width: 100%;
+    min-width: 0;
+
+    &.field-spacer {
+      visibility: hidden;
+      pointer-events: none;
+
+      .field-spacer-inner {
+        display: block;
+        height: 32px;
+      }
+    }
+
+    ::v-deep .el-input,
+    ::v-deep .el-select,
+    ::v-deep .el-date-editor {
+      width: 100%;
+      display: block;
+    }
+
+    ::v-deep .el-input__inner,
+    ::v-deep .el-select .el-input__inner {
+      height: 32px;
+      line-height: 32px;
+      border-radius: 6px;
+      border-color: #e4e7ed;
+      font-size: 13px;
+
+      &::placeholder {
+        color: #c0c4cc;
+      }
+    }
+
+    ::v-deep .el-range-editor.el-input__inner {
+      height: 32px;
+      min-height: 32px;
+      line-height: normal;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      border-radius: 6px;
+      border-color: #e4e7ed;
+      font-size: 13px;
+      padding: 0 10px;
+      vertical-align: middle;
+    }
+
+    ::v-deep .el-range-editor .el-range-input {
+      height: 30px;
+      line-height: 30px;
+      font-size: 13px;
+      background: transparent;
+    }
+
+    ::v-deep .el-range-editor .el-range-separator {
+      line-height: 1;
+      height: auto;
+      width: auto;
+      padding: 0 4px;
+      margin: 0;
+      flex-shrink: 0;
+      align-self: center;
+      color: #606266;
+    }
+
+    ::v-deep .el-range-editor .el-range__close-icon,
+    ::v-deep .el-range-editor .el-range__icon {
+      line-height: 32px;
+      flex-shrink: 0;
+    }
+  }
+
+  .search-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    grid-column: 5;
+    justify-self: start;
+    line-height: 1;
+
+    ::v-deep .el-button + .el-button {
+      margin-left: 0 !important;
+    }
+
+    ::v-deep .el-button {
+      height: 32px;
+      padding: 0 14px;
+      font-size: 13px;
+      border-radius: 6px;
+    }
+
+    ::v-deep .el-button--primary {
+      background: #1677ff;
+      border-color: #1677ff;
+
+      &:hover {
+        background: #4096ff;
+        border-color: #4096ff;
+      }
+    }
+
+    ::v-deep .el-button--success {
+      background: #52c41a;
+      border-color: #52c41a;
+
+      &:hover {
+        background: #73d13d;
+        border-color: #73d13d;
+      }
+    }
+  }
+}
+
+.content-box {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  flex: 1;
+  padding: 16px 16px 10px;
+}
+
+.content-toolbar.ea-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0 8px 12px;
+
+  .toolbar-left {
+    min-width: 0;
+  }
+
+  .section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+
+    .title-bar {
+      width: 3px;
+      height: 16px;
+      background: #1677ff;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+  }
+}
+
+.list-view.ea-list-view {
+  padding: 0;
+
+  .table-toolbar {
+    padding: 10px 0;
+
+    .selection-info {
+      font-size: 13px;
+      color: #606266;
+
+      .count {
+        color: #1677ff;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+.ea-table.light-border-table {
+  margin-top: 8px;
+
+  ::v-deep {
+    border: 1px solid #f0f0f0 !important;
+
+    .el-table__header-wrapper th {
+      border-right: 1px solid #f0f0f0 !important;
+      border-bottom: 1px solid #f0f0f0 !important;
+    }
+
+    td {
+      border-right: 1px solid #f5f5f5 !important;
+      border-bottom: 1px solid #f5f5f5 !important;
+    }
+
+    .el-table__body tr.el-table__row--striped > td {
+      background: #fcfdff !important;
+    }
+
+    .el-table--enable-row-hover .el-table__body tr:hover > td {
+      background: #f2f8ff !important;
+    }
+
+    .el-table__fixed-right-patch {
+      border-bottom: 1px solid #f0f0f0 !important;
+      background-color: #f5f7fa !important;
+    }
+  }
+}
+
+.adjustment-action-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  ::v-deep .el-button--text {
+    color: #1677ff;
+    padding: 0 4px;
+
+    &:hover {
+      color: #4096ff;
+    }
+  }
+
+  ::v-deep .action-retry.el-button--text {
+    color: #e6a23c;
+
+    &:hover {
+      color: #cf9236;
+    }
+  }
+}
+
+/* 弹窗：class 在 .el-dialog 根节点上，需直接命中 .el-dialog.custom-dialog */
+::v-deep .el-dialog.custom-dialog {
+  border-radius: 8px;
+
+  .el-dialog__header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #ebeef5;
+    background-color: #fafbfc;
+    border-radius: 8px 8px 0 0;
+
+    .el-dialog__title {
+      font-size: 16px;
+      font-weight: 500;
+      color: #303133;
+    }
+
+    .el-dialog__headerbtn {
+      top: 16px;
+      right: 20px;
+    }
+  }
+
+  .el-dialog__body {
+    padding: 20px;
+  }
+
+  .el-dialog__footer {
+    padding: 16px 20px;
+    border-top: 1px solid #ebeef5;
+    background-color: #fafbfc;
+    border-radius: 0 0 8px 8px;
+
+    .dialog-footer {
+      text-align: right;
+
+      .el-button {
+        min-width: 80px;
+      }
+    }
+  }
+}
+
+.pagination-container.compact-pagination {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 0 4px;
+
+  ::v-deep .el-pagination {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 12px;
+
+    span,
+    button,
+    .el-pager li,
+    .el-pagination__total,
+    .el-pagination__jump,
+    .el-pagination__sizes,
+    .el-pagination__sizes .el-input,
+    .el-pagination__sizes .el-input__inner,
+    .btn-prev,
+    .btn-next {
+      vertical-align: middle;
+      display: inline-flex !important;
+      align-items: center !important;
+    }
+
+    .el-pagination__total {
+      font-size: 12px;
+    }
+
+    .el-pagination__sizes .el-input {
+      width: 88px !important;
+      min-width: 0 !important;
+
+      .el-input__inner {
+        height: 24px;
+        font-size: 12px;
+        padding: 0 8px;
+        box-sizing: border-box;
+      }
+    }
+
+    .btn-prev,
+    .btn-next {
+      min-width: 24px;
+      height: 24px;
+      font-size: 12px;
+      padding: 0 6px;
+    }
+
+    .el-pager li {
+      min-width: 24px;
+      height: 24px;
+      font-size: 12px;
+      padding: 0 6px;
+    }
+
+    .el-pagination__jump {
+      font-size: 12px;
+
+      .el-input .el-input__inner {
+        height: 24px;
+        font-size: 12px;
+        padding: 0 4px;
+      }
+    }
+  }
+}
 </style>

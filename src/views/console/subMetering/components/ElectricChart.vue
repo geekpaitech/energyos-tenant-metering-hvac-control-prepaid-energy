@@ -7,7 +7,7 @@
 <script>
 export default {
   name: 'ElectricChart',
-  
+
   props: {
     seriesData: {
       type: Array,
@@ -18,40 +18,40 @@ export default {
       default: () => []
     }
   },
-  
-  data() {
+
+  data () {
     return {
       chartInstance: null
     }
   },
-  
+
   watch: {
     seriesData: {
-      handler() {
+      handler () {
         this.updateChart()
       },
       deep: true
     },
     xAxisData: {
-      handler() {
+      handler () {
         this.updateChart()
       },
       deep: true
     }
   },
-  
-  mounted() {
+
+  mounted () {
     this.initChart()
     window.addEventListener('resize', this.handleResize)
   },
-  
-  beforeDestroy() {
+
+  beforeDestroy () {
     window.removeEventListener('resize', this.handleResize)
     this.chartInstance?.dispose()
   },
-  
+
   methods: {
-    initChart() {
+    initChart () {
       this.$nextTick(() => {
         if (this.$refs.chartRef) {
           this.chartInstance = this.$echarts.init(this.$refs.chartRef)
@@ -59,13 +59,13 @@ export default {
         }
       })
     },
-    
-    updateChart() {
+
+    updateChart () {
       if (!this.chartInstance) {
         this.initChart()
         return
       }
-      
+
       const option = {
         tooltip: {
           trigger: 'axis',
@@ -115,11 +115,11 @@ export default {
         },
         series: this.seriesData
       }
-      
+
       this.chartInstance.setOption(option, true)
     },
-    
-    handleResize() {
+
+    handleResize () {
       this.chartInstance?.resize()
     }
   }
@@ -129,7 +129,7 @@ export default {
 <style lang="scss" scoped>
 .electric-chart-wrapper {
   width: 100%;
-  
+
   .chart-container {
     width: 100%;
     height: 400px;

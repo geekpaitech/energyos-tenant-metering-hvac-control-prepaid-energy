@@ -3,12 +3,12 @@ import request from '@/utils/request'
 // 水表价格方案相关接口
 
 // 新增价格方案
-export function waterPriceAddPrice(data) {
+export function waterPriceAddPrice (data) {
   return request({
     url: '/api/ebc-content/waterPrice/addPrice',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -16,12 +16,12 @@ export function waterPriceAddPrice(data) {
 }
 
 // 设置方案启动状态
-export function waterPriceChangeEnableStatus(params) {
+export function waterPriceChangeEnableStatus (params) {
   return request({
     url: '/api/ebc-content/waterPrice/changeEnableStatus',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params
@@ -29,12 +29,12 @@ export function waterPriceChangeEnableStatus(params) {
 }
 
 // 列表查询价格方案
-export function waterPriceListPrice(data) {
+export function waterPriceListPrice (data) {
   return request({
     url: '/api/ebc-content/waterPrice/listPrice',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -42,12 +42,12 @@ export function waterPriceListPrice(data) {
 }
 
 // 修改价格方案
-export function waterPriceUpdatePrice(data) {
+export function waterPriceUpdatePrice (data) {
   return request({
     url: '/api/ebc-content/waterPrice/updatePrice',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -55,12 +55,12 @@ export function waterPriceUpdatePrice(data) {
 }
 
 // 批量绑定价格方案
-export function waterPriceBatchBindWater(data) {
+export function waterPriceBatchBindWater (data) {
   return request({
     url: '/api/ebc-content/waterPrice/batchBindWater',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -68,24 +68,24 @@ export function waterPriceBatchBindWater(data) {
 }
 
 // 获取批量绑定信息
-export function waterPriceQueryWaterPriceBind(params) {
+export function waterPriceQueryWaterPriceBind (params) {
   return request({
     url: '/api/ebc-content/waterPrice/queryWaterPriceBind',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params
   })
 }
 
-export function waterQueryWaterRecord(data) {
+export function waterQueryWaterRecord (data) {
   return request({
     url: '/api/ebc-content/water/queryWaterRecord',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data

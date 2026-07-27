@@ -4,15 +4,15 @@
     <div class="filter-container">
       <!-- 统计时间 -->
       <div class="filter-item date-filter">
-        <label class="filter-label">统计时间</label>
+        <label class="filter-label">{{ $t('equipmentWater.filterStatPeriod') }}</label>
         <el-date-picker
           v-model="queryParams.dateRange"
           type="daterange"
           format="yyyy-MM-dd"
           value-format="yyyy-MM-dd"
           range-separator="-"
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
+          :start-placeholder="$t('equipmentWater.phDateStart')"
+          :end-placeholder="$t('equipmentWater.phDateEnd')"
           :picker-options="pickerOptions"
           class="custom-date-picker"
           @change="handleDateRangeChange"
@@ -21,12 +21,12 @@
 
       <!-- 水表选择 -->
       <div class="filter-item water-filter">
-        <label class="filter-label">选择水表</label>
+        <label class="filter-label">{{ $t('equipmentWater.filterWater') }}</label>
         <el-select
           ref="waterSelect"
           v-model="queryParams.waterId"
           filterable
-          placeholder="请选择水表"
+          :placeholder="$t('equipmentWater.phWater')"
           class="custom-select"
           :loading="waterLoading"
           clearable
@@ -35,10 +35,10 @@
           <el-option
             v-for="water in waterList"
             :key="water.waterId"
-            :label="`${water.waterName} (${water.serial})`"
+            :label="waterOptionLabel(water)"
             :value="water.waterId"
           >
-            <span style="float: left">{{ water.waterName }}</span>
+            <span style="float: left">{{ $displayBizHybrid(water.waterName) }}</span>
             <span style="float: right; color: #8492a6; font-size: 13px">{{
               water.serial
             }}</span>
@@ -63,8 +63,8 @@
               d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
             />
           </svg>
-          <span v-if="exportLoading">导出中...</span>
-          <span v-else>导出报表</span>
+          <span v-if="exportLoading">{{ $t('equipmentWater.exportLoading') }}</span>
+          <span v-else>{{ $t('equipmentWater.exportReport') }}</span>
         </button>
       </div>
     </div>
@@ -73,15 +73,15 @@
     <div
       class="main-content"
       v-loading="loading"
-      :element-loading-text="loadingText"
+      :element-loading-text="$t('equipmentWater.loadingText')"
     >
       <!-- 数据表格区域 -->
       <div class="table-section">
         <div class="section-header">
-          <h2 class="section-title">水表用水</h2>
+          <h2 class="section-title">{{ $t('equipmentWater.sectionTitle') }}</h2>
           <div class="section-tip">
             <i class="el-icon-info"></i>
-            <span>请选择水表查看详细数据</span>
+            <span>{{ $t('equipmentWater.sectionTip') }}</span>
           </div>
         </div>
 
@@ -103,38 +103,45 @@
           >
             <!-- 基础信息列 -->
             <el-table-column
-              label="水表ID"
+              :label="$t('equipmentWater.colWaterId')"
               width="100"
               prop="waterId"
               fixed
               show-overflow-tooltip
             />
             <el-table-column
-              label="水表名称"
+              :label="$t('equipmentWater.colWaterName')"
               min-width="160"
-              prop="waterName"
               fixed
               show-overflow-tooltip
-            />
+            >
+              <template slot-scope="scope">
+                {{ $displayBizHybrid(scope.row.waterName) }}
+              </template>
+            </el-table-column>
             <el-table-column
-              label="设备序列号"
+              :label="$t('equipmentWater.colSerial')"
               width="140"
               prop="serial"
               show-overflow-tooltip
             />
-            <el-table-column label="绑定类型" width="120">
+            <el-table-column :label="$t('equipmentWater.colBindType')" width="120">
               <template slot-scope="scope">
                 {{ getBindTypeLabel(scope.row.bindType) }}
               </template>
             </el-table-column>
             <el-table-column
-              label="绑定信息"
+              :label="$t('equipmentWater.colBindInfo')"
               min-width="200"
               prop="bindName"
               show-overflow-tooltip
-            />
+            >
+              <template slot-scope="scope">
+                {{ bindNameDisplay(scope.row.bindName) }}
+              </template>
+            </el-table-column>
             <el-table-column
-              label="用水日期"
+              :label="$t('equipmentWater.colOccurDate')"
               width="120"
               prop="occurDate"
             />
@@ -145,14 +152,14 @@
             </el-table-column> -->
 
             <!-- 用水统计列 -->
-            <el-table-column label="用水费(元)" width="120" align="right">
+            <el-table-column :label="$t('equipmentWater.colWaterFee')" width="120" align="right">
               <template slot-scope="scope">
                 <span style="color: #f56c6c">
                   {{ formatNumber(scope.row.balance) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="用水量(吨)" width="120" align="right">
+            <el-table-column :label="$t('equipmentWater.colWaterVolume')" width="120" align="right">
               <template slot-scope="scope">
                 <span style="color: #f56c6c">
                   {{ formatNumber(scope.row.consumption) }}
@@ -161,13 +168,13 @@
             </el-table-column>
 
             <!-- 起始读数列组 -->
-            <el-table-column label="起始读数" align="center">
-              <el-table-column label="时间" width="160">
+            <el-table-column :label="$t('equipmentWater.colStartRead')" align="center">
+              <el-table-column :label="$t('equipmentWater.colTime')" width="160">
                 <template slot-scope="scope">
                   {{ scope.row.startTime || '-' }}
                 </template>
               </el-table-column>
-              <el-table-column label="读数" width="100" align="right">
+              <el-table-column :label="$t('equipmentWater.colRead')" width="100" align="right">
                 <template slot-scope="scope">
                   {{ formatNumber(scope.row.startRead) }}
                 </template>
@@ -175,13 +182,13 @@
             </el-table-column>
 
             <!-- 截止读数列组 -->
-            <el-table-column label="截止读数" align="center">
-              <el-table-column label="时间" width="160">
+            <el-table-column :label="$t('equipmentWater.colEndRead')" align="center">
+              <el-table-column :label="$t('equipmentWater.colTime')" width="160">
                 <template slot-scope="scope">
                   {{ scope.row.endTime || '-' }}
                 </template>
               </el-table-column>
-              <el-table-column label="读数" width="100" align="right">
+              <el-table-column :label="$t('equipmentWater.colRead')" width="100" align="right">
                 <template slot-scope="scope">
                   {{ formatNumber(scope.row.endRead) }}
                 </template>
@@ -203,8 +210,8 @@
             />
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
-          <p>暂无数据</p>
-          <span class="empty-tip">请选择水表后查看数据</span>
+          <p>{{ $t('equipmentWater.emptyNoData') }}</p>
+          <span class="empty-tip">{{ $t('equipmentWater.emptyTip') }}</span>
         </div>
       </div>
     </div>
@@ -212,141 +219,154 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import { queryWaterUseStatis, waterPageWater } from '@/api/water';
-import moment from 'moment';
-import * as XLSX from 'xlsx';
+import { mapGetters } from 'vuex'
+import { queryWaterUseStatis, waterPageWater } from '@/api/water'
+import moment from 'moment'
+import * as XLSX from 'xlsx'
 
 export default {
   name: 'EquipmentWater',
-  data() {
+  data () {
     return {
       queryParams: {
         waterId: '',
-        dateRange: [],
+        dateRange: []
       },
       waterList: [],
       tableData: [],
       waterLoading: false,
       loading: false,
-      loadingText: '数据加载中...',
-      exportLoading: false,
-      bindTypeMap: {
-        1: '专用表',
-        2: '公摊表',
-        3: '公式表',
-      },
-      settleWayMap: {
-        1: '系统结算',
-        2: '手动结算',
-      },
-      pickerOptions: {
-        shortcuts: [
-          {
-            text: '最近7天',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 6);
-              picker.$emit('pick', [start, end]);
-            },
-          },
-          {
-            text: '最近15天',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 14);
-              picker.$emit('pick', [start, end]);
-            },
-          },
-          {
-            text: '最近30天',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 29);
-              picker.$emit('pick', [start, end]);
-            },
-          },
-          {
-            text: '本月',
-            onClick(picker) {
-              const start = new Date();
-              start.setDate(1);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setHours(23, 59, 59, 999);
-              picker.$emit('pick', [start, end]);
-            },
-          },
-          {
-            text: '上月',
-            onClick(picker) {
-              const start = new Date();
-              start.setMonth(start.getMonth() - 1);
-              start.setDate(1);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setDate(0);
-              end.setHours(23, 59, 59, 999);
-              picker.$emit('pick', [start, end]);
-            },
-          },
-        ],
-        disabledDate(time) {
-          return time.getTime() > Date.now();
-        },
-      },
-    };
+      exportLoading: false
+    }
   },
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
+
+    pickerOptions () {
+      const t = (k) => this.$t(`equipmentWater.${k}`)
+      return {
+        shortcuts: [
+          {
+            text: t('pickerLast7'),
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 6)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('pickerLast15'),
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 14)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('pickerLast30'),
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 29)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('pickerThisMonth'),
+            onClick (picker) {
+              const start = new Date()
+              start.setDate(1)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('pickerLastMonth'),
+            onClick (picker) {
+              const start = new Date()
+              start.setMonth(start.getMonth() - 1)
+              start.setDate(1)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setDate(0)
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          }
+        ],
+        disabledDate (time) {
+          return time.getTime() > Date.now()
+        }
+      }
+    }
   },
   watch: {
     currentManagerId: {
-      handler(val) {
+      handler (val) {
         if (val) {
-          this.initializeData();
+          this.initializeData()
         }
       },
-      immediate: true,
-    },
+      immediate: true
+    }
   },
   methods: {
+    waterOptionLabel (water) {
+      return `${this.$displayBizHybrid(water.waterName)} (${water.serial})`
+    },
+
+    bindNameDisplay (name) {
+      if (name == null || name === '') return '-'
+      return this.$displayBizHybrid(name)
+    },
+
     // ==================== 初始化相关 ====================
-    async initializeData() {
+    async initializeData () {
       // 从路由获取参数
-      const routeWaterId = this.$route.query.waterId;
-      const routeStartDate = this.$route.query.startDate;
-      const routeEndDate = this.$route.query.endDate;
+      const routeWaterId = this.$route.query.waterId
+      const routeStartDate = this.$route.query.startDate
+      const routeEndDate = this.$route.query.endDate
 
-      // 如果有日期参数,覆盖默认值
       if (routeStartDate && routeEndDate) {
-        this.queryParams.dateRange = [routeStartDate, routeEndDate];
+        this.queryParams.dateRange = [routeStartDate, routeEndDate]
+      } else {
+        this.setDefaultDateRange()
       }
 
-      await this.getWaterList();
+      await this.getWaterList()
 
-      // 如果有水表参数,设置水表
       if (routeWaterId) {
-        const targetWaterId = Number(routeWaterId) || routeWaterId;
-        const water = this.waterList.find((w) => w.waterId == targetWaterId);
+        const targetWaterId = Number(routeWaterId) || routeWaterId
+        const water = this.waterList.find((w) => w.waterId == targetWaterId)
         if (water) {
-          this.queryParams.waterId = water.waterId;
+          this.queryParams.waterId = water.waterId
         }
+      } else if (!this.queryParams.waterId && this.waterList && this.waterList.length > 0) {
+        this.queryParams.waterId = this.waterList[0].waterId
       }
 
-      // 只有当参数完整时才自动查询
-      if (routeWaterId && routeStartDate && routeEndDate) {
-        await this.fetchData();
-      } else if (routeWaterId) {
-        this.queryParams.waterId = routeWaterId;
+      if (
+        this.queryParams.dateRange &&
+        this.queryParams.dateRange.length === 2 &&
+        this.queryParams.waterId
+      ) {
+        await this.fetchData()
       }
     },
 
-    async getWaterList() {
-      this.waterLoading = true;
+    setDefaultDateRange () {
+      this.queryParams.dateRange = [
+        moment().startOf('month').format('YYYY-MM-DD'),
+        moment().format('YYYY-MM-DD')
+      ]
+    },
+
+    async getWaterList () {
+      this.waterLoading = true
       try {
         const params = {
           bindType: '',
@@ -355,159 +375,167 @@ export default {
           managerId: this.currentManagerId,
           page: {
             size: 1000,
-            current: 1,
-          },
-        };
+            current: 1
+          }
+        }
 
-        const { data } = await waterPageWater(params);
-        
+        const { data } = await waterPageWater(params)
+
         if (data && data.dataList) {
           // 提取水表列表,使用id作为waterId
           this.waterList = data.dataList.map((item) => ({
             waterId: item.id,
             waterName: item.waterName,
-            serial: item.serial,
-          }));
+            serial: item.serial
+          }))
         } else {
-          this.waterList = [];
+          this.waterList = []
         }
       } catch (error) {
-        this.$message.error('获取水表列表失败');
-        console.error('获取水表列表失败:', error);
+        this.$apiError.notify(error, this.$t('equipmentWater.msgWaterListFail'))
+        console.error('获取水表列表失败:', error)
       } finally {
-        this.waterLoading = false;
+        this.waterLoading = false
       }
     },
 
-    async fetchData() {
+    async fetchData () {
       // 校验必填项
       if (
         !this.queryParams.dateRange ||
         this.queryParams.dateRange.length !== 2
       ) {
-        this.$message.warning('请选择统计时间');
-        return;
+        this.$message.warning(this.$t('equipmentWater.msgPickPeriod'))
+        return
       }
 
       // 必须选择水表
       if (!this.queryParams.waterId) {
-        this.$message.warning('请选择水表');
-        return;
+        this.$message.warning(this.$t('equipmentWater.msgPickWater'))
+        return
       }
 
-      this.loading = true;
+      this.loading = true
       try {
         const params = {
           managerId: this.currentManagerId,
           waterId: this.queryParams.waterId,
           startDate: this.queryParams.dateRange[0],
-          endDate: this.queryParams.dateRange[1],
-        };
+          endDate: this.queryParams.dateRange[1]
+        }
 
-        const { data } = await queryWaterUseStatis(params);
-        this.tableData = data || [];
+        const { data } = await queryWaterUseStatis(params)
+        this.tableData = data || []
 
         if (this.tableData.length === 0) {
-          this.$message.info('未查询到数据');
+          this.$message.info(this.$t('equipmentWater.msgNoData'))
         }
       } catch (error) {
-        this.$message.error('获取数据失败');
-        console.error('获取数据失败:', error);
+        this.$apiError.notify(error, this.$t('equipmentWater.msgFetchFail'))
+        console.error('获取数据失败:', error)
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
     // ==================== 筛选器事件处理 ====================
-    handleDateRangeChange(val) {
+    handleDateRangeChange (val) {
       if (val && val.length === 2 && val[0] && val[1]) {
-        const [start, end] = val;
-        const startDate = new Date(start);
-        const endDate = new Date(end);
+        const [start, end] = val
+        const startDate = new Date(start)
+        const endDate = new Date(end)
         const diffDays = Math.floor(
           (endDate - startDate) / (24 * 3600 * 1000)
-        );
+        )
 
         // 限制最多选择31天
         if (diffDays > 30) {
-          this.$message.warning('日期最多只能选择31天');
+          this.$message.warning(this.$t('equipmentWater.msgDateMax31'))
           const newEndDate = new Date(
             startDate.getTime() + 30 * 24 * 3600 * 1000
-          );
+          )
           this.queryParams.dateRange = [
             start,
-            moment(newEndDate).format('YYYY-MM-DD'),
-          ];
-          return;
+            moment(newEndDate).format('YYYY-MM-DD')
+          ]
+          return
         }
 
         // 日期变更时，如果已经选择了水表，则重新查询
         if (this.queryParams.waterId) {
-          this.fetchData();
+          this.fetchData()
         }
       }
     },
 
-    handleWaterChange() {
+    handleWaterChange () {
       // 水表变更时直接查询
       if (this.queryParams.waterId) {
-        this.fetchData();
+        this.fetchData()
       } else {
         // 清空水表时清空数据
-        this.tableData = [];
+        this.tableData = []
       }
     },
 
     // ==================== 导出功能 ====================
-    handleExport() {
+    handleExport () {
       if (!this.tableData || this.tableData.length === 0) {
-        this.$message.warning('暂无数据可导出');
-        return;
+        this.$message.warning(this.$t('equipmentWater.msgExportEmpty'))
+        return
       }
 
-      this.exportLoading = true;
+      this.exportLoading = true
 
       setTimeout(() => {
         try {
-          this.exportToExcel();
-          this.$message.success('导出成功！');
+          this.exportToExcel()
+          this.$message.success(this.$t('equipmentWater.msgExportOk'))
         } catch (error) {
-          console.error('导出失败:', error);
-          this.$message.error(`导出失败: ${error.message || '请重试'}`);
+          console.error('导出失败:', error)
+          this.$message.error(
+            `${this.$t('equipmentWater.msgExportFail')}: ${error.message || this.$t('equipmentWater.msgExportRetry')}`
+          )
         } finally {
-          this.exportLoading = false;
+          this.exportLoading = false
         }
-      }, 100);
+      }, 100)
     },
 
-    exportToExcel() {
+    exportToExcel () {
       const water = this.waterList.find(
         (w) => w.waterId === this.queryParams.waterId
-      );
+      )
       const waterName = water
-        ? `${water.waterName} (${water.serial})`
-        : this.queryParams.waterId;
+        ? `${this.$displayBizHybrid(water.waterName)} (${water.serial})`
+        : this.queryParams.waterId
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}  |  水表: ${waterName}`,
-      ];
+        this.$t('equipmentWater.exportFilterLine', {
+          start: this.queryParams.dateRange[0],
+          end: this.queryParams.dateRange[1],
+          water: waterName
+        })
+      ]
+
+      const t = (k) => this.$t(`equipmentWater.${k}`)
 
       // 第一行表头
       const header1 = [
-        '水表ID',
-        '水表名称',
-        '设备序列号',
-        '绑定类型',
-        '绑定信息',
-        '用水日期',
-        '结算方式',
-        '用水费(元)',
-        '用水量(吨)',
-        '起始读数',
+        t('expColWaterId'),
+        t('expColWaterName'),
+        t('expColSerial'),
+        t('expColBindType'),
+        t('expColBindInfo'),
+        t('expColOccurDate'),
+        t('expColSettleWay'),
+        t('expColWaterFee'),
+        t('expColWaterVolume'),
+        t('expColStartRead'),
         '',
-        '截止读数',
-        '',
-      ];
+        t('expColEndRead'),
+        ''
+      ]
 
       // 第二行表头
       const header2 = [
@@ -520,20 +548,20 @@ export default {
         '',
         '',
         '',
-        '时间',
-        '读数',
-        '时间',
-        '读数',
-      ];
+        t('expColTime'),
+        t('expColRead'),
+        t('expColTime'),
+        t('expColRead')
+      ]
 
       // 数据行
       const dataRows = this.tableData.map((row) => {
         return [
           row.waterId || '',
-          row.waterName || '',
+          this.$displayBizHybrid(row.waterName) || '',
           row.serial || '',
           this.getBindTypeLabel(row.bindType),
-          row.bindName || '',
+          this.bindNameDisplay(row.bindName),
           row.occurDate || '',
           this.getSettleWayLabel(row.settleWay),
           this.formatExportNumber(row.balance),
@@ -541,13 +569,13 @@ export default {
           row.startTime || '',
           this.formatExportNumber(row.startRead),
           row.endTime || '',
-          this.formatExportNumber(row.endRead),
-        ];
-      });
+          this.formatExportNumber(row.endRead)
+        ]
+      })
 
-      const wsData = [filterRow, [], header1, header2, ...dataRows];
+      const wsData = [filterRow, [], header1, header2, ...dataRows]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
       // 设置列宽
       ws['!cols'] = [
@@ -563,8 +591,8 @@ export default {
         { wch: 18 },
         { wch: 10 },
         { wch: 18 },
-        { wch: 10 },
-      ];
+        { wch: 10 }
+      ]
 
       // 合并单元格
       const merges = [
@@ -579,20 +607,20 @@ export default {
         { s: { r: 2, c: 7 }, e: { r: 3, c: 7 } }, // 用水费
         { s: { r: 2, c: 8 }, e: { r: 3, c: 8 } }, // 用水量
         { s: { r: 2, c: 9 }, e: { r: 2, c: 10 } }, // 起始读数
-        { s: { r: 2, c: 11 }, e: { r: 2, c: 12 } }, // 截止读数
-      ];
+        { s: { r: 2, c: 11 }, e: { r: 2, c: 12 } } // 截止读数
+      ]
 
-      ws['!merges'] = merges;
+      ws['!merges'] = merges
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '水表用水报表');
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('equipmentWater.exportSheetName'))
 
-      const fileName = this.generateFileName('水表用水报表');
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(this.$t('equipmentWater.exportFilePrefix'))
+      XLSX.writeFile(wb, fileName)
     },
 
-    generateFileName(prefix) {
-      const now = new Date();
+    generateFileName (prefix) {
+      const now = new Date()
       const timeStr =
         now.getFullYear() +
         String(now.getMonth() + 1).padStart(2, '0') +
@@ -600,41 +628,43 @@ export default {
         '_' +
         String(now.getHours()).padStart(2, '0') +
         String(now.getMinutes()).padStart(2, '0') +
-        String(now.getSeconds()).padStart(2, '0');
+        String(now.getSeconds()).padStart(2, '0')
 
-      return `${prefix}_${timeStr}.xlsx`;
+      return `${prefix}_${timeStr}.xlsx`
     },
 
     // ==================== 格式化方法 ====================
-    formatExportNumber(num) {
+    formatExportNumber (num) {
       if (num === undefined || num === null || num === '' || num === '-') {
-        return 0;
+        return 0
       }
-      const numValue = typeof num === 'string' ? parseFloat(num) : num;
+      const numValue = typeof num === 'string' ? parseFloat(num) : num
       if (isNaN(numValue)) {
-        return 0;
+        return 0
       }
-      return numValue;
+      return numValue
     },
 
-    formatNumber(num) {
+    formatNumber (num) {
       if (num === undefined || num === null || num === '') {
-        return '0.00';
+        return '0.00'
       }
-      return Number(num).toFixed(2);
+      return Number(num).toFixed(2)
     },
 
-    getBindTypeLabel(bindType) {
-      if (bindType === undefined || bindType === null) return '-';
-      return this.bindTypeMap[bindType] || '-';
+    getBindTypeLabel (bindType) {
+      if (bindType === undefined || bindType === null) return '-'
+      const key = { 1: 'bindType1', 2: 'bindType2', 3: 'bindType3' }[bindType]
+      return key ? this.$t(`equipmentWater.${key}`) : '-'
     },
 
-    getSettleWayLabel(settleWay) {
-      if (settleWay === undefined || settleWay === null) return '-';
-      return this.settleWayMap[settleWay] || '-';
-    },
-  },
-};
+    getSettleWayLabel (settleWay) {
+      if (settleWay === undefined || settleWay === null) return '-'
+      const key = { 1: 'settleWay1', 2: 'settleWay2' }[settleWay]
+      return key ? this.$t(`equipmentWater.${key}`) : '-'
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>

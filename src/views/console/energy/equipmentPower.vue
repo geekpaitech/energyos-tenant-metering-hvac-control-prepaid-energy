@@ -4,32 +4,32 @@
     <div class="filter-container">
       <!-- 统计时间 -->
       <div class="filter-item date-filter">
-        <label class="filter-label">统计时间</label>
+        <label class="filter-label">{{ $t('equipmentPower.filterStatPeriod') }}</label>
         <el-date-picker v-model="queryParams.dateRange" type="daterange" format="yyyy-MM-dd" value-format="yyyy-MM-dd"
-          range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" :picker-options="pickerOptions"
+          range-separator="-" :start-placeholder="$t('equipmentPower.phDateStart')" :end-placeholder="$t('equipmentPower.phDateEnd')" :picker-options="pickerOptions"
           class="custom-date-picker" @change="handleDateRangeChange" />
       </div>
 
       <!-- 租户选择 -->
       <div class="filter-item tenant-filter">
-        <label class="filter-label">选择租户</label>
-        <el-select v-model="queryParams.tenantId" filterable placeholder="请选择租户" class="custom-select"
+        <label class="filter-label">{{ $t('equipmentPower.filterTenant') }}</label>
+        <el-select v-model="queryParams.tenantId" filterable :placeholder="$t('equipmentPower.phTenant')" class="custom-select"
           :loading="tenantLoading" clearable @change="handleTenantChange">
 
-          <el-option v-for="tenant in tenantList" :key="tenant.tenantId" :label="tenant.name"
+          <el-option v-for="tenant in tenantList" :key="tenant.tenantId" :label="tenantOptionLabel(tenant)"
             :value="tenant.tenantId" />
         </el-select>
       </div>
 
       <!-- 电表选择 -->
       <div class="filter-item meter-filter">
-        <label class="filter-label">选择电表</label>
-        <el-select ref="meterSelect" v-model="queryParams.meterQuery" filterable placeholder="请输入序列号或选择电表"
+        <label class="filter-label">{{ $t('equipmentPower.filterMeter') }}</label>
+        <el-select ref="meterSelect" v-model="queryParams.meterQuery" filterable :placeholder="$t('equipmentPower.phMeter')"
           class="custom-select" :loading="meterLoading" clearable @change="handleMeterChange">
           <!-- <el-option label="全部" :value="''" /> -->
-          <el-option v-for="meter in meterList" :key="meter.serial" :label="`${meter.meterName} (${meter.serial})`"
+          <el-option v-for="meter in meterList" :key="meter.serial" :label="meterSelectLabel(meter)"
             :value="meter.serial">
-            <span style="float: left">{{ meter.meterName }}</span>
+            <span style="float: left">{{ $displayBizHybrid(meter.meterName, 120) }}</span>
             <span style="float: right; color: #8492a6; font-size: 13px">{{ meter.serial }}</span>
           </el-option>
         </el-select>
@@ -40,30 +40,34 @@
           <svg v-if="!exportLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
           </svg>
-          <span v-if="exportLoading">导出中...</span>
-          <span v-else>导出报表</span>
+          <span v-if="exportLoading">{{ $t('equipmentPower.exportLoading') }}</span>
+          <span v-else>{{ $t('equipmentPower.exportReport') }}</span>
         </button>
       </div>
     </div>
 
     <!-- 主内容区 -->
-    <div class="main-content" v-loading="loading" :element-loading-text="loadingText">
+    <div class="main-content" v-loading="loading" :element-loading-text="$t('equipmentPower.loadingText')">
       <!-- 数据表格区域 -->
       <div class="table-section">
         <div class="section-header">
-          <h2 class="section-title">电表用电</h2>
+          <h2 class="section-title">{{ $t('equipmentPower.sectionTitle') }}</h2>
           <div class="section-tip">
             <i class="el-icon-info"></i>
-            <span>请选择电表查看详细数据</span>
+            <span>{{ $t('equipmentPower.sectionTip') }}</span>
           </div>
         </div>
-        
+
         <!-- 最大需量统计 -->
         <div class="max-demand-info" v-if="maxDemandInfo">
-          <span class="label">最大需量：</span>
-          <span class="value">{{ maxDemandInfo.maxDemand }}</span>
-          <span class="label" style="margin-left: 30px;">采集时间：</span>
+          <span class="label">{{ $t('equipmentPower.maxDemandLabel') }}</span>
+          <span class="value">{{ formatNumber(maxDemandInfo.maxDemand) }} {{ $t('equipmentPower.unitKw') }}</span>
+          <span class="label" style="margin-left: 30px;">{{ $t('equipmentPower.collectTimeLabel') }}</span>
           <span class="value">{{ maxDemandInfo.occurTime }}</span>
+          <span class="label" style="margin-left: 30px;">{{ $t('equipmentPower.totalFeeLabel') }}</span>
+          <span class="value">{{ formatNumber(totalBalance) }} {{ $t('equipmentPower.unitYuan') }}</span>
+          <span class="label" style="margin-left: 30px;">{{ $t('equipmentPower.totalElecLabel') }}</span>
+          <span class="value">{{ formatNumber(totalUseElec) }} {{ $t('equipmentPower.unitKwh') }}</span>
         </div>
 
         <!-- 电表用电表格 -->
@@ -75,132 +79,120 @@
               fontWeight: '600',
               textAlign: 'center'
             }" :cell-style="{ textAlign: 'center' }">
-            <!-- 基础信息列 -->
-            <el-table-column label="电表编号" width="100" prop="meterId" fixed show-overflow-tooltip />
-            <el-table-column label="电表名称" min-width="160" prop="meterName" fixed show-overflow-tooltip />
-            <el-table-column label="电表序列号" width="140" prop="serial" show-overflow-tooltip />
-            <el-table-column label="电表绑定类型" width="120">
+            <!-- 设备信息（展示合并：编号/名称/序列号/绑定类型/绑定信息，数据字段不变） -->
+            <el-table-column :label="$t('equipmentPower.colEquipment')" min-width="260" fixed align="left">
               <template slot-scope="scope">
-                {{ getBindTypeLabel(scope.row.bindType) }}
+                <div class="equipment-info-cell is-link" @click="jumpToMeterBySerial(scope.row.serial)">
+                  <div class="eq-title">{{ $displayDynamicName(scope.row.meterName, 200) || $t('equipmentPower.dash') }}</div>
+                  <div class="eq-meta">{{ $t('equipmentPower.serialPrefix') }} {{ scope.row.serial || $t('equipmentPower.dash') }}</div>
+                  <div class="eq-tag-row">
+                    <el-tag size="mini" type="primary">{{ getBindTypeLabel(scope.row.bindType) }}</el-tag>
+                  </div>
+                </div>
               </template>
             </el-table-column>
-            <!-- <el-table-column label="绑定ID" width="100" prop="bindId" show-overflow-tooltip /> -->
-            <el-table-column label="绑定信息" min-width="200" prop="bindName" show-overflow-tooltip />
-            <el-table-column label="日期" width="120" prop="occurDate" />
-            
-            <!-- 最大需量 -->
-            <el-table-column label="最大需量(kW)" width="140">
+            <el-table-column :label="$t('equipmentPower.colBindInfo')" min-width="220" align="left">
               <template slot-scope="scope">
-                {{ scope.row.maxDemand || '--' }}
+                <div class="bind-inline-cell is-link" @click="jumpToTenantByBind(scope.row)">
+                  <span class="bind-id">{{ scope.row.bindId || '--' }}</span>
+                  <span class="bind-name">{{ bindNameDisplay(scope.row.bindName) }}</span>
+                </div>
               </template>
             </el-table-column>
-            <el-table-column label="采集时间" width="160">
-              <template slot-scope="scope">
-                {{ scope.row.occurTime || '--' }}
-              </template>
-            </el-table-column>
-             
+            <el-table-column :label="$t('equipmentPower.colDate')" width="120" prop="occurDate" />
 
-            <!-- 用电统计列 -->
-            <el-table-column label="总电费(元)" width="120" align="right">
+            <!-- 需量记录 -->
+            <el-table-column :label="$t('equipmentPower.colDemandRecord')" width="240" align="left">
               <template slot-scope="scope">
-                <span style="color: #f56c6c;">
-                  {{ formatNumber(scope.row.balance) }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="总电量(度)" width="120" align="right">
-              <template slot-scope="scope">
-                <span style="color: #f56c6c;">
-                  {{ formatNumber(scope.row.useElec) }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="尖电量(度)" width="120" align="right">
-              <template slot-scope="scope">
-                {{ formatNumber(scope.row.useElecPeak) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="峰电量(度)" width="120" align="right">
-              <template slot-scope="scope">
-                {{ formatNumber(scope.row.useElecTop) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="平电量(度)" width="120" align="right">
-              <template slot-scope="scope">
-                {{ formatNumber(scope.row.useElecFlat) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="谷电量(度)" width="120" align="right">
-              <template slot-scope="scope">
-                {{ formatNumber(scope.row.useElecValley) }}
+                <div class="merge-metric-cell">
+                  <div><span class="metric-label">{{ $t('equipmentPower.metricMaxDemand') }}</span><span class="metric-value">{{ scope.row.maxDemand ? `${formatNumber(scope.row.maxDemand)} ${$t('equipmentPower.unitKwLower')}` : $t('equipmentPower.dash') }}</span></div>
+                  <div><span class="metric-label">{{ $t('equipmentPower.metricCollectTime') }}</span><span class="metric-value">{{ scope.row.occurTime || $t('equipmentPower.dash') }}</span></div>
+                </div>
               </template>
             </el-table-column>
 
-            <!-- 起始读数列组 -->
-            <el-table-column label="起始读数" align="center">
-              <el-table-column label="时间" width="160">
-                <template slot-scope="scope">
-                  {{ scope.row.startUseDto ? scope.row.startUseDto.occurTime : '-' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="总电量" width="100" align="right">
-                <template slot-scope="scope">
-                  {{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerAll) : '-' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="尖" width="100" align="right">
-                <template slot-scope="scope">
-                  {{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerPeak) : '-' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="峰" width="100" align="right">
-                <template slot-scope="scope">
-                  {{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerTop) : '-' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="平" width="100" align="right">
-                <template slot-scope="scope">
-                  {{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerFlat) : '-' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="谷" width="100" align="right">
-                <template slot-scope="scope">
-                  {{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerValley) : '-' }}
-                </template>
-              </el-table-column>
+            <!-- 用能 -->
+            <el-table-column :label="$t('equipmentPower.colTotalFee')" width="190" align="left">
+              <template slot-scope="scope">
+                <div class="merge-metric-cell">
+                  <div>
+                    <span class="metric-label">{{ $t('equipmentPower.metricTotalFee') }}</span>
+                    <span class="metric-value metric-value-highlight">{{ formatNumber(scope.row.balance) }}</span>
+                  </div>
+                </div>
+              </template>
             </el-table-column>
 
-            <!-- 截止读数列组 -->
-            <el-table-column label="截止读数" align="center">
-              <el-table-column label="时间" width="160">
+            <!-- 分时电量 -->
+            <el-table-column :label="$t('equipmentPower.colEnergyKwh')" :min-width="energyKwhColMin" align="left">
+              <template slot-scope="scope">
+                <div class="power-grid-cell">
+                  <div class="power-total-row">
+                    <span class="tou-pair">
+                      <span class="metric-label">{{ $t('equipmentPower.metricTotalElec') }}</span>
+                      <span class="metric-value">{{ formatNumber(scope.row.useElec) }}</span>
+                    </span>
+                  </div>
+                  <div class="power-pair-row">
+                    <span class="tou-pair"><span class="metric-label">{{ $t('equipmentPower.touSharp') }}:</span><span class="metric-value">{{ formatNumber(scope.row.useElecPeak) }}</span></span>
+                    <span class="tou-pair"><span class="metric-label">{{ $t('equipmentPower.touPeak') }}:</span><span class="metric-value">{{ formatNumber(scope.row.useElecTop) }}</span></span>
+                  </div>
+                  <div class="power-pair-row">
+                    <span class="tou-pair"><span class="metric-label">{{ $t('equipmentPower.touFlat') }}:</span><span class="metric-value">{{ formatNumber(scope.row.useElecFlat) }}</span></span>
+                    <span class="tou-pair"><span class="metric-label">{{ $t('equipmentPower.touValley') }}:</span><span class="metric-value">{{ formatNumber(scope.row.useElecValley) }}</span></span>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
+
+            <!-- 起止读数：同一子列内叠放起始/截止，数据仍来自 startUseDto、stopUseDto -->
+            <el-table-column :label="$t('equipmentPower.colStartEnd')" align="center">
+              <el-table-column :label="$t('equipmentPower.colTime')" width="168" align="left">
                 <template slot-scope="scope">
-                  {{ scope.row.stopUseDto ? scope.row.stopUseDto.occurTime : '-' }}
+                  <div class="start-end-stack">
+                    <div><span class="se-mark">{{ $t('equipmentPower.seStart') }}</span>{{ scope.row.startUseDto ? scope.row.startUseDto.occurTime : $t('equipmentPower.dash') }}</div>
+                    <div><span class="se-mark">{{ $t('equipmentPower.seEnd') }}</span>{{ scope.row.stopUseDto ? scope.row.stopUseDto.occurTime : $t('equipmentPower.dash') }}</div>
+                  </div>
                 </template>
               </el-table-column>
-              <el-table-column label="总电量" width="100" align="right">
+              <el-table-column :label="$t('equipmentPower.colTotalElecCol')" width="108" align="right">
                 <template slot-scope="scope">
-                  {{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerAll) : '-' }}
+                  <div class="start-end-stack is-num">
+                    <div><span class="se-mark">{{ $t('equipmentPower.seStart') }}</span>{{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerAll) : $t('equipmentPower.dash') }}</div>
+                    <div><span class="se-mark">{{ $t('equipmentPower.seEnd') }}</span>{{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerAll) : $t('equipmentPower.dash') }}</div>
+                  </div>
                 </template>
               </el-table-column>
-              <el-table-column label="尖" width="100" align="right">
+              <el-table-column :label="$t('equipmentPower.touSharp')" width="100" align="right">
                 <template slot-scope="scope">
-                  {{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerPeak) : '-' }}
+                  <div class="start-end-stack is-num">
+                    <div><span class="se-mark">{{ $t('equipmentPower.seStart') }}</span>{{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerPeak) : $t('equipmentPower.dash') }}</div>
+                    <div><span class="se-mark">{{ $t('equipmentPower.seEnd') }}</span>{{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerPeak) : $t('equipmentPower.dash') }}</div>
+                  </div>
                 </template>
               </el-table-column>
-              <el-table-column label="峰" width="100" align="right">
+              <el-table-column :label="$t('equipmentPower.touPeak')" width="100" align="right">
                 <template slot-scope="scope">
-                  {{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerTop) : '-' }}
+                  <div class="start-end-stack is-num">
+                    <div><span class="se-mark">{{ $t('equipmentPower.seStart') }}</span>{{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerTop) : $t('equipmentPower.dash') }}</div>
+                    <div><span class="se-mark">{{ $t('equipmentPower.seEnd') }}</span>{{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerTop) : $t('equipmentPower.dash') }}</div>
+                  </div>
                 </template>
               </el-table-column>
-              <el-table-column label="平" width="100" align="right">
+              <el-table-column :label="$t('equipmentPower.touFlat')" width="100" align="right">
                 <template slot-scope="scope">
-                  {{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerFlat) : '-' }}
+                  <div class="start-end-stack is-num">
+                    <div><span class="se-mark">{{ $t('equipmentPower.seStart') }}</span>{{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerFlat) : $t('equipmentPower.dash') }}</div>
+                    <div><span class="se-mark">{{ $t('equipmentPower.seEnd') }}</span>{{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerFlat) : $t('equipmentPower.dash') }}</div>
+                  </div>
                 </template>
               </el-table-column>
-              <el-table-column label="谷" width="100" align="right">
+              <el-table-column :label="$t('equipmentPower.touValley')" width="100" align="right">
                 <template slot-scope="scope">
-                  {{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerValley) : '-' }}
+                  <div class="start-end-stack is-num">
+                    <div><span class="se-mark">{{ $t('equipmentPower.seStart') }}</span>{{ scope.row.startUseDto ? formatNumber(scope.row.startUseDto.powerValley) : $t('equipmentPower.dash') }}</div>
+                    <div><span class="se-mark">{{ $t('equipmentPower.seEnd') }}</span>{{ scope.row.stopUseDto ? formatNumber(scope.row.stopUseDto.powerValley) : $t('equipmentPower.dash') }}</div>
+                  </div>
                 </template>
               </el-table-column>
             </el-table-column>
@@ -213,8 +205,8 @@
             <path d="M9 17V7m0 10l-3-3m3 3l3-3m5-1V7m0 10l-3-3m3 3l3-3" />
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
-          <p>暂无数据</p>
-          <span class="empty-tip">请选择电表序列号或电表后查看数据</span>
+          <p>{{ $t('equipmentPower.emptyNoData') }}</p>
+          <span class="empty-tip">{{ $t('equipmentPower.emptySelectMeter') }}</span>
         </div>
       </div>
     </div>
@@ -233,7 +225,7 @@ import * as XLSX from 'xlsx'
 
 export default {
   name: 'EquipmentPower',
-  data() {
+  data () {
     return {
       queryParams: {
         tenantId: '',
@@ -246,18 +238,18 @@ export default {
       tenantLoading: false,
       meterLoading: false,
       loading: false,
-      loadingText: '数据加载中...',
-      exportLoading: false,
-      bindTypeMap: {
-        1: '专用表',
-        2: '公摊表',
-        3: '公式表'
-      },
-      pickerOptions: {
+      exportLoading: false
+    }
+  },
+  computed: {
+    ...mapGetters('manager', ['currentManagerId']),
+    pickerOptions () {
+      const t = (k) => this.$t(`equipmentPower.${k}`)
+      return {
         shortcuts: [
           {
-            text: '最近7天',
-            onClick(picker) {
+            text: t('pickerLast7'),
+            onClick (picker) {
               const end = new Date()
               const start = new Date()
               start.setTime(start.getTime() - 3600 * 1000 * 24 * 6)
@@ -265,8 +257,8 @@ export default {
             }
           },
           {
-            text: '最近15天',
-            onClick(picker) {
+            text: t('pickerLast15'),
+            onClick (picker) {
               const end = new Date()
               const start = new Date()
               start.setTime(start.getTime() - 3600 * 1000 * 24 * 14)
@@ -274,8 +266,8 @@ export default {
             }
           },
           {
-            text: '最近30天',
-            onClick(picker) {
+            text: t('pickerLast30'),
+            onClick (picker) {
               const end = new Date()
               const start = new Date()
               start.setTime(start.getTime() - 3600 * 1000 * 24 * 29)
@@ -283,8 +275,8 @@ export default {
             }
           },
           {
-            text: '本月',
-            onClick(picker) {
+            text: t('pickerThisMonth'),
+            onClick (picker) {
               const start = new Date()
               start.setDate(1)
               start.setHours(0, 0, 0, 0)
@@ -294,8 +286,8 @@ export default {
             }
           },
           {
-            text: '上月',
-            onClick(picker) {
+            text: t('pickerLastMonth'),
+            onClick (picker) {
               const start = new Date()
               start.setMonth(start.getMonth() - 1)
               start.setDate(1)
@@ -307,20 +299,17 @@ export default {
             }
           }
         ],
-        disabledDate(time) {
+        disabledDate (time) {
           return time.getTime() > Date.now()
         }
       }
-    }
-  },
-  computed: {
-    ...mapGetters('manager', ['currentManagerId']),
-    maxDemandInfo() {
+    },
+    maxDemandInfo () {
       if (!this.tableData || this.tableData.length === 0) return null
-      
+
       let maxVal = -1
       let maxItem = null
-      
+
       this.tableData.forEach(item => {
         const val = parseFloat(item.maxDemand)
         if (!isNaN(val) && val > maxVal) {
@@ -328,20 +317,32 @@ export default {
           maxItem = item
         }
       })
-      
+
       if (maxItem) {
         return {
           maxDemand: maxItem.maxDemand || '--',
           occurTime: maxItem.occurTime || '--'
         }
       }
-      
+
       return null
+    },
+    totalBalance () {
+      if (!this.tableData || this.tableData.length === 0) return 0
+      return this.tableData.reduce((sum, row) => sum + this.formatExportNumber(row.balance), 0)
+    },
+    totalUseElec () {
+      if (!this.tableData || this.tableData.length === 0) return 0
+      return this.tableData.reduce((sum, row) => sum + this.formatExportNumber(row.useElec), 0)
+    },
+    /** 英文分时标签较长，列宽略增避免换行把数字挤断 */
+    energyKwhColMin () {
+      return this.$i18n.locale === 'en' ? 292 : 200
     }
   },
   watch: {
     currentManagerId: {
-      handler(val) {
+      handler (val) {
         if (val) {
           this.initializeData()
         }
@@ -349,50 +350,71 @@ export default {
       immediate: true
     }
   },
-  mounted() {
+  mounted () {
     this.initPasteListener()
   },
-  beforeDestroy() {
+  beforeDestroy () {
     this.removePasteListener()
   },
   methods: {
-    // ==================== 初始化相关 ====================
-    async initializeData() {
-      // 先设置默认日期
-      // this.setDefaultDateRange()
+    tenantOptionLabel (tenant) {
+      if (!tenant) return ''
+      const n = tenant.name != null && tenant.name !== '' ? String(tenant.name) : ''
+      return n ? `${this.$displayBizHybrid(n, 200)}` : String(tenant.tenantId != null ? tenant.tenantId : '')
+    },
+    meterSelectLabel (meter) {
+      if (!meter) return ''
+      const mn = this.$displayBizHybrid(meter.meterName || '', 120)
+      return `${mn} (${meter.serial || ''})`
+    },
+    bindNameDisplay (name) {
+      if (name == null || name === '' || name === '-') return '--'
+      return this.$displayBizHybrid(String(name), 200)
+    },
 
+    // ==================== 初始化相关 ====================
+    async initializeData () {
       // 保存路由参数
       const routeSerial = this.$route.query.serial
       const routeStartDate = this.$route.query.startDate
       const routeEndDate = this.$route.query.endDate
 
-      // 如果有日期参数,覆盖默认值
       if (routeStartDate && routeEndDate) {
         this.queryParams.dateRange = [routeStartDate, routeEndDate]
+      } else {
+        this.setDefaultDateRange()
       }
 
       await this.getTenantList()
-      await this.getMeterList()
+      if (!this.queryParams.tenantId && this.tenantList && this.tenantList.length > 0) {
+        this.queryParams.tenantId = this.tenantList[0].tenantId
+      }
 
-      // ⭐ 只有当路由参数完整时才自动查询
-      if (routeSerial && routeStartDate && routeEndDate) {
+      await this.getMeterList()
+      if (routeSerial) {
         this.queryParams.meterQuery = routeSerial
+      } else if (!this.queryParams.meterQuery && this.meterList && this.meterList.length > 0) {
+        this.queryParams.meterQuery = this.meterList[0].serial
+      }
+
+      if (
+        this.queryParams.dateRange &&
+        this.queryParams.dateRange.length === 2 &&
+        this.queryParams.meterQuery
+      ) {
         await this.fetchData()
-      } else if (routeSerial) {
-        // 只设置序列号,不查询
-        this.queryParams.meterQuery = routeSerial
       }
     },
 
-    setDefaultDateRange() {
+    setDefaultDateRange () {
       this.queryParams.dateRange = [
-        moment().subtract(29, 'days').format('YYYY-MM-DD'),
+        moment().startOf('month').format('YYYY-MM-DD'),
         moment().format('YYYY-MM-DD')
       ]
     },
 
     // ==================== 粘贴事件处理 ====================
-    initPasteListener() {
+    initPasteListener () {
       this.$nextTick(() => {
         if (this.$refs.meterSelect && this.$refs.meterSelect.$el) {
           const input = this.$refs.meterSelect.$el.querySelector('input')
@@ -404,13 +426,13 @@ export default {
       })
     },
 
-    removePasteListener() {
+    removePasteListener () {
       if (this.meterInput) {
         this.meterInput.removeEventListener('paste', this.handlePaste)
       }
     },
 
-    handlePaste(event) {
+    handlePaste (event) {
       event.preventDefault()
       const pastedText = (event.clipboardData || window.clipboardData).getData('text')
       const cleanedText = pastedText.replace(/\s+/g, '')
@@ -422,11 +444,15 @@ export default {
           const inputEvent = new Event('input', { bubbles: true })
           event.target.dispatchEvent(inputEvent)
         }
+        // 粘贴后自动触发查询
+        if (this.queryParams.meterQuery) {
+          this.fetchData()
+        }
       })
     },
 
     // ==================== 数据获取 ====================
-    async getTenantList() {
+    async getTenantList () {
       this.tenantLoading = true
       try {
         const { data } = await getSimpleTenantList({
@@ -435,14 +461,14 @@ export default {
         })
         this.tenantList = data || []
       } catch (error) {
-        this.$message.error('获取租户列表失败')
+        this.$apiError.notify(error, this.$t('equipmentPower.msgTenantListFail'))
         console.error('获取租户列表失败:', error)
       } finally {
         this.tenantLoading = false
       }
     },
 
-    async getMeterList() {
+    async getMeterList () {
       this.meterLoading = true
       try {
         const params = {
@@ -457,23 +483,23 @@ export default {
         const { data } = await listMeterInfo(params)
         this.meterList = data || []
       } catch (error) {
-        this.$message.error('获取电表列表失败')
+        this.$apiError.notify(error, this.$t('equipmentPower.msgMeterListFail'))
         console.error('获取电表列表失败:', error)
       } finally {
         this.meterLoading = false
       }
     },
 
-    async fetchData() {
+    async fetchData () {
       // 校验必填项
       if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) {
-        this.$message.warning('请选择统计时间')
+        this.$message.warning(this.$t('equipmentPower.msgSelectDate'))
         return
       }
 
       // 必须选择电表
       if (!this.queryParams.meterQuery) {
-        this.$message.warning('请选择电表')
+        this.$message.warning(this.$t('equipmentPower.msgSelectMeter'))
         return
       }
 
@@ -490,10 +516,10 @@ export default {
         this.tableData = data || []
 
         if (this.tableData.length === 0) {
-          this.$message.info('未查询到数据')
+          this.$message.info(this.$t('equipmentPower.msgNoData'))
         }
       } catch (error) {
-        this.$message.error('获取数据失败')
+        this.$apiError.notify(error, this.$t('equipmentPower.msgFetchFail'))
         console.error('获取数据失败:', error)
       } finally {
         this.loading = false
@@ -501,7 +527,7 @@ export default {
     },
 
     // ==================== 筛选器事件处理 ====================
-    handleDateRangeChange(val) {
+    handleDateRangeChange (val) {
       if (val && val.length === 2 && val[0] && val[1]) {
         // 日期变更时，如果已经选择了电表，则重新查询
         if (this.queryParams.meterQuery) {
@@ -510,14 +536,14 @@ export default {
       }
     },
 
-    async handleTenantChange() {
+    async handleTenantChange () {
       // 租户变更时清空电表选择并重新获取电表列表
       this.queryParams.meterQuery = ''
       this.tableData = []
       await this.getMeterList()
     },
 
-    handleMeterChange() {
+    handleMeterChange () {
       // 电表变更时直接查询
       if (this.queryParams.meterQuery) {
         this.fetchData()
@@ -528,9 +554,9 @@ export default {
     },
 
     // ==================== 导出功能 ====================
-    handleExport() {
+    handleExport () {
       if (!this.tableData || this.tableData.length === 0) {
-        this.$message.warning('暂无数据可导出')
+        this.$message.warning(this.$t('equipmentPower.msgExportEmpty'))
         return
       }
 
@@ -539,55 +565,61 @@ export default {
       setTimeout(() => {
         try {
           this.exportToExcel()
-          this.$message.success('导出成功！')
+          this.$message.success(this.$t('equipmentPower.msgExportOk'))
         } catch (error) {
           console.error('导出失败:', error)
-          this.$message.error(`导出失败: ${error.message || '请重试'}`)
+          this.$message.error(`${this.$t('equipmentPower.msgExportFail')}: ${error.message || this.$t('equipmentPower.msgExportRetry')}`)
         } finally {
           this.exportLoading = false
         }
       }, 100)
     },
 
-    exportToExcel() {
+    exportToExcel () {
+      const t = (k) => this.$t(`equipmentPower.${k}`)
       const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId)
-      const tenantName = tenant ? tenant.name : '全部'
+      const tenantName = tenant
+        ? (tenant.name ? this.$displayBizHybrid(String(tenant.name), 200) : String(tenant.tenantId))
+        : t('tenantAll')
 
       const meter = this.meterList.find(m => m.serial === this.queryParams.meterQuery)
-      const meterName = meter ? `${meter.meterName} (${meter.serial})` : this.queryParams.meterQuery
+      const meterName = meter ? this.meterSelectLabel(meter) : this.queryParams.meterQuery
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}  |  租户: ${tenantName}  |  电表: ${meterName}`
+        this.$t('equipmentPower.exportFilterLine', {
+          start: this.queryParams.dateRange[0],
+          end: this.queryParams.dateRange[1],
+          tenant: tenantName,
+          meter: meterName
+        })
       ]
 
-      // 第一行表头
       const header1 = [
-        '电表编号', '电表名称', '电表序列号', '电表绑定类型', '绑定ID', '绑定信息', '日期',
-        '总电费(元)', '总电量(度)', '尖电量(度)', '峰电量(度)', '平电量(度)', '谷电量(度)',
-        '起始读数', '', '', '', '', '',
-        '截止读数', '', '', '', '', ''
+        t('expColMeterId'), t('expColMeterName'), t('expColSerial'), t('expColBindType'), t('expColBindId'), t('expColBindName'), t('expColDate'),
+        t('expColTotalFee'), t('expColTotalKwh'), t('expColKwhSharp'), t('expColKwhPeak'), t('expColKwhFlat'), t('expColKwhValley'),
+        t('expRowStartRead'), '', '', '', '', '',
+        t('expRowStopRead'), '', '', '', '', ''
       ]
 
-      // 第二行表头
       const header2 = [
         '', '', '', '', '', '', '',
         '', '', '', '', '', '',
-        '时间', '总电量', '尖', '峰', '平', '谷',
-        '时间', '总电量', '尖', '峰', '平', '谷'
+        t('expSubTime'), t('expSubTotal'), t('expSubSharp'), t('expSubPeak'), t('expSubFlat'), t('expSubValley'),
+        t('expSubTime'), t('expSubTotal'), t('expSubSharp'), t('expSubPeak'), t('expSubFlat'), t('expSubValley')
       ]
 
-      // 数据行
       const dataRows = this.tableData.map(row => {
         const startDto = row.startUseDto || {}
         const stopDto = row.stopUseDto || {}
+        const bindNameCell = row.bindName ? this.$displayBizHybrid(String(row.bindName), 200) : ''
 
         return [
           row.meterId || '',
-          row.meterName || '',
+          this.$displayDynamicName(row.meterName, 200) || '',
           row.serial || '',
           this.getBindTypeLabel(row.bindType),
           row.bindId || '',
-          row.bindName || '',
+          bindNameCell,
           row.occurDate || '',
           this.formatExportNumber(row.balance),
           this.formatExportNumber(row.useElec),
@@ -620,7 +652,6 @@ export default {
 
       const ws = XLSX.utils.aoa_to_sheet(wsData)
 
-      // 设置列宽
       ws['!cols'] = [
         { wch: 10 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 12 },
         { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
@@ -628,36 +659,35 @@ export default {
         { wch: 18 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }
       ]
 
-      // 合并单元格
       const merges = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 24 } }, // 筛选条件行
-        { s: { r: 2, c: 0 }, e: { r: 3, c: 0 } },   // 电表编号
-        { s: { r: 2, c: 1 }, e: { r: 3, c: 1 } },   // 电表名称
-        { s: { r: 2, c: 2 }, e: { r: 3, c: 2 } },   // 电表序列号
-        { s: { r: 2, c: 3 }, e: { r: 3, c: 3 } },   // 电表绑定类型
-        { s: { r: 2, c: 4 }, e: { r: 3, c: 4 } },   // 绑定ID
-        { s: { r: 2, c: 5 }, e: { r: 3, c: 5 } },   // 绑定信息
-        { s: { r: 2, c: 6 }, e: { r: 3, c: 6 } },   // 日期
-        { s: { r: 2, c: 7 }, e: { r: 3, c: 7 } },   // 总电费
-        { s: { r: 2, c: 8 }, e: { r: 3, c: 8 } },   // 总电量
-        { s: { r: 2, c: 9 }, e: { r: 3, c: 9 } },   // 尖电量
-        { s: { r: 2, c: 10 }, e: { r: 3, c: 10 } }, // 峰电量
-        { s: { r: 2, c: 11 }, e: { r: 3, c: 11 } }, // 平电量
-        { s: { r: 2, c: 12 }, e: { r: 3, c: 12 } }, // 谷电量
-        { s: { r: 2, c: 13 }, e: { r: 2, c: 18 } }, // 起始读数
-        { s: { r: 2, c: 19 }, e: { r: 2, c: 24 } }  // 截止读数
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 24 } },
+        { s: { r: 2, c: 0 }, e: { r: 3, c: 0 } },
+        { s: { r: 2, c: 1 }, e: { r: 3, c: 1 } },
+        { s: { r: 2, c: 2 }, e: { r: 3, c: 2 } },
+        { s: { r: 2, c: 3 }, e: { r: 3, c: 3 } },
+        { s: { r: 2, c: 4 }, e: { r: 3, c: 4 } },
+        { s: { r: 2, c: 5 }, e: { r: 3, c: 5 } },
+        { s: { r: 2, c: 6 }, e: { r: 3, c: 6 } },
+        { s: { r: 2, c: 7 }, e: { r: 3, c: 7 } },
+        { s: { r: 2, c: 8 }, e: { r: 3, c: 8 } },
+        { s: { r: 2, c: 9 }, e: { r: 3, c: 9 } },
+        { s: { r: 2, c: 10 }, e: { r: 3, c: 10 } },
+        { s: { r: 2, c: 11 }, e: { r: 3, c: 11 } },
+        { s: { r: 2, c: 12 }, e: { r: 3, c: 12 } },
+        { s: { r: 2, c: 13 }, e: { r: 2, c: 18 } },
+        { s: { r: 2, c: 19 }, e: { r: 2, c: 24 } }
       ]
 
       ws['!merges'] = merges
 
       const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, '电表用电报表')
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('equipmentPower.exportSheetName'))
 
-      const fileName = this.generateFileName('电表用电报表')
+      const fileName = this.generateFileName(this.$t('equipmentPower.exportFilePrefix'))
       XLSX.writeFile(wb, fileName)
     },
 
-    generateFileName(prefix) {
+    generateFileName (prefix) {
       const now = new Date()
       const timeStr = now.getFullYear() +
         String(now.getMonth() + 1).padStart(2, '0') +
@@ -670,7 +700,7 @@ export default {
     },
 
     // ==================== 格式化方法 ====================
-    formatExportNumber(num) {
+    formatExportNumber (num) {
       if (num === undefined || num === null || num === '' || num === '-') {
         return 0
       }
@@ -681,16 +711,54 @@ export default {
       return numValue
     },
 
-    formatNumber(num) {
+    formatNumber (num) {
       if (num === undefined || num === null || num === '') {
         return '0.00'
       }
       return Number(num).toFixed(2)
     },
 
-    getBindTypeLabel(bindType) {
+    getBindTypeLabel (bindType) {
       if (bindType === undefined || bindType === null) return '-'
-      return this.bindTypeMap[bindType] || '-'
+      const map = {
+        1: 'bindDedicated',
+        2: 'bindPublic',
+        3: 'bindFormula',
+        4: 'bindAc'
+      }
+      const key = map[Number(bindType)]
+      return key ? this.$t(`equipmentPower.${key}`) : '-'
+    },
+
+    jumpToMeterBySerial (serial) {
+      if (!serial || serial === '-') {
+        this.$message.warning(this.$t('equipmentPower.msgNoSerial'))
+        return
+      }
+      this.$router.push({
+        path: '/device/electricity',
+        query: {
+          serial,
+          autoSearch: 'true'
+        }
+      })
+    },
+
+    jumpToTenantByBind (row) {
+      const bindType = Number(row && row.bindType)
+      const bindId = row && row.bindId
+
+      if (bindType !== 1) {
+        this.$message.warning(this.$t('equipmentPower.msgBindNotTenant'))
+        return
+      }
+
+      if (!bindId || bindId === '-') {
+        this.$message.warning(this.$t('equipmentPower.msgNoTenantId'))
+        return
+      }
+
+      this.$router.push(`/metering/tenant/detail/${bindId}/`)
     }
   }
 }
@@ -824,17 +892,23 @@ export default {
   margin-bottom: 15px;
   font-size: 16px;
   color: #333;
-  
+
   .label {
     font-weight: 400;
     color: #807f7f;
      font-size: 16px;
   }
-  
+
   .value {
     color: #080808;
     font-weight: 500;
     font-size: 20px;
+  }
+
+  .sub-value {
+    color: #606266;
+    font-size: 14px;
+    font-weight: 400;
   }
 }
 
@@ -920,6 +994,157 @@ export default {
 
   .el-table__body tr:hover>td {
     background-color: #f5f7fa !important;
+  }
+
+  .equipment-info-cell {
+    padding: 4px 10px;
+    text-align: left;
+    line-height: 1.45;
+
+    &.is-link {
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background: #f0f7ff;
+      }
+    }
+  }
+
+  .eq-title {
+    font-weight: 600;
+    color: #303133;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .eq-meta {
+    font-size: 12px;
+    color: #606266;
+    margin-top: 2px;
+  }
+
+  .eq-tag-row {
+    margin-top: 6px;
+  }
+
+  .start-end-stack {
+    padding: 2px 6px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #303133;
+
+    &.is-num {
+      font-variant-numeric: tabular-nums;
+    }
+
+    > div + div {
+      margin-top: 4px;
+    }
+  }
+
+  .se-mark {
+    display: inline-block;
+    min-width: 18px;
+    margin-right: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #3b82f6;
+  }
+
+  .merge-metric-cell {
+    padding: 2px 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: left;
+
+    > div + div {
+      margin-top: 4px;
+    }
+  }
+
+  .bind-inline-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 10px;
+    line-height: 1.5;
+
+    &.is-link {
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background: #f0f7ff;
+      }
+    }
+  }
+
+  .bind-id,
+  .bind-name {
+    color: #409eff;
+    font-size: 12px;
+  }
+
+  .power-grid-cell {
+    padding: 2px 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  .power-total-row {
+    margin-bottom: 4px;
+  }
+
+  .power-pair-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: baseline;
+  }
+
+  .power-pair-row + .power-pair-row {
+    margin-top: 4px;
+  }
+
+  .tou-pair {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: nowrap;
+    gap: 4px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .tou-pair .metric-label {
+    flex-shrink: 0;
+  }
+
+  .tou-pair .metric-value {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tou-pair .metric-label + .metric-value {
+    margin-left: 4px;
+  }
+
+  .power-total-row .tou-pair {
+    max-width: 100%;
+  }
+
+  .metric-label {
+    color: #606266;
+  }
+
+  .metric-value {
+    color: #303133;
+    font-weight: 500;
+  }
+
+  .metric-value-highlight {
+    color: #f56c6c;
   }
 }
 

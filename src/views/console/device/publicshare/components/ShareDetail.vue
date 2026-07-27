@@ -9,7 +9,7 @@
     <el-card class="info-card" shadow="never">
       <div slot="header" class="card-header">
         <span class="header-title"><i class="el-icon-document"></i> 公摊信息</span>
-        <el-button type="primary" size="small" icon="el-icon-edit" @click="handleModifyShare">修改</el-button>
+        <el-button v-if="canAdd" type="primary" size="small" icon="el-icon-edit" @click="handleModifyShare">修改</el-button>
       </div>
       <el-row :gutter="20">
         <el-col :span="8">
@@ -40,7 +40,7 @@
         <el-card class="tenant-card" shadow="never">
           <div slot="header" class="card-header">
             <span class="header-title">租户信息</span>
-            <el-button type="primary" size="small" icon="el-icon-link" @click="handleBindTenant">关联/解绑租户</el-button>
+            <el-button v-if="canAdd" type="primary" size="small" icon="el-icon-link" @click="handleBindTenant">关联/解绑租户</el-button>
           </div>
           <el-table :data="tenantList" stripe style="width: 100%" max-height="500" :header-cell-style="{
             background: '#f5f7fa',
@@ -86,7 +86,7 @@
               <span :class="['tab-item', { active: currentTab === -1 }]" @click="changeTab(-1)">减法设备({{ subMeterCount
               }})</span>
             </div>
-            <el-button type="primary" size="small" icon="el-icon-link" @click="handleBindMeter">关联/解绑电表</el-button>
+            <el-button v-if="canAdd" type="primary" size="small" icon="el-icon-link" @click="handleBindMeter">关联/解绑电表</el-button>
           </div>
           <div class="meter-list">
             <div v-for="item in filteredMeterList" :key="item.id" class="meter-item">
@@ -109,7 +109,7 @@
                 </span>
               </div>
               <div class="meter-action">
-                <el-button type="text" size="small" icon="el-icon-setting"
+                <el-button v-if="canAdd" type="text" size="small" icon="el-icon-setting"
                   @click="handleMeterSetting(item)">设置</el-button>
               </div>
             </div>
@@ -130,7 +130,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="modifyDialog.visible = false">取 消</el-button>
-        <el-button type="primary" :loading="modifySubmitting" @click="handleModifySubmit">确 定</el-button>
+        <el-button v-if="canAdd" type="primary" :loading="modifySubmitting" @click="handleModifySubmit">确 定</el-button>
       </span>
     </el-dialog>
 
@@ -151,7 +151,7 @@
             <el-table-column label="实际公摊面积" width="120" align="center">
               <template slot-scope="scope">{{ scope.row.publicArea }}㎡</template>
             </el-table-column>
-            <el-table-column label="操作" width="180" align="center">
+            <el-table-column v-if="canAdd" label="操作" width="180" align="center">
               <template slot-scope="scope">
                 <el-button type="text" size="small" @click="handleTenantUnbind(scope.row)">解绑</el-button>
                 <el-button type="text" size="small" @click="handleTenantModifyArea(scope.row)">修改面积</el-button>
@@ -176,7 +176,7 @@
             <el-table-column label="实际公摊面积" width="120" align="center">
               <template slot-scope="scope">{{ scope.row.publicArea }}㎡</template>
             </el-table-column>
-            <el-table-column label="操作" width="80" align="center">
+            <el-table-column v-if="canAdd" label="操作" width="80" align="center">
               <template slot-scope="scope">
                 <el-button type="text" size="small" @click="handleTenantBind(scope.row)">绑定</el-button>
               </template>
@@ -206,7 +206,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="tenantOperateDialog.visible = false">取 消</el-button>
-        <el-button type="primary" :loading="tenantOperateSubmitting" @click="handleTenantOperateSubmit">确 认</el-button>
+        <el-button v-if="canAdd" type="primary" :loading="tenantOperateSubmitting" @click="handleTenantOperateSubmit">确 认</el-button>
       </span>
     </el-dialog>
 
@@ -312,14 +312,14 @@
       </el-form>
       <span slot="footer">
         <el-button @click="meterSettingDialog.visible = false">取 消</el-button>
-        <el-button type="primary" :loading="meterSettingSubmitting" @click="handleMeterSettingSubmit">确 定</el-button>
+        <el-button v-if="canAdd" type="primary" :loading="meterSettingSubmitting" @click="handleMeterSettingSubmit">确 定</el-button>
       </span>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapGetters } from 'vuex'
 import {
   shareGetShareDetail,
   shareUpdate,
@@ -328,22 +328,22 @@ import {
   shareGetShareMeterBindEdit,
   shareBindShareMeter,
   getMeterPriceList,
-  meterUpdateMeterBase,
-} from "@/api/electricityShare";
+  meterUpdateMeterBase
+} from '@/api/electricityShare'
 
 export default {
-  name: "ElectricityShareDetail",
-  data() {
+  name: 'ElectricityShareDetail',
+  data () {
     return {
-      shareId: "",
+      shareId: '',
       pageLoading: false,
-      shareData: { id: "", name: "", area: 0 },
+      shareData: { id: '', name: '', area: 0 },
       tenantList: [],
       meterList: [],
       currentTab: 1,
-      modifyDialog: { visible: false, name: "", id: "" },
+      modifyDialog: { visible: false, name: '', id: '' },
       modifyRules: {
-        name: [{ required: true, message: "请输入公摊组名", trigger: "blur" }],
+        name: [{ required: true, message: '请输入公摊组名', trigger: 'blur' }]
       },
       modifySubmitting: false,
       tenantBindDialog: {
@@ -352,17 +352,17 @@ export default {
         selectableList: [],
         filteredSelectedList: [],
         filteredSelectableList: [],
-        selectedSearch: "",
-        selectableSearch: "",
+        selectedSearch: '',
+        selectableSearch: ''
       },
       tenantBindLoading: false,
       tenantOperateDialog: {
         visible: false,
-        title: "",
-        type: "",
-        name: "",
-        id: "",
-        area: "",
+        title: '',
+        type: '',
+        name: '',
+        id: '',
+        area: ''
       },
       tenantOperateSubmitting: false,
       // 电表绑定弹窗 - 穿梭框
@@ -370,258 +370,277 @@ export default {
         visible: false,
         allMeterList: [],
         selectedIds: [],
-        originalSelectedIds: [],
+        originalSelectedIds: []
       },
       meterBindLoading: false,
       // 电表设置弹窗
       meterSettingDialog: {
         visible: false,
         data: {
-          id: "",
-          ct: "",
-          serial: "",
-          meterName: "",
-          monitorType: "",
-          bindType: "",
-          priceId: "",
-          serviceId: "",
-          logicPayType: "",
+          id: '',
+          ct: '',
+          serial: '',
+          meterName: '',
+          monitorType: '',
+          bindType: '',
+          priceId: '',
+          serviceId: '',
+          logicPayType: '',
           overloadSwitch: false,
-          overloadP: "",
-          overloadTime: "",
-          managerId: "",
-          phase: "",
+          overloadP: '',
+          overloadTime: '',
+          managerId: '',
+          phase: ''
         },
         priceList: [],
         serviceList: [],
         priceRead: {},
         serviceRead: {},
-        monitorTypeOptions: [],
+        monitorTypeOptions: []
       },
       meterSettingSubmitting: false,
       // 枚举定义
       MeterBindType: [
-        { value: 1, label: "专用表" },
-        { value: 2, label: "公摊表" },
-        { value: 3, label: "公式表" },
+        { value: 1, label: '专用表' },
+        { value: 2, label: '公摊表' },
+        { value: 3, label: '公式表' }
       ],
       MeterPayTypeDetail: [
-        { value: 0, label: "预付费（欠费跳闸）" },
-        { value: 1, label: "强控（欠费不跳闸）" },
+        { value: 0, label: '预付费（欠费跳闸）' },
+        { value: 1, label: '强控（欠费不跳闸）' }
       ],
       MeterMonitorType: [
-        { value: 1, label: "一次" },
-        { value: 2, label: "二次" },
+        { value: 1, label: '一次' },
+        { value: 2, label: '二次' }
       ],
       timeTypeOptions: [
-        { value: "10", label: "10分钟" },
-        { value: "15", label: "15分钟" },
-        { value: "20", label: "20分钟" },
-        { value: "25", label: "25分钟" },
-        { value: "30", label: "30分钟" },
-      ],
-    };
+        { value: '10', label: '10分钟' },
+        { value: '15', label: '15分钟' },
+        { value: '20', label: '20分钟' },
+        { value: '25', label: '25分钟' },
+        { value: '30', label: '30分钟' }
+      ]
+    }
   },
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
-    totalArea() {
+    ...mapGetters('manager', ['currentManagerId']),
+    ...mapGetters(['kztMenuNos']),
+    hasKztPermission () {
+      const allow = new Set((this.kztMenuNos || []).map((v) => String(v)))
+      return (menuNo) => allow.has(String(menuNo))
+    },
+    canAdd () {
+      return this.hasKztPermission('630040')
+    },
+    canView () {
+      return this.hasKztPermission('630042')
+    },
+    totalArea () {
       return this.tenantList
         .reduce((sum, i) => sum + (i.area || 0), 0)
-        .toFixed(2);
+        .toFixed(2)
     },
-    addMeterCount() {
+    addMeterCount () {
       return this.meterList.filter(
         (m) => m.coefficient === 1 || m.coefficient === 1.0
-      ).length;
+      ).length
     },
-    subMeterCount() {
+    subMeterCount () {
       return this.meterList.filter(
         (m) => m.coefficient === -1 || m.coefficient === -1.0
-      ).length;
+      ).length
     },
-    filteredMeterList() {
+    filteredMeterList () {
       return this.meterList.filter((m) =>
         this.currentTab === 1
           ? m.coefficient === 1 || m.coefficient === 1.0
           : m.coefficient === -1 || m.coefficient === -1.0
-      );
-    },
+      )
+    }
   },
-  created() {
-    this.shareId = this.$route.query.id;
-    if (this.shareId) this.fetchDetailData();
+  created () {
+    this.shareId = this.$route.query.id
+    if (this.shareId) this.fetchDetailData()
     else {
-      this.$message.error("缺少公摊组ID");
-      this.goBack();
+      this.$message.error('缺少公摊组ID')
+      this.goBack()
     }
   },
   methods: {
-    goBack() {
-      this.$router.go(-1);
+    goBack () {
+      this.$router.go(-1)
     },
-    async fetchDetailData() {
-      this.pageLoading = true;
+    async fetchDetailData () {
+      this.pageLoading = true
       try {
-        const res = await shareGetShareDetail({ shareId: this.shareId });
+        const res = await shareGetShareDetail({ shareId: this.shareId })
         if (res.code === 200 && res.data) {
-          this.shareData = res.data.shareDto || {};
-          this.tenantList = res.data.tenantDtoList || [];
-          this.meterList = res.data.meterInfoDtoList || [];
-        } else this.$message.error(res.msg || "获取详情失败");
+          this.shareData = res.data.shareDto || {}
+          this.tenantList = res.data.tenantDtoList || []
+          this.meterList = res.data.meterInfoDtoList || []
+        } else this.$message.error(res.msg || '获取详情失败')
       } catch (e) {
-        this.$message.error("获取详情失败");
+        this.$message.error('获取详情失败')
       } finally {
-        this.pageLoading = false;
+        this.pageLoading = false
       }
     },
-    handleModifyShare() {
+    handleModifyShare () {
+      if (!this.canAdd) return
       this.modifyDialog = {
         visible: true,
         name: this.shareData.name,
-        id: this.shareData.id,
-      };
+        id: this.shareData.id
+      }
     },
-    async handleModifySubmit() {
+    async handleModifySubmit () {
+      if (!this.canAdd) return
       this.$refs.modifyForm.validate(async (valid) => {
-        if (!valid) return;
-        this.modifySubmitting = true;
+        if (!valid) return
+        this.modifySubmitting = true
         try {
           const res = await shareUpdate({
             id: this.modifyDialog.id,
             name: this.modifyDialog.name,
             managerId: this.currentManagerId,
-            area: 1,
-          });
+            area: 1
+          })
           if (res.code === 200) {
-            this.$message.success(res.msg || "修改成功");
-            this.modifyDialog.visible = false;
-            this.fetchDetailData();
-          } else this.$message.error(res.msg || "修改失败");
+            this.$message.success(res.msg || '修改成功')
+            this.modifyDialog.visible = false
+            this.fetchDetailData()
+          } else this.$message.error(res.msg || '修改失败')
         } catch (e) {
-          this.$message.error("修改失败");
+          this.$message.error('修改失败')
         } finally {
-          this.modifySubmitting = false;
+          this.modifySubmitting = false
         }
-      });
+      })
     },
-    changeTab(tab) {
-      this.currentTab = tab;
+    changeTab (tab) {
+      this.currentTab = tab
     },
-    handleTenantDetail(row) {
+    handleTenantDetail (row) {
       this.$router.push({
-        path: "/control-tenement-detail",
-        query: { id: row.tenantId, selectType: 3, deviceType: 1 },
-      });
+        path: '/control-tenement-detail',
+        query: { id: row.tenantId, selectType: 3, deviceType: 1 }
+      })
     },
-    async handleBindTenant() {
-      this.tenantBindDialog.visible = true;
-      this.tenantBindLoading = true;
-      this.tenantBindDialog.selectedSearch = "";
-      this.tenantBindDialog.selectableSearch = "";
+    async handleBindTenant () {
+      if (!this.canAdd) return
+      this.tenantBindDialog.visible = true
+      this.tenantBindLoading = true
+      this.tenantBindDialog.selectedSearch = ''
+      this.tenantBindDialog.selectableSearch = ''
       try {
         const res = await shareGetShareTenantBindEdit({
           managerId: this.currentManagerId,
-          shareId: this.shareId,
-        });
+          shareId: this.shareId
+        })
         if (res.code === 200 && res.data) {
           this.tenantBindDialog.selectedList =
-            res.data.tenantSelectedList || [];
+            res.data.tenantSelectedList || []
           this.tenantBindDialog.selectableList =
-            res.data.tenantSelectableList || [];
+            res.data.tenantSelectableList || []
           this.tenantBindDialog.filteredSelectedList = [
-            ...this.tenantBindDialog.selectedList,
-          ];
+            ...this.tenantBindDialog.selectedList
+          ]
           this.tenantBindDialog.filteredSelectableList = [
-            ...this.tenantBindDialog.selectableList,
-          ];
+            ...this.tenantBindDialog.selectableList
+          ]
         }
       } catch (e) {
-        this.$message.error("获取租户绑定信息失败");
+        this.$message.error('获取租户绑定信息失败')
       } finally {
-        this.tenantBindLoading = false;
+        this.tenantBindLoading = false
       }
     },
-    filterSelectedTenant() {
-      const k = this.tenantBindDialog.selectedSearch;
+    filterSelectedTenant () {
+      const k = this.tenantBindDialog.selectedSearch
       this.tenantBindDialog.filteredSelectedList = k
         ? this.tenantBindDialog.selectedList.filter((i) => i.name.includes(k))
-        : [...this.tenantBindDialog.selectedList];
+        : [...this.tenantBindDialog.selectedList]
     },
-    filterSelectableTenant() {
-      const k = this.tenantBindDialog.selectableSearch;
+    filterSelectableTenant () {
+      const k = this.tenantBindDialog.selectableSearch
       this.tenantBindDialog.filteredSelectableList = k
         ? this.tenantBindDialog.selectableList.filter((i) => i.name.includes(k))
-        : [...this.tenantBindDialog.selectableList];
+        : [...this.tenantBindDialog.selectableList]
     },
-    handleTenantBind(row) {
+    handleTenantBind (row) {
+      if (!this.canAdd) return
       this.tenantOperateDialog = {
         visible: true,
-        title: "绑定操作",
-        type: "bind",
+        title: '绑定操作',
+        type: 'bind',
         name: row.name,
         id: row.id,
-        area: row.publicArea || "",
-      };
+        area: row.publicArea || ''
+      }
     },
-    handleTenantUnbind(row) {
+    handleTenantUnbind (row) {
+      if (!this.canAdd) return
       this.tenantOperateDialog = {
         visible: true,
-        title: "解绑操作",
-        type: "unbind",
+        title: '解绑操作',
+        type: 'unbind',
         name: row.name,
         id: row.id,
-        area: row.publicArea,
-      };
+        area: row.publicArea
+      }
     },
-    handleTenantModifyArea(row) {
+    handleTenantModifyArea (row) {
+      if (!this.canAdd) return
       this.tenantOperateDialog = {
         visible: true,
-        title: "修改面积",
-        type: "bind",
+        title: '修改面积',
+        type: 'bind',
         name: row.name,
         id: row.id,
-        area: row.publicArea,
-      };
+        area: row.publicArea
+      }
     },
-    async handleTenantOperateSubmit() {
-      this.tenantOperateSubmitting = true;
+    async handleTenantOperateSubmit () {
+      if (!this.canAdd) return
+      this.tenantOperateSubmitting = true
       try {
         const res = await shareBindShareTenant({
           tenantId: this.tenantOperateDialog.id,
           shareId: this.shareId,
           managerId: this.currentManagerId,
           type: this.tenantOperateDialog.type,
-          area: this.tenantOperateDialog.area,
-        });
+          area: this.tenantOperateDialog.area
+        })
         if (res.code === 200) {
-          this.$message.success(res.msg || "操作成功");
-          this.tenantOperateDialog.visible = false;
-          this.handleBindTenant();
-          this.fetchDetailData();
-        } else this.$message.error(res.msg || "操作失败");
+          this.$message.success(res.msg || '操作成功')
+          this.tenantOperateDialog.visible = false
+          this.handleBindTenant()
+          this.fetchDetailData()
+        } else this.$message.error(res.msg || '操作失败')
       } catch (e) {
-        this.$message.error("操作失败");
+        this.$apiError.notify(e, '操作失败')
       } finally {
-        this.tenantOperateSubmitting = false;
+        this.tenantOperateSubmitting = false
       }
     },
     // 打开电表绑定弹窗 - 穿梭框
-    async handleBindMeter() {
-      this.meterBindDialog.visible = true;
-      this.meterBindLoading = true;
+    async handleBindMeter () {
+      if (!this.canAdd) return
+      this.meterBindDialog.visible = true
+      this.meterBindLoading = true
       try {
         const res = await shareGetShareMeterBindEdit({
           managerId: this.currentManagerId,
-          shareId: this.shareId,
-        });
+          shareId: this.shareId
+        })
         if (res.code === 200 && res.data) {
-          const selectedList = res.data.meterSelectedList || [];
-          const selectableList = res.data.meterSelectableList || [];
+          const selectedList = res.data.meterSelectedList || []
+          const selectableList = res.data.meterSelectableList || []
 
           // ⭐ 关键修改1：从已选列表中过滤出当前类型的电表
           const filteredSelected = selectedList.filter(
             item => item.coefficient === this.currentTab || item.coefficient === parseFloat(this.currentTab)
-          );
+          )
 
           // ⭐ 关键修改2：从已选列表中过滤出【其他类型】的电表
           // 这些电表已经绑定到另一个类型（加法/减法），不应该出现在可选列表中
@@ -630,38 +649,39 @@ export default {
               item.coefficient !== this.currentTab &&
               item.coefficient !== parseFloat(this.currentTab)
             )
-            .map(item => item.id);
+            .map(item => item.id)
 
           // ⭐ 关键修改3：过滤可选列表，排除已绑定到其他类型的电表
           const filteredSelectable = selectableList.filter(
             item => !otherTypeSelectedIds.includes(item.id)
-          );
+          )
 
           // 合并电表数据（过滤后的可选列表 + 当前类型的已选列表）
           this.meterBindDialog.allMeterList = [
-            ...filteredSelectable,  // 使用过滤后的可选列表
-            ...filteredSelected,
-          ];
+            ...filteredSelectable, // 使用过滤后的可选列表
+            ...filteredSelected
+          ]
 
           // 已绑定的电表ID
           this.meterBindDialog.selectedIds = filteredSelected.map(
             (item) => item.id
-          );
+          )
 
           // 保存原始已绑定ID
           this.meterBindDialog.originalSelectedIds = [
-            ...this.meterBindDialog.selectedIds,
-          ];
+            ...this.meterBindDialog.selectedIds
+          ]
         }
       } catch (e) {
-        this.$message.error("获取电表绑定信息失败");
+        this.$message.error('获取电表绑定信息失败')
       } finally {
-        this.meterBindLoading = false;
+        this.meterBindLoading = false
       }
     },
     // 穿梭框变化事件
-    async handleMeterTransferChange(value, direction, movedKeys) {
-      const type = direction === "right" ? "bind" : "unbind";
+    async handleMeterTransferChange (value, direction, movedKeys) {
+      if (!this.canAdd) return
+      const type = direction === 'right' ? 'bind' : 'unbind'
 
       for (const meterId of movedKeys) {
         try {
@@ -669,39 +689,40 @@ export default {
             meterId: meterId,
             shareId: this.shareId,
             coefficient: this.currentTab, // ⭐ 添加 coefficient 参数，使用当前tab值
-            type: type,
-          });
+            type: type
+          })
 
           if (res.code === 200) {
-            this.$message.success(res.msg || "操作成功");
+            this.$message.success(res.msg || '操作成功')
           } else {
-            this.$message.error(res.msg || "操作失败");
+            this.$message.error(res.msg || '操作失败')
             // 操作失败，恢复原状态
-            if (type === "bind") {
+            if (type === 'bind') {
               this.meterBindDialog.selectedIds =
-                this.meterBindDialog.selectedIds.filter((id) => id !== meterId);
+                this.meterBindDialog.selectedIds.filter((id) => id !== meterId)
             } else {
-              this.meterBindDialog.selectedIds.push(meterId);
+              this.meterBindDialog.selectedIds.push(meterId)
             }
           }
         } catch (e) {
-          this.$message.error("操作失败");
+          this.$apiError.notify(e, '操作失败')
           // 操作失败，恢复原状态
-          if (type === "bind") {
+          if (type === 'bind') {
             this.meterBindDialog.selectedIds =
-              this.meterBindDialog.selectedIds.filter((id) => id !== meterId);
+              this.meterBindDialog.selectedIds.filter((id) => id !== meterId)
           } else {
-            this.meterBindDialog.selectedIds.push(meterId);
+            this.meterBindDialog.selectedIds.push(meterId)
           }
         }
       }
 
       // 刷新详情数据
-      this.fetchDetailData();
+      this.fetchDetailData()
     },
     // 打开电表设置弹窗
-    handleMeterSetting(item) {
-      this.meterSettingDialog.visible = true;
+    handleMeterSetting (item) {
+      if (!this.canAdd) return
+      this.meterSettingDialog.visible = true
       this.meterSettingDialog.data = {
         id: item.id,
         ct: item.ct,
@@ -710,129 +731,131 @@ export default {
         monitorType: item.monitorType,
         bindType: item.bindType,
         priceId:
-          item.priceId || (item.meterPriceDto ? item.meterPriceDto.id : ""),
-        serviceId: item.serviceId || "",
+          item.priceId || (item.meterPriceDto ? item.meterPriceDto.id : ''),
+        serviceId: item.serviceId || '',
         logicPayType: item.logicPayType,
         overloadSwitch: item.overloadSwitch || false,
-        overloadP: item.overloadP || "",
-        overloadTime: item.overloadTime || "",
+        overloadP: item.overloadP || '',
+        overloadTime: item.overloadTime || '',
         managerId: item.managerId || this.currentManagerId,
-        phase: item.phase,
-      };
+        phase: item.phase
+      }
     },
     // 初始化电表设置弹窗
-    async initMeterSettingDialog() {
-      const phase = this.meterSettingDialog.data.phase;
-      const baseOptions = JSON.parse(JSON.stringify(this.MeterMonitorType));
+    async initMeterSettingDialog () {
+      if (!this.canAdd) return
+      const phase = this.meterSettingDialog.data.phase
+      const baseOptions = JSON.parse(JSON.stringify(this.MeterMonitorType))
       if (phase) {
         if (phase == 5) {
           this.meterSettingDialog.monitorTypeOptions = baseOptions.map(
             (item) => {
-              item.label = "三相" + item.label;
-              return item;
+              item.label = '三相' + item.label
+              return item
             }
-          );
+          )
         } else {
           this.meterSettingDialog.monitorTypeOptions = baseOptions.filter(
             (item) => {
               if (item.value == 1) {
-                item.label = "单相" + item.label;
-                return item;
+                item.label = '单相' + item.label
+                return item
               }
             }
-          );
+          )
         }
       } else {
-        this.meterSettingDialog.monitorTypeOptions = baseOptions;
+        this.meterSettingDialog.monitorTypeOptions = baseOptions
       }
       // 并行加载电费方案和服务费方案
       await Promise.all([
         this.loadMeterPriceList(),
-        this.loadServicePriceList(),
-      ]);
+        this.loadServicePriceList()
+      ])
     },
     // 加载电费方案列表
-    async loadMeterPriceList() {
+    async loadMeterPriceList () {
       try {
         const res = await getMeterPriceList({
           managerId: this.meterSettingDialog.data.managerId,
-          priceType: 1,
-        });
+          priceType: 1
+        })
         if (res.code === 200 && res.data) {
-          this.meterSettingDialog.priceRead = {};
+          this.meterSettingDialog.priceRead = {}
           this.meterSettingDialog.priceList = res.data.map((item) => {
-            this.meterSettingDialog.priceRead[item.id] = item;
-            return { name: item.name, id: item.id };
-          });
+            this.meterSettingDialog.priceRead[item.id] = item
+            return { name: item.name, id: item.id }
+          })
         }
       } catch (e) {
-        console.error("加载电费方案失败", e);
+        console.error('加载电费方案失败', e)
       }
     },
     // 加载服务费方案列表
-    async loadServicePriceList() {
+    async loadServicePriceList () {
       try {
         const res = await getMeterPriceList({
           managerId: this.meterSettingDialog.data.managerId,
-          priceType: 2,
-        });
+          priceType: 2
+        })
         if (res.code === 200 && res.data) {
-          this.meterSettingDialog.serviceRead = {};
+          this.meterSettingDialog.serviceRead = {}
           this.meterSettingDialog.serviceList = res.data.map((item) => {
-            this.meterSettingDialog.serviceRead[item.id] = item;
-            return { name: item.name, id: item.id };
-          });
+            this.meterSettingDialog.serviceRead[item.id] = item
+            return { name: item.name, id: item.id }
+          })
         }
       } catch (e) {
-        console.error("加载服务费方案失败", e);
+        console.error('加载服务费方案失败', e)
       }
     },
     // 提交电表设置
-    async handleMeterSettingSubmit() {
-      const data = this.meterSettingDialog.data;
+    async handleMeterSettingSubmit () {
+      if (!this.canAdd) return
+      const data = this.meterSettingDialog.data
       if (data.overloadSwitch) {
         const reg =
-          /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/;
+          /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/
         if (!reg.test(data.overloadP)) {
-          this.$message.error("限制功率必须为正数且至多两位小数");
-          return;
+          this.$message.error('限制功率必须为正数且至多两位小数')
+          return
         }
       }
-      this.$confirm("确认修改电表?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
+      this.$confirm('确认修改电表?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
       })
         .then(async () => {
-          this.meterSettingSubmitting = true;
+          this.meterSettingSubmitting = true
           try {
-            const submitData = { ...data };
+            const submitData = { ...data }
             if (!submitData.overloadSwitch) {
-              submitData.overloadP = "";
-              submitData.overloadTime = "";
+              submitData.overloadP = ''
+              submitData.overloadTime = ''
             }
-            const res = await meterUpdateMeterBase(submitData);
+            const res = await meterUpdateMeterBase(submitData)
             if (res.code === 200) {
-              this.$message.success(res.msg || "修改成功");
-              this.meterSettingDialog.visible = false;
-              this.fetchDetailData();
+              this.$message.success(res.msg || '修改成功')
+              this.meterSettingDialog.visible = false
+              this.fetchDetailData()
             } else {
-              this.$message.error(res.msg || "修改失败");
+              this.$message.error(res.msg || '修改失败')
             }
           } catch (e) {
-            this.$message.error("修改失败");
+            this.$message.error('修改失败')
           } finally {
-            this.meterSettingSubmitting = false;
+            this.meterSettingSubmitting = false
           }
         })
-        .catch(() => { });
+        .catch(() => { })
     },
-    getMeterBindTypeLabel(type) {
-      const item = this.MeterBindType.find((i) => i.value === type);
-      return item ? item.label : "-";
-    },
-  },
-};
+    getMeterBindTypeLabel (type) {
+      const item = this.MeterBindType.find((i) => i.value === type)
+      return item ? item.label : '-'
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>

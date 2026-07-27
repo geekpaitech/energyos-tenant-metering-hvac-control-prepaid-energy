@@ -23,7 +23,7 @@
                 size="mini"
                 style="margin-left: -20px"
               >
-                <i class="el-icon-arrow-left"></i> 返回 
+                <i class="el-icon-arrow-left"></i> 返回
               </el-button>{{ deviceInfo.name }}
             </div>
             <div class="device-id">{{ deviceInfo.deviceId }}</div>
@@ -33,7 +33,7 @@
             <span class="status-text">{{ deviceInfo.online ? '在线' : '离线' }}</span>
           </div>
         </div>
-        
+
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-label">实时功率</div>
@@ -43,7 +43,7 @@
             </div>
             <div class="metric-sub">额定 {{ deviceInfo.ratedPower }}kW</div>
           </div>
-          
+
           <div class="metric-card">
             <div class="metric-label">当前电流</div>
             <div class="metric-value">
@@ -52,7 +52,7 @@
             </div>
             <div class="metric-sub">电压 {{ realtimeData.voltage }}V</div>
           </div>
-          
+
           <div class="metric-card">
             <div class="metric-label">今日充电量</div>
             <div class="metric-value">
@@ -61,7 +61,7 @@
             </div>
             <div class="metric-sub">{{ todayData.sessions }} 次充电</div>
           </div>
-          
+
           <div class="metric-card">
             <div class="metric-label">今日收入</div>
             <div class="metric-value">
@@ -72,7 +72,7 @@
           </div>
         </div>
       </div>
-  
+
       <!-- 主要内容区 -->
       <div class="main-content">
         <div class="left-panel">
@@ -81,18 +81,18 @@
             <div class="panel-header">
               <h3>充电控制</h3>
               <div class="header-actions">
-                <el-button 
+                <el-button
                   v-if="chargingStatus.isCharging"
-                  type="danger" 
+                  type="danger"
                   size="small"
                   plain
                   @click="stopCharging"
                 >
                   停止充电
                 </el-button>
-                <el-button 
+                <el-button
                   v-else
-                  type="primary" 
+                  type="primary"
                   size="small"
                   @click="startCharging"
                   :disabled="!deviceInfo.online"
@@ -101,7 +101,7 @@
                 </el-button>
               </div>
             </div>
-            
+
             <div class="control-body" v-if="chargingStatus.isCharging">
               <div class="session-info">
                 <div class="session-row">
@@ -129,14 +129,14 @@
                   <span class="session-value highlight">¥ {{ currentSession.currentCost }}</span>
                 </div>
               </div>
-              
+
               <div class="charge-progress-section">
                 <div class="progress-header">
                   <span>电池电量</span>
                   <span class="progress-percent">{{ currentSession.batterySOC }}%</span>
                 </div>
-                <el-progress 
-                  :percentage="currentSession.batterySOC" 
+                <el-progress
+                  :percentage="currentSession.batterySOC"
                   :stroke-width="8"
                   :show-text="false"
                   :color="getSOCColor(currentSession.batterySOC)"
@@ -146,20 +146,20 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="control-empty" v-else>
               <p>设备空闲</p>
               <span>等待用户连接充电</span>
             </div>
           </div>
-  
+
           <!-- 实时参数监控 -->
           <div class="monitor-panel">
             <div class="panel-header">
               <h3>实时参数</h3>
               <span class="update-time">{{ lastUpdateTime }}</span>
             </div>
-            
+
             <div class="monitor-grid">
               <div class="monitor-item">
                 <div class="monitor-label">A相电压</div>
@@ -202,7 +202,7 @@
             </div>
           </div>
         </div>
-  
+
         <div class="center-panel">
           <!-- 充电功率曲线 -->
           <div class="chart-panel">
@@ -218,7 +218,7 @@
               <div ref="powerChart" style="width: 100%; height: 260px;"></div>
             </div>
           </div>
-  
+
           <!-- 日充电量分布 -->
           <div class="chart-panel">
             <div class="panel-header">
@@ -230,7 +230,7 @@
             </div>
           </div>
         </div>
-  
+
         <div class="right-panel">
           <!-- 设备信息 -->
           <div class="info-panel">
@@ -264,7 +264,7 @@
               </div>
             </div>
           </div>
-  
+
           <!-- 告警记录 -->
           <div class="alert-panel">
             <div class="panel-header">
@@ -274,8 +274,8 @@
               </el-badge>
             </div>
             <div class="alert-list">
-              <div 
-                v-for="alert in alerts" 
+              <div
+                v-for="alert in alerts"
                 :key="alert.id"
                 class="alert-item"
                 :class="'level-' + alert.level"
@@ -298,7 +298,7 @@
           </div>
         </div>
       </div>
-  
+
       <!-- 底部统计区 -->
       <div class="bottom-stats">
         <div class="stats-tabs">
@@ -354,12 +354,12 @@ import * as echarts from 'echarts'
 
 export default {
   name: 'ChargingStationDetail',
-  data() {
+  data () {
     return {
       // 🔥 新增：页面加载状态
       pageLoading: true,
       resizeTimer: null,
-      
+
       // 设备基础信息
       deviceInfo: {
         deviceId: 'DC-2024-A3-001',
@@ -373,7 +373,7 @@ export default {
         totalRevenue: 235184.25,
         online: true
       },
-      
+
       // 实时数据
       realtimeData: {
         voltage: 380,
@@ -389,7 +389,7 @@ export default {
         efficiency: 95.8,
         temperature: 45.2
       },
-      
+
       // 今日数据
       todayData: {
         totalEnergy: 823.5,
@@ -397,12 +397,12 @@ export default {
         revenue: 1235.25,
         avgPrice: 1.5
       },
-      
+
       // 充电状态
       chargingStatus: {
         isCharging: true
       },
-      
+
       // 当前充电会话
       currentSession: {
         userName: '王建国',
@@ -415,12 +415,12 @@ export default {
         estimatedTime: 25,
         targetSOC: 95
       },
-      
+
       // 日统计数据
       dailyStats: {
         totalEnergy: 823.5
       },
-      
+
       // 月统计数据
       monthStats: {
         sessions: 486,
@@ -435,7 +435,7 @@ export default {
         faultHours: 2.5,
         availability: 99.3
       },
-      
+
       // 告警列表
       alerts: [
         {
@@ -455,15 +455,15 @@ export default {
           resolved: true
         }
       ],
-      
+
       activeAlerts: 1,
       lastUpdateTime: '16:35:42',
       updateTimer: null,
-      
+
       // 图表控制
       powerChartRange: 'realtime',
       statsTab: 'month',
-      
+
       // 图表实例
       charts: {
         power: null,
@@ -472,54 +472,53 @@ export default {
       }
     }
   },
-  
-  async mounted() {
+
+  async mounted () {
     console.log('充电桩详情页面已挂载')
-    
+
     // 🔥 新增：模拟数据加载过程
     await this.loadStationData()
-    
+
     // 🔥 新增：初始化图表（在数据加载完成后）
     this.initCharts()
-    
+
     // 🔥 新增：启动实时更新
     this.startRealtimeUpdate()
-    
+
     // 🔥 新增：处理布局变化
     this.$nextTick(() => {
       this.handleLayoutChange()
     })
   },
-  
-  beforeDestroy() {
+
+  beforeDestroy () {
     // 🔥 新增：完善的清理工作
     this.stopRealtimeUpdate()
     this.destroyCharts()
     clearTimeout(this.resizeTimer)
     window.removeEventListener('resize', this.handleResize)
   },
-  
+
   methods: {
     // 🔥 新增：模拟数据加载
-    async loadStationData() {
+    async loadStationData () {
       this.pageLoading = true
-      
+
       try {
         // 模拟网络请求
         await new Promise(resolve => setTimeout(resolve, 1500))
-        
+
         // 这里可以根据路由参数加载不同的充电桩数据
         console.log('充电桩数据加载完成')
-        
       } catch (error) {
         this.$message.error('加载充电桩数据失败')
       } finally {
         this.pageLoading = false
       }
     },
-    
+
     // 🔥 新增：布局变化处理
-    handleLayoutChange() {
+    handleLayoutChange () {
       // 延迟执行，等待CSS动画完成
       this.resizeTimer = setTimeout(() => {
         if (this.charts.power) {
@@ -531,9 +530,9 @@ export default {
         }
       }, 350) // 等待树面板动画完成
     },
-    
+
     // 🔥 新增：防抖的resize处理
-    handleResize() {
+    handleResize () {
       clearTimeout(this.resizeTimer)
       this.resizeTimer = setTimeout(() => {
         if (this.charts.power) {
@@ -544,37 +543,37 @@ export default {
         }
       }, 100)
     },
-    
+
     // 初始化图表
-    initCharts() {
+    initCharts () {
       this.$nextTick(() => {
         this.initPowerChart()
         this.initEnergyChart()
-        
+
         // 🔥 新增：监听窗口大小变化
         window.addEventListener('resize', this.handleResize)
       })
     },
-    
+
     // 功率曲线图
-    initPowerChart() {
+    initPowerChart () {
       if (!this.$refs.powerChart) return
-      
+
       // 使用 this.$echarts 或 window.echarts
       const echarts = this.$echarts || window.echarts
       if (!echarts) {
         console.error('ECharts 未加载')
         return
       }
-      
+
       const chart = echarts.init(this.$refs.powerChart)
       this.charts.power = chart
-      
+
       // 生成真实的充电功率曲线数据
       const generatePowerData = () => {
         const data = []
         const now = new Date()
-        
+
         if (this.powerChartRange === 'realtime') {
           // 实时数据 - 每秒一个点，显示5分钟
           for (let i = 300; i >= 0; i--) {
@@ -589,14 +588,14 @@ export default {
             } else if (i > 100) {
               power = 85 + Math.random() * 3
             } else {
-              power = 60 + Math.random() * 2  // 充电后期功率下降
+              power = 60 + Math.random() * 2 // 充电后期功率下降
             }
             data.push([timeStr, power.toFixed(1)])
           }
         }
         return data
       }
-      
+
       const option = {
         tooltip: {
           trigger: 'axis',
@@ -648,7 +647,10 @@ export default {
           areaStyle: {
             color: {
               type: 'linear',
-              x: 0, y: 0, x2: 0, y2: 1,
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
               colorStops: [
                 { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
                 { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
@@ -658,35 +660,35 @@ export default {
           data: generatePowerData()
         }]
       }
-      
+
       chart.setOption(option)
     },
-    
+
     // 24小时充电量分布
-    initEnergyChart() {
+    initEnergyChart () {
       if (!this.$refs.energyChart) return
-      
+
       // 使用 this.$echarts 或 window.echarts
       const echarts = this.$echarts || window.echarts
       if (!echarts) {
         console.error('ECharts 未加载')
         return
       }
-      
+
       const chart = echarts.init(this.$refs.energyChart)
       this.charts.energy = chart
-      
+
       // 生成24小时充电量分布（符合实际充电站规律）
       const hours = []
       const energyData = []
       const sessionsData = []
-      
+
       for (let i = 0; i < 24; i++) {
         hours.push(`${i.toString().padStart(2, '0')}:00`)
         // 充电高峰：早高峰7-9点，晚高峰17-20点
         let energy = 20 + Math.random() * 10
         let sessions = 0.5 + Math.random() * 0.3
-        
+
         if (i >= 7 && i <= 9) {
           energy = 45 + Math.random() * 15
           sessions = 1.2 + Math.random() * 0.3
@@ -697,18 +699,18 @@ export default {
           energy = 10 + Math.random() * 5
           sessions = 0.2 + Math.random() * 0.1
         }
-        
+
         energyData.push(energy.toFixed(1))
         sessionsData.push(sessions.toFixed(0))
       }
-      
+
       const option = {
         tooltip: {
           trigger: 'axis',
           axisPointer: {
             type: 'shadow'
           },
-          formatter: function(params) {
+          formatter: function (params) {
             return `${params[0].name}<br/>
                     充电量: ${params[0].value} kWh<br/>
                     充电次数: ${params[1].value} 次`
@@ -762,7 +764,10 @@ export default {
             itemStyle: {
               color: {
                 type: 'linear',
-                x: 0, y: 0, x2: 0, y2: 1,
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
                 colorStops: [
                   { offset: 0, color: '#409EFF' },
                   { offset: 1, color: '#79BBFF' }
@@ -784,12 +789,12 @@ export default {
           }
         ]
       }
-      
+
       chart.setOption(option)
     },
-    
+
     // 销毁图表
-    destroyCharts() {
+    destroyCharts () {
       Object.keys(this.charts).forEach(key => {
         if (this.charts[key]) {
           this.charts[key].dispose()
@@ -797,49 +802,49 @@ export default {
         }
       })
     },
-    
+
     // 启动实时更新
-    startRealtimeUpdate() {
+    startRealtimeUpdate () {
       this.updateTimer = setInterval(() => {
         this.updateRealtimeData()
         this.updateCharts()
       }, 1500)
     },
-    
+
     // 停止实时更新
-    stopRealtimeUpdate() {
+    stopRealtimeUpdate () {
       if (this.updateTimer) {
         clearInterval(this.updateTimer)
         this.updateTimer = null
       }
     },
-    
+
     // 更新实时数据
-    updateRealtimeData() {
+    updateRealtimeData () {
       // 模拟真实的三相电压波动（±2V）
       this.realtimeData.voltageA = Number((220 + (Math.random() - 0.5) * 4).toFixed(1))
       this.realtimeData.voltageB = Number((220 + (Math.random() - 0.5) * 4).toFixed(1))
       this.realtimeData.voltageC = Number((220 + (Math.random() - 0.5) * 4).toFixed(1))
-      
+
       // 充电时的电流变化
       if (this.chargingStatus.isCharging) {
         // 根据SOC调整充电电流（SOC越高，电流越小）
         const socFactor = (100 - this.currentSession.batterySOC) / 100
         const baseCurrent = 50 + socFactor * 30
-        
+
         this.realtimeData.currentA = Number((baseCurrent + (Math.random() - 0.5) * 2).toFixed(1))
         this.realtimeData.currentB = Number((baseCurrent + (Math.random() - 0.5) * 2).toFixed(1))
         this.realtimeData.currentC = Number((baseCurrent + (Math.random() - 0.5) * 2).toFixed(1))
-        
+
         // 计算总电流和功率
         this.realtimeData.current = Number((this.realtimeData.currentA + this.realtimeData.currentB + this.realtimeData.currentC).toFixed(1))
         this.realtimeData.power = Number((this.realtimeData.voltage * this.realtimeData.current / 1000).toFixed(1))
-        
+
         // 更新充电会话数据（修复精度问题）
         this.currentSession.duration = Math.round(this.currentSession.duration + 0.05)
         this.currentSession.chargedEnergy = Number((this.currentSession.chargedEnergy + this.realtimeData.power * 0.05 / 60).toFixed(2))
         this.currentSession.currentCost = Number((this.currentSession.chargedEnergy * 1.5).toFixed(2))
-        
+
         // 更新SOC（充电速度递减）
         if (this.currentSession.batterySOC < this.currentSession.targetSOC) {
           const chargeRate = this.currentSession.batterySOC < 80 ? 0.5 : 0.2
@@ -847,7 +852,7 @@ export default {
             this.currentSession.targetSOC,
             this.currentSession.batterySOC + chargeRate
           )
-          
+
           // 计算剩余时间
           const remainingSOC = this.currentSession.targetSOC - this.currentSession.batterySOC
           const currentRate = this.currentSession.batterySOC < 80 ? 2 : 0.5
@@ -861,45 +866,45 @@ export default {
         this.realtimeData.current = 0
         this.realtimeData.power = 0
       }
-      
+
       // 功率因数（正常范围0.95-0.99）
       this.realtimeData.powerFactor = Number((0.95 + Math.random() * 0.04).toFixed(2))
-      
+
       // 充电效率（正常范围94-97%）
       this.realtimeData.efficiency = Number((94 + Math.random() * 3).toFixed(1))
-      
+
       // 设备温度（根据功率调整）
       const baseTemperate = 35 + this.realtimeData.power * 0.2
       this.realtimeData.temperature = Number((baseTemperate + (Math.random() - 0.5) * 2).toFixed(1))
-      
+
       // 更新时间
       const now = new Date()
       this.lastUpdateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
     },
-    
+
     // 更新图表
-    updateCharts() {
+    updateCharts () {
       if (this.powerChartRange === 'realtime' && this.charts.power) {
         // 实时更新功率曲线
         this.updatePowerChart()
       }
     },
-    
+
     // 更新功率图表
-    updatePowerChart() {
+    updatePowerChart () {
       this.initPowerChart()
     },
-    
+
     // 获取SOC颜色
-    getSOCColor(soc) {
+    getSOCColor (soc) {
       if (soc < 20) return '#F56C6C'
       if (soc < 50) return '#E6A23C'
       if (soc < 80) return '#409EFF'
       return '#67C23A'
     },
-    
+
     // 启动充电
-    startCharging() {
+    startCharging () {
       this.$confirm('确认启动充电？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -921,9 +926,9 @@ export default {
         this.$message.success('充电已启动')
       })
     },
-    
+
     // 停止充电
-    stopCharging() {
+    stopCharging () {
       this.$confirm('确认停止充电？当前充电将结束。', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -931,7 +936,7 @@ export default {
       }).then(() => {
         this.chargingStatus.isCharging = false
         this.$message.success('充电已停止')
-        
+
         // 生成充电记录
         const record = {
           ...this.currentSession,
@@ -940,9 +945,9 @@ export default {
         console.log('充电记录：', record)
       })
     },
-    
+
     // 处理告警
-    resolveAlert(alertId) {
+    resolveAlert (alertId) {
       const alert = this.alerts.find(a => a.id === alertId)
       if (alert) {
         alert.resolved = true
@@ -950,15 +955,15 @@ export default {
         this.$message.success('告警已处理')
       }
     },
-    
+
     // 返回上一页
-    goBack() {
+    goBack () {
       this.$router.go(-1)
     }
   },
-  
+
   watch: {
-    statsTab(val) {
+    statsTab (val) {
       if (val === 'history') {
         this.$nextTick(() => {
         })
@@ -1505,11 +1510,11 @@ export default {
   .main-content {
     grid-template-columns: 300px 1fr 320px;
   }
-  
+
   .metrics-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1519,7 +1524,7 @@ export default {
   .main-content {
     grid-template-columns: 1fr;
   }
-  
+
   .monitor-grid {
     grid-template-columns: repeat(3, 1fr);
   }

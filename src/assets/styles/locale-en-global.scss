@@ -1,0 +1,27 @@
+/* 英文全局：标签栏等（不在 .energy-dashboard 内） */
+html.locale-en {
+  .tags-view-container {
+    .tag-title {
+      max-width: 108px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    .trigger-text {
+      font-size: 11px;
+    }
+
+    .tags-overflow-container {
+      min-width: 88px;
+      padding: 0 4px;
+      gap: 4px;
+    }
+
+    .fixed-actions-container {
+      min-width: 72px;
+      padding: 0 6px;
+    }
+  }
+}

@@ -300,7 +300,7 @@ export default {
   components: {
     WithdrawDetail
   },
-  data() {
+  data () {
     return {
       // 表格高度配置
       tableHeightConfig: {
@@ -308,7 +308,7 @@ export default {
         rowHeight: 47,
         minHeight: 200,
         maxRows: 10,
-        paginationHeight: 68,
+        paginationHeight: 68
       },
       // 查询参数
       queryData: {
@@ -342,7 +342,7 @@ export default {
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
     // 动态计算表格高度
-    tableMaxHeight() {
+    tableMaxHeight () {
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
@@ -351,7 +351,7 @@ export default {
   },
   watch: {
     currentManagerId: {
-      handler(newVal) {
+      handler (newVal) {
         if (newVal) {
           this.fetchTableData()
         }
@@ -359,13 +359,13 @@ export default {
       immediate: true
     }
   },
-  created() {
+  created () {
     // 组件创建时初始化数据
     if (this.currentManagerId) {
       this.fetchTableData()
     }
   },
-  mounted() {
+  mounted () {
     // 如果 created 时没有 managerId，mounted 时再检查一次
     if (!this.tableData.length && this.currentManagerId) {
       this.fetchTableData()
@@ -373,9 +373,9 @@ export default {
   },
   methods: {
     // 获取表格数据
-    async fetchTableData() {
+    async fetchTableData () {
       if (!this.currentManagerId) return
-      
+
       this.loading = true
       try {
         const params = {
@@ -417,13 +417,13 @@ export default {
     },
 
     // 格式化金额
-    formatAmount(amount) {
+    formatAmount (amount) {
       if (amount === null || amount === undefined) return '0.00'
       return parseFloat(amount).toFixed(2)
     },
 
     // 格式化手续费
-    formatHandFee(row) {
+    formatHandFee (row) {
       if (row.managerBalance > row.settleAmt) {
         return this.formatAmount(row.handFeeAmt)
       }
@@ -431,7 +431,7 @@ export default {
     },
 
     // 格式化提现金额
-    formatWithdrawAmount(row) {
+    formatWithdrawAmount (row) {
       if (row.managerBalance > row.settleAmt) {
         return this.formatAmount(row.withdrawAmt)
       }
@@ -439,13 +439,13 @@ export default {
     },
 
     // 查询
-    handleSearch() {
+    handleSearch () {
       this.pageData.current = 1
       this.fetchTableData()
     },
 
     // 重置
-    handleReset() {
+    handleReset () {
       this.queryData = {
         timeRange: ['', ''],
         status: ''
@@ -454,15 +454,15 @@ export default {
     },
 
     // 手续费开票
-    handleInvoice() {
-      this.$router.push({ 
-        path: '/expense-monthlyBill', 
+    handleInvoice () {
+      this.$router.push({
+        path: '/expense-monthlyBill',
         query: { type: 2 }
       })
     },
 
     // 查看详情
-    handleDetail(row) {
+    handleDetail (row) {
       this.detailDrawer = {
         show: true,
         id: row.withdApplyIds,
@@ -473,19 +473,19 @@ export default {
     },
 
     // 关闭详情
-    handleDetailClose() {
+    handleDetailClose () {
       this.detailDrawer.show = false
     },
 
     // 分页大小变化
-    handleSizeChange(val) {
+    handleSizeChange (val) {
       this.pageData.size = val
       this.pageData.current = 1
       this.fetchTableData()
     },
 
     // 当前页变化
-    handleCurrentChange(val) {
+    handleCurrentChange (val) {
       this.pageData.current = val
       this.fetchTableData()
     }
@@ -502,7 +502,7 @@ export default {
   font-family: 'Helvetica Neue', Arial, sans-serif;
   font-weight: 500;
   color: #303133;
-  
+
   &.highlight {
     color: #409EFF;
     font-weight: 600;
@@ -513,12 +513,12 @@ export default {
   padding: 80px 0;
   text-align: center;
   color: #909399;
-  
+
   i {
     font-size: 48px;
     margin-bottom: 16px;
   }
-  
+
   p {
     font-size: 14px;
   }

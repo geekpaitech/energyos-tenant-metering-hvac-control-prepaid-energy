@@ -8,24 +8,24 @@
       </div>
     </div>
   </template>
-  
-  <script>
-  export default {
-    name: 'NoPermission',
-    methods: {
-      async logout() {
-        try {
-          await this.$store.dispatch('user/logout')
-          this.$message.success('已退出登录')
-          this.$router.push('/login')
-        } catch (error) {
-          console.error('退出登录失败:', error)
-        }
+
+<script>
+export default {
+  name: 'NoPermission',
+  methods: {
+    async logout () {
+      try {
+        await this.$store.dispatch('user/logout')
+        this.$message.success('已退出登录')
+        this.$router.push('/login')
+      } catch (error) {
+        console.error('退出登录失败:', error)
       }
     }
   }
-  </script>
-  
+}
+</script>
+
   <style scoped>
   .no-permission-container {
     height: 100vh;
@@ -34,7 +34,7 @@
     justify-content: center;
     background: #f5f7fa;
   }
-  
+
   .no-permission-content {
     text-align: center;
     padding: 60px;
@@ -42,12 +42,12 @@
     border-radius: 8px;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   }
-  
+
   .no-permission-content h2 {
     color: #303133;
     margin-bottom: 16px;
   }
-  
+
   .no-permission-content p {
     color: #606266;
     margin-bottom: 30px;

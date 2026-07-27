@@ -1,0 +1,117 @@
+/** Console dashboard — English copy kept short for layout (中文文案见 dashboard-zh，勿改) */
+export default {
+  dashboard: {
+    index: {
+      retentionAmountYuan: 'Retained (CNY)',
+      receivableMonthlyTitle: 'Recv. month (CNY)',
+      receivableElec: 'Elec {n}',
+      receivableWater: 'Water {n}',
+      receivedMonthlyTitle: 'Paid month (CNY)',
+      receivedElec: 'Elec {n}',
+      receivedWater: 'Water {n}',
+      collectionRate: 'Paid %',
+      verificationTitle: 'Audit parse',
+      verificationSub: 'AI reads audit sheets & billing gaps.',
+      btnAnalyze: 'Open',
+      acTopologyTitle: 'HVAC map',
+      acTopologySub: 'Topology for ops.',
+      btnView: 'View'
+    },
+    topOverview: {
+      tenantTodayElec: 'Today kWh',
+      elecFeePrefix: 'Bill ',
+      tenantCount: 'Tenants',
+      monthNewTenants: 'New',
+      offline: 'Off',
+      onlineRate: 'Online',
+      meterElecCount: 'E-meters',
+      waterMeterCount: 'W-meters',
+      acIndoorCount: 'HVAC in',
+      otherSmartDevices: 'IoT'
+    },
+    trend: {
+      title: 'Elec & water',
+      subtitleDay: 'Use vs cost',
+      subtitleMonth: '6-mo trend',
+      loading: 'Loading…',
+      last7d: 'Last 7 days',
+      lastHalfYear: 'Last 6 months',
+      last7dTab: '7 days',
+      lastHalfYearTab: '6 mo',
+      elecKwh: '{period} electricity (kWh)',
+      waterTon: '{period} water (t)',
+      chainRatio: 'MoM',
+      chainNone: 'MoM --',
+      airElec: 'HVAC kWh',
+      roomElec: 'Indoor kWh',
+      degree: ' kWh',
+      legendElecUsage: 'Elec',
+      legendWaterUsage: 'Water',
+      legendIndoorFee: 'In fee',
+      legendAcFee: 'HVAC ¥',
+      legendWaterFee: 'Water ¥',
+      legendTodayVirtual: 'Today',
+      feeComposition: 'Fees',
+      noData: 'No data',
+      totalFeeYuan: 'Total ¥',
+      today: 'Today',
+      seriesElecUsage: 'Elec',
+      seriesWaterUsage: 'Water',
+      seriesVirtual: 'Today(v)',
+      seriesIndoorFee: 'In ¥',
+      seriesAcFee: 'HVAC ¥',
+      seriesWaterFee: 'Water ¥',
+      feeElec: 'Elec',
+      feeAc: 'HVAC',
+      feeWater: 'Water',
+      feeOther: 'Other',
+      tooltipKwh: 'kWh',
+      tooltipElecFee: 'Elec ¥',
+      tooltipTotalElecFee: 'Sum ¥',
+      tooltipAcUsage: 'HVAC',
+      tooltipRoomUsage: 'Indoor',
+      yuan: '¥',
+      tenantSplit: 'Tenant/Public',
+      tenantLabel: 'Tenant %',
+      tenantEnergy: 'Tenant',
+      publicEnergy: 'Public'
+    },
+    arrears: {
+      title: 'Arrears',
+      subtitle: 'Top 5',
+      owingElecTotal: 'Elec due',
+      owingWaterTotal: 'Water due',
+      empty: 'None'
+    },
+    sankey: {
+      title: 'Energy flow',
+      subtitle: 'Supply → use',
+      loading: 'Loading…',
+      emptyTitle: 'No data',
+      emptySub: 'No flow yet',
+      parkTotal: 'Park kWh',
+      dedicated: 'Dedicated',
+      shared: 'Shared',
+      otherTenants: 'Other'
+    },
+    subMetering: {
+      title: 'Sub-meter',
+      demoTag: 'Demo',
+      subtitle: 'Preview',
+      goBuild: 'Build'
+    },
+    kpi: {
+      yesterdayElec: 'Yest. kWh',
+      yesterdayWater: 'Yest. m³',
+      yesterdayFee: 'Yest. ¥',
+      tenantTotal: 'Tenants',
+      acRunning: 'HVAC on',
+      pendingAlerts: 'Alerts'
+    },
+    units: {
+      households: '',
+      devices: '',
+      alerts: ''
+    }
+  }
+}

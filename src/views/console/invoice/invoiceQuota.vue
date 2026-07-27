@@ -236,7 +236,7 @@
           }"
         >
           <el-table-column type="selection" width="55" align="center" />
-          
+
           <!-- 租户ID -->
           <el-table-column
             prop="tenantId"
@@ -250,7 +250,7 @@
               <span class="text-primary">{{ scope.row.tenantId || '-' }}</span>
             </template>
           </el-table-column>
-          
+
           <!-- 租户名称 -->
           <el-table-column
             prop="tenantName"
@@ -266,7 +266,7 @@
               </el-link>
             </template>
           </el-table-column>
-          
+
           <!-- 楼栋位置 -->
           <el-table-column
             prop="location"
@@ -278,7 +278,7 @@
               <el-tag size="small" type="info">{{ scope.row.location }}</el-tag>
             </template>
           </el-table-column>
-          
+
           <!-- 月度额度 -->
           <el-table-column
             prop="monthlyQuota"
@@ -293,7 +293,7 @@
               </span>
             </template>
           </el-table-column>
-          
+
           <!-- 已开票金额 -->
           <el-table-column
             prop="issuedAmount"
@@ -308,7 +308,7 @@
               </span>
             </template>
           </el-table-column>
-          
+
           <!-- 待开票金额 -->
           <el-table-column
             prop="pendingAmount"
@@ -323,7 +323,7 @@
               </span>
             </template>
           </el-table-column>
-          
+
           <!-- 剩余额度 -->
           <el-table-column
             prop="remainingQuota"
@@ -333,7 +333,7 @@
             sortable
           >
             <template slot-scope="scope">
-              <span 
+              <span
                 class="amount-text"
                 :class="scope.row.remainingQuota < 10000 ? 'text-danger' : ''"
               >
@@ -341,7 +341,7 @@
               </span>
             </template>
           </el-table-column>
-          
+
           <!-- 使用进度 -->
           <el-table-column
             prop="usageRate"
@@ -360,7 +360,7 @@
               </div>
             </template>
           </el-table-column>
-          
+
           <!-- 额度状态 -->
           <el-table-column
             prop="quotaStatus"
@@ -403,7 +403,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          
+
           <!-- 最后更新时间 -->
           <el-table-column
             prop="updateTime"
@@ -452,15 +452,15 @@
                     <el-dropdown-item command="history" icon="el-icon-time">
                       历史记录
                     </el-dropdown-item>
-                    <el-dropdown-item 
-                      command="freeze" 
+                    <el-dropdown-item
+                      command="freeze"
                       icon="el-icon-lock"
                       v-if="scope.row.quotaStatus !== 'frozen'"
                     >
                       冻结额度
                     </el-dropdown-item>
-                    <el-dropdown-item 
-                      command="unfreeze" 
+                    <el-dropdown-item
+                      command="unfreeze"
                       icon="el-icon-unlock"
                       v-else
                     >
@@ -483,7 +483,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 分页 -->
     <div class="pagination-container">
       <el-pagination
@@ -526,7 +526,7 @@
             />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="月度额度" prop="monthlyQuota">
           <el-input-number
             v-model="editForm.monthlyQuota"
@@ -537,7 +537,7 @@
             style="width: 100%"
           />
         </el-form-item>
-        
+
         <el-form-item label="调整原因" prop="reason">
           <el-input
             v-model="editForm.reason"
@@ -547,7 +547,7 @@
           />
         </el-form-item>
       </el-form>
-      
+
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="handleSave">确 定</el-button>
@@ -577,7 +577,7 @@
             style="width: 100%"
           />
         </el-form-item>
-        
+
         <el-form-item label="调整原因" prop="reason">
           <el-input
             v-model="batchIncreaseForm.reason"
@@ -587,7 +587,7 @@
           />
         </el-form-item>
       </el-form>
-      
+
       <span slot="footer" class="dialog-footer">
         <el-button @click="batchIncreaseVisible = false">取 消</el-button>
         <el-button type="primary" @click="handleBatchIncreaseSave">确 定</el-button>
@@ -610,7 +610,7 @@ const quotaStatusOptions = [
 
 export default {
   name: 'InvoiceQuota',
-  data() {
+  data () {
     return {
       // 表格高度配置
       tableHeightConfig: {
@@ -701,11 +701,11 @@ export default {
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
     // 显示的基础搜索字段
-    displayBasicFields() {
+    displayBasicFields () {
       return this.searchFields.basic
     },
     // 表格最大高度
-    tableMaxHeight() {
+    tableMaxHeight () {
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
@@ -714,134 +714,65 @@ export default {
   },
   watch: {
     currentManagerId: {
-      handler(newVal) {
+      handler (newVal) {
         if (newVal) {
           this.queryData.managerId = newVal
-          this.getTenantList()
-          this.fetchTableData()
-          this.fetchStatistics()
+          this.setEmptyData()
         }
       },
       immediate: true
     }
   },
-  created() {
+  created () {
     this.init()
   },
   methods: {
     // 初始化
-    init() {
+    init () {
       if (this.currentManagerId) {
         this.queryData.managerId = this.currentManagerId
       }
-      this.fetchTableData()
-      this.fetchStatistics()
+      this.setEmptyData()
     },
 
     // 获取租户列表
-    getTenantList() {
-      // 模拟智慧园区租户数据
-      this.tenantList = [
-        { id: 'PKA001', name: '智云科技有限公司' },
-        { id: 'PKB002', name: '金融科技服务有限公司' },
-        { id: 'PKC003', name: '文化传播有限公司' },
-        { id: 'PKD001', name: '生物医药研发中心' },
-        { id: 'PKE002', name: '绿色环保科技有限公司' },
-        { id: 'PKF001', name: '园区餐饮管理有限公司' }
-      ]
+    getTenantList () {
+      this.tenantList = []
     },
 
     // 获取统计数据
-    fetchStatistics() {
-      // 模拟统计数据
+    fetchStatistics () {
       this.statistics = {
-        totalQuota: 5680000,
-        usedQuota: 3852000,
-        remainQuota: 1828000,
-        usedRate: 67.8,
-        warningCount: 2
+        totalQuota: 0,
+        usedQuota: 0,
+        remainQuota: 0,
+        usedRate: 0,
+        warningCount: 0
       }
     },
 
     // 获取表格数据
-    async fetchTableData() {
-      this.loading = true
-      
-      setTimeout(() => {
-        // 生成模拟数据
-        const mockData = []
-        
-        // 企业额度配置
-        const quotaConfig = {
-          'PKA001': { monthly: 800000, issued: 520000, pending: 80000, location: 'A栋' },
-          'PKB002': { monthly: 1500000, issued: 1200000, pending: 250000, location: 'B栋' },
-          'PKC003': { monthly: 300000, issued: 180000, pending: 30000, location: 'C栋' },
-          'PKD001': { monthly: 1200000, issued: 850000, pending: 200000, location: 'D栋' },
-          'PKE002': { monthly: 600000, issued: 400000, pending: 50000, location: 'E栋' },
-          'PKF001': { monthly: 150000, issued: 120000, pending: 20000, location: 'F栋' }
-        }
-        
-        this.tenantList.forEach((tenant, index) => {
-          const config = quotaConfig[tenant.id]
-          const remaining = config.monthly - config.issued - config.pending
-          const usageRate = Math.round((config.issued / config.monthly) * 100)
-          
-          // 判断额度状态
-          let quotaStatus = 'normal'
-          if (remaining <= 0) {
-            quotaStatus = 'exhausted'
-          } else if (remaining < config.monthly * 0.2) {
-            quotaStatus = 'warning'
-          }
-          
-          mockData.push({
-            id: index + 1,
-            tenantId: tenant.id,
-            tenantName: tenant.name,
-            location: config.location,
-            monthlyQuota: config.monthly,
-            issuedAmount: config.issued,
-            pendingAmount: config.pending,
-            remainingQuota: remaining,
-            usageRate: usageRate,
-            quotaStatus: quotaStatus,
-            updateTime: moment().subtract(Math.floor(Math.random() * 7), 'days').format('YYYY-MM-DD HH:mm:ss')
-          })
-        })
-        
-        // 根据查询条件过滤
-        let filteredData = [...mockData]
-        
-        if (this.queryData.tenantId) {
-          filteredData = filteredData.filter(item => 
-            item.tenantId === this.queryData.tenantId
-          )
-        }
-        
-        if (this.queryData.tenantName) {
-          filteredData = filteredData.filter(item => 
-            item.tenantName.includes(this.queryData.tenantName)
-          )
-        }
-        
-        if (this.queryData.quotaStatus) {
-          filteredData = filteredData.filter(item => 
-            item.quotaStatus === this.queryData.quotaStatus
-          )
-        }
-        
-        // 分页处理
-        this.pageData.total = filteredData.length
-        const start = (this.pageData.current - 1) * this.pageData.size
-        const end = start + this.pageData.size
-        this.tableData = filteredData.slice(start, end)
-        
-        this.loading = false
-      }, 500)
+    async fetchTableData () {
+      this.setEmptyData()
+    },
+
+    setEmptyData () {
+      this.loading = false
+      this.tenantList = []
+      this.tableData = []
+      this.pageData.total = 0
+      this.selectedData = []
+      this.statistics = {
+        totalQuota: 0,
+        usedQuota: 0,
+        remainQuota: 0,
+        usedRate: 0,
+        warningCount: 0
+      }
     },
 
     // 格式化金额
-    formatMoney(value) {
+    formatMoney (value) {
       if (value === null || value === undefined || value === '') {
         return '¥0.00'
       }
@@ -849,20 +780,20 @@ export default {
     },
 
     // 获取进度条颜色
-    getProgressColor(percentage) {
+    getProgressColor (percentage) {
       if (percentage < 60) return '#67C23A'
       if (percentage < 80) return '#E6A23C'
       return '#F56C6C'
     },
 
     // 查询
-    handleSearch() {
+    handleSearch () {
       this.pageData.current = 1
       this.fetchTableData()
     },
 
     // 重置
-    handleReset() {
+    handleReset () {
       this.queryData = {
         tenantId: '',
         tenantName: '',
@@ -874,7 +805,7 @@ export default {
     },
 
     // 处理下拉命令
-    handleCommand(command) {
+    handleCommand (command) {
       switch (command) {
         case 'export':
           this.handleExport()
@@ -889,7 +820,7 @@ export default {
     },
 
     // 处理表格下拉命令
-    handleTableCommand(command, row) {
+    handleTableCommand (command, row) {
       switch (command) {
         case 'history':
           this.handleHistory(row)
@@ -907,7 +838,7 @@ export default {
     },
 
     // 新增额度
-    handleAddQuota() {
+    handleAddQuota () {
       this.editForm = {
         id: '',
         tenantId: '',
@@ -918,7 +849,7 @@ export default {
     },
 
     // 批量调整
-    handleBatchAdjust() {
+    handleBatchAdjust () {
       if (this.selectedData.length === 0) {
         this.$message.warning('请先选择要调整的额度记录')
         return
@@ -927,12 +858,12 @@ export default {
     },
 
     // 批量增加额度
-    handleBatchIncrease() {
+    handleBatchIncrease () {
       if (this.selectedData.length === 0) {
         this.$message.warning('请先选择要增加额度的记录')
         return
       }
-      
+
       this.batchIncreaseForm = {
         increaseAmount: 0,
         reason: ''
@@ -941,12 +872,12 @@ export default {
     },
 
     // 批量重置
-    handleBatchReset() {
+    handleBatchReset () {
       if (this.selectedData.length === 0) {
         this.$message.warning('请先选择要重置的额度记录')
         return
       }
-      
+
       this.$confirm(`确定要重置所选 ${this.selectedData.length} 条额度记录吗？`, '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -959,7 +890,7 @@ export default {
     },
 
     // 批量增加额度保存
-    handleBatchIncreaseSave() {
+    handleBatchIncreaseSave () {
       this.$refs.batchIncreaseForm.validate((valid) => {
         if (valid) {
           this.$confirm(`确定为所选 ${this.selectedData.length} 条记录增加 ${this.formatMoney(this.batchIncreaseForm.increaseAmount)} 额度吗？`, '提示', {
@@ -973,7 +904,7 @@ export default {
               item.remainingQuota += this.batchIncreaseForm.increaseAmount
               item.updateTime = moment().format('YYYY-MM-DD HH:mm:ss')
             })
-            
+
             this.batchIncreaseVisible = false
             this.$message.success('批量增加额度成功')
             this.fetchTableData()
@@ -984,7 +915,7 @@ export default {
     },
 
     // 编辑额度
-    handleEdit(row) {
+    handleEdit (row) {
       this.editForm = {
         id: row.id,
         tenantId: row.tenantId,
@@ -995,7 +926,7 @@ export default {
     },
 
     // 保存编辑
-    handleSave() {
+    handleSave () {
       this.$refs.editForm.validate((valid) => {
         if (valid) {
           const action = this.editForm.id ? '调整' : '新增'
@@ -1014,7 +945,7 @@ export default {
     },
 
     // 查看明细
-    handleViewDetail(row) {
+    handleViewDetail (row) {
       this.$message.info(`查看 ${row.tenantName} 的额度使用明细`)
       // 可以跳转到详情页面
       // this.$router.push({
@@ -1024,25 +955,25 @@ export default {
     },
 
     // 查看租户详情
-    handleTenantDetail(row) {
+    handleTenantDetail (row) {
       this.$router.push({
-        name: "TenantDetail", // 使用路由名称
+        name: 'TenantDetail', // 使用路由名称
         params: { id: row.tenantId }, // 使用 params 传递动态路由参数
         query: {
           // 可选：传递额外的查询参数
           name: row.name,
-          from: "list",
-        },
-      });
+          from: 'list'
+        }
+      })
     },
 
     // 查看历史记录
-    handleHistory(row) {
+    handleHistory (row) {
       this.$message.info(`查看 ${row.tenantName} 的额度调整历史`)
     },
 
     // 冻结额度
-    handleFreeze(row) {
+    handleFreeze (row) {
       this.$confirm(`确定要冻结 ${row.tenantName} 的发票额度吗？`, '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -1055,7 +986,7 @@ export default {
     },
 
     // 解冻额度
-    handleUnfreeze(row) {
+    handleUnfreeze (row) {
       this.$confirm(`确定要解冻 ${row.tenantName} 的发票额度吗？`, '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -1076,7 +1007,7 @@ export default {
     },
 
     // 重置额度
-    handleResetQuota(row) {
+    handleResetQuota (row) {
       this.$confirm(`确定要重置 ${row.tenantName} 的发票额度吗？此操作将清空已使用记录！`, '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -1095,20 +1026,20 @@ export default {
     },
 
     // 导出数据
-    handleExport() {
+    handleExport () {
       if (this.tableData.length === 0) {
         this.$message.warning('暂无数据可导出')
         return
       }
-      
+
       const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-      
+
       const params = {
         ele: this.$refs.table?.$el,
         name: '发票额度管理.xlsx',
         data: exportData
       }
-      
+
       if (this.$store && this.$store.dispatch) {
         this.$store.dispatch('export/export', params)
       } else {
@@ -1117,19 +1048,19 @@ export default {
     },
 
     // 选择变化
-    handleSelectionChange(selection) {
+    handleSelectionChange (selection) {
       this.selectedData = selection
     },
 
     // 分页大小变化
-    handleSizeChange(val) {
+    handleSizeChange (val) {
       this.pageData.size = val
       this.pageData.current = 1
       this.fetchTableData()
     },
 
     // 当前页变化
-    handleCurrentChange(val) {
+    handleCurrentChange (val) {
       this.pageData.current = val
       this.fetchTableData()
     }
@@ -1144,35 +1075,35 @@ export default {
 // 统计卡片样式
 .statistics-container {
   margin-bottom: 16px;
-  
+
   .stat-card {
     background: #fff;
     border-radius: 6px;
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
     transition: all 0.3s ease;
-    
+
     &:hover {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
-    
+
     .stat-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 16px;
-      
+
       .stat-title {
         font-size: 14px;
         color: #606266;
         font-weight: 500;
       }
-      
+
       .stat-icon {
         font-size: 24px;
       }
     }
-    
+
     .stat-content {
       .stat-value {
         font-size: 24px;
@@ -1180,7 +1111,7 @@ export default {
         margin-bottom: 8px;
         line-height: 1;
       }
-      
+
       .stat-desc {
         font-size: 12px;
         color: #909399;
@@ -1193,19 +1124,19 @@ export default {
 .amount-text {
   font-weight: 500;
   color: #303133;
-  
+
   &.text-primary {
     color: #409EFF;
   }
-  
+
   &.text-success {
     color: #67C23A;
   }
-  
+
   &.text-warning {
     color: #E6A23C;
   }
-  
+
   &.text-danger {
     color: #F56C6C;
   }
@@ -1216,11 +1147,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   .el-progress {
     flex: 1;
   }
-  
+
   .progress-text {
     font-size: 12px;
     color: #606266;
@@ -1245,7 +1176,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   .el-divider--vertical {
     height: 12px;
     margin: 0 8px;

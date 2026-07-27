@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="!item.hidden && !isApiDocsRoute(item)"
+    v-if="!item.hidden && !isApiDocsRoute(item) && !isMonitoringSidebarBlocked(item)"
     class="sidebar-item-wrapper"
   >
     <!-- 如果是分隔线 -->
@@ -11,7 +11,7 @@
     { 'with-label': item.meta.dividerLabel },
     item.meta.customClass // 🆕 添加自定义class
   ]"
-  :data-label="item.meta.dividerLabel"
+  :data-label="item.meta.dividerLabel ? $localeText(item.meta.dividerLabel) : ''"
 ></div>
 
     <!-- 单一菜单项（无子菜单） -->
@@ -29,6 +29,7 @@
       >
         <div
           class="menu-item single-item"
+          :data-menu-path="item.path"
           :class="{
             'is-active': isActive(resolvePath(onlyOneChild.path)),
             'is-selected': isSelected(resolvePath(onlyOneChild.path)),
@@ -44,8 +45,12 @@
               ]"
               class="menu-icon"
             />
-            <span class="menu-title" v-show="!isCollapsed">
-              {{ onlyOneChild.meta.title }}
+            <span
+              class="menu-title"
+              v-show="!isCollapsed"
+              :title="$localeText(onlyOneChild.meta.title)"
+            >
+              {{ $localeText(onlyOneChild.meta.title) }}
             </span>
           </div>
         </div>
@@ -56,6 +61,7 @@
     <div
       v-else
       class="menu-item parent-item"
+      :data-menu-path="item.path"
       :class="{
         'is-active': isParentActive(item),
         'is-expanded': expandedItem === item.path,
@@ -69,8 +75,12 @@
           :class="['iconfont', item.meta.icon]"
           class="menu-icon"
         />
-        <span class="menu-title" v-show="!isCollapsed">
-          {{ item.meta.title }}
+        <span
+          class="menu-title"
+          v-show="!isCollapsed"
+          :title="$localeText(item.meta.title)"
+        >
+          {{ $localeText(item.meta.title) }}
         </span>
         <!-- 调试信息 - 生产环境可删除 -->
         <div
@@ -92,193 +102,204 @@
 </template>
 
 <script>
-import path from "path";
-import { isExternal } from "@/utils/validate";
-import Item from "./Item";
-import AppLink from "./Link";
+import path from 'path'
+import { isExternal } from '@/utils/validate'
+import Item from './Item'
+import AppLink from './Link'
+import {
+  canAccessMonitoringMenus,
+  MONITORING_ROOT_PATH
+} from '@/config/monitoringAccess'
 
 export default {
-  name: "SidebarItem",
+  name: 'SidebarItem',
   components: { Item, AppLink },
   props: {
     item: {
       type: Object,
-      required: true,
+      required: true
     },
     isNest: {
       type: Boolean,
-      default: false,
+      default: false
     },
     basePath: {
       type: String,
-      default: "",
-    },
+      default: ''
+    }
   },
-  data() {
-    this.onlyOneChild = null;
-    return {};
+  data () {
+    this.onlyOneChild = null
+    return {}
   },
   computed: {
     // 计算侧边栏是否收缩
-    isCollapsed() {
+    isCollapsed () {
       return (
         this.$store.getters.sidebar && this.$store.getters.sidebar.collapse
-      );
+      )
     },
 
     // 获取可见的子菜单项
-    visibleChildren() {
-      if (!this.item.children) return [];
-      return this.item.children.filter((child) => !child.hidden);
+    visibleChildren () {
+      if (!this.item.children) return []
+      return this.item.children.filter((child) => !child.hidden)
     },
 
     // 是否有子菜单
-    hasChildren() {
-      return this.visibleChildren.length > 0;
+    hasChildren () {
+      return this.visibleChildren.length > 0
     },
 
     // 当前展开的菜单项 - 从父组件获取
-    expandedItem() {
-      let parent = this.$parent;
+    expandedItem () {
+      let parent = this.$parent
       while (parent && parent.expandedItem === undefined) {
-        parent = parent.$parent;
+        parent = parent.$parent
       }
-      const expanded = parent ? parent.expandedItem : null;
+      const expanded = parent ? parent.expandedItem : null
       // console.log(`SidebarItem ${this.item.path} - expandedItem:`, expanded)
-      return expanded;
+      return expanded
     },
 
     // 当前选中的菜单项 - 从父组件获取
-    selectedItem() {
-      let parent = this.$parent;
+    selectedItem () {
+      let parent = this.$parent
       while (parent && parent.selectedItem === undefined) {
-        parent = parent.$parent;
+        parent = parent.$parent
       }
-      const selected = parent ? parent.selectedItem : null;
+      const selected = parent ? parent.selectedItem : null
       // console.log(`SidebarItem ${this.item.path} - selectedItem:`, selected)
-      return selected;
-    },
+      return selected
+    }
   },
 
   methods: {
     // 新增：检查是否是API文档路由
-    isApiDocsRoute(item) {
-      return item.name === "ApiDocs" || item.path === "/api-docs";
+    isApiDocsRoute (item) {
+      return item.name === 'ApiDocs' || item.path === '/api-docs'
     },
-    hasOneShowingChild(children = [], parent) {
+
+    /** 监测模块整组仅对白名单管理方展示顶级入口 */
+    isMonitoringSidebarBlocked (item) {
+      if (!item || item.path !== MONITORING_ROOT_PATH) return false
+      const managerId = this.$store.getters.currentManagerId
+      return !canAccessMonitoringMenus(managerId)
+    },
+    hasOneShowingChild (children = [], parent) {
       const showingChildren = children.filter((item) => {
         if (item.hidden) {
-          return false;
+          return false
         } else {
-          this.onlyOneChild = item;
-          return true;
+          this.onlyOneChild = item
+          return true
         }
-      });
+      })
 
       if (showingChildren.length === 1) {
-        return true;
+        return true
       }
 
       if (showingChildren.length === 0) {
-        this.onlyOneChild = { ...parent, path: "", noShowingChildren: true };
-        return true;
+        this.onlyOneChild = { ...parent, path: '', noShowingChildren: true }
+        return true
       }
 
-      return false;
+      return false
     },
 
-    resolvePath(routePath) {
+    resolvePath (routePath) {
       if (isExternal(routePath)) {
-        return routePath;
+        return routePath
       }
       if (isExternal(this.basePath)) {
-        return this.basePath;
+        return this.basePath
       }
-      return path.resolve(this.basePath, routePath);
+      return path.resolve(this.basePath, routePath)
     },
 
     // 判断菜单项是否激活（基于路由）
-    isActive(path) {
-      return this.$route.path === path;
+    isActive (path) {
+      return this.$route.path === path
     },
 
     // 判断菜单项是否被选中（基于用户点击）
-    isSelected(path) {
-      return this.selectedItem === path;
+    isSelected (path) {
+      return this.selectedItem === path
     },
 
     // 判断父菜单是否激活（有子菜单激活）
-    isParentActive(item) {
-      if (!item.children) return false;
+    isParentActive (item) {
+      if (!item.children) return false
       return item.children.some((child) => {
-        if (child.hidden) return false;
-        return this.$route.path === this.resolvePath(child.path);
-      });
+        if (child.hidden) return false
+        return this.$route.path === this.resolvePath(child.path)
+      })
     },
 
     // 关键修复：判断父菜单是否被选中
-    isParentSelected(item) {
-      const currentSelected = this.selectedItem;
-      const currentExpanded = this.expandedItem;
-      const itemPath = item.path;
+    isParentSelected (item) {
+      const currentSelected = this.selectedItem
+      const currentExpanded = this.expandedItem
+      const itemPath = item.path
 
       // 1. 如果当前选中的就是父菜单本身，直接返回true
       if (currentSelected === itemPath) {
-        return true;
+        return true
       }
 
       // 2. 检查是否有子菜单被选中，且子菜单面板未展开
-      if (!item.children) return false;
+      if (!item.children) return false
 
       const isChildSelected = item.children.some((child) => {
-        if (child.hidden) return false;
-        const childPath = this.resolvePath(child.path);
-        return currentSelected === childPath;
-      });
+        if (child.hidden) return false
+        const childPath = this.resolvePath(child.path)
+        return currentSelected === childPath
+      })
 
       // 只有子菜单被选中且子菜单面板未展开时，父菜单才显示选中状态
-      const result = isChildSelected && currentExpanded !== itemPath;
+      const result = isChildSelected && currentExpanded !== itemPath
 
-      return result;
+      return result
     },
 
     // 处理父菜单点击
-    handleParentClick(item) {
+    handleParentClick (item) {
       // 如果侧边栏收缩或没有子菜单，不处理展开逻辑
       if (this.isCollapsed || !this.hasChildren) {
-        return;
+        return
       }
 
       // 向上查找到 Layout 组件并调用 toggleSubmenu
-      let parent = this.$parent;
+      let parent = this.$parent
       while (parent && !parent.toggleSubmenu) {
-        parent = parent.$parent;
+        parent = parent.$parent
       }
 
       if (parent && parent.toggleSubmenu) {
-        parent.toggleSubmenu(item);
+        parent.toggleSubmenu(item)
       } else {
-        console.error("未找到 Layout 组件的 toggleSubmenu 方法");
+        console.error('未找到 Layout 组件的 toggleSubmenu 方法')
       }
     },
 
     // 处理单一菜单点击
-    handleSingleClick(path) {
-      this.setSelectedItem(path);
+    handleSingleClick (path) {
+      this.setSelectedItem(path)
     },
 
     // 设置选中项
-    setSelectedItem(path) {
-      let parent = this.$parent;
+    setSelectedItem (path) {
+      let parent = this.$parent
       while (parent && !parent.setSelectedItem) {
-        parent = parent.$parent;
+        parent = parent.$parent
       }
       if (parent && parent.setSelectedItem) {
-        parent.setSelectedItem(path);
+        parent.setSelectedItem(path)
       }
-    },
-  },
-};
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -322,7 +343,7 @@ export default {
     height: 2px; // 加粗分隔线
     background: rgba(255, 255, 255, 0.2); // 稍微明显一点
     margin: 24px 12px; // 上下间距增大到24px
-    
+
     // 可选：添加渐变效果让分隔线更明显
     background: linear-gradient(
       90deg,
@@ -405,13 +426,18 @@ export default {
     }
 
     .menu-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.25;
       max-width: 100%;
+      white-space: normal;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      text-align: center;
+      word-break: break-word;
     }
 
     .expand-icon {

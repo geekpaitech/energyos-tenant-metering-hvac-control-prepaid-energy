@@ -6,6 +6,118 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "1540602",
+      "name": "实收金额",
+      "font_class": "round_rmb1",
+      "unicode": "e697",
+      "unicode_decimal": 59031
+    },
+    {
+      "icon_id": "9478561",
+      "name": "应收",
+      "font_class": "yingshou",
+      "unicode": "e60b",
+      "unicode_decimal": 58891
+    },
+    {
+      "icon_id": "20022040",
+      "name": "资金管理",
+      "font_class": "zijinguanli",
+      "unicode": "e650",
+      "unicode_decimal": 58960
+    },
+    {
+      "icon_id": "1853884",
+      "name": "水费",
+      "font_class": "shuifei",
+      "unicode": "e640",
+      "unicode_decimal": 58944
+    },
+    {
+      "icon_id": "43043442",
+      "name": "电费",
+      "font_class": "dianfei",
+      "unicode": "e626",
+      "unicode_decimal": 58918
+    },
+    {
+      "icon_id": "6085765",
+      "name": "电脑",
+      "font_class": "diannao",
+      "unicode": "e64e",
+      "unicode_decimal": 58958
+    },
+    {
+      "icon_id": "8156487",
+      "name": "拓扑",
+      "font_class": "tuopu",
+      "unicode": "e603",
+      "unicode_decimal": 58883
+    },
+    {
+      "icon_id": "1411052",
+      "name": "6备用设备",
+      "font_class": "beiyongshebei",
+      "unicode": "e627",
+      "unicode_decimal": 58919
+    },
+    {
+      "icon_id": "9788688",
+      "name": "空调",
+      "font_class": "kongtiao1",
+      "unicode": "e601",
+      "unicode_decimal": 58881
+    },
+    {
+      "icon_id": "10018596",
+      "name": "租户-企业",
+      "font_class": "zuhu-qiye",
+      "unicode": "e638",
+      "unicode_decimal": 58936
+    },
+    {
+      "icon_id": "10416503",
+      "name": "水表过户-01",
+      "font_class": "shuibiaoguohu-",
+      "unicode": "e61f",
+      "unicode_decimal": 58911
+    },
+    {
+      "icon_id": "8750338",
+      "name": "电表",
+      "font_class": "dianbiao5",
+      "unicode": "e61e",
+      "unicode_decimal": 58910
+    },
+    {
+      "icon_id": "10135173",
+      "name": "aiff",
+      "font_class": "aiff",
+      "unicode": "e8a6",
+      "unicode_decimal": 59558
+    },
+    {
+      "icon_id": "8135232",
+      "name": "AI及算法",
+      "font_class": "zu",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "5961321",
+      "name": "AI",
+      "font_class": "wuguan",
+      "unicode": "ec5f",
+      "unicode_decimal": 60511
+    },
+    {
+      "icon_id": "10135169",
+      "name": "ai",
+      "font_class": "ai",
+      "unicode": "e8a5",
+      "unicode_decimal": 59557
+    },
+    {
       "icon_id": "5653146",
       "name": "报表",
       "font_class": "baobiao",

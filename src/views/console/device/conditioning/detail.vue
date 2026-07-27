@@ -55,40 +55,45 @@
                   </div>
                 </div>
               </div>
-              
+
               <div class="control-buttons">
                 <div class="button-row top-row">
-                  <button 
+                  <button
+                    v-if="canControl"
                     class="ctrl-button"
                     @click="changeMode"
                     :disabled="!deviceInfo.online"
                   >
                     模式
                   </button>
-                  <button 
+                  <button
+                    v-if="canControl"
                     class="ctrl-button"
                     @click="adjustFanSpeed"
                     :disabled="!deviceInfo.power || !deviceInfo.online"
                   >
                     风速
                   </button>
-                  <button 
+                  <button
+                    v-if="canControl"
                     class="ctrl-button temp-up"
                     @click="adjustTemp(1)"
                     :disabled="!deviceInfo.power || !deviceInfo.online || deviceInfo.setTemp >= 30"
                   >
                     ▲
                   </button>
-                  <button 
+                  <button
+                    v-if="canControl"
                     class="ctrl-button"
                     @click="showScheduleDialog"
                   >
                     定时
                   </button>
                 </div>
-                
+
                 <div class="button-row bottom-row">
-                  <button 
+                  <button
+                    v-if="canControl"
                     class="ctrl-button power-button"
                     :class="{ active: deviceInfo.power }"
                     @click="togglePower"
@@ -96,21 +101,24 @@
                   >
                     开关
                   </button>
-                  <button 
+                  <button
+                    v-if="canControl"
                     class="ctrl-button"
                     @click="toggleSwing"
                     :disabled="!deviceInfo.power || !deviceInfo.online"
                   >
                     风向
                   </button>
-                  <button 
+                  <button
+                    v-if="canControl"
                     class="ctrl-button temp-down"
                     @click="adjustTemp(-1)"
                     :disabled="!deviceInfo.power || !deviceInfo.online || deviceInfo.setTemp <= 16"
                   >
                     ▼
                   </button>
-                  <button 
+                  <button
+                    v-if="canControl"
                     class="ctrl-button"
                     @click="showAdvancedSettings"
                   >
@@ -249,7 +257,7 @@
               <el-button type="primary" size="small" @click="queryHistoryData">
                 查询数据
               </el-button>
-              <el-button size="small" @click="exportData">
+              <el-button v-if="canView" size="small" @click="exportData">
                 导出报表
               </el-button>
             </div>
@@ -289,8 +297,8 @@
 
             <!-- 运行记录表格 -->
             <div v-show="activeTab === '运行记录'" class="table-container">
-              <el-table 
-                :data="operationRecords" 
+              <el-table
+                :data="operationRecords"
                 style="width: 100%"
                 size="small"
                 stripe
@@ -309,8 +317,8 @@
                 <el-table-column prop="duration" label="持续时长" min-width="120" align="center" />
                 <el-table-column prop="result" label="执行结果" min-width="100" align="center">
                   <template slot-scope="scope">
-                    <el-tag 
-                      :type="scope.row.result === '成功' ? 'success' : 'danger'" 
+                    <el-tag
+                      :type="scope.row.result === '成功' ? 'success' : 'danger'"
                       size="mini"
                     >
                       {{ scope.row.result }}
@@ -323,8 +331,8 @@
 
             <!-- 控制历史表格 -->
             <div v-show="activeTab === '控制历史'" class="table-container">
-              <el-table 
-                :data="controlHistory" 
+              <el-table
+                :data="controlHistory"
                 style="width: 100%"
                 size="small"
                 stripe
@@ -333,8 +341,8 @@
                 <el-table-column prop="time" label="操作时间" min-width="160" />
                 <el-table-column prop="operationType" label="操作类型" min-width="100" align="center">
                   <template slot-scope="scope">
-                    <el-tag 
-                      :type="scope.row.operationType === '开启' ? 'success' : 'info'" 
+                    <el-tag
+                      :type="scope.row.operationType === '开启' ? 'success' : 'info'"
                       size="mini"
                     >
                       {{ scope.row.operationType }}
@@ -352,8 +360,8 @@
                 <el-table-column prop="responseTime" label="响应时间" min-width="100" align="center" />
                 <el-table-column prop="result" label="执行结果" min-width="100" align="center">
                   <template slot-scope="scope">
-                    <el-tag 
-                      :type="scope.row.result === '成功' ? 'success' : 'danger'" 
+                    <el-tag
+                      :type="scope.row.result === '成功' ? 'success' : 'danger'"
                       size="mini"
                     >
                       {{ scope.row.result }}
@@ -372,8 +380,8 @@
             <h3><i class="el-icon-data-analysis"></i> 设备用能统计</h3>
           </div>
           <div class="energy-content">
-            <el-table 
-              :data="energyStatsData" 
+            <el-table
+              :data="energyStatsData"
               style="width: 100%"
               size="small"
               stripe
@@ -436,7 +444,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="advancedDialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="saveAdvancedSettings">保存</el-button>
+        <el-button v-if="canControl" type="primary" @click="saveAdvancedSettings">保存</el-button>
       </span>
     </el-dialog>
 
@@ -483,7 +491,7 @@
       </el-form>
       <span slot="footer">
         <el-button @click="scheduleDialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="saveScheduleSettings">保存设置</el-button>
+        <el-button v-if="canControl" type="primary" @click="saveScheduleSettings">保存设置</el-button>
       </span>
     </el-dialog>
   </div>
@@ -491,175 +499,191 @@
 
 <script>
 export default {
-  name: "HvacDeviceDetail",
-  
-  data() {
+  name: 'HvacDeviceDetail',
+  computed: {
+    kztMenuNos () {
+      const list = this.$store.getters.kztMenuNos
+      return Array.isArray(list) ? list : []
+    },
+    hasKztPermission () {
+      const allow = new Set(this.kztMenuNos.map((v) => String(v)))
+      return (menuNo) => allow.has(String(menuNo))
+    },
+    canControl () {
+      return this.hasKztPermission('630030')
+    },
+    canView () {
+      return this.hasKztPermission('630032')
+    }
+  },
+
+  data () {
     return {
       // ========== 页面状态 ==========
       pageLoading: true,
       resizeTimer: null,
-      
+
       // ========== 路由参数 ==========
       routeParams: {
         deviceId: null,
         serialNumber: null,
-        name: null,
+        name: null
       },
-      
+
       // ========== 设备基本信息 ==========
       deviceInfo: {
-        id: "AC001",
-        serialNumber: "HVAC-2024-001506",
-        name: "展销空调-01",
-        location: "中心大厦A栋-1F展销大厅",
+        id: 'AC001',
+        serialNumber: 'HVAC-2024-001506',
+        name: '展销空调-01',
+        location: '中心大厦A栋-1F展销大厅',
         online: true,
         power: true,
-        status: "running",
+        status: 'running',
         currentTemp: 24,
         setTemp: 26,
-        mode: "cool", // cool, heat, dry, fan, auto
-        fanSpeed: "mid", // low, mid, high, auto
+        mode: 'cool', // cool, heat, dry, fan, auto
+        fanSpeed: 'mid', // low, mid, high, auto
         powerUsage: 3.2,
         swingH: false,
         swingV: true,
-        brand: "格力",
-        model: "KFR-35GW",
+        brand: '格力',
+        model: 'KFR-35GW',
         lastUpdate: this.getCurrentTime(),
-        installDate: "2023-03-15",
+        installDate: '2023-03-15',
         autoAdjust: false,
         energySaving: false,
         maxTemp: 30,
-        minTemp: 16,
+        minTemp: 16
       },
-      
+
       // ========== 项目配置信息 ==========
       projectConfig: {
-        projectName: "中心大厦A栋",
-        tenant: "",
-        gatewayMac: "A1:23:45:67:89:AB",
-        deviceType: "多联机",
-        shareType: "专用",
-        meterNumber: "A12308253400362",
-        billingMethod: "时长计费",
+        projectName: '中心大厦A栋',
+        tenant: '',
+        gatewayMac: 'A1:23:45:67:89:AB',
+        deviceType: '多联机',
+        shareType: '专用',
+        meterNumber: 'A12308253400362',
+        billingMethod: '时长计费',
         coilCoefficient: 63,
         fanPower: 0.8,
         highCoefficient: 1.2,
         midCoefficient: 1.1,
-        lowCoefficient: 1.0,
+        lowCoefficient: 1.0
       },
-      
+
       // ========== 能耗数据 ==========
       todayEnergy: 18.6,
-      
+
       // ========== 控制加载状态 ==========
       controlLoading: {
         power: false,
         temp: false,
         mode: false,
-        fanSpeed: false,
+        fanSpeed: false
       },
-      
+
       // ========== 图表统计数据 ==========
       chartStats: {
         avgTemp: 25.2,
         tempChange: -0.3,
-        tempChangeClass: "decrease",
+        tempChangeClass: 'decrease',
         runningHours: 8.5,
         runningChange: 8,
         totalEnergy: 18.6,
         energyChange: 5.2,
-        energyChangeClass: "increase",
+        energyChangeClass: 'increase',
         avgPower: 2.8,
-        energyLevel: "二级能效",
-        tempAccuracy: 95,
+        energyLevel: '二级能效',
+        tempAccuracy: 95
       },
-      
+
       // ========== 查询参数 ==========
       queryParams: {
-        deviceId: "AC001",
-        dateRange: null,
+        deviceId: 'AC001',
+        dateRange: null
       },
-      
+
       // ========== 活跃标签页 ==========
-      activeTab: "温度数据",
-      
+      activeTab: '温度数据',
+
       // ========== 运行记录数据 ==========
       operationRecords: [],
-      
+
       // ========== 控制历史数据 ==========
       controlHistory: [],
-      
+
       // ========== 设备用能统计数据 ==========
       energyStatsData: [],
-      
+
       // ========== 弹窗状态 ==========
       advancedDialog: { visible: false },
       scheduleDialog: { visible: false },
-      
+
       // ========== 表单数据 ==========
       advancedForm: {
-        name: "",
-        location: "",
+        name: '',
+        location: '',
         maxTemp: 30,
         minTemp: 16,
         autoAdjust: false,
-        energySaving: false,
+        energySaving: false
       },
-      
+
       scheduleForm: {
-        startTime: "08:00",
-        endTime: "18:00",
-        repeatDays: ["1", "2", "3", "4", "5"],
+        startTime: '08:00',
+        endTime: '18:00',
+        repeatDays: ['1', '2', '3', '4', '5'],
         targetTemp: 24,
-        enabled: false,
+        enabled: false
       },
-      
+
       // ========== 图表实例 ==========
       temperatureChart: null,
-      
+
       // ========== 映射常量 ==========
       modeMap: {
-        cool: "制冷",
-        heat: "制热", 
-        dry: "除湿",
-        fan: "送风",
-        auto: "自动"
+        cool: '制冷',
+        heat: '制热',
+        dry: '除湿',
+        fan: '送风',
+        auto: '自动'
       },
-      
+
       fanSpeedMap: {
-        low: "低风",
-        mid: "中风", 
-        high: "高风",
-        auto: "自动"
+        low: '低风',
+        mid: '中风',
+        high: '高风',
+        auto: '自动'
       },
 
       // ========== 完善的设备数据映射 ==========
       deviceDataMapping: {
-        "AC001": {
-          name: "展销空调-01",
-          serialNumber: "HVAC-2024-001506",
+        AC001: {
+          name: '展销空调-01',
+          serialNumber: 'HVAC-2024-001506',
           currentTemp: 24,
           setTemp: 26,
           powerUsage: 3.2,
-          mode: "cool",
-          fanSpeed: "mid",
-          brand: "格力",
-          model: "KFR-35GW",
-          location: "中心大厦A栋-1F展销大厅",
-          area: "A",
+          mode: 'cool',
+          fanSpeed: 'mid',
+          brand: '格力',
+          model: 'KFR-35GW',
+          location: '中心大厦A栋-1F展销大厅',
+          area: 'A',
           floor: 1,
-          room: "展销大厅",
-          installDate: "2023-03-15",
+          room: '展销大厅',
+          installDate: '2023-03-15',
           online: true,
           power: true,
-          status: "running",
+          status: 'running',
           projectConfig: {
-            projectName: "中心大厦A栋",
-            gatewayMac: "A1:23:45:67:89:AB",
-            meterNumber: "A12308253400362",
-            deviceType: "多联机",
-            shareType: "公共",
-            billingMethod: "时长计费",
+            projectName: '中心大厦A栋',
+            gatewayMac: 'A1:23:45:67:89:AB',
+            meterNumber: 'A12308253400362',
+            deviceType: '多联机',
+            shareType: '公共',
+            billingMethod: '时长计费',
             coilCoefficient: 68,
             fanPower: 0.8,
             highCoefficient: 1.3,
@@ -667,31 +691,31 @@ export default {
             lowCoefficient: 0.9
           }
         },
-        "AC002": {
-          name: "会议空调-01", 
-          serialNumber: "HVAC-2024-001507",
+        AC002: {
+          name: '会议空调-01',
+          serialNumber: 'HVAC-2024-001507',
           currentTemp: 25,
           setTemp: 23,
           powerUsage: 2.8,
-          mode: "cool",
-          fanSpeed: "high",
-          brand: "美的",
-          model: "KFR-50GW",
-          location: "中心大厦A栋-2F会议接待厅",
-          area: "A",
+          mode: 'cool',
+          fanSpeed: 'high',
+          brand: '美的',
+          model: 'KFR-50GW',
+          location: '中心大厦A栋-2F会议接待厅',
+          area: 'A',
           floor: 2,
-          room: "会议接待厅",
-          installDate: "2023-03-15",
+          room: '会议接待厅',
+          installDate: '2023-03-15',
           online: true,
           power: true,
-          status: "running",
+          status: 'running',
           projectConfig: {
-            projectName: "中心大厦A栋",
-            gatewayMac: "A1:23:45:67:89:AB",
-            meterNumber: "A12308253400363",
-            deviceType: "风管机",
-            shareType: "公共",
-            billingMethod: "时长计费",
+            projectName: '中心大厦A栋',
+            gatewayMac: 'A1:23:45:67:89:AB',
+            meterNumber: 'A12308253400363',
+            deviceType: '风管机',
+            shareType: '公共',
+            billingMethod: '时长计费',
             coilCoefficient: 72,
             fanPower: 1.2,
             highCoefficient: 1.4,
@@ -699,31 +723,31 @@ export default {
             lowCoefficient: 1.0
           }
         },
-        "AC003": {
-          name: "营销空调-05",
-          serialNumber: "HVAC-2024-001508",
+        AC003: {
+          name: '营销空调-05',
+          serialNumber: 'HVAC-2024-001508',
           currentTemp: 26,
           setTemp: 24,
           powerUsage: 2.1,
-          mode: "cool",
-          fanSpeed: "auto",
-          brand: "大金",
-          model: "FTXS35",
-          location: "中心大厦A栋-3F市场营销部",
-          area: "A",
+          mode: 'cool',
+          fanSpeed: 'auto',
+          brand: '大金',
+          model: 'FTXS35',
+          location: '中心大厦A栋-3F市场营销部',
+          area: 'A',
           floor: 3,
-          room: "营销部办公区",
-          installDate: "2023-04-20",
+          room: '营销部办公区',
+          installDate: '2023-04-20',
           online: true,
           power: true,
-          status: "running",
+          status: 'running',
           projectConfig: {
-            projectName: "中心大厦A栋",
-            gatewayMac: "A1:23:45:67:89:AB",
-            meterNumber: "A12308253400364",
-            deviceType: "壁挂机",
-            shareType: "专用",
-            billingMethod: "电量计费",
+            projectName: '中心大厦A栋',
+            gatewayMac: 'A1:23:45:67:89:AB',
+            meterNumber: 'A12308253400364',
+            deviceType: '壁挂机',
+            shareType: '专用',
+            billingMethod: '电量计费',
             coilCoefficient: 58,
             fanPower: 0.6,
             highCoefficient: 1.2,
@@ -731,31 +755,31 @@ export default {
             lowCoefficient: 0.8
           }
         },
-        "AC004": {
-          name: "研发空调-08",
-          serialNumber: "HVAC-2024-001509",
+        AC004: {
+          name: '研发空调-08',
+          serialNumber: 'HVAC-2024-001509',
           currentTemp: 28,
           setTemp: 22,
           powerUsage: 0,
-          mode: "cool",
-          fanSpeed: "mid",
-          brand: "格力",
-          model: "KFR-26GW",
-          location: "中心大厦A栋-4F技术研发部",
-          area: "A",
+          mode: 'cool',
+          fanSpeed: 'mid',
+          brand: '格力',
+          model: 'KFR-26GW',
+          location: '中心大厦A栋-4F技术研发部',
+          area: 'A',
           floor: 4,
-          room: "研发部办公区",
-          installDate: "2023-03-15",
+          room: '研发部办公区',
+          installDate: '2023-03-15',
           online: false,
           power: false,
-          status: "offline",
+          status: 'offline',
           projectConfig: {
-            projectName: "中心大厦A栋",
-            gatewayMac: "A1:23:45:67:89:AB",
-            meterNumber: "A12308253400365",
-            deviceType: "壁挂机",
-            shareType: "专用",
-            billingMethod: "电量计费",
+            projectName: '中心大厦A栋',
+            gatewayMac: 'A1:23:45:67:89:AB',
+            meterNumber: 'A12308253400365',
+            deviceType: '壁挂机',
+            shareType: '专用',
+            billingMethod: '电量计费',
             coilCoefficient: 55,
             fanPower: 0.5,
             highCoefficient: 1.1,
@@ -763,31 +787,31 @@ export default {
             lowCoefficient: 0.9
           }
         },
-        "AC005": {
-          name: "行政空调-03",
-          serialNumber: "HVAC-2024-001510",
+        AC005: {
+          name: '行政空调-03',
+          serialNumber: 'HVAC-2024-001510',
           currentTemp: 23,
           setTemp: 24,
           powerUsage: 1.8,
-          mode: "heat",
-          fanSpeed: "low",
-          brand: "海尔",
-          model: "KFR-35GW",
-          location: "中心大厦A栋-5F行政办公室",
-          area: "A",
+          mode: 'heat',
+          fanSpeed: 'low',
+          brand: '海尔',
+          model: 'KFR-35GW',
+          location: '中心大厦A栋-5F行政办公室',
+          area: 'A',
           floor: 5,
-          room: "行政办公室",
-          installDate: "2023-05-10",
+          room: '行政办公室',
+          installDate: '2023-05-10',
           online: true,
           power: true,
-          status: "running",
+          status: 'running',
           projectConfig: {
-            projectName: "中心大厦A栋",
-            gatewayMac: "A1:23:45:67:89:AB",
-            meterNumber: "A12308253400366",
-            deviceType: "壁挂机",
-            shareType: "专用",
-            billingMethod: "时长计费",
+            projectName: '中心大厦A栋',
+            gatewayMac: 'A1:23:45:67:89:AB',
+            meterNumber: 'A12308253400366',
+            deviceType: '壁挂机',
+            shareType: '专用',
+            billingMethod: '时长计费',
             coilCoefficient: 60,
             fanPower: 0.7,
             highCoefficient: 1.2,
@@ -795,31 +819,31 @@ export default {
             lowCoefficient: 0.9
           }
         },
-        "AC006": {
-          name: "停车空调-02",
-          serialNumber: "HVAC-2024-001511",
+        AC006: {
+          name: '停车空调-02',
+          serialNumber: 'HVAC-2024-001511',
           currentTemp: 18,
           setTemp: 20,
           powerUsage: 0,
-          mode: "fan",
-          fanSpeed: "high",
-          brand: "美的",
-          model: "KFR-26GW",
-          location: "创新大厦B栋-B1地下停车库",
-          area: "B",
+          mode: 'fan',
+          fanSpeed: 'high',
+          brand: '美的',
+          model: 'KFR-26GW',
+          location: '创新大厦B栋-B1地下停车库',
+          area: 'B',
           floor: -1,
-          room: "停车库",
-          installDate: "2023-05-10",
+          room: '停车库',
+          installDate: '2023-05-10',
           online: true,
           power: false,
-          status: "standby",
+          status: 'standby',
           projectConfig: {
-            projectName: "创新大厦B栋",
-            gatewayMac: "B1:23:45:67:89:CD",
-            meterNumber: "B12308253400367",
-            deviceType: "柜机",
-            shareType: "公共",
-            billingMethod: "电量计费",
+            projectName: '创新大厦B栋',
+            gatewayMac: 'B1:23:45:67:89:CD',
+            meterNumber: 'B12308253400367',
+            deviceType: '柜机',
+            shareType: '公共',
+            billingMethod: '电量计费',
             coilCoefficient: 85,
             fanPower: 2.2,
             highCoefficient: 1.5,
@@ -827,31 +851,31 @@ export default {
             lowCoefficient: 1.1
           }
         },
-        "AC007": {
-          name: "接待空调-01",
-          serialNumber: "HVAC-2024-001512",
+        AC007: {
+          name: '接待空调-01',
+          serialNumber: 'HVAC-2024-001512',
           currentTemp: 25,
           setTemp: 23,
           powerUsage: 2.9,
-          mode: "cool",
-          fanSpeed: "auto",
-          brand: "格力",
-          model: "KFR-35GW",
-          location: "创新大厦B栋-1F接待大厅",
-          area: "B",
+          mode: 'cool',
+          fanSpeed: 'auto',
+          brand: '格力',
+          model: 'KFR-35GW',
+          location: '创新大厦B栋-1F接待大厅',
+          area: 'B',
           floor: 1,
-          room: "接待大厅",
-          installDate: "2023-06-01",
+          room: '接待大厅',
+          installDate: '2023-06-01',
           online: true,
           power: true,
-          status: "running",
+          status: 'running',
           projectConfig: {
-            projectName: "创新大厦B栋",
-            gatewayMac: "B1:23:45:67:89:CD",
-            meterNumber: "B12308253400368",
-            deviceType: "吊顶机",
-            shareType: "公共",
-            billingMethod: "时长计费",
+            projectName: '创新大厦B栋',
+            gatewayMac: 'B1:23:45:67:89:CD',
+            meterNumber: 'B12308253400368',
+            deviceType: '吊顶机',
+            shareType: '公共',
+            billingMethod: '时长计费',
             coilCoefficient: 70,
             fanPower: 1.0,
             highCoefficient: 1.3,
@@ -859,31 +883,31 @@ export default {
             lowCoefficient: 0.9
           }
         },
-        "AC008": {
-          name: "餐厅空调-03",
-          serialNumber: "HVAC-2024-001513",
+        AC008: {
+          name: '餐厅空调-03',
+          serialNumber: 'HVAC-2024-001513',
           currentTemp: 27,
           setTemp: 25,
           powerUsage: 3.8,
-          mode: "cool",
-          fanSpeed: "mid",
-          brand: "大金",
-          model: "FTXS50",
-          location: "创新大厦B栋-2F餐厅食堂",
-          area: "B",
+          mode: 'cool',
+          fanSpeed: 'mid',
+          brand: '大金',
+          model: 'FTXS50',
+          location: '创新大厦B栋-2F餐厅食堂',
+          area: 'B',
           floor: 2,
-          room: "餐厅食堂",
-          installDate: "2023-06-01",
+          room: '餐厅食堂',
+          installDate: '2023-06-01',
           online: true,
           power: true,
-          status: "running",
+          status: 'running',
           projectConfig: {
-            projectName: "创新大厦B栋",
-            gatewayMac: "B1:23:45:67:89:CD",
-            meterNumber: "B12308253400369",
-            deviceType: "多联机",
-            shareType: "公共",
-            billingMethod: "电量计费",
+            projectName: '创新大厦B栋',
+            gatewayMac: 'B1:23:45:67:89:CD',
+            meterNumber: 'B12308253400369',
+            deviceType: '多联机',
+            shareType: '公共',
+            billingMethod: '电量计费',
             coilCoefficient: 75,
             fanPower: 1.5,
             highCoefficient: 1.4,
@@ -892,180 +916,179 @@ export default {
           }
         }
       }
-    };
+    }
   },
-  
+
   // ========== 生命周期钩子 ==========
-  async mounted() {
-    console.log("空调详情页组件已挂载");
-    
+  async mounted () {
+    console.log('空调详情页组件已挂载')
+
     // 提取路由参数
-    this.extractRouteParams();
-    
+    this.extractRouteParams()
+
     // 初始化默认时间范围
-    this.initDefaultDateRange();
-    
+    this.initDefaultDateRange()
+
     // 模拟加载数据
-    await this.loadDeviceData();
-    
+    await this.loadDeviceData()
+
     // 初始化图表
     this.$nextTick(() => {
-      this.initCharts();
-    });
-    
+      this.initCharts()
+    })
+
     // 加载echarts库
-    if (typeof echarts === "undefined") {
-      this.loadEcharts();
+    if (typeof echarts === 'undefined') {
+      this.loadEcharts()
     }
-    
+
     // 添加窗口resize监听
-    window.addEventListener("resize", this.handleResize);
+    window.addEventListener('resize', this.handleResize)
   },
-  
-  beforeDestroy() {
+
+  beforeDestroy () {
     // 清理定时器
     if (this.resizeTimer) {
-      clearTimeout(this.resizeTimer);
+      clearTimeout(this.resizeTimer)
     }
-    
+
     // 移除事件监听
-    window.removeEventListener("resize", this.handleResize);
-    
+    window.removeEventListener('resize', this.handleResize)
+
     // 销毁图表实例
     if (this.temperatureChart) {
-      this.temperatureChart.dispose();
+      this.temperatureChart.dispose()
     }
   },
-  
+
   methods: {
     // ========== 初始化方法 ==========
-    extractRouteParams() {
-      this.routeParams.deviceId = this.$route.params.id || this.$route.query.deviceId || "AC001";
-      this.routeParams.serialNumber = this.$route.query.serial || null;
-      this.routeParams.name = this.$route.query.name || null;
-      
+    extractRouteParams () {
+      this.routeParams.deviceId = this.$route.params.id || this.$route.query.deviceId || 'AC001'
+      this.routeParams.serialNumber = this.$route.query.serial || null
+      this.routeParams.name = this.$route.query.name || null
+
       if (this.routeParams.deviceId) {
-        this.queryParams.deviceId = this.routeParams.deviceId;
-        this.deviceInfo.id = this.routeParams.deviceId;
+        this.queryParams.deviceId = this.routeParams.deviceId
+        this.deviceInfo.id = this.routeParams.deviceId
       }
       if (this.routeParams.name) {
-        this.deviceInfo.name = this.routeParams.name;
+        this.deviceInfo.name = this.routeParams.name
       }
       if (this.routeParams.serialNumber) {
-        this.deviceInfo.serialNumber = this.routeParams.serialNumber;
+        this.deviceInfo.serialNumber = this.routeParams.serialNumber
       }
 
-      console.log("提取的路由参数:", this.routeParams);
+      console.log('提取的路由参数:', this.routeParams)
     },
-    
-    initDefaultDateRange() {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      
+
+    initDefaultDateRange () {
+      const now = new Date()
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+
       this.queryParams.dateRange = [
         this.formatDateTime(start),
         this.formatDateTime(end)
-      ];
+      ]
     },
-    
-    async loadDeviceData() {
-      this.pageLoading = true;
-      
+
+    async loadDeviceData () {
+      this.pageLoading = true
+
       try {
         // 模拟API调用延迟
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        
+        await new Promise(resolve => setTimeout(resolve, 1200))
+
         if (this.routeParams.deviceId) {
-          this.mapDeviceDataFromList(this.routeParams.deviceId);
+          this.mapDeviceDataFromList(this.routeParams.deviceId)
         }
-        
+
         // 生成历史数据
-        this.generateHistoryData();
-        
+        this.generateHistoryData()
+
         // 更新最后更新时间
-        this.deviceInfo.lastUpdate = this.getCurrentTime();
-        
-        console.log("设备数据加载完成:", this.deviceInfo);
-        
+        this.deviceInfo.lastUpdate = this.getCurrentTime()
+
+        console.log('设备数据加载完成:', this.deviceInfo)
       } catch (error) {
-        console.error("加载设备数据失败:", error);
-        this.$message.error("加载设备数据失败");
+        console.error('加载设备数据失败:', error)
+        this.$message.error('加载设备数据失败')
       } finally {
-        this.pageLoading = false;
+        this.pageLoading = false
       }
     },
-    
+
     // 从外层列表数据映射设备信息
-    mapDeviceDataFromList(deviceId) {
-      const deviceData = this.deviceDataMapping[deviceId];
+    mapDeviceDataFromList (deviceId) {
+      const deviceData = this.deviceDataMapping[deviceId]
       if (deviceData) {
         // 映射基本信息
-        Object.assign(this.deviceInfo, deviceData);
-        
+        Object.assign(this.deviceInfo, deviceData)
+
         // 映射项目配置
         if (deviceData.projectConfig) {
-          Object.assign(this.projectConfig, deviceData.projectConfig);
+          Object.assign(this.projectConfig, deviceData.projectConfig)
         }
-        
+
         // 调整统计数据
-        this.adjustStatsData(deviceData);
-        
-        console.log("设备数据映射完成:", this.deviceInfo);
+        this.adjustStatsData(deviceData)
+
+        console.log('设备数据映射完成:', this.deviceInfo)
       } else {
-        console.log("未找到设备数据，使用默认配置");
+        console.log('未找到设备数据，使用默认配置')
       }
     },
-    
+
     // 调整统计数据
-    adjustStatsData(deviceData) {
+    adjustStatsData (deviceData) {
       // 根据设备运行状态调整统计数据
       if (deviceData.power && deviceData.online) {
-        this.todayEnergy = (deviceData.powerUsage * (6 + Math.random() * 4)).toFixed(1);
-        this.chartStats.avgTemp = deviceData.currentTemp;
-        this.chartStats.runningHours = (Math.random() * 8 + 4).toFixed(1);
-        this.chartStats.totalEnergy = this.todayEnergy;
-        this.chartStats.tempAccuracy = Math.floor(Math.random() * 10 + 90);
+        this.todayEnergy = (deviceData.powerUsage * (6 + Math.random() * 4)).toFixed(1)
+        this.chartStats.avgTemp = deviceData.currentTemp
+        this.chartStats.runningHours = (Math.random() * 8 + 4).toFixed(1)
+        this.chartStats.totalEnergy = this.todayEnergy
+        this.chartStats.tempAccuracy = Math.floor(Math.random() * 10 + 90)
       } else {
-        this.todayEnergy = (Math.random() * 2).toFixed(1);
-        this.chartStats.runningHours = (Math.random() * 2).toFixed(1);
-        this.chartStats.totalEnergy = this.todayEnergy;
-        this.chartStats.tempAccuracy = Math.floor(Math.random() * 20 + 60);
+        this.todayEnergy = (Math.random() * 2).toFixed(1)
+        this.chartStats.runningHours = (Math.random() * 2).toFixed(1)
+        this.chartStats.totalEnergy = this.todayEnergy
+        this.chartStats.tempAccuracy = Math.floor(Math.random() * 20 + 60)
       }
     },
 
     // 生成历史数据
-    generateHistoryData() {
-      this.generateOperationRecords();
-      this.generateControlHistory();
-      this.generateEnergyStats();
+    generateHistoryData () {
+      this.generateOperationRecords()
+      this.generateControlHistory()
+      this.generateEnergyStats()
     },
 
     // 生成运行记录
-    generateOperationRecords() {
-      const operations = ["温度调节", "开机启动", "关机停止", "模式切换", "风速调节"];
-      const modes = ["制冷", "制热", "除湿", "送风", "自动"];
-      const fanSpeeds = ["低风", "中风", "高风", "自动"];
-      const operators = ["手动控制", "定时任务", "自动控制"];
-      
-      this.operationRecords = [];
-      
+    generateOperationRecords () {
+      const operations = ['温度调节', '开机启动', '关机停止', '模式切换', '风速调节']
+      const modes = ['制冷', '制热', '除湿', '送风', '自动']
+      const fanSpeeds = ['低风', '中风', '高风', '自动']
+      const operators = ['手动控制', '定时任务', '自动控制']
+
+      this.operationRecords = []
+
       // 生成最近3天的记录
       for (let day = 0; day < 3; day++) {
-        const recordCount = Math.floor(Math.random() * 8) + 5; // 每天5-12条记录
-        
+        const recordCount = Math.floor(Math.random() * 8) + 5 // 每天5-12条记录
+
         for (let i = 0; i < recordCount; i++) {
-          const date = new Date();
-          date.setDate(date.getDate() - day);
-          date.setHours(Math.floor(Math.random() * 24));
-          date.setMinutes(Math.floor(Math.random() * 60));
-          date.setSeconds(Math.floor(Math.random() * 60));
-          
-          const operation = operations[Math.floor(Math.random() * operations.length)];
-          const beforeTemp = Math.floor(Math.random() * 8) + 20;
-          const afterTemp = operation === "温度调节" ? 
-            Math.floor(Math.random() * 8) + 20 : beforeTemp;
-          
+          const date = new Date()
+          date.setDate(date.getDate() - day)
+          date.setHours(Math.floor(Math.random() * 24))
+          date.setMinutes(Math.floor(Math.random() * 60))
+          date.setSeconds(Math.floor(Math.random() * 60))
+
+          const operation = operations[Math.floor(Math.random() * operations.length)]
+          const beforeTemp = Math.floor(Math.random() * 8) + 20
+          const afterTemp = operation === '温度调节'
+            ? Math.floor(Math.random() * 8) + 20 : beforeTemp
+
           const record = {
             time: this.formatDateTime(date),
             operation: operation,
@@ -1073,44 +1096,44 @@ export default {
             afterTemp: afterTemp,
             mode: modes[Math.floor(Math.random() * modes.length)],
             fanSpeed: fanSpeeds[Math.floor(Math.random() * fanSpeeds.length)],
-            powerUsage: operation.includes("关机") ? 0 : (Math.random() * 3 + 1).toFixed(1),
+            powerUsage: operation.includes('关机') ? 0 : (Math.random() * 3 + 1).toFixed(1),
             duration: this.generateDuration(),
-            result: Math.random() > 0.05 ? "成功" : "失败",
+            result: Math.random() > 0.05 ? '成功' : '失败',
             operator: operators[Math.floor(Math.random() * operators.length)]
-          };
-          
-          this.operationRecords.push(record);
+          }
+
+          this.operationRecords.push(record)
         }
       }
-      
+
       // 按时间排序
-      this.operationRecords.sort((a, b) => new Date(b.time) - new Date(a.time));
+      this.operationRecords.sort((a, b) => new Date(b.time) - new Date(a.time))
     },
 
     // 生成控制历史
-    generateControlHistory() {
-      const operationTypes = ["开启", "关闭", "温度调节", "模式切换", "风速调节"];
-      const operators = ["手动控制", "定时任务", "自动控制", "APP控制"];
-      const networkTypes = ["WiFi", "以太网", "4G"];
-      const statusList = ["运行", "关闭", "待机", "制冷模式", "制热模式"];
-      
-      this.controlHistory = [];
-      
+    generateControlHistory () {
+      const operationTypes = ['开启', '关闭', '温度调节', '模式切换', '风速调节']
+      const operators = ['手动控制', '定时任务', '自动控制', 'APP控制']
+      const networkTypes = ['WiFi', '以太网', '4G']
+      const statusList = ['运行', '关闭', '待机', '制冷模式', '制热模式']
+
+      this.controlHistory = []
+
       // 生成最近7天的记录
       for (let day = 0; day < 7; day++) {
-        const recordCount = Math.floor(Math.random() * 6) + 3; // 每天3-8条记录
-        
+        const recordCount = Math.floor(Math.random() * 6) + 3 // 每天3-8条记录
+
         for (let i = 0; i < recordCount; i++) {
-          const date = new Date();
-          date.setDate(date.getDate() - day);
-          date.setHours(Math.floor(Math.random() * 24));
-          date.setMinutes(Math.floor(Math.random() * 60));
-          date.setSeconds(Math.floor(Math.random() * 60));
-          
-          const operationType = operationTypes[Math.floor(Math.random() * operationTypes.length)];
-          const beforeStatus = statusList[Math.floor(Math.random() * statusList.length)];
-          const afterStatus = statusList[Math.floor(Math.random() * statusList.length)];
-          
+          const date = new Date()
+          date.setDate(date.getDate() - day)
+          date.setHours(Math.floor(Math.random() * 24))
+          date.setMinutes(Math.floor(Math.random() * 60))
+          date.setSeconds(Math.floor(Math.random() * 60))
+
+          const operationType = operationTypes[Math.floor(Math.random() * operationTypes.length)]
+          const beforeStatus = statusList[Math.floor(Math.random() * statusList.length)]
+          const afterStatus = statusList[Math.floor(Math.random() * statusList.length)]
+
           const record = {
             time: this.formatDateTime(date),
             operationType: operationType,
@@ -1120,45 +1143,45 @@ export default {
             signalStrength: `-${Math.floor(Math.random() * 30) + 40}dBm`,
             networkType: networkTypes[Math.floor(Math.random() * networkTypes.length)],
             responseTime: `${Math.floor(Math.random() * 150) + 50}ms`,
-            result: Math.random() > 0.03 ? "成功" : "失败",
+            result: Math.random() > 0.03 ? '成功' : '失败',
             remark: this.generateRemark(operationType)
-          };
-          
-          this.controlHistory.push(record);
+          }
+
+          this.controlHistory.push(record)
         }
       }
-      
+
       // 按时间排序
-      this.controlHistory.sort((a, b) => new Date(b.time) - new Date(a.time));
+      this.controlHistory.sort((a, b) => new Date(b.time) - new Date(a.time))
     },
 
     // 生成用能统计
-    generateEnergyStats() {
-      const timeTypes = ["今日", "昨日", "本周", "本月"];
-      this.energyStatsData = [];
-      
+    generateEnergyStats () {
+      const timeTypes = ['今日', '昨日', '本周', '本月']
+      this.energyStatsData = []
+
       timeTypes.forEach(timeType => {
-        let multiplier = 1;
-        switch(timeType) {
-          case "今日": multiplier = 1; break;
-          case "昨日": multiplier = 0.9; break;
-          case "本周": multiplier = 6.5; break;
-          case "本月": multiplier = 28; break;
+        let multiplier = 1
+        switch (timeType) {
+          case '今日': multiplier = 1; break
+          case '昨日': multiplier = 0.9; break
+          case '本周': multiplier = 6.5; break
+          case '本月': multiplier = 28; break
         }
-        
-        const highWindTime = (Math.random() * 3 * multiplier).toFixed(1);
-        const midWindTime = (Math.random() * 5 * multiplier).toFixed(1);
-        const lowWindTime = (Math.random() * 4 * multiplier).toFixed(1);
-        const autoWindTime = (Math.random() * 2 * multiplier).toFixed(1);
-        
-        const highWindEnergy = (highWindTime * 3.2).toFixed(1);
-        const midWindEnergy = (midWindTime * 2.8).toFixed(1);
-        const lowWindEnergy = (lowWindTime * 2.1).toFixed(1);
-        const autoWindEnergy = (autoWindTime * 2.5).toFixed(1);
-        
-        const totalEnergy = (parseFloat(highWindEnergy) + parseFloat(midWindEnergy) + 
-                           parseFloat(lowWindEnergy) + parseFloat(autoWindEnergy)).toFixed(1);
-        
+
+        const highWindTime = (Math.random() * 3 * multiplier).toFixed(1)
+        const midWindTime = (Math.random() * 5 * multiplier).toFixed(1)
+        const lowWindTime = (Math.random() * 4 * multiplier).toFixed(1)
+        const autoWindTime = (Math.random() * 2 * multiplier).toFixed(1)
+
+        const highWindEnergy = (highWindTime * 3.2).toFixed(1)
+        const midWindEnergy = (midWindTime * 2.8).toFixed(1)
+        const lowWindEnergy = (lowWindTime * 2.1).toFixed(1)
+        const autoWindEnergy = (autoWindTime * 2.5).toFixed(1)
+
+        const totalEnergy = (parseFloat(highWindEnergy) + parseFloat(midWindEnergy) +
+                           parseFloat(lowWindEnergy) + parseFloat(autoWindEnergy)).toFixed(1)
+
         this.energyStatsData.push({
           timeType,
           highWindTime,
@@ -1170,168 +1193,168 @@ export default {
           autoWindTime,
           autoWindEnergy,
           totalEnergy
-        });
-      });
+        })
+      })
     },
 
-    generateDuration() {
+    generateDuration () {
       const durations = [
-        "持续运行", "30分钟", "1小时15分", "2小时30分", 
-        "45分钟", "3小时", "1小时", "4小时15分"
-      ];
-      return durations[Math.floor(Math.random() * durations.length)];
+        '持续运行', '30分钟', '1小时15分', '2小时30分',
+        '45分钟', '3小时', '1小时', '4小时15分'
+      ]
+      return durations[Math.floor(Math.random() * durations.length)]
     },
 
-    generateRemark(operationType) {
+    generateRemark (operationType) {
       const remarks = {
-        "开启": ["定时开启", "手动开启", "自动开启", "远程开启"],
-        "关闭": ["定时关闭", "手动关闭", "节能关闭", "下班关闭"],
-        "温度调节": ["用户调节", "自动调节", "节能调节", "舒适度调节"],
-        "模式切换": ["季节切换", "手动切换", "自动切换", "临时调整"],
-        "风速调节": ["舒适度调节", "噪音调节", "节能调节", "手动调节"]
-      };
-      
-      const remarkList = remarks[operationType] || ["正常操作"];
-      return remarkList[Math.floor(Math.random() * remarkList.length)];
+        开启: ['定时开启', '手动开启', '自动开启', '远程开启'],
+        关闭: ['定时关闭', '手动关闭', '节能关闭', '下班关闭'],
+        温度调节: ['用户调节', '自动调节', '节能调节', '舒适度调节'],
+        模式切换: ['季节切换', '手动切换', '自动切换', '临时调整'],
+        风速调节: ['舒适度调节', '噪音调节', '节能调节', '手动调节']
+      }
+
+      const remarkList = remarks[operationType] || ['正常操作']
+      return remarkList[Math.floor(Math.random() * remarkList.length)]
     },
-    
-    loadEcharts() {
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js";
+
+    loadEcharts () {
+      const script = document.createElement('script')
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js'
       script.onload = () => {
-        this.initCharts();
-      };
-      document.head.appendChild(script);
+        this.initCharts()
+      }
+      document.head.appendChild(script)
     },
-    
-    getCurrentTime() {
-      return this.formatDateTime(new Date());
+
+    getCurrentTime () {
+      return this.formatDateTime(new Date())
     },
-    
+
     // ========== 图表相关方法 ==========
-    initCharts() {
+    initCharts () {
       this.$nextTick(() => {
-        if (typeof echarts !== "undefined") {
-          this.initTemperatureChart();
+        if (typeof echarts !== 'undefined') {
+          this.initTemperatureChart()
         }
-      });
+      })
     },
-    
-    initTemperatureChart() {
-      const chartDom = this.$refs.temperatureChart;
-      if (!chartDom) return;
-      
-      this.temperatureChart = echarts.init(chartDom);
-      this.updateTemperatureChart();
+
+    initTemperatureChart () {
+      const chartDom = this.$refs.temperatureChart
+      if (!chartDom) return
+
+      this.temperatureChart = echarts.init(chartDom)
+      this.updateTemperatureChart()
     },
-    
-    updateTemperatureChart() {
-      if (!this.temperatureChart) return;
-      
+
+    updateTemperatureChart () {
+      if (!this.temperatureChart) return
+
       // 生成24小时温度数据
-      const hours = [];
-      const currentTemp = [];
-      const targetTemp = [];
-      
+      const hours = []
+      const currentTemp = []
+      const targetTemp = []
+
       for (let i = 0; i < 24; i++) {
-        hours.push(String(i).padStart(2, '0') + ':00');
-        
+        hours.push(String(i).padStart(2, '0') + ':00')
+
         // 模拟当前温度数据（更真实的变化）
-        let baseTemp;
+        let baseTemp
         if (i >= 8 && i <= 18) {
           // 工作时间，空调运行，温度相对稳定
-          baseTemp = this.deviceInfo.currentTemp + Math.sin((i - 8) * Math.PI / 10) * 1.5 + Math.random() * 0.8 - 0.4;
+          baseTemp = this.deviceInfo.currentTemp + Math.sin((i - 8) * Math.PI / 10) * 1.5 + Math.random() * 0.8 - 0.4
         } else if (i >= 19 && i <= 22) {
           // 晚上时间，部分运行
-          baseTemp = this.deviceInfo.currentTemp + 2 + Math.sin((i - 19) * Math.PI / 4) * 1 + Math.random() * 0.6 - 0.3;
+          baseTemp = this.deviceInfo.currentTemp + 2 + Math.sin((i - 19) * Math.PI / 4) * 1 + Math.random() * 0.6 - 0.3
         } else {
           // 夜间和早晨，空调关闭，温度上升
-          baseTemp = this.deviceInfo.currentTemp + 4 + Math.sin(i * Math.PI / 12) * 2 + Math.random() * 1 - 0.5;
+          baseTemp = this.deviceInfo.currentTemp + 4 + Math.sin(i * Math.PI / 12) * 2 + Math.random() * 1 - 0.5
         }
-        currentTemp.push(Math.max(18, Math.min(32, baseTemp)).toFixed(1));
-        
+        currentTemp.push(Math.max(18, Math.min(32, baseTemp)).toFixed(1))
+
         // 模拟目标温度数据
         if (i >= 8 && i <= 18) {
-          targetTemp.push(this.deviceInfo.setTemp); // 工作时间
+          targetTemp.push(this.deviceInfo.setTemp) // 工作时间
         } else if (i >= 19 && i <= 22) {
-          targetTemp.push(this.deviceInfo.setTemp + 1); // 晚间时间
+          targetTemp.push(this.deviceInfo.setTemp + 1) // 晚间时间
         } else {
-          targetTemp.push(this.deviceInfo.setTemp + 4); // 关闭时间设定温度
+          targetTemp.push(this.deviceInfo.setTemp + 4) // 关闭时间设定温度
         }
       }
-      
+
       const option = {
-        backgroundColor: "transparent",
+        backgroundColor: 'transparent',
         grid: {
-          left: "60px",
-          right: "40px", 
-          top: "40px",
-          bottom: "60px",
-          containLabel: true,
+          left: '60px',
+          right: '40px',
+          top: '40px',
+          bottom: '60px',
+          containLabel: true
         },
         tooltip: {
-          trigger: "axis",
-          backgroundColor: "#ffffff",
-          borderColor: "#e8e8e8",
+          trigger: 'axis',
+          backgroundColor: '#ffffff',
+          borderColor: '#e8e8e8',
           borderWidth: 1,
           borderRadius: 8,
           padding: [12, 16],
           textStyle: {
-            color: "#262626",
+            color: '#262626',
             fontSize: 13,
-            lineHeight: 20,
+            lineHeight: 20
           },
-          formatter: function(params) {
-            let html = `<div style="line-height: 1.8;">`;
-            html += `<div style="font-weight: 600; margin-bottom: 8px; color: #262626;">${params[0].name}</div>`;
-            
+          formatter: function (params) {
+            let html = '<div style="line-height: 1.8;">'
+            html += `<div style="font-weight: 600; margin-bottom: 8px; color: #262626;">${params[0].name}</div>`
+
             params.forEach(param => {
               if (param.value !== null && param.value !== undefined) {
-                const color = param.seriesName === '当前温度' ? '#1890ff' : '#52c41a';
-                html += `<div style="color: ${color}; margin-bottom: 4px; display: flex; align-items: center;">`;
-                html += `<span style="display: inline-block; width: 8px; height: 8px; background: ${color}; border-radius: 50%; margin-right: 8px;"></span>`;
-                html += `${param.seriesName}: ${param.value}°C</div>`;
+                const color = param.seriesName === '当前温度' ? '#1890ff' : '#52c41a'
+                html += `<div style="color: ${color}; margin-bottom: 4px; display: flex; align-items: center;">`
+                html += `<span style="display: inline-block; width: 8px; height: 8px; background: ${color}; border-radius: 50%; margin-right: 8px;"></span>`
+                html += `${param.seriesName}: ${param.value}°C</div>`
               }
-            });
-            html += '</div>';
-            return html;
-          },
+            })
+            html += '</div>'
+            return html
+          }
         },
         legend: {
-          data: ["当前温度", "目标温度"],
+          data: ['当前温度', '目标温度'],
           top: 10,
           right: 20,
           textStyle: {
-            color: "#595959",
-            fontSize: 12,
-          },
+            color: '#595959',
+            fontSize: 12
+          }
         },
         xAxis: {
-          type: "category",
+          type: 'category',
           data: hours,
           axisLabel: {
-            color: "#8c8c8c",
-            fontSize: 12,
+            color: '#8c8c8c',
+            fontSize: 12
           },
           axisLine: {
             show: true,
-            lineStyle: { 
-              color: "#f0f0f0",
+            lineStyle: {
+              color: '#f0f0f0',
               width: 1
             }
           },
           axisTick: {
             show: false
-          },
+          }
         },
         yAxis: {
-          type: "value",
+          type: 'value',
           min: 18,
           max: 32,
           axisLabel: {
-            color: "#8c8c8c", 
+            color: '#8c8c8c',
             fontSize: 12,
-            formatter: "{value}°C",
+            formatter: '{value}°C'
           },
           axisLine: {
             show: false
@@ -1341,309 +1364,320 @@ export default {
           },
           splitLine: {
             show: false
-          },
+          }
         },
         series: [
           {
-            name: "当前温度",
+            name: '当前温度',
             data: currentTemp,
-            type: "line",
+            type: 'line',
             smooth: true,
-            symbol: "none",
+            symbol: 'none',
             lineStyle: {
-              color: "#1890ff",
-              width: 3,
+              color: '#1890ff',
+              width: 3
             },
             areaStyle: {
               color: {
-                type: "linear",
+                type: 'linear',
                 x: 0,
                 y: 0,
                 x2: 0,
                 y2: 1,
                 colorStops: [
-                  { offset: 0, color: "rgba(24, 144, 255, 0.15)" },
-                  { offset: 1, color: "rgba(24, 144, 255, 0.01)" },
-                ],
-              },
-            },
+                  { offset: 0, color: 'rgba(24, 144, 255, 0.15)' },
+                  { offset: 1, color: 'rgba(24, 144, 255, 0.01)' }
+                ]
+              }
+            }
           },
           {
-            name: "目标温度",
+            name: '目标温度',
             data: targetTemp,
-            type: "line",
+            type: 'line',
             smooth: true,
-            symbol: "none",
+            symbol: 'none',
             lineStyle: {
-              color: "#52c41a",
-              width: 2,
-            },
-          },
-        ],
-      };
-      
-      this.temperatureChart.setOption(option);
+              color: '#52c41a',
+              width: 2
+            }
+          }
+        ]
+      }
+
+      this.temperatureChart.setOption(option)
     },
-    
+
     // ========== 设备控制方法 ==========
-    async togglePower() {
-      this.controlLoading.power = true;
+    async togglePower () {
+      if (!this.canControl) return
+      this.controlLoading.power = true
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        this.deviceInfo.power = !this.deviceInfo.power;
-        
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        this.deviceInfo.power = !this.deviceInfo.power
+
         if (!this.deviceInfo.power) {
-          this.deviceInfo.powerUsage = 0;
-          this.deviceInfo.status = "standby";
+          this.deviceInfo.powerUsage = 0
+          this.deviceInfo.status = 'standby'
         } else {
-          this.deviceInfo.powerUsage = this.calculatePower();
-          this.deviceInfo.status = "running";
+          this.deviceInfo.powerUsage = this.calculatePower()
+          this.deviceInfo.status = 'running'
         }
-        
+
         // 添加操作记录
         this.addOperationRecord({
-          operation: this.deviceInfo.power ? "开机启动" : "关机停止",
+          operation: this.deviceInfo.power ? '开机启动' : '关机停止',
           beforeTemp: this.deviceInfo.currentTemp,
           afterTemp: this.deviceInfo.currentTemp,
           mode: this.getModeText(this.deviceInfo.mode),
           fanSpeed: this.getFanSpeedText(this.deviceInfo.fanSpeed),
-          powerUsage: this.deviceInfo.powerUsage,
-        });
-        
-        this.$message.success(`设备已${this.deviceInfo.power ? '开启' : '关闭'}`);
+          powerUsage: this.deviceInfo.powerUsage
+        })
+
+        this.$message.success(`设备已${this.deviceInfo.power ? '开启' : '关闭'}`)
       } catch (error) {
-        this.$message.error("操作失败");
+        this.$apiError.notify(error, '操作失败')
       } finally {
-        this.controlLoading.power = false;
+        this.controlLoading.power = false
       }
     },
-    
-    async adjustTemp(delta) {
-      const newTemp = this.deviceInfo.setTemp + delta;
+
+    async adjustTemp (delta) {
+      if (!this.canControl) return
+      const newTemp = this.deviceInfo.setTemp + delta
       if (newTemp >= 16 && newTemp <= 30) {
-        const oldTemp = this.deviceInfo.setTemp;
-        this.deviceInfo.setTemp = newTemp;
-        
+        const oldTemp = this.deviceInfo.setTemp
+        this.deviceInfo.setTemp = newTemp
+
         if (this.deviceInfo.power) {
-          this.deviceInfo.powerUsage = this.calculatePower();
+          this.deviceInfo.powerUsage = this.calculatePower()
         }
-        
+
         // 添加操作记录
         this.addOperationRecord({
-          operation: "温度调节",
+          operation: '温度调节',
           beforeTemp: oldTemp,
           afterTemp: newTemp,
           mode: this.getModeText(this.deviceInfo.mode),
           fanSpeed: this.getFanSpeedText(this.deviceInfo.fanSpeed),
-          powerUsage: this.deviceInfo.powerUsage,
-        });
-        
-        this.$message.success(`目标温度已调整为${newTemp}°C`);
+          powerUsage: this.deviceInfo.powerUsage
+        })
+
+        this.$message.success(`目标温度已调整为${newTemp}°C`)
       }
-    },
-    
-    changeMode() {
-      const modes = ["cool", "heat", "dry", "fan"];
-      const currentIndex = modes.indexOf(this.deviceInfo.mode);
-      const nextIndex = (currentIndex + 1) % modes.length;
-      this.deviceInfo.mode = modes[nextIndex];
-      
-      if (this.deviceInfo.power) {
-        this.deviceInfo.powerUsage = this.calculatePower();
-      }
-      
-      // 添加操作记录
-      this.addOperationRecord({
-        operation: "模式切换",
-        beforeTemp: this.deviceInfo.setTemp,
-        afterTemp: this.deviceInfo.setTemp,
-        mode: this.getModeText(this.deviceInfo.mode),
-        fanSpeed: this.getFanSpeedText(this.deviceInfo.fanSpeed),
-        powerUsage: this.deviceInfo.powerUsage,
-      });
-      
-      this.$message.success(`模式已切换为${this.getModeText(this.deviceInfo.mode)}`);
-    },
-    
-    adjustFanSpeed() {
-      const speeds = ["low", "mid", "high", "auto"];
-      const currentIndex = speeds.indexOf(this.deviceInfo.fanSpeed);
-      const nextIndex = (currentIndex + 1) % speeds.length;
-      this.deviceInfo.fanSpeed = speeds[nextIndex];
-      
-      if (this.deviceInfo.power) {
-        this.deviceInfo.powerUsage = this.calculatePower();
-      }
-      
-      // 添加操作记录
-      this.addOperationRecord({
-        operation: "风速调节",
-        beforeTemp: this.deviceInfo.setTemp,
-        afterTemp: this.deviceInfo.setTemp,
-        mode: this.getModeText(this.deviceInfo.mode),
-        fanSpeed: this.getFanSpeedText(this.deviceInfo.fanSpeed),
-        powerUsage: this.deviceInfo.powerUsage,
-      });
-      
-      this.$message.success(`风速已调整为${this.getFanSpeedText(this.deviceInfo.fanSpeed)}`);
     },
 
-    toggleSwing() {
-      this.deviceInfo.swingV = !this.deviceInfo.swingV;
-      this.$message.success(`垂直摆风已${this.deviceInfo.swingV ? '开启' : '关闭'}`);
+    changeMode () {
+      if (!this.canControl) return
+      const modes = ['cool', 'heat', 'dry', 'fan']
+      const currentIndex = modes.indexOf(this.deviceInfo.mode)
+      const nextIndex = (currentIndex + 1) % modes.length
+      this.deviceInfo.mode = modes[nextIndex]
+
+      if (this.deviceInfo.power) {
+        this.deviceInfo.powerUsage = this.calculatePower()
+      }
+
+      // 添加操作记录
+      this.addOperationRecord({
+        operation: '模式切换',
+        beforeTemp: this.deviceInfo.setTemp,
+        afterTemp: this.deviceInfo.setTemp,
+        mode: this.getModeText(this.deviceInfo.mode),
+        fanSpeed: this.getFanSpeedText(this.deviceInfo.fanSpeed),
+        powerUsage: this.deviceInfo.powerUsage
+      })
+
+      this.$message.success(`模式已切换为${this.getModeText(this.deviceInfo.mode)}`)
     },
-    
+
+    adjustFanSpeed () {
+      if (!this.canControl) return
+      const speeds = ['low', 'mid', 'high', 'auto']
+      const currentIndex = speeds.indexOf(this.deviceInfo.fanSpeed)
+      const nextIndex = (currentIndex + 1) % speeds.length
+      this.deviceInfo.fanSpeed = speeds[nextIndex]
+
+      if (this.deviceInfo.power) {
+        this.deviceInfo.powerUsage = this.calculatePower()
+      }
+
+      // 添加操作记录
+      this.addOperationRecord({
+        operation: '风速调节',
+        beforeTemp: this.deviceInfo.setTemp,
+        afterTemp: this.deviceInfo.setTemp,
+        mode: this.getModeText(this.deviceInfo.mode),
+        fanSpeed: this.getFanSpeedText(this.deviceInfo.fanSpeed),
+        powerUsage: this.deviceInfo.powerUsage
+      })
+
+      this.$message.success(`风速已调整为${this.getFanSpeedText(this.deviceInfo.fanSpeed)}`)
+    },
+
+    toggleSwing () {
+      if (!this.canControl) return
+      this.deviceInfo.swingV = !this.deviceInfo.swingV
+      this.$message.success(`垂直摆风已${this.deviceInfo.swingV ? '开启' : '关闭'}`)
+    },
+
     // ========== 弹窗相关方法 ==========
-    showAdvancedSettings() {
+    showAdvancedSettings () {
+      if (!this.canControl) return
       this.advancedForm = {
         name: this.deviceInfo.name,
         location: this.deviceInfo.location,
         maxTemp: this.deviceInfo.maxTemp,
         minTemp: this.deviceInfo.minTemp,
         autoAdjust: this.deviceInfo.autoAdjust,
-        energySaving: this.deviceInfo.energySaving,
-      };
-      this.advancedDialog.visible = true;
+        energySaving: this.deviceInfo.energySaving
+      }
+      this.advancedDialog.visible = true
     },
-    
-    async saveAdvancedSettings() {
+
+    async saveAdvancedSettings () {
+      if (!this.canControl) return
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        Object.assign(this.deviceInfo, this.advancedForm);
-        this.advancedDialog.visible = false;
-        this.$message.success("设置保存成功");
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        Object.assign(this.deviceInfo, this.advancedForm)
+        this.advancedDialog.visible = false
+        this.$message.success('设置保存成功')
       } catch (error) {
-        this.$message.error("设置保存失败");
+        this.$message.error('设置保存失败')
       }
     },
-    
-    showScheduleDialog() {
-      this.scheduleDialog.visible = true;
+
+    showScheduleDialog () {
+      if (!this.canControl) return
+      this.scheduleDialog.visible = true
     },
-    
-    async saveScheduleSettings() {
+
+    async saveScheduleSettings () {
+      if (!this.canControl) return
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        this.scheduleDialog.visible = false;
-        this.$message.success("定时设置已保存");
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        this.scheduleDialog.visible = false
+        this.$message.success('定时设置已保存')
       } catch (error) {
-        this.$message.error("定时设置保存失败");
+        this.$message.error('定时设置保存失败')
       }
     },
-    
+
     // ========== 数据查询方法 ==========
-    queryHistoryData() {
-      this.$message.info("正在查询历史数据...");
-      
+    queryHistoryData () {
+      if (!this.canView) return
+      this.$message.info('正在查询历史数据...')
+
       // 重新绘制图表
       setTimeout(() => {
         if (this.temperatureChart) {
-          this.updateTemperatureChart();
+          this.updateTemperatureChart()
         }
-        this.$message.success("数据查询完成");
-      }, 1000);
+        this.$message.success('数据查询完成')
+      }, 1000)
     },
-    
-    exportData() {
-      this.$message.info("正在导出数据...");
-      
+
+    exportData () {
+      if (!this.canView) return
+      this.$message.info('正在导出数据...')
+
       setTimeout(() => {
         // 模拟生成CSV文件并下载
-        const csvContent = this.generateCSVContent();
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `空调设备数据_${this.deviceInfo.id}_${this.formatDate(new Date())}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        this.$message.success("数据导出成功");
-      }, 1000);
+        const csvContent = this.generateCSVContent()
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+        link.setAttribute('href', url)
+        link.setAttribute('download', `空调设备数据_${this.deviceInfo.id}_${this.formatDate(new Date())}.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        this.$message.success('数据导出成功')
+      }, 1000)
     },
-    
+
     // ========== 工具方法 ==========
-    getModeIcon(mode) {
+    getModeIcon (mode) {
       const iconMap = {
-        cool: "❄",
-        heat: "🔥",
-        dry: "💧",
-        fan: "🌀",
-        auto: "🔄"
-      };
-      return iconMap[mode] || "❄";
+        cool: '❄',
+        heat: '🔥',
+        dry: '💧',
+        fan: '🌀',
+        auto: '🔄'
+      }
+      return iconMap[mode] || '❄'
     },
-    
-    calculatePower() {
-      const baseMap = { 
-        cool: 3.2, 
-        heat: 3.8, 
-        dry: 2.1, 
-        fan: 0.6, 
-        auto: 2.8 
-      };
-      const speedMap = { 
-        low: 0.8, 
-        mid: 1, 
-        high: 1.3, 
-        auto: 1 
-      };
-      
-      const basePower = baseMap[this.deviceInfo.mode] || 2.8;
-      const speedFactor = speedMap[this.deviceInfo.fanSpeed] || 1;
-      
-      return (basePower * speedFactor).toFixed(1);
+
+    calculatePower () {
+      const baseMap = {
+        cool: 3.2,
+        heat: 3.8,
+        dry: 2.1,
+        fan: 0.6,
+        auto: 2.8
+      }
+      const speedMap = {
+        low: 0.8,
+        mid: 1,
+        high: 1.3,
+        auto: 1
+      }
+
+      const basePower = baseMap[this.deviceInfo.mode] || 2.8
+      const speedFactor = speedMap[this.deviceInfo.fanSpeed] || 1
+
+      return (basePower * speedFactor).toFixed(1)
     },
-    
-    getStatusTagType(status) {
+
+    getStatusTagType (status) {
       const typeMap = {
-        running: "success",
-        standby: "info", 
-        offline: "danger",
-        fault: "danger"
-      };
-      return typeMap[status] || "info";
+        running: 'success',
+        standby: 'info',
+        offline: 'danger',
+        fault: 'danger'
+      }
+      return typeMap[status] || 'info'
     },
-    
-    getStatusText(device) {
-      if (!device.online) return "离线";
-      if (device.status === "fault") return "故障";
-      if (device.power) return "运行中";
-      return "待机";
+
+    getStatusText (device) {
+      if (!device.online) return '离线'
+      if (device.status === 'fault') return '故障'
+      if (device.power) return '运行中'
+      return '待机'
     },
-    
-    getModeText(mode) {
-      return this.modeMap[mode] || mode;
+
+    getModeText (mode) {
+      return this.modeMap[mode] || mode
     },
-    
-    getFanSpeedText(speed) {
-      return this.fanSpeedMap[speed] || speed;
+
+    getFanSpeedText (speed) {
+      return this.fanSpeedMap[speed] || speed
     },
-    
+
     // ========== 辅助方法 ==========
-    formatDateTime(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      const seconds = String(date.getSeconds()).padStart(2, '0');
-      
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    formatDateTime (date) {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     },
-    
-    formatDate(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      
-      return `${year}${month}${day}`;
+
+    formatDate (date) {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+
+      return `${year}${month}${day}`
     },
-    
-    addOperationRecord(record) {
+
+    addOperationRecord (record) {
       const newRecord = {
         time: this.getCurrentTime(),
         operation: record.operation,
@@ -1652,22 +1686,22 @@ export default {
         mode: record.mode,
         fanSpeed: record.fanSpeed,
         powerUsage: record.powerUsage,
-        duration: "实时操作",
-        result: "成功",
-        operator: "手动控制"
-      };
-      
-      this.operationRecords.unshift(newRecord);
-      
+        duration: '实时操作',
+        result: '成功',
+        operator: '手动控制'
+      }
+
+      this.operationRecords.unshift(newRecord)
+
       // 保持记录数量在50条以内
       if (this.operationRecords.length > 50) {
-        this.operationRecords = this.operationRecords.slice(0, 50);
+        this.operationRecords = this.operationRecords.slice(0, 50)
       }
     },
-    
-    generateCSVContent() {
+
+    generateCSVContent () {
       // 生成CSV文件内容
-      const headers = ['时间', '操作类型', '操作前温度', '操作后温度', '模式', '风速', '功率(kW)', '运行时长', '执行结果', '操作来源'];
+      const headers = ['时间', '操作类型', '操作前温度', '操作后温度', '模式', '风速', '功率(kW)', '运行时长', '执行结果', '操作来源']
       const rows = this.operationRecords.map(record => {
         return [
           record.time,
@@ -1680,26 +1714,26 @@ export default {
           record.duration,
           record.result,
           record.operator
-        ].join(',');
-      });
-      
-      return [headers.join(','), ...rows].join('\n');
+        ].join(',')
+      })
+
+      return [headers.join(','), ...rows].join('\n')
     },
-    
-    handleResize() {
-      clearTimeout(this.resizeTimer);
+
+    handleResize () {
+      clearTimeout(this.resizeTimer)
       this.resizeTimer = setTimeout(() => {
         if (this.temperatureChart) {
-          this.temperatureChart.resize();
+          this.temperatureChart.resize()
         }
-      }, 100);
+      }, 100)
     },
-    
-    goBack() {
-      this.$router.go(-1);
+
+    goBack () {
+      this.$router.go(-1)
     }
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>

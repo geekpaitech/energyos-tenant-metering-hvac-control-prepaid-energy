@@ -332,12 +332,12 @@
 
               <!-- 账户信息 -->
               <template v-else-if="col.key === 'accountInfo'">
-                <el-link 
-                  type="primary" 
+                <el-link
+                  type="primary"
                   @click="handleAccountClick(scope.row)"
                   class="fund-account-link"
                 >
-                  <i 
+                  <i
                     :class="getAccountIcon(scope.row.accountType)"
                     style="margin-right: 4px"
                   ></i>
@@ -399,21 +399,21 @@
                     <i class="el-icon-arrow-down el-icon--right"></i>
                   </el-button>
                   <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item 
+                    <el-dropdown-item
                       v-if="scope.row.status == 1"
-                      command="cancel" 
+                      command="cancel"
                       icon="el-icon-close"
                     >
                       取消流水
                     </el-dropdown-item>
-                    <el-dropdown-item 
-                      command="print" 
+                    <el-dropdown-item
+                      command="print"
                       icon="el-icon-printer"
                     >
                       打印凭证
                     </el-dropdown-item>
-                    <el-dropdown-item 
-                      command="copy" 
+                    <el-dropdown-item
+                      command="copy"
                       icon="el-icon-document-copy"
                       divided
                     >
@@ -561,74 +561,74 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapGetters } from 'vuex'
 
 // 流水类型枚举
 const FlowType = [
-  { value: 1, label: "收入" },
-  { value: 2, label: "支出" },
-  { value: 3, label: "转账" },
-];
+  { value: 1, label: '收入' },
+  { value: 2, label: '支出' },
+  { value: 3, label: '转账' }
+]
 
 // 流水状态枚举
 const FlowStatus = [
-  { value: 1, label: "处理中" },
-  { value: 2, label: "成功" },
-  { value: 3, label: "失败" },
-];
+  { value: 1, label: '处理中' },
+  { value: 2, label: '成功' },
+  { value: 3, label: '失败' }
+]
 
 // 账户类型枚举
 const AccountType = [
-  { value: 1, label: "银行账户" },
-  { value: 2, label: "支付宝" },
-  { value: 3, label: "微信支付" },
-  { value: 4, label: "现金" },
-];
+  { value: 1, label: '银行账户' },
+  { value: 2, label: '支付宝' },
+  { value: 3, label: '微信支付' },
+  { value: 4, label: '现金' }
+]
 
 export default {
-  name: "FundFlowManagement",
-  data() {
+  name: 'FundFlowManagement',
+  data () {
     return {
       tableHeightConfig: {
         headerHeight: 48, // 表头高度
         rowHeight: 47, // 每行高度
         minHeight: 200, // 最小高度
         maxRows: 10, // 最大显示行数（超过9行显示滚动条）
-        paginationHeight: 68, // 分页高度
+        paginationHeight: 68 // 分页高度
       },
       // 查询参数
       queryData: {
-        flowNo: "",
-        flowType: "",
-        status: "",
-        accountType: "",
-        counterparty: "",
+        flowNo: '',
+        flowType: '',
+        status: '',
+        accountType: '',
+        counterparty: '',
         dateRange: [],
-        accountNo: "",
-        amountMin: "",
-        amountMax: "",
-        managerId: "",
+        accountNo: '',
+        amountMin: '',
+        amountMax: '',
+        managerId: ''
       },
       // 搜索字段配置
       searchFields: {
         basic: [
-          { prop: "flowNo", label: "流水编号", type: "input" },
-          { prop: "flowType", label: "流水类型", type: "select" },
-          { prop: "status", label: "流水状态", type: "select" },
-          { prop: "dateRange", label: "交易时间", type: "daterange" },
+          { prop: 'flowNo', label: '流水编号', type: 'input' },
+          { prop: 'flowType', label: '流水类型', type: 'select' },
+          { prop: 'status', label: '流水状态', type: 'select' },
+          { prop: 'dateRange', label: '交易时间', type: 'daterange' }
         ],
         advanced: [
-          { prop: "accountType", label: "账户类型", type: "select" },
-          { prop: "counterparty", label: "交易对象", type: "input" },
-          { prop: "amountMin", label: "最小金额", type: "input" },
-          { prop: "amountMax", label: "最大金额", type: "input" },
-        ],
+          { prop: 'accountType', label: '账户类型', type: 'select' },
+          { prop: 'counterparty', label: '交易对象', type: 'input' },
+          { prop: 'amountMin', label: '最小金额', type: 'input' },
+          { prop: 'amountMax', label: '最大金额', type: 'input' }
+        ]
       },
       // 表格数据
       tableData: [],
       // 模拟数据
       mockData: [
-  
+
       ],
       // 加载状态
       loading: false,
@@ -639,7 +639,7 @@ export default {
       pageData: {
         current: 1,
         size: 15,
-        total: 0,
+        total: 0
       },
       // 选中的数据
       selectedData: [],
@@ -647,33 +647,33 @@ export default {
       dialogVisible: false,
       // 编辑表单
       editForm: {
-        id: "",
-        flowType: "",
-        amount: "",
-        accountType: "",
-        accountNo: "",
-        counterparty: "",
-        transactionTime: "",
-        remark: "",
-        managerId: "",
+        id: '',
+        flowType: '',
+        amount: '',
+        accountType: '',
+        accountNo: '',
+        counterparty: '',
+        transactionTime: '',
+        remark: '',
+        managerId: ''
       },
       // 表单验证规则
       rules: {
         flowType: [
-          { required: true, message: "请选择流水类型", trigger: "change" },
+          { required: true, message: '请选择流水类型', trigger: 'change' }
         ],
         amount: [
-          { required: true, message: "请输入金额", trigger: "blur" },
+          { required: true, message: '请输入金额', trigger: 'blur' }
         ],
         accountType: [
-          { required: true, message: "请选择账户类型", trigger: "change" },
+          { required: true, message: '请选择账户类型', trigger: 'change' }
         ],
         accountNo: [
-          { required: true, message: "请输入账户号码", trigger: "blur" },
+          { required: true, message: '请输入账户号码', trigger: 'blur' }
         ],
         transactionTime: [
-          { required: true, message: "请选择交易时间", trigger: "change" },
-        ],
+          { required: true, message: '请选择交易时间', trigger: 'change' }
+        ]
       },
       // 枚举数据
       FlowType,
@@ -682,342 +682,342 @@ export default {
       // 表格列配置
       tableKey: [
         {
-          label: "流水编号",
-          key: "flowNo",
-          width: "160",
+          label: '流水编号',
+          key: 'flowNo',
+          width: '160',
           checked: true,
-          disabled: true,
+          disabled: true
         },
         {
-          label: "流水类型",
-          key: "flowTypeLabel",
-          width: "120",
+          label: '流水类型',
+          key: 'flowTypeLabel',
+          width: '120',
+          checked: true
+        },
+        {
+          label: '金额',
+          key: 'amount',
+          width: '150',
           checked: true,
+          disabled: true
         },
         {
-          label: "金额",
-          key: "amount",
-          width: "150",
-          checked: true,
-          disabled: true,
+          label: '账户信息',
+          key: 'accountInfo',
+          width: '200',
+          checked: true
         },
         {
-          label: "账户信息",
-          key: "accountInfo",
-          width: "200",
-          checked: true,
+          label: '交易对象',
+          key: 'counterparty',
+          width: '150',
+          checked: true
         },
         {
-          label: "交易对象",
-          key: "counterparty",
-          width: "150",
-          checked: true,
+          label: '流水状态',
+          key: 'statusLabel',
+          width: '120',
+          checked: true
         },
         {
-          label: "流水状态",
-          key: "statusLabel",
-          width: "120",
-          checked: true,
+          label: '交易时间',
+          key: 'transactionTime',
+          width: '180',
+          checked: true
         },
         {
-          label: "交易时间",
-          key: "transactionTime",
-          width: "180",
-          checked: true,
+          label: '余额',
+          key: 'balance',
+          width: '150',
+          checked: true
         },
         {
-          label: "余额",
-          key: "balance",
-          width: "150",
-          checked: true,
+          label: '备注',
+          key: 'remark',
+          width: '200'
         },
         {
-          label: "备注",
-          key: "remark",
-          width: "200",
-        },
-        {
-          label: "创建时间",
-          key: "createTime",
-          width: "180",
-        },
-      ],
-    };
+          label: '创建时间',
+          key: 'createTime',
+          width: '180'
+        }
+      ]
+    }
   },
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
-    treeSelectedIds() {
-      const ids = this.$store.state.treeSelection?.selectedIds || [];
-      console.log("实时获取树形选中ID:", ids);
-      return ids;
+    ...mapGetters('manager', ['currentManagerId']),
+    treeSelectedIds () {
+      const ids = this.$store.state.treeSelection?.selectedIds || []
+      console.log('实时获取树形选中ID:', ids)
+      return ids
     },
-    hasTreeSelection() {
-      return this.treeSelectedIds.length > 0;
+    hasTreeSelection () {
+      return this.treeSelectedIds.length > 0
     },
     // 计算需要显示的列
-    displayColumns() {
-      return this.tableKey.filter((col) => col.checked !== false);
+    displayColumns () {
+      return this.tableKey.filter((col) => col.checked !== false)
     },
-    dataLength() {
-      return this.tableData.length;
+    dataLength () {
+      return this.tableData.length
     },
     // 判断是否需要显示高级筛选按钮
-    needAdvancedSearch() {
+    needAdvancedSearch () {
       // 当总搜索字段数量大于4个时显示高级筛选
       const totalFields =
-        this.searchFields.basic.length + this.searchFields.advanced.length;
-      return totalFields > 4;
+        this.searchFields.basic.length + this.searchFields.advanced.length
+      return totalFields > 4
     },
     // 获取实际显示的基础搜索字段
-    displayBasicFields() {
+    displayBasicFields () {
       // 如果不需要高级筛选，显示所有字段
       if (!this.needAdvancedSearch) {
-        return [...this.searchFields.basic, ...this.searchFields.advanced];
+        return [...this.searchFields.basic, ...this.searchFields.advanced]
       }
       // 否则只显示基础字段
-      return this.searchFields.basic;
+      return this.searchFields.basic
     },
     // 获取高级搜索字段
-    displayAdvancedFields() {
-      return this.searchFields.advanced;
+    displayAdvancedFields () {
+      return this.searchFields.advanced
     },
-    tableMaxHeight() {
+    tableMaxHeight () {
       // 始终返回最大高度（9行 + 表头）
       return (
         this.tableHeightConfig.headerHeight +
         this.tableHeightConfig.maxRows * this.tableHeightConfig.rowHeight
-      );
-    },
+      )
+    }
   },
   watch: {
     currentManagerId: {
-      handler(newVal) {
+      handler (newVal) {
         if (newVal) {
-          this.queryData.managerId = newVal;
-          this.fetchTableData();
+          this.queryData.managerId = newVal
+          this.fetchTableData()
         }
       },
-      immediate: true,
-    },
+      immediate: true
+    }
   },
-  mounted() {
-    this.fetchTableData();
+  mounted () {
+    this.fetchTableData()
   },
   methods: {
     // 获取流水列表数据
-    async fetchTableData() {
-      this.loading = true;
+    async fetchTableData () {
+      this.loading = true
       try {
         // 模拟API调用延迟
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        await new Promise(resolve => setTimeout(resolve, 500))
+
         // 使用模拟数据
-        let filteredData = [...this.mockData];
-        
+        let filteredData = [...this.mockData]
+
         // 应用筛选条件
         if (this.queryData.flowNo) {
-          filteredData = filteredData.filter(item => 
+          filteredData = filteredData.filter(item =>
             item.flowNo.includes(this.queryData.flowNo.trim())
-          );
+          )
         }
         if (this.queryData.flowType) {
-          filteredData = filteredData.filter(item => 
+          filteredData = filteredData.filter(item =>
             item.flowType == this.queryData.flowType
-          );
+          )
         }
         if (this.queryData.status) {
-          filteredData = filteredData.filter(item => 
+          filteredData = filteredData.filter(item =>
             item.status == this.queryData.status
-          );
+          )
         }
         if (this.queryData.accountType) {
-          filteredData = filteredData.filter(item => 
+          filteredData = filteredData.filter(item =>
             item.accountType == this.queryData.accountType
-          );
+          )
         }
         if (this.queryData.counterparty) {
-          filteredData = filteredData.filter(item => 
+          filteredData = filteredData.filter(item =>
             item.counterparty.includes(this.queryData.counterparty.trim())
-          );
+          )
         }
         if (this.queryData.amountMin) {
-          filteredData = filteredData.filter(item => 
+          filteredData = filteredData.filter(item =>
             item.amount >= parseFloat(this.queryData.amountMin)
-          );
+          )
         }
         if (this.queryData.amountMax) {
-          filteredData = filteredData.filter(item => 
+          filteredData = filteredData.filter(item =>
             item.amount <= parseFloat(this.queryData.amountMax)
-          );
+          )
         }
         if (this.queryData.dateRange && this.queryData.dateRange.length === 2) {
-          const startDate = this.queryData.dateRange[0];
-          const endDate = this.queryData.dateRange[1];
+          const startDate = this.queryData.dateRange[0]
+          const endDate = this.queryData.dateRange[1]
           filteredData = filteredData.filter(item => {
-            const itemDate = item.transactionTime.split(' ')[0];
-            return itemDate >= startDate && itemDate <= endDate;
-          });
+            const itemDate = item.transactionTime.split(' ')[0]
+            return itemDate >= startDate && itemDate <= endDate
+          })
         }
-        
+
         // 分页处理
-        const start = (this.pageData.current - 1) * this.pageData.size;
-        const end = start + this.pageData.size;
-        this.tableData = this.formatTableData(filteredData.slice(start, end));
-        this.pageData.total = filteredData.length;
+        const start = (this.pageData.current - 1) * this.pageData.size
+        const end = start + this.pageData.size
+        this.tableData = this.formatTableData(filteredData.slice(start, end))
+        this.pageData.total = filteredData.length
       } catch (error) {
-        this.$message.error("获取资金流水数据失败");
-        console.error("获取资金流水数据失败:", error);
+        this.$message.error('获取资金流水数据失败')
+        console.error('获取资金流水数据失败:', error)
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
     // 格式化表格数据
-    formatTableData(data) {
+    formatTableData (data) {
       return data.map((item) => {
-        const flowTypeLabel = this.getFlowTypeLabel(item.flowType);
-        const statusLabel = this.getStatusLabel(item.status);
-        const accountTypeLabel = this.getAccountTypeLabel(item.accountType);
+        const flowTypeLabel = this.getFlowTypeLabel(item.flowType)
+        const statusLabel = this.getStatusLabel(item.status)
+        const accountTypeLabel = this.getAccountTypeLabel(item.accountType)
 
         return {
           ...item,
           flowTypeLabel,
           statusLabel,
-          accountTypeLabel,
-        };
-      });
+          accountTypeLabel
+        }
+      })
     },
 
     // 获取流水类型标签
-    getFlowTypeLabel(value) {
-      const item = this.FlowType.find((i) => i.value == value);
-      return item ? item.label : "-";
+    getFlowTypeLabel (value) {
+      const item = this.FlowType.find((i) => i.value == value)
+      return item ? item.label : '-'
     },
 
     // 获取状态标签
-    getStatusLabel(value) {
-      const item = this.FlowStatus.find((i) => i.value == value);
-      return item ? item.label : "-";
+    getStatusLabel (value) {
+      const item = this.FlowStatus.find((i) => i.value == value)
+      return item ? item.label : '-'
     },
 
     // 获取账户类型标签
-    getAccountTypeLabel(value) {
-      const item = this.AccountType.find((i) => i.value == value);
-      return item ? item.label : "-";
+    getAccountTypeLabel (value) {
+      const item = this.AccountType.find((i) => i.value == value)
+      return item ? item.label : '-'
     },
 
     // 获取账户图标
-    getAccountIcon(value) {
+    getAccountIcon (value) {
       const iconMap = {
-        1: "el-icon-bank-card",
-        2: "el-icon-mobile",
-        3: "el-icon-chat-dot-round",
-        4: "el-icon-wallet",
-      };
-      return iconMap[value] || "el-icon-wallet";
+        1: 'el-icon-bank-card',
+        2: 'el-icon-mobile',
+        3: 'el-icon-chat-dot-round',
+        4: 'el-icon-wallet'
+      }
+      return iconMap[value] || 'el-icon-wallet'
     },
 
     // 获取账户标签类型
-    getAccountTagType(value) {
+    getAccountTagType (value) {
       const typeMap = {
-        1: "primary",
-        2: "success",
-        3: "warning",
-        4: "info",
-      };
-      return typeMap[value] || "info";
+        1: 'primary',
+        2: 'success',
+        3: 'warning',
+        4: 'info'
+      }
+      return typeMap[value] || 'info'
     },
 
     // 格式化金额
-    formatAmount(amount) {
-      if (!amount) return "0.00";
+    formatAmount (amount) {
+      if (!amount) return '0.00'
       return parseFloat(amount).toLocaleString('zh-CN', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-      });
+      })
     },
 
     // 查询 - 修改这个方法来支持树形选择参数
-    handleSearch() {
-      this.pageData.current = 1;
-      this.fetchTableData();
+    handleSearch () {
+      this.pageData.current = 1
+      this.fetchTableData()
     },
 
     // 新增方法：带树形选择参数的数据获取
-    async fetchTableDataWithTreeSelection() {
+    async fetchTableDataWithTreeSelection () {
       // 直接调用fetchTableData，因为我们使用模拟数据
-      this.fetchTableData();
+      this.fetchTableData()
     },
 
     // 重置
-    handleReset() {
+    handleReset () {
       this.queryData = {
-        flowNo: "",
-        flowType: "",
-        status: "",
-        accountType: "",
-        counterparty: "",
+        flowNo: '',
+        flowType: '',
+        status: '',
+        accountType: '',
+        counterparty: '',
         dateRange: [],
-        accountNo: "",
-        amountMin: "",
-        amountMax: "",
-        managerId: "",
-      };
-      this.showAdvanced = false;
-      this.handleSearch();
+        accountNo: '',
+        amountMin: '',
+        amountMax: '',
+        managerId: ''
+      }
+      this.showAdvanced = false
+      this.handleSearch()
     },
 
     // 处理顶部下拉命令
-    handleCommand(command) {
+    handleCommand (command) {
       switch (command) {
-        case "export":
-          this.handleExport();
-          break;
-        case "import":
-          this.$message.info("导入功能开发中...");
-          break;
-        case "batch":
-          this.$message.info("批量操作功能开发中...");
-          break;
+        case 'export':
+          this.handleExport()
+          break
+        case 'import':
+          this.$message.info('导入功能开发中...')
+          break
+        case 'batch':
+          this.$message.info('批量操作功能开发中...')
+          break
       }
     },
 
     // 处理表格下拉命令
-    handleTableCommand(command, row) {
+    handleTableCommand (command, row) {
       switch (command) {
-        case "cancel":
-          this.handleCancel(row);
-          break;
-        case "print":
-          this.handlePrint(row);
-          break;
-        case "copy":
-          this.handleCopy(row);
-          break;
+        case 'cancel':
+          this.handleCancel(row)
+          break
+        case 'print':
+          this.handlePrint(row)
+          break
+        case 'copy':
+          this.handleCopy(row)
+          break
       }
     },
 
     // 新增流水
-    handleAdd() {
+    handleAdd () {
       this.editForm = {
-        id: "",
-        flowType: "",
-        amount: "",
-        accountType: "",
-        accountNo: "",
-        counterparty: "",
-        transactionTime: "",
-        remark: "",
-        managerId: "",
-      };
-      this.dialogVisible = true;
+        id: '',
+        flowType: '',
+        amount: '',
+        accountType: '',
+        accountNo: '',
+        counterparty: '',
+        transactionTime: '',
+        remark: '',
+        managerId: ''
+      }
+      this.dialogVisible = true
       this.$nextTick(() => {
-        this.$refs.editForm && this.$refs.editForm.clearValidate();
-      });
+        this.$refs.editForm && this.$refs.editForm.clearValidate()
+      })
     },
 
     // 查看详情
-    handleViewDetail(row) {
+    handleViewDetail (row) {
       this.$alert(`
         <div style="text-align: left;">
           <p><strong>流水编号：</strong>${row.flowNo}</p>
@@ -1033,53 +1033,53 @@ export default {
       `, '流水详情', {
         dangerouslyUseHTMLString: true,
         confirmButtonText: '确定'
-      });
+      })
     },
 
     // 账户点击
-    handleAccountClick(row) {
-      this.$message.info(`查看账户详情: ${this.getAccountTypeLabel(row.accountType)} (${row.accountNo})`);
+    handleAccountClick (row) {
+      this.$message.info(`查看账户详情: ${this.getAccountTypeLabel(row.accountType)} (${row.accountNo})`)
     },
 
     // 取消流水
-    async handleCancel(row) {
+    async handleCancel (row) {
       if (row.status !== 1) {
-        this.$message.warning("只能取消处理中的流水");
-        return;
+        this.$message.warning('只能取消处理中的流水')
+        return
       }
 
       try {
         await this.$confirm(
           `确定要取消流水"${row.flowNo}"吗？`,
-          "提示",
+          '提示',
           {
-            confirmButtonText: "确定",
-            cancelButtonText: "取消",
-            type: "warning",
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
           }
-        );
+        )
 
         // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
         // 更新模拟数据中的状态
-        const index = this.mockData.findIndex(item => item.id === row.id);
+        const index = this.mockData.findIndex(item => item.id === row.id)
         if (index !== -1) {
-          this.mockData[index].status = 3; // 设置为失败状态
+          this.mockData[index].status = 3 // 设置为失败状态
         }
 
-        this.$message.success("流水取消成功");
-        this.fetchTableData();
+        this.$message.success('流水取消成功')
+        this.fetchTableData()
       } catch (error) {
-        if (error !== "cancel") {
-          this.$message.error("取消流水失败");
-          console.error("取消失败:", error);
+        if (error !== 'cancel') {
+          this.$message.error('取消流水失败')
+          console.error('取消失败:', error)
         }
       }
     },
 
     // 打印凭证
-    handlePrint(row) {
+    handlePrint (row) {
       // 模拟打印流水凭证
       const printContent = `
         资金流水凭证
@@ -1094,9 +1094,9 @@ export default {
         余额：¥${this.formatAmount(row.balance)}
         备注：${row.remark || '-'}
         ================
-      `;
-      
-      const printWindow = window.open('', '_blank');
+      `
+
+      const printWindow = window.open('', '_blank')
       printWindow.document.write(`
         <html>
           <head>
@@ -1110,47 +1110,47 @@ export default {
             <pre>${printContent}</pre>
           </body>
         </html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
+      `)
+      printWindow.document.close()
+      printWindow.print()
     },
 
     // 复制流水
-    handleCopy(row) {
+    handleCopy (row) {
       this.editForm = {
-        id: "",
+        id: '',
         flowType: row.flowType,
         amount: row.amount,
         accountType: row.accountType,
         accountNo: row.accountNo,
         counterparty: row.counterparty,
-        transactionTime: "",
+        transactionTime: '',
         remark: `复制自 ${row.flowNo}`,
-        managerId: row.managerId,
-      };
-      this.dialogVisible = true;
+        managerId: row.managerId
+      }
+      this.dialogVisible = true
       this.$nextTick(() => {
-        this.$refs.editForm && this.$refs.editForm.clearValidate();
-      });
+        this.$refs.editForm && this.$refs.editForm.clearValidate()
+      })
     },
 
     // 保存
-    async handleSave() {
+    async handleSave () {
       this.$refs.editForm.validate(async (valid) => {
         if (valid) {
-          this.submitting = true;
+          this.submitting = true
           try {
             // 模拟API调用
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
             if (this.editForm.id) {
               // 编辑 - 更新模拟数据
-              const index = this.mockData.findIndex(item => item.id === this.editForm.id);
+              const index = this.mockData.findIndex(item => item.id === this.editForm.id)
               if (index !== -1) {
                 this.mockData[index] = {
                   ...this.mockData[index],
-                  ...this.editForm,
-                };
+                  ...this.editForm
+                }
               }
             } else {
               // 新增 - 添加到模拟数据
@@ -1160,54 +1160,54 @@ export default {
                 flowNo: `FL${new Date().toISOString().slice(0, 10).replace(/-/g, '')}${String(this.mockData.length + 1).padStart(4, '0')}`,
                 status: 1, // 默认处理中
                 balance: 10000.00, // 模拟余额
-                createTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
-              };
-              this.mockData.unshift(newFlow);
+                createTime: new Date().toISOString().slice(0, 19).replace('T', ' ')
+              }
+              this.mockData.unshift(newFlow)
             }
 
-            this.$message.success(this.editForm.id ? "修改成功" : "新增成功");
-            this.dialogVisible = false;
-            this.fetchTableData();
+            this.$message.success(this.editForm.id ? '修改成功' : '新增成功')
+            this.dialogVisible = false
+            this.fetchTableData()
           } catch (error) {
-            this.$message.error("操作失败");
-            console.error("保存失败:", error);
+            this.$apiError.notify(error, '操作失败')
+            console.error('保存失败:', error)
           } finally {
-            this.submitting = false;
+            this.submitting = false
           }
         }
-      });
+      })
     },
 
     // 导出数据
-    handleExport() {
+    handleExport () {
       if (this.selectedData.length === 0) {
-        this.$message.warning("请先选择要导出的数据");
-        return;
+        this.$message.warning('请先选择要导出的数据')
+        return
       }
-      this.$message.info("导出功能开发中...");
+      this.$message.info('导出功能开发中...')
     },
 
     // 选择变化
-    handleSelectionChange(selection) {
-      this.selectedData = selection;
+    handleSelectionChange (selection) {
+      this.selectedData = selection
     },
 
     // 分页大小变化
-    handleSizeChange(val) {
-      this.pageData.size = val;
-      this.pageData.current = 1;
+    handleSizeChange (val) {
+      this.pageData.size = val
+      this.pageData.current = 1
       // 分页变化时不传递树形选择参数，使用普通的 fetchTableData
-      this.fetchTableData();
+      this.fetchTableData()
     },
 
     // 当前页变化
-    handleCurrentChange(val) {
-      this.pageData.current = val;
+    handleCurrentChange (val) {
+      this.pageData.current = val
       // 分页变化时不传递树形选择参数，使用普通的 fetchTableData
-      this.fetchTableData();
-    },
-  },
-};
+      this.fetchTableData()
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1242,7 +1242,7 @@ export default {
 .fund-account-link {
   cursor: pointer;
   color: #409eff;
-  
+
   &:hover {
     text-decoration: underline;
   }

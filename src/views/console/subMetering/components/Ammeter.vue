@@ -72,12 +72,12 @@ export default {
   props: {
     serial: {
       type: [String, Number],
-      default() {
+      default () {
         return ''
       }
     }
   },
-  data() {
+  data () {
     return {
       queryData: {
         serial: '',
@@ -136,7 +136,7 @@ export default {
   },
   watch: {
     serial: {
-      handler: function(val, oldVal) {
+      handler: function (val, oldVal) {
         if (val && val !== oldVal) {
           this.queryData.serial = val
           this.onSearch()
@@ -145,14 +145,14 @@ export default {
       immediate: true
     }
   },
-  created() {
+  created () {
     this.elecLable = {}
     this.elecRead.forEach(item => {
       this.elecLable[item.value] = item.label
     })
   },
   methods: {
-    changeElec(val) {
+    changeElec (val) {
       if (val.length) {
         this.queryData.timeRange = [
           moment().format('YYYY-MM-DD') + ' 00:00:00',
@@ -160,7 +160,7 @@ export default {
         ]
       }
     },
-    onSearch() {
+    onSearch () {
       if (!this.queryData.serial) {
         this.$message.warning('请输入序列号')
         return
@@ -171,7 +171,7 @@ export default {
       }
       this.getElecData()
     },
-    async getElecData() {
+    async getElecData () {
       try {
         const query = {
           endTime: this.queryData.timeRange ? this.queryData.timeRange[1] : '',
@@ -185,7 +185,7 @@ export default {
         this.$message.error('获取电力数据失败')
       }
     },
-    async setElecData(data) {
+    async setElecData (data) {
       const timeArr = []
       let seriesData = []
       const dataObj = {
@@ -243,7 +243,7 @@ export default {
       if (this.queryData.timeRange[1] !== timeArr[timeArr.length - 1]) {
         xAxisData.push(this.queryData.timeRange[1])
       }
-      
+
       if (this.$refs.ElectricChart) {
         this.$refs.ElectricChart.getElectricData(seriesData, xAxisData)
       }

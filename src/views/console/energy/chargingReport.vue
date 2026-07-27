@@ -3,15 +3,15 @@
     <!-- 筛选器 -->
     <div class="filter-container">
       <div class="filter-item date-filter">
-        <label class="filter-label">统计时间</label>
+        <label class="filter-label">{{ $t('chargingReport.filterStatPeriod') }}</label>
         <el-date-picker
           v-model="queryParams.dateRange"
           type="daterange"
           format="yyyy-MM-dd"
           value-format="yyyy-MM-dd"
           range-separator="-"
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
+          :start-placeholder="$t('chargingReport.phDateStart')"
+          :end-placeholder="$t('chargingReport.phDateEnd')"
           :picker-options="pickerOptions"
           class="custom-date-picker"
           @change="handleDateRangeChange"
@@ -20,21 +20,20 @@
 
       <!-- 租户选择 -->
       <div class="filter-item tenant-filter">
-        <label class="filter-label">选择租户</label>
+        <label class="filter-label">{{ $t('chargingReport.filterTenant') }}</label>
         <el-select
           v-model="queryParams.tenantId"
           filterable
-          placeholder="请选择租户"
+          :placeholder="$t('chargingReport.phTenant')"
           class="custom-select"
           :loading="tenantLoading"
           clearable
           @change="handleTenantChange"
         >
-          <!-- <el-option label="全部" :value="''" /> -->
           <el-option
             v-for="tenant in tenantList"
             :key="tenant.tenantId"
-            :label="tenant.name"
+            :label="tenantOptionLabel(tenant)"
             :value="tenant.tenantId"
           />
         </el-select>
@@ -42,21 +41,20 @@
 
       <!-- 空调选择 -->
       <div class="filter-item air-filter">
-        <label class="filter-label">选择空调</label>
+        <label class="filter-label">{{ $t('chargingReport.filterAir') }}</label>
         <el-select
           v-model="queryParams.airId"
           filterable
-          placeholder="请选择空调"
+          :placeholder="$t('chargingReport.phAir')"
           class="custom-select"
           :loading="airLoading"
           clearable
           @change="handleAirChange"
         >
-          <!-- <el-option label="全部" :value="''" /> -->
           <el-option
             v-for="air in airList"
             :key="air.airId"
-            :label="air.airName"
+            :label="airOptionLabel(air)"
             :value="air.airId"
           />
         </el-select>
@@ -79,8 +77,8 @@
               d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
             />
           </svg>
-          <span v-if="exportLoading">导出中...</span>
-          <span v-else>导出报表</span>
+          <span v-if="exportLoading">{{ $t('chargingReport.exportLoading') }}</span>
+          <span v-else>{{ $t('chargingReport.exportReport') }}</span>
         </button>
       </div>
     </div>
@@ -89,15 +87,15 @@
     <div
       class="main-content"
       v-loading="loading"
-      :element-loading-text="loadingText"
+      :element-loading-text="$t('chargingReport.loadingText')"
     >
       <!-- 数据表格区域 -->
       <div class="table-section">
         <div class="section-header">
-          <h2 class="section-title">空调用电</h2>
+          <h2 class="section-title">{{ $t('chargingReport.sectionTitle') }}</h2>
           <div class="section-tip">
             <i class="el-icon-info"></i>
-            <span>请选择日期后查看数据</span>
+            <span>{{ $t('chargingReport.sectionTip') }}</span>
           </div>
         </div>
 
@@ -119,13 +117,17 @@
           >
             <!-- 固定列 -->
             <el-table-column
-              label="外机系统名称"
+              :label="$t('chargingReport.colOutdoor')"
               prop="gateWay"
               width="150"
               show-overflow-tooltip
-            />
+            >
+              <template slot-scope="scope">
+                {{ $displayBizHybrid(scope.row.gateWay, 200) }}
+              </template>
+            </el-table-column>
             <el-table-column
-              label="计量电表"
+              :label="$t('chargingReport.colMeter')"
               prop="serial"
               width="150"
               show-overflow-tooltip
@@ -141,13 +143,13 @@
               </template>
             </el-table-column>
             <el-table-column
-              label="计量总电量(kwh)"
+              :label="$t('chargingReport.colMeterTotalKwh')"
               prop="meterUseElec"
               width="120"
               show-overflow-tooltip
             />
             <el-table-column
-              label="空调名称"
+              :label="$t('chargingReport.colAirName')"
               prop="airName"
               width="150"
               show-overflow-tooltip
@@ -158,12 +160,12 @@
                   :underline="false"
                   @click="handleAirJump(scope.row)"
                 >
-                  {{ scope.row.airName }}
+                  {{ $displayDynamicName(scope.row.airName, 200) }}
                 </el-link>
               </template>
             </el-table-column>
             <el-table-column
-              label="绑定信息"
+              :label="$t('chargingReport.colBindInfo')"
               prop="tenantName"
               width="150"
               show-overflow-tooltip
@@ -174,28 +176,40 @@
                   :underline="false"
                   @click="handleTenantJump(scope.row)"
                 >
-                  {{ scope.row.tenantName || '-' }}
+                  {{ bindNameDisplay(scope.row.tenantName) }}
                 </el-link>
               </template>
             </el-table-column>
 
             <!-- 汇总列组 -->
-            <el-table-column label="汇总" align="center">
-              <el-table-column label="总计(时长)" min-width="120" align="right">
+            <el-table-column :label="$t('chargingReport.summaryGroup')" align="center">
+              <el-table-column :label="$t('chargingReport.colTotalTime')" min-width="120" align="right">
                 <template slot-scope="scope">
                   <span style="color: #f56c6c">
                     {{ formatTime(scope.row.totalTime) }}
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="总电量(kwh)" min-width="120" align="right">
+              <el-table-column :label="$t('chargingReport.colTotalKwh')" min-width="120" align="right">
                 <template slot-scope="scope">
                   <span style="color: #f56c6c">
                     {{ formatNumber(scope.row.useElec) }}
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="总电费(元)" min-width="120" align="right">
+              <el-table-column
+                v-if="nanduSysElecEnabled"
+                :label="$t('chargingReport.colTotalSysKwh')"
+                min-width="130"
+                align="right"
+              >
+                <template slot-scope="scope">
+                  <span style="color: #f56c6c">
+                    {{ formatNumber(scope.row.sysElec) }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('chargingReport.colTotalFee')" min-width="120" align="right">
                 <template slot-scope="scope">
                   <span style="color: #f56c6c">
                     {{ formatNumber(scope.row.balance) }}
@@ -212,7 +226,7 @@
               align="center"
             >
               <el-table-column
-                :label="`${date.shortLabel}时长`"
+                :label="dateSubColLabel(date, 'time')"
                 min-width="110"
                 align="right"
               >
@@ -221,7 +235,7 @@
                 </template>
               </el-table-column>
               <el-table-column
-                :label="`${date.shortLabel}电量`"
+                :label="dateSubColLabel(date, 'elec')"
                 min-width="110"
                 align="right"
               >
@@ -230,7 +244,23 @@
                 </template>
               </el-table-column>
               <el-table-column
-                :label="`${date.shortLabel}电费`"
+                v-if="nanduSysElecEnabled"
+                min-width="132"
+                header-align="center"
+                align="right"
+              >
+                <template slot="header">
+                  <div class="sys-elec-col-head">
+                    <span class="sys-elec-col-head__date">{{ date.label }}</span>
+                    <span class="sys-elec-col-head__label">{{ $t('chargingReport.sysElecSubHead') }}</span>
+                  </div>
+                </template>
+                <template slot-scope="scope">
+                  {{ getDateValue(scope.row, date.value, "sysElec") }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                :label="dateSubColLabel(date, 'fee')"
                 min-width="110"
                 align="right"
               >
@@ -246,7 +276,7 @@
         <div class="pagination-container" v-if="tableData.length > 0">
           <el-pagination
             :current-page="pageData.current"
-            :page-sizes="[10, 20, 50, 100]"
+            :page-sizes="[10, 20, 50, 100, 500]"
             :page-size="pageData.size"
             :total="pageData.total"
             layout="total, sizes, prev, pager, next, jumper"
@@ -266,7 +296,7 @@
             <path d="M9 17V7m0 10l-3-3m3 3l3-3m5-1V7m0 10l-3-3m3 3l3-3" />
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
-          <p>暂无数据</p>
+          <p>{{ $t('chargingReport.emptyNoData') }}</p>
         </div>
       </div>
     </div>
@@ -274,27 +304,26 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
-import { listAirUse } from "@/api/airReport";
-import { getSimpleTenantList } from "@/api/useReport";
-import moment from "moment";
-import * as XLSX from "xlsx";
+import { mapGetters } from 'vuex'
+import { listAirUse } from '@/api/airReport'
+import { getSimpleTenantList } from '@/api/useReport'
+import moment from 'moment'
+import * as XLSX from 'xlsx'
 
 export default {
-  name: "AirReport",
-  data() {
+  name: 'AirReport',
+  data () {
     return {
       queryParams: {
         dateRange: [],
-        tenantId: "",
-        airId: "",
+        tenantId: '',
+        airId: ''
       },
       tenantList: [],
       airList: [],
       tenantLoading: false,
       airLoading: false,
       loading: false,
-      loadingText: "数据加载中...",
       exportLoading: false,
       tableData: [],
       dateColumns: [],
@@ -302,165 +331,208 @@ export default {
       pageData: {
         current: 1,
         size: 15,
-        total: 0,
+        total: 0
       },
-      spanArr: [], // 合并单元格数组
-      pickerOptions: {
-        shortcuts: [
-          {
-            text: "最近7天",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 6);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "最近15天",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 14);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "最近30天",
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 29);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "本月",
-            onClick(picker) {
-              const start = new Date();
-              start.setDate(1);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-          {
-            text: "上月",
-            onClick(picker) {
-              const start = new Date();
-              start.setMonth(start.getMonth() - 1);
-              start.setDate(1);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date();
-              end.setDate(0);
-              end.setHours(23, 59, 59, 999);
-              picker.$emit("pick", [start, end]);
-            },
-          },
-        ],
-        disabledDate(time) {
-          return time.getTime() > Date.now();
-        },
-      },
-    };
+      spanArr: [] // 合并单元格数组
+    }
   },
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
+    ...mapGetters('manager', ['currentManagerId', 'isAirSysElecManager']),
+    /** 是否展示系统总电量 / 分日 sysElec（由 getAirSysElecCoefKeys 白名单决定） */
+    nanduSysElecEnabled () {
+      return this.isAirSysElecManager(this.currentManagerId)
+    },
+    pickerOptions () {
+      const t = (k) => this.$t(`chargingReport.${k}`)
+      return {
+        shortcuts: [
+          {
+            text: t('pickerLast7'),
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 6)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('pickerLast15'),
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 14)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('pickerLast30'),
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 29)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('pickerThisMonth'),
+            onClick (picker) {
+              const start = new Date()
+              start.setDate(1)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: t('pickerLastMonth'),
+            onClick (picker) {
+              const start = new Date()
+              start.setMonth(start.getMonth() - 1)
+              start.setDate(1)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date()
+              end.setDate(0)
+              end.setHours(23, 59, 59, 999)
+              picker.$emit('pick', [start, end])
+            }
+          }
+        ],
+        disabledDate (time) {
+          return time.getTime() > Date.now()
+        }
+      }
+    }
   },
   watch: {
     currentManagerId: {
-      handler(val) {
-        if (val) {
-          this.initializeData();
+      async handler (val, oldVal) {
+        if (!val) return
+        // 切换管理方：清空租户/空调筛选与表格，避免沿用上一管理方的 ID（仍保留日期范围）
+        const switched =
+          oldVal !== undefined &&
+          oldVal !== null &&
+          String(oldVal) !== '' &&
+          String(oldVal) !== String(val)
+        if (switched) {
+          this.queryParams.tenantId = ''
+          this.queryParams.airId = ''
+          this.tableData = []
+          this.dateColumns = []
+          this.spanArr = []
+          this.pageData.current = 1
+          this.pageData.total = 0
         }
+        await this.initializeData()
       },
-      immediate: true,
-    },
+      immediate: true
+    }
   },
   methods: {
-    async initializeData() {
-      // 先设置默认日期范围
-      // this.setDefaultDateRange();
+    tenantOptionLabel (tenant) {
+      if (!tenant) return ''
+      const n = tenant.name != null && tenant.name !== '' ? String(tenant.name) : ''
+      return n ? `${this.$displayBizHybrid(n, 200)}` : String(tenant.tenantId != null ? tenant.tenantId : '')
+    },
+    airOptionLabel (air) {
+      if (!air) return ''
+      const n = air.airName != null && air.airName !== '' ? String(air.airName) : ''
+      return n ? `${this.$displayDynamicName(n, 200)}` : String(air.airId != null ? air.airId : '')
+    },
+    bindNameDisplay (name) {
+      if (name == null || name === '' || name === '-') return '-'
+      return this.$displayBizHybrid(String(name), 200)
+    },
+    dateSubColLabel (date, kind) {
+      const lab = date.shortLabel || date.label || ''
+      const suf =
+        kind === 'time'
+          ? this.$t('chargingReport.suffixDuration')
+          : kind === 'elec'
+            ? this.$t('chargingReport.suffixElec')
+            : kind === 'sysElec'
+              ? this.$t('chargingReport.suffixSysElec')
+              : this.$t('chargingReport.suffixFee')
+      return `${lab}${suf}`
+    },
 
+    async initializeData () {
       // 从路由获取参数
-      const { tenantId, airId, startDate, endDate, deviceName } = this.$route.query;
+      const { tenantId, airId, startDate, endDate, deviceName } = this.$route.query
 
-      // 如果有日期参数，覆盖默认值
       if (startDate && endDate) {
-        this.queryParams.dateRange = [startDate, endDate];
+        this.queryParams.dateRange = [startDate, endDate]
+      } else {
+        this.setDefaultDateRange()
       }
 
       // 获取租户列表
-      await this.getTenantList();
+      await this.getTenantList()
 
-      // 如果有租户参数，设置租户
       if (tenantId) {
-        const targetTenantId = Number(tenantId) || tenantId;
-        const tenant = this.tenantList.find(
-          (t) => t.tenantId == targetTenantId
-        );
-        if (tenant) {
-          this.queryParams.tenantId = tenant.tenantId;
-        }
+        const targetTenantId = Number(tenantId) || tenantId
+        const tenant = this.tenantList.find((t) => t.tenantId == targetTenantId)
+        if (tenant) this.queryParams.tenantId = tenant.tenantId
+      } else if (!this.queryParams.tenantId && this.tenantList && this.tenantList.length > 0) {
+        this.queryParams.tenantId = this.tenantList[0].tenantId
       }
 
       // 获取空调列表
-      await this.getAirList();
+      await this.getAirList()
 
-      // 如果有空调参数，设置空调
       if (airId) {
-        const targetAirId = Number(airId) || airId;
-        const air = this.airList.find((a) => a.airId == targetAirId);
+        const targetAirId = Number(airId) || airId
+        const air = this.airList.find((a) => a.airId == targetAirId)
         if (air) {
-          this.queryParams.airId = air.airId;
+          this.queryParams.airId = air.airId
         }
       } else if (deviceName) {
         // 如果没有airId但有deviceName，尝试通过名称匹配
-        const air = this.airList.find((a) => a.airName == deviceName);
+        const air = this.airList.find((a) => a.airName == deviceName)
         if (air) {
-          this.queryParams.airId = air.airId;
+          this.queryParams.airId = air.airId
         }
+      } else if (!this.queryParams.airId && this.airList && this.airList.length > 0) {
+        this.queryParams.airId = this.airList[0].airId
       }
 
       // 查询数据
-      this.fetchData();
+      this.fetchData()
     },
 
-    setDefaultDateRange() {
-      // 默认查询近7天
+    setDefaultDateRange () {
       this.queryParams.dateRange = [
-        moment().subtract(6, "days").format("YYYY-MM-DD"),
-        moment().format("YYYY-MM-DD"),
-      ];
+        moment().startOf('month').format('YYYY-MM-DD'),
+        moment().format('YYYY-MM-DD')
+      ]
     },
 
-    async getTenantList() {
-      this.tenantLoading = true;
+    async getTenantList () {
+      this.tenantLoading = true
       try {
         const { data } = await getSimpleTenantList({
           managerId: this.currentManagerId,
-          tenantStatus: 0,
-        });
-        this.tenantList = data || [];
+          tenantStatus: 0
+        })
+        this.tenantList = data || []
       } catch (error) {
-        this.$message.error("获取租户列表失败");
-        console.error("获取租户列表失败:", error);
+        this.$apiError.notify(error, this.$t('chargingReport.msgTenantListFail'))
+        console.error('获取租户列表失败:', error)
       } finally {
-        this.tenantLoading = false;
+        this.tenantLoading = false
       }
     },
 
-    async getAirList() {
-      this.airLoading = true;
+    async getAirList () {
+      this.airLoading = true
       try {
         // ⭐ 添加日期范围检查
         if (
           !this.queryParams.dateRange ||
           this.queryParams.dateRange.length !== 2
         ) {
-          this.airList = [];
-          return;
+          this.airList = []
+          return
         }
 
         const params = {
@@ -469,85 +541,85 @@ export default {
           endTime: this.queryParams.dateRange[1],
           page: {
             current: 1,
-            size: 200,
-          },
-        };
-
-        if (this.queryParams.tenantId) {
-          params.tenantId = this.queryParams.tenantId;
+            size: 200
+          }
         }
 
-        const { data } = await listAirUse(params);
+        if (this.queryParams.tenantId) {
+          params.tenantId = this.queryParams.tenantId
+        }
+
+        const { data } = await listAirUse(params)
 
         if (data && data.dataList) {
-          const airMap = new Map();
+          const airMap = new Map()
           data.dataList.forEach((item) => {
             if (item.airId && item.airName) {
               airMap.set(item.airId, {
                 airId: item.airId,
-                airName: item.airName,
-              });
+                airName: item.airName
+              })
             }
-          });
-          this.airList = Array.from(airMap.values());
+          })
+          this.airList = Array.from(airMap.values())
         } else {
-          this.airList = [];
+          this.airList = []
         }
       } catch (error) {
-        this.$message.error("获取空调列表失败");
-        console.error("获取空调列表失败:", error);
+        this.$apiError.notify(error, this.$t('chargingReport.msgAirListFail'))
+        console.error('获取空调列表失败:', error)
       } finally {
-        this.airLoading = false;
+        this.airLoading = false
       }
     },
 
-    handleDateRangeChange(val) {
+    handleDateRangeChange (val) {
       if (val && val.length === 2 && val[0] && val[1]) {
-        const [start, end] = val;
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000));
+        const [start, end] = val
+        const startDate = new Date(start)
+        const endDate = new Date(end)
+        const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000))
 
         // 限制最多选择31天
         if (diffDays > 30) {
-          this.$message.warning("日期最多只能选择31天");
+          this.$message.warning(this.$t('chargingReport.msgDateMax31'))
           const newEndDate = new Date(
             startDate.getTime() + 30 * 24 * 3600 * 1000
-          );
+          )
           this.queryParams.dateRange = [
             start,
-            moment(newEndDate).format("YYYY-MM-DD"),
-          ];
-          return;
+            moment(newEndDate).format('YYYY-MM-DD')
+          ]
+          return
         }
 
         // 日期变更时重新获取空调列表和数据
-        this.getAirList();
-        this.fetchData();
+        this.getAirList()
+        this.fetchData()
       }
     },
 
-    async handleTenantChange() {
+    async handleTenantChange () {
       // 租户变更时清空空调选择并重新获取空调列表和数据
-      this.queryParams.airId = "";
-      await this.getAirList();
-      this.fetchData();
+      this.queryParams.airId = ''
+      await this.getAirList()
+      this.fetchData()
     },
 
-    handleAirChange() {
+    handleAirChange () {
       // 空调变更时直接查询
-      this.fetchData();
+      this.fetchData()
     },
 
-    async fetchData() {
+    async fetchData () {
       if (
         !this.queryParams.dateRange ||
         this.queryParams.dateRange.length !== 2
       ) {
-        return;
+        return
       }
 
-      this.loading = true;
+      this.loading = true
       try {
         const params = {
           managerId: this.currentManagerId,
@@ -555,406 +627,419 @@ export default {
           endTime: this.queryParams.dateRange[1],
           page: {
             current: this.pageData.current,
-            size: this.pageData.size,
-          },
-        };
+            size: this.pageData.size
+          }
+        }
 
         if (this.queryParams.tenantId) {
-          params.tenantId = this.queryParams.tenantId;
+          params.tenantId = this.queryParams.tenantId
         }
 
         if (this.queryParams.airId) {
-          params.airId = this.queryParams.airId;
+          params.airId = this.queryParams.airId
         }
 
-        const { data } = await listAirUse(params);
+        const { data } = await listAirUse(params)
 
         if (data && data.dataList) {
-          this.processTableData(data.dataList);
-          this.pageData.total = data.total || 0;
+          this.processTableData(data.dataList)
+          this.pageData.total = data.total || 0
         } else {
-          this.tableData = [];
-          this.dateColumns = [];
-          this.pageData.total = 0;
+          this.tableData = []
+          this.dateColumns = []
+          this.pageData.total = 0
         }
       } catch (error) {
-        this.$message.error("获取数据失败");
-        console.error("获取数据失败:", error);
+        this.$apiError.notify(error, this.$t('chargingReport.msgFetchFail'))
+        console.error('获取数据失败:', error)
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
     // 处理表格数据
-    processTableData(dataList) {
+    processTableData (dataList) {
       // 生成日期列
-      this.generateDateColumns();
+      this.generateDateColumns()
 
       // 处理表格数据
       this.tableData = dataList.map((item) => {
         // 创建日期数据映射
-        const dateDataMap = {};
+        const dateDataMap = {}
         if (item.settleAirDateDtoList && item.settleAirDateDtoList.length > 0) {
           item.settleAirDateDtoList.forEach((dateItem) => {
             dateDataMap[dateItem.date] = {
               totalTime: dateItem.totalTime || 0,
               useElec: dateItem.useElec || 0,
               balance: dateItem.balance || 0,
-            };
-          });
+              sysElec: dateItem.sysElec != null && dateItem.sysElec !== '' ? Number(dateItem.sysElec) : null
+            }
+          })
         }
 
         return {
           gatewayId: item.gatewayId,
-          gateWay: item.gateWay || "-",
-          serial: item.serial || "-",
+          gateWay: item.gateWay || '-',
+          serial: item.serial || '-',
           meterUseElec: item.meterUseElec || 0,
           tenantName: item.tenantName,
           tenantId: item.tenantId,
           bindType: item.bindType,
           airId: item.airId,
-          airName: item.airName || "-",
+          airName: item.airName || '-',
           totalTime: item.totalTime || 0,
           useElec: item.useElec || 0,
+          sysElec: item.sysElec != null && item.sysElec !== '' ? Number(item.sysElec) : null,
           balance: item.balance || 0,
-          dateDataMap,
-        };
-      });
+          dateDataMap
+        }
+      })
 
-      this.calculateSpanData();
+      this.calculateSpanData()
     },
 
-    calculateSpanData() {
-      this.spanArr = [];
-      let contactDot = 0;
+    calculateSpanData () {
+      this.spanArr = []
+      let contactDot = 0
       this.tableData.forEach((item, index) => {
         if (index === 0) {
-          this.spanArr.push(1);
-          contactDot = 0;
+          this.spanArr.push(1)
+          contactDot = 0
         } else {
           if (
             item.gatewayId &&
             this.tableData[index - 1].gatewayId &&
             item.gatewayId === this.tableData[index - 1].gatewayId
           ) {
-            this.spanArr[contactDot] += 1;
-            this.spanArr.push(0);
+            this.spanArr[contactDot] += 1
+            this.spanArr.push(0)
           } else {
-            this.spanArr.push(1);
-            contactDot = index;
+            this.spanArr.push(1)
+            contactDot = index
           }
         }
-      });
+      })
     },
 
-    objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+    objectSpanMethod ({ row, column, rowIndex, columnIndex }) {
       if (columnIndex === 0 || columnIndex === 1 || columnIndex === 2) {
-        const _row = this.spanArr[rowIndex];
-        const _col = _row > 0 ? 1 : 0;
+        const _row = this.spanArr[rowIndex]
+        const _col = _row > 0 ? 1 : 0
         return {
           rowspan: _row,
-          colspan: _col,
-        };
+          colspan: _col
+        }
       }
     },
 
-    handleMeterJump(row) {
-      if (!row.serial) return;
+    handleMeterJump (row) {
+      if (!row.serial) return
       this.$router.push({
-        path: "/device/electricity",
+        path: '/device/electricity',
         query: {
           serial: row.serial,
-          autoSearch: "true",
-        },
-      });
+          autoSearch: 'true'
+        }
+      })
     },
 
-    handleAirJump(row) {
-      if (!row.airId) return;
+    handleAirJump (row) {
+      if (!row.airId) return
       this.$router.push({
-        path: "/device/conditioning",
+        path: '/device/conditioning',
         query: {
-          deviceName: row.airName,
-        },
-      });
+          deviceName: row.airName
+        }
+      })
     },
 
-    handleTenantJump(row) {
-      if (!row.tenantId) return;
-      
+    handleTenantJump (row) {
+      if (!row.tenantId) return
+
       if (row.bindType === 2) {
         this.$router.push({
-          path: "/metering/fee/electricitySharing/detail",
+          path: '/metering/fee/electricitySharing/detail',
           query: {
-            id: row.tenantId,
-          },
-        });
+            id: row.tenantId
+          }
+        })
       } else {
         this.$router.push({
-          path: "/metering/tenant/detail/" + row.tenantId,
-        });
+          path: '/metering/tenant/detail/' + row.tenantId
+        })
       }
     },
 
     // 生成日期列配置
-    generateDateColumns() {
+    generateDateColumns () {
       if (
         !this.queryParams.dateRange ||
         this.queryParams.dateRange.length !== 2
       ) {
-        this.dateColumns = [];
-        return;
+        this.dateColumns = []
+        return
       }
 
-      const [start, end] = this.queryParams.dateRange;
-      const startDate = moment(start);
-      const endDate = moment(end);
-      const columns = [];
+      const [start, end] = this.queryParams.dateRange
+      const startDate = moment(start)
+      const endDate = moment(end)
+      const columns = []
 
-      let current = startDate.clone();
+      const current = startDate.clone()
       while (current.isSameOrBefore(endDate)) {
         columns.push({
-          value: current.format("YYYY-MM-DD"),
-          label: current.format("MM/DD"),
-          shortLabel: current.format("MM/DD"),
-        });
-        current.add(1, "day");
+          value: current.format('YYYY-MM-DD'),
+          label: current.format('MM/DD'),
+          shortLabel: current.format('MM/DD')
+        })
+        current.add(1, 'day')
       }
 
-      this.dateColumns = columns;
+      this.dateColumns = columns
     },
 
     // 获取指定日期的数据
-    getDateValue(row, date, type) {
+    getDateValue (row, date, type) {
       // 如果没有该日期的数据,返回0
       if (!row.dateDataMap || !row.dateDataMap[date]) {
-        return type === "time" ? "0.00h" : "0.00";
+        return type === 'time' ? `0.00${this.$t('chargingReport.unitHours')}` : '0.00'
       }
 
-      const dateData = row.dateDataMap[date];
+      const dateData = row.dateDataMap[date]
 
       switch (type) {
-        case "time":
-          return this.formatTime(dateData.totalTime);
-        case "elec":
-          return this.formatNumber(dateData.useElec);
-        case "balance":
-          return this.formatNumber(dateData.balance);
+        case 'time':
+          return this.formatTime(dateData.totalTime)
+        case 'elec':
+          return this.formatNumber(dateData.useElec)
+        case 'sysElec':
+          return this.formatNumber(dateData.sysElec)
+        case 'balance':
+          return this.formatNumber(dateData.balance)
         default:
-          return "0.00";
+          return '0.00'
       }
     },
 
     // ==================== 导出功能 ====================
-    handleExport() {
+    handleExport () {
       if (!this.tableData || this.tableData.length === 0) {
-        this.$message.warning("暂无数据可导出");
-        return;
+        this.$message.warning(this.$t('chargingReport.msgExportEmpty'))
+        return
       }
 
-      this.exportLoading = true;
+      this.exportLoading = true
 
       setTimeout(() => {
         try {
-          this.exportAirReport();
-          this.$message.success("导出成功！");
+          this.exportAirReport()
+          this.$message.success(this.$t('chargingReport.msgExportOk'))
         } catch (error) {
-          console.error("导出失败:", error);
-          this.$message.error(`导出失败: ${error.message || "请重试"}`);
+          console.error('导出失败:', error)
+          this.$message.error(`${this.$t('chargingReport.msgExportFail')}: ${error.message || this.$t('chargingReport.msgExportRetry')}`)
         } finally {
-          this.exportLoading = false;
+          this.exportLoading = false
         }
-      }, 100);
+      }, 100)
     },
 
-    exportAirReport() {
-      const tenant = this.tenantList.find(
-        (t) => t.tenantId === this.queryParams.tenantId
-      );
-      const tenantName = tenant ? tenant.name : "全部";
+    exportAirReport () {
+      const t = (k) => this.$t(`chargingReport.${k}`)
+      const sys = this.nanduSysElecEnabled
+      const summarySpan = sys ? 4 : 3
+      const dateSpan = sys ? 4 : 3
 
-      const air = this.airList.find((a) => a.airId === this.queryParams.airId);
-      const airName = air ? air.airName : "全部";
+      const tenant = this.tenantList.find(
+        (x) => x.tenantId === this.queryParams.tenantId
+      )
+      const tenantName = tenant
+        ? (tenant.name ? this.$displayBizHybrid(String(tenant.name), 200) : String(tenant.tenantId))
+        : t('tenantAll')
+
+      const air = this.airList.find((a) => a.airId === this.queryParams.airId)
+      const airName = air
+        ? (air.airName ? this.$displayDynamicName(String(air.airName), 200) : String(air.airId))
+        : t('airAll')
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}  |  租户: ${tenantName}  |  空调: ${airName}`,
-      ];
+        this.$t('chargingReport.exportFilterLine', {
+          start: this.queryParams.dateRange[0],
+          end: this.queryParams.dateRange[1],
+          tenant: tenantName,
+          air: airName
+        })
+      ]
 
-      // 构建表头
       const header1 = [
-        "外机系统名称",
-        "计量电表",
-        "计量总电量(kwh)",
-        "空调名称",
-        "绑定信息",
-        "汇总",
-        "",
-        "",
-        ...this.dateColumns.flatMap((date) => [date.label, "", ""]),
-      ];
+        t('expColOutdoor'),
+        t('expColMeter'),
+        t('expColMeterTotal'),
+        t('expColAirName'),
+        t('expColBind'),
+        t('expSummary'),
+        ...Array.from({ length: summarySpan - 1 }, () => ''),
+        ...this.dateColumns.flatMap((date) => [
+          date.label,
+          ...Array.from({ length: dateSpan - 1 }, () => '')
+        ])
+      ]
+
+      const summaryHeader2 = sys
+        ? [t('expTotalTime'), t('expTotalKwh'), t('expTotalSysKwh'), t('expTotalFee')]
+        : [t('expTotalTime'), t('expTotalKwh'), t('expTotalFee')]
 
       const header2 = [
-        "",
-        "",
-        "",
-        "",
-        "",
-        "总计(时长)",
-        "总计(电量)",
-        "总计(电费)",
-        ...this.dateColumns.flatMap((date) => [
-          `${date.shortLabel}时长`,
-          `${date.shortLabel}电量`,
-          `${date.shortLabel}电费`,
-        ]),
-      ];
+        '',
+        '',
+        '',
+        '',
+        '',
+        ...summaryHeader2,
+        ...this.dateColumns.flatMap((date) => {
+          const parts = [
+            this.dateSubColLabel(date, 'time'),
+            this.dateSubColLabel(date, 'elec')
+          ]
+          if (sys) parts.push(this.dateSubColLabel(date, 'sysElec'))
+          parts.push(this.dateSubColLabel(date, 'fee'))
+          return parts
+        })
+      ]
 
-      // 构建数据行
       const dataRows = this.tableData.map((row) => {
         const baseData = [
-          row.gateWay,
+          this.$displayBizHybrid(row.gateWay || '', 200),
           row.serial,
           this.formatExportNumber(row.meterUseElec),
-          row.airName,
-          row.tenantName || "-",
+          this.$displayDynamicName(row.airName || '', 200),
+          row.tenantName ? this.$displayBizHybrid(String(row.tenantName), 200) : '-',
           this.formatTime(row.totalTime),
           this.formatExportNumber(row.useElec),
-          this.formatExportNumber(row.balance),
-        ];
+          ...(sys ? [this.formatExportNumber(row.sysElec)] : []),
+          this.formatExportNumber(row.balance)
+        ]
 
         const dateData = this.dateColumns.flatMap((date) => {
           if (!row.dateDataMap || !row.dateDataMap[date.value]) {
-            return ["", "", ""];
+            return Array.from({ length: dateSpan }, () => '')
           }
-          const data = row.dateDataMap[date.value];
-          return [
+          const data = row.dateDataMap[date.value]
+          const parts = [
             this.formatTime(data.totalTime),
-            this.formatExportNumber(data.useElec),
-            this.formatExportNumber(data.balance),
-          ];
-        });
+            this.formatExportNumber(data.useElec)
+          ]
+          if (sys) parts.push(this.formatExportNumber(data.sysElec))
+          parts.push(this.formatExportNumber(data.balance))
+          return parts
+        })
 
-        return [...baseData, ...dateData];
-      });
+        return [...baseData, ...dateData]
+      })
 
-      const wsData = [filterRow, [], header1, header2, ...dataRows];
+      const wsData = [filterRow, [], header1, header2, ...dataRows]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
-      // 设置列宽
       const colWidths = [
         { wch: 20 },
         { wch: 20 },
         { wch: 15 },
         { wch: 20 },
         { wch: 20 },
-        { wch: 14 },
-        { wch: 14 },
-        { wch: 14 },
-        { wch: 14 },
-        ...this.dateColumns.flatMap(() => [
-          { wch: 12 },
-          { wch: 12 },
-          { wch: 12 },
-        ]),
-      ];
-      ws["!cols"] = colWidths;
+        ...Array.from({ length: summarySpan }, () => ({ wch: 14 })),
+        ...this.dateColumns.flatMap(() =>
+          Array.from({ length: dateSpan }, () => ({ wch: 12 }))
+        )
+      ]
+      ws['!cols'] = colWidths
 
-      // 合并单元格
+      const firstDateCol = 5 + summarySpan
       const merges = [
-        // 筛选条件行
         { s: { r: 0, c: 0 }, e: { r: 0, c: header1.length - 1 } },
-        // 外机系统名称
         { s: { r: 2, c: 0 }, e: { r: 3, c: 0 } },
-        // 计量电表
         { s: { r: 2, c: 1 }, e: { r: 3, c: 1 } },
-        // 计量总电量
         { s: { r: 2, c: 2 }, e: { r: 3, c: 2 } },
-        // 空调名称
         { s: { r: 2, c: 3 }, e: { r: 3, c: 3 } },
-        // 绑定信息
         { s: { r: 2, c: 4 }, e: { r: 3, c: 4 } },
-        // 汇总列组
-        { s: { r: 2, c: 5 }, e: { r: 2, c: 7 } },
-      ];
+        { s: { r: 2, c: 5 }, e: { r: 2, c: 5 + summarySpan - 1 } }
+      ]
 
-      // 动态日期列组合并
       this.dateColumns.forEach((date, index) => {
-        const startCol = 8 + index * 3;
+        const startCol = firstDateCol + index * dateSpan
         merges.push({
           s: { r: 2, c: startCol },
-          e: { r: 2, c: startCol + 2 },
-        });
-      });
+          e: { r: 2, c: startCol + dateSpan - 1 }
+        })
+      })
 
-      ws["!merges"] = merges;
+      ws['!merges'] = merges
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "空调用电报表");
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('chargingReport.exportSheetName'))
 
-      const fileName = this.generateFileName("空调用电报表");
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(this.$t('chargingReport.exportFilePrefix'))
+      XLSX.writeFile(wb, fileName)
     },
 
-    generateFileName(prefix) {
-      const now = new Date();
+    generateFileName (prefix) {
+      const now = new Date()
       const timeStr =
         now.getFullYear() +
-        String(now.getMonth() + 1).padStart(2, "0") +
-        String(now.getDate()).padStart(2, "0") +
-        "_" +
-        String(now.getHours()).padStart(2, "0") +
-        String(now.getMinutes()).padStart(2, "0") +
-        String(now.getSeconds()).padStart(2, "0");
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0') +
+        '_' +
+        String(now.getHours()).padStart(2, '0') +
+        String(now.getMinutes()).padStart(2, '0') +
+        String(now.getSeconds()).padStart(2, '0')
 
-      return `${prefix}_${timeStr}.xlsx`;
+      return `${prefix}_${timeStr}.xlsx`
     },
 
-    formatExportNumber(num) {
-      if (num === undefined || num === null || num === "" || num === "-") {
-        return 0;
+    formatExportNumber (num) {
+      if (num === undefined || num === null || num === '' || num === '-') {
+        return 0
       }
 
-      const numValue = typeof num === "string" ? parseFloat(num) : num;
+      const numValue = typeof num === 'string' ? parseFloat(num) : num
 
       if (isNaN(numValue)) {
-        return 0;
+        return 0
       }
 
-      return numValue;
+      return numValue
     },
 
     // ==================== 格式化方法 ====================
-    formatNumber(num) {
-      if (num === undefined || num === null || num === "") {
-        return "0.00";
+    formatNumber (num) {
+      if (num === undefined || num === null || num === '') {
+        return '0.00'
       }
-      return Number(num).toFixed(2);
+      return Number(num).toFixed(2)
     },
 
     // 格式化时长（秒 -> 小时）
-    formatTime(seconds) {
-      if (seconds === undefined || seconds === null || seconds === "") {
-        return "0.00h";
+    formatTime (seconds) {
+      if (seconds === undefined || seconds === null || seconds === '') {
+        return `0.00${this.$t('chargingReport.unitHours')}`
       }
-      const hours = (seconds / 3600).toFixed(2);
-      return `${hours}h`;
+      const hours = (seconds / 3600).toFixed(2)
+      return `${hours}${this.$t('chargingReport.unitHours')}`
     },
 
     // 分页大小变化
-    handleSizeChange(val) {
-      this.pageData.size = val;
-      this.pageData.current = 1;
-      this.fetchData();
+    handleSizeChange (val) {
+      this.pageData.size = val
+      this.pageData.current = 1
+      this.fetchData()
     },
 
     // 当前页变化
-    handleCurrentChange(val) {
-      this.pageData.current = val;
-      this.fetchData();
-    },
-  },
-};
+    handleCurrentChange (val) {
+      this.pageData.current = val
+      this.fetchData()
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1124,6 +1209,31 @@ export default {
           background: #e8f4fd !important;
           color: #3b82f6;
           font-weight: 700;
+        }
+
+        // 系统电量子列表头：两行垂直居中，与表头其它列同色
+        .sys-elec-col-head {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
+          width: 100%;
+          margin: 0 auto;
+          line-height: 1.3;
+          color: #606266;
+
+          &__date {
+            font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
+          }
+
+          &__label {
+            font-weight: 600;
+            font-size: 12px;
+            white-space: nowrap;
+          }
         }
       }
     }

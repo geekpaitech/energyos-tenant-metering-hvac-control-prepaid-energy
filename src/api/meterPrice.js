@@ -2,12 +2,12 @@
 import request from '@/utils/request'
 
 // 新增电表方案
-export function meterPriceAdd(data) {
+export function meterPriceAdd (data) {
   return request({
     url: '/api/ebc-device/meterPrice/add',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -15,12 +15,12 @@ export function meterPriceAdd(data) {
 }
 
 // 设置方案启用状态
-export function meterPriceChangeEnableStatus(params) {
+export function meterPriceChangeEnableStatus (params) {
   return request({
     url: '/api/ebc-device/meterPrice/changeEnableStatus',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params
@@ -28,12 +28,12 @@ export function meterPriceChangeEnableStatus(params) {
 }
 
 // 查询电表方案列表
-export function meterPriceList(data) {
+export function meterPriceList (data) {
   return request({
     url: '/api/ebc-device/meterPrice/list',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -41,12 +41,12 @@ export function meterPriceList(data) {
 }
 
 // 修改电表方案
-export function meterPriceUpdate(data) {
+export function meterPriceUpdate (data) {
   return request({
     url: '/api/ebc-device/meterPrice/update',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -54,12 +54,12 @@ export function meterPriceUpdate(data) {
 }
 
 // 获取批量绑定电表列表
-export function meterPriceQueryPriceMeterEdit(params) {
+export function meterPriceQueryPriceMeterEdit (params) {
   return request({
     url: '/api/ebc-device/meterPrice/queryPriceMeterEdit',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params
@@ -67,12 +67,12 @@ export function meterPriceQueryPriceMeterEdit(params) {
 }
 
 // 根据id查询电表方案
-export function meterPriceQueryById(data) {
+export function meterPriceQueryById (data) {
   return request({
     url: '/api/ebc-device/meterPrice/queryById',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -80,12 +80,12 @@ export function meterPriceQueryById(data) {
 }
 
 // 批量绑定电表到方案
-export function meterPriceBatchBindPriceMeter(data) {
+export function meterPriceBatchBindPriceMeter (data) {
   return request({
     url: '/api/ebc-device/meterPrice/batchBindPriceMeter',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -93,12 +93,12 @@ export function meterPriceBatchBindPriceMeter(data) {
 }
 
 // 查询调价日志（分页）
-export function meterPriceLogPageMeterPriceLog(data) {
+export function meterPriceLogPageMeterPriceLog (data) {
   return request({
     url: '/api/ebc-content/meterPriceLog/pageMeterPriceLog',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -106,12 +106,12 @@ export function meterPriceLogPageMeterPriceLog(data) {
 }
 
 // 发送验证码（用于调价验证）
-export function authSendSmsCode(params) {
+export function authSendSmsCode (params) {
   return request({
     url: '/api/ebc-auth/auth/sendSmsCode',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params
@@ -119,14 +119,14 @@ export function authSendSmsCode(params) {
 }
 
 // 调价日志
-export function queryPriceLog(data) {
-    return request({
-      url: '/api/ebc-content/meterPriceLog/pageMeterPriceLog',
-      method: 'post',
-      headers: {
-        'userDeviceType': 'PC',
-        'Content-Type': 'application/json'
-      },
-      data
-    })
-  }
+export function queryPriceLog (data) {
+  return request({
+    url: '/api/ebc-content/meterPriceLog/pageMeterPriceLog',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}

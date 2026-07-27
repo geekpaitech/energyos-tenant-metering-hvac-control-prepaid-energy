@@ -3,15 +3,15 @@
     <!-- 顶部操作栏 -->
     <div class="dashboard-header">
       <div class="header-left">
-        <h1 class="dashboard-title">用电报表</h1>
+        <h1 class="dashboard-title">{{ $t('electricityReport.dashboardTitle') }}</h1>
 
         <!-- Tab切换 -->
         <div class="tab-switcher">
           <button :class="['tab-btn', { active: reportType === 'statistics' }]" @click="switchReportType('statistics')">
-            租户用电统计
+            {{ $t('electricityReport.tabStatistics') }}
           </button>
           <button :class="['tab-btn', { active: reportType === 'detail' }]" @click="switchReportType('detail')">
-            租户用电明细
+            {{ $t('electricityReport.tabDetail') }}
           </button>
         </div>
 
@@ -31,8 +31,8 @@
           <svg v-if="!exportLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
           </svg>
-          <span v-if="exportLoading">导出中...</span>
-          <span v-else>导出报表</span>
+          <span v-if="exportLoading">{{ $t('electricityReport.exportLoading') }}</span>
+          <span v-else>{{ $t('electricityReport.exportReport') }}</span>
         </button>
       </div>
     </div>
@@ -40,39 +40,63 @@
     <!-- 筛选器 -->
     <div class="filter-container">
       <div class="filter-item date-filter">
-        <label class="filter-label">统计时间</label>
+        <label class="filter-label">{{ $t('electricityReport.filterStatPeriod') }}</label>
         <el-date-picker v-model="queryParams.dateRange" :type="datePickerType" :format="dateFormat"
-          :value-format="dateValueFormat" range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间"
+          :value-format="dateValueFormat" range-separator="-" :start-placeholder="$t('electricityReport.phDateStart')" :end-placeholder="$t('electricityReport.phDateEnd')"
           :picker-options="currentPickerOptions" class="custom-date-picker" popper-class="elegant-date-picker"
           @change="handleDateRangeChange" />
       </div>
 
       <!-- 租户选择 -->
       <div class="filter-item tenant-filter">
-        <label class="filter-label">选择租户</label>
+        <label class="filter-label">{{ $t('electricityReport.filterTenant') }}</label>
         <!-- 单选 - 租户用电统计 -->
-        <el-select v-show="reportType === 'statistics'" v-model="queryParams.tenantId" filterable placeholder="请选择租户"
+        <el-select v-show="reportType === 'statistics'" v-model="queryParams.tenantId" filterable :placeholder="$t('electricityReport.phTenant')"
           class="custom-select" :loading="tenantLoading" @change="handleTenantChange">
           <el-option v-for="tenant in (switchDeviceDetail ? realTenantList : tenantList)" :key="tenant.tenantId"
-            :label="tenant.name" :value="tenant.tenantId" />
+            :label="tenantOptionLabel(tenant)" :value="tenant.tenantId" />
         </el-select>
         <!-- 多选 - 租户用电明细 -->
         <el-select v-show="reportType === 'detail'" v-model="queryParams.tenantIds" multiple collapse-tags filterable
-          placeholder="请选择租户" class="custom-select" :loading="tenantLoading" @change="handleTenantChange">
-          <el-option v-for="tenant in realTenantList" :key="tenant.tenantId" :label="tenant.name"
+          :placeholder="$t('electricityReport.phTenant')" class="custom-select" :loading="tenantLoading" @change="handleDetailTenantChange">
+          <el-option
+            v-if="realTenantList.length > 0 && !isAllDetailTenantsSelected"
+            :key="TENANT_SELECT_SELECT_ALL"
+            :label="$t('electricityReport.btnSelectAll')"
+            :value="TENANT_SELECT_SELECT_ALL"
+            class="tenant-select-action-option"
+          />
+          <el-option
+            v-if="queryParams.tenantIds.length > 0"
+            :key="TENANT_SELECT_CLEAR_ALL"
+            :label="$t('electricityReport.btnDeselectAll')"
+            :value="TENANT_SELECT_CLEAR_ALL"
+            class="tenant-select-action-option tenant-select-action-option--clear"
+          />
+          <el-option v-for="tenant in realTenantList" :key="tenant.tenantId" :label="tenantOptionLabel(tenant)"
             :value="tenant.tenantId" />
+        </el-select>
+      </div>
+
+      <!-- 租户类型 -->
+      <div class="filter-item tenant-type-filter">
+        <label class="filter-label">{{ $t('electricityReport.filterTenantType') }}</label>
+        <el-select v-model="queryParams.tenantType" class="custom-select" @change="handleTenantTypeChange">
+          <el-option :label="$t('electricityReport.tenantType0')" :value="0" />
+          <el-option :label="$t('electricityReport.tenantType1')" :value="1" />
+          <el-option :label="$t('electricityReport.tenantType2')" :value="2" />
         </el-select>
       </div>
 
       <div class="filter-actions">
         <!-- <button class="search-btn" @click="handleSearch">查询</button> -->
-        <button class="reset-btn" @click="handleReset">重置</button>
+        <button class="reset-btn" @click="handleReset">{{ $t('electricityReport.btnReset') }}</button>
 
         <!-- 第一个tab的设备明细 -->
-        <el-tooltip v-if="reportType === 'statistics'" effect="dark" content="设备明细仅支持单一租户查询,不支持全部租户" placement="top"
+        <el-tooltip v-if="reportType === 'statistics'" effect="dark" :content="$t('electricityReport.tooltipDeviceDetailStats')" placement="top"
           :disabled="!!queryParams.tenantId">
           <div class="detail-switch">
-            <span class="switch-text">设备明细</span>
+            <span class="switch-text">{{ $t('electricityReport.deviceDetailSwitch') }}</span>
             <label class="toggle-switch">
               <input type="checkbox" v-model="switchDeviceDetail" @change="handleSwitchChange" />
               <span class="toggle-slider"></span>
@@ -80,15 +104,9 @@
           </div>
         </el-tooltip>
 
-        <!-- 第二个tab的全选按钮 -->
-        <button v-if="reportType === 'detail'" class="reset-btn" @click="toggleSelectAll"
-          :disabled="tenantLoading || tenantList.length === 0">
-          {{ isAllSelected ? "取消全选" : "全选" }}
-        </button>
-
         <!-- 第二个tab的设备明细 -->
         <div class="detail-switch" v-if="reportType === 'detail'">
-          <span class="switch-text">设备明细</span>
+          <span class="switch-text">{{ $t('electricityReport.deviceDetailSwitch') }}</span>
           <label class="toggle-switch">
             <input type="checkbox" v-model="detailSwitchDeviceDetail" @change="handleDetailSwitchChange" />
             <span class="toggle-slider"></span>
@@ -100,41 +118,16 @@
     <!-- 租户用电统计 - 数据统计卡片（改为两个大模块） -->
 
     <div class="stats-formula-cards" v-if="reportType === 'statistics' && tableData.length > 0">
-      <!-- 左侧：电费公式 -->
-      <div class="formula-card electricity-cost">
-        <div class="card-content">
-          <div class="formula-main">
-            <div class="main-indicator">
-              <div class="main-value">{{ formatNumber(totalStats.amount) }}</div>
-              <div class="main-label">总电费(元)</div>
-            </div>
-          </div>
-
-          <div class="formula-operator">=</div>
-
-          <div class="formula-sub-group two-items">
-            <div class="sub-indicator">
-              <div class="sub-value">{{ formatNumber(totalStats.meterBalance) }}</div>
-              <div class="sub-label">室内电费(元)</div>
-            </div>
-
-            <div class="operator-plus">+</div>
-
-            <div class="sub-indicator">
-              <div class="sub-value">{{ formatNumber(totalStats.airBalance) }}</div>
-              <div class="sub-label">空调电费(元)</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 右侧：电量公式 -->
+      <!-- 左侧：电量公式 -->
       <div class="formula-card electricity-usage">
+        <div class="card-top-badge" v-if="todayVirtualRow">
+          {{ $t('electricityReport.todayElecBadge', { value: formatNumber(todayVirtualRow.useElec) }) }}
+        </div>
         <div class="card-content">
           <div class="formula-main">
             <div class="main-indicator">
               <div class="main-value">{{ formatNumber(totalStats.elec) }}</div>
-              <div class="main-label">总电量(度)</div>
+              <div class="main-label">{{ $t('electricityReport.mainTotalElec') }}</div>
             </div>
           </div>
 
@@ -143,71 +136,106 @@
           <div class="formula-sub-group four-items">
             <div class="sub-indicator">
               <div class="sub-value">{{ formatNumber(totalStats.elecPeak) }}</div>
-              <div class="sub-label">尖电量(度)</div>
+              <div class="sub-label">{{ $t('electricityReport.subPeak') }}</div>
             </div>
 
             <div class="operator-plus">+</div>
 
             <div class="sub-indicator">
               <div class="sub-value">{{ formatNumber(totalStats.elecTop) }}</div>
-              <div class="sub-label">峰电量(度)</div>
+              <div class="sub-label">{{ $t('electricityReport.subTop') }}</div>
             </div>
 
             <div class="operator-plus">+</div>
 
             <div class="sub-indicator">
               <div class="sub-value">{{ formatNumber(totalStats.elecFlat) }}</div>
-              <div class="sub-label">平电量(度)</div>
+              <div class="sub-label">{{ $t('electricityReport.subFlat') }}</div>
             </div>
 
             <div class="operator-plus">+</div>
 
             <div class="sub-indicator">
               <div class="sub-value">{{ formatNumber(totalStats.elecValley) }}</div>
-              <div class="sub-label">谷电量(度)</div>
+              <div class="sub-label">{{ $t('electricityReport.subValley') }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：电费公式 -->
+      <div class="formula-card electricity-cost">
+        <div class="card-top-badge" v-if="todayVirtualRow">
+          {{ $t('electricityReport.todayFeeBadge', { value: formatNumber(todayVirtualRow.useAmount) }) }}
+        </div>
+        <div class="card-content">
+          <div class="formula-main">
+            <div class="main-indicator">
+              <div class="main-value">{{ formatNumber(totalStats.amount) }}</div>
+              <div class="main-label">{{ $t('electricityReport.mainTotalFee') }}</div>
+            </div>
+          </div>
+
+          <div class="formula-operator">=</div>
+
+          <div class="formula-sub-group two-items">
+            <div class="sub-indicator">
+              <div class="sub-value">{{ formatNumber(totalStats.meterBalance) }}</div>
+              <div class="sub-label">{{ $t('electricityReport.subIndoorFee') }}</div>
+            </div>
+
+            <div class="operator-plus">+</div>
+
+            <div class="sub-indicator">
+              <div class="sub-value">{{ formatNumber(totalStats.airBalance) }}</div>
+              <div class="sub-label">{{ $t('electricityReport.subAcFee') }}</div>
+            </div>
+
+            <div class="formula-cost-side-hint" :title="$t('electricityReport.tipNoFloatingTitle')">
+              <i class="el-icon-info" aria-hidden="true" />
+              <span>{{ $t('electricityReport.tipNoFloatingShort') }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-
     <!-- 主内容区 -->
-    <div class="main-content" v-loading="loading" :element-loading-text="loadingText">
+    <div class="main-content" v-loading="loading" :element-loading-text="$t('electricityReport.loadingText')">
       <!-- 租户用电统计 - 图表区域 -->
-      <div class="chart-section" v-if="reportType === 'statistics' && chartData.length > 0">
+      <div class="chart-section" v-if="reportType === 'statistics' && displayChartData.length > 0">
         <div class="chart-container">
           <div class="chart-header">
-            <h2 class="chart-title">用电趋势分析</h2>
+            <h2 class="chart-title">{{ $t('electricityReport.chartTrendTitle') }}</h2>
             <div class="chart-date-range">{{ formatDateRange }}</div>
           </div>
           <div class="chart-info">
             <div class="chart-legends">
-              <div class="legend-item active" @click="toggleSeries('总电费')">
+              <div class="legend-item active" @click="toggleSeriesByKey('totalFee')">
                 <span class="legend-dot" style="background: #52c41a"></span>
-                <span class="legend-text">总电费</span>
+                <span class="legend-text">{{ $t('electricityReport.legendTotalFee') }}</span>
               </div>
-              <div class="legend-item active" @click="toggleSeries('室内电量')">
+              <div class="legend-item active" @click="toggleSeriesByKey('indoorElec')">
                 <span class="legend-dot" style="background: #5b9bd5"></span>
-                <span class="legend-text">室内电量</span>
+                <span class="legend-text">{{ $t('electricityReport.legendIndoorElec') }}</span>
               </div>
-              <div class="legend-item active" @click="toggleSeries('空调电量')">
+              <div class="legend-item active" @click="toggleSeriesByKey('acElec')">
                 <span class="legend-dot" style="background: #ff9f5a"></span>
-                <span class="legend-text">空调电量</span>
+                <span class="legend-text">{{ $t('electricityReport.legendAcElec') }}</span>
               </div>
             </div>
             <div class="chart-summary">
               <div class="summary-item">
-                <span class="summary-label">总电费</span>
+                <span class="summary-label">{{ $t('electricityReport.summaryTotalFee') }}</span>
                 <span class="summary-value">¥{{ formatNumber(totalStats.amount) }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">室内电量</span>
-                <span class="summary-value">{{ formatNumber(totalStats.meterUseElec) }} 度</span>
+                <span class="summary-label">{{ $t('electricityReport.summaryIndoorElec') }}</span>
+                <span class="summary-value">{{ formatNumber(totalStats.meterUseElec) }} {{ $t('electricityReport.unitKwhDisplay') }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">空调电量</span>
-                <span class="summary-value">{{ formatNumber(totalStats.airUseElec) }} 度</span>
+                <span class="summary-label">{{ $t('electricityReport.summaryAcElec') }}</span>
+                <span class="summary-value">{{ formatNumber(totalStats.airUseElec) }} {{ $t('electricityReport.unitKwhDisplay') }}</span>
               </div>
             </div>
           </div>
@@ -216,35 +244,35 @@
 
         <div class="monitor-container">
           <div class="monitor-header">
-            <h3 class="monitor-title">分时电量监控</h3>
+            <h3 class="monitor-title">{{ $t('electricityReport.monitorTitle') }}</h3>
           </div>
           <div class="monitor-content">
             <div ref="monitorChartContainer" class="monitor-chart"></div>
             <div class="monitor-stats">
               <div class="monitor-stat-item">
                 <span class="stat-icon spike"></span>
-                <span class="stat-name">尖电量</span>
+                <span class="stat-name">{{ $t('electricityReport.statPeak') }}</span>
                 <span class="stat-value">{{
                   formatNumber(totalStats.elecPeak)
                 }}</span>
               </div>
               <div class="monitor-stat-item">
                 <span class="stat-icon peak"></span>
-                <span class="stat-name">峰电量</span>
+                <span class="stat-name">{{ $t('electricityReport.statTop') }}</span>
                 <span class="stat-value">{{
                   formatNumber(totalStats.elecTop)
                 }}</span>
               </div>
               <div class="monitor-stat-item">
                 <span class="stat-icon flat"></span>
-                <span class="stat-name">平电量</span>
+                <span class="stat-name">{{ $t('electricityReport.statFlat') }}</span>
                 <span class="stat-value">{{
                   formatNumber(totalStats.elecFlat)
                 }}</span>
               </div>
               <div class="monitor-stat-item">
                 <span class="stat-icon valley"></span>
-                <span class="stat-name">谷电量</span>
+                <span class="stat-name">{{ $t('electricityReport.statValley') }}</span>
                 <span class="stat-value">{{
                   formatNumber(totalStats.elecValley)
                 }}</span>
@@ -257,104 +285,134 @@
       <!-- 租户用电统计 - 详细数据表格区域 -->
       <div class="table-section" v-if="reportType === 'statistics'">
         <div class="section-header">
-          <h2 class="section-title">详细数据</h2>
+          <h2 class="section-title">{{ $t('electricityReport.detailedData') }}</h2>
+          <div class="today-exclude-note" v-if="todayVirtualRow">{{ $t('electricityReport.todayDataNote') }}</div>
           <div class="section-actions">
             <button class="fullscreen-btn" @click="openFullscreen"
-              v-if="tableData.length > 0 || deviceDetailData.length > 0">
+              v-if="displayTableData.length > 0 || displayDeviceDetailData.length > 0">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
               </svg>
-              <span>全屏查看</span>
+              <span>{{ $t('electricityReport.fullscreenView') }}</span>
             </button>
           </div>
         </div>
 
         <!-- 普通统计表格 -->
-        <el-table v-show="!switchDeviceDetail" v-if="tableData.length > 0" ref="statisticsTable" :data="tableData"
-          show-summary :summary-method="getStatisticsSummaries" height="70vh" :highlight-current-row="true">
-          <el-table-column min-width="140" label="日期">
+        <el-table v-show="!switchDeviceDetail" v-if="displayTableData.length > 0" ref="statisticsTable" :data="displayTableData"
+          show-summary :summary-method="getStatisticsSummaries" height="70vh" :highlight-current-row="true"
+          :row-class-name="statisticsRowClassName">
+          <el-table-column min-width="140" :label="$t('electricityReport.colDate')">
             <template slot-scope="scope">
-              {{ scope.row.occurDate ? scope.row.occurDate : "总计" }}
+              {{ scope.row.occurDate ? scope.row.occurDate : $t('electricityReport.summaryTotal') }}
             </template>
           </el-table-column>
-          <el-table-column min-width="140" label="总电费（元）" prop="useAmount" align="right" />
-          <el-table-column min-width="140" label="室内电费（元）" prop="meterBalance" align="right" />
-          <el-table-column min-width="140" label="空调电费（元）" prop="airBalance" align="right" />
-          <el-table-column min-width="140" label="总电量（度）" prop="useElec" align="right" />
-          <el-table-column min-width="140" label="室内电量（度）" prop="meterUseElec" align="right" />
-          <el-table-column min-width="140" label="空调电量（度）" prop="airUseElec" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colTotalFeeYuan')" prop="useAmount" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colIndoorFeeYuan')" prop="meterBalance" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colAcFeeYuan')" prop="airBalance" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colTotalKwh')" prop="useElec" align="right" />
+          <el-table-column
+            v-if="airSysElecColsVisible"
+            min-width="140"
+            :label="$t('electricityReport.colSysTotalKwh')"
+            prop="sysElec"
+            align="right"
+          />
+          <el-table-column min-width="140" :label="$t('electricityReport.colIndoorKwh')" prop="meterUseElec" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colAcKwh')" prop="airUseElec" align="right" />
+          <el-table-column
+            v-if="airSysElecColsVisible"
+            min-width="150"
+            :label="$t('electricityReport.colAirSysKwh')"
+            prop="airSysElec"
+            align="right"
+          />
 
-          <el-table-column min-width="140" label="尖电量（度）" prop="useElecPeak" align="right" />
-          <el-table-column min-width="140" label="峰电量（度）" prop="useElecTop" align="right" />
-          <el-table-column min-width="140" label="平电量（度）" prop="useElecFlat" align="right" />
-          <el-table-column min-width="140" label="谷电量（度）" prop="useElecValley" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colPeakKwh')" prop="useElecPeak" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colTopKwh')" prop="useElecTop" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colFlatKwh')" prop="useElecFlat" align="right" />
+          <el-table-column min-width="140" :label="$t('electricityReport.colValleyKwh')" prop="useElecValley" align="right" />
         </el-table>
 
         <!-- 设备明细表格 -->
-        <el-table v-show="switchDeviceDetail" v-if="deviceDetailData.length > 0" ref="deviceDetailTable"
-          :data="deviceDetailData" :span-method="deviceDetailSpanMethod" :summary-method="getDeviceDetailSummaries"
-          show-summary height="70vh" :highlight-current-row="true">
-          <el-table-column min-width="140" label="日期">
+        <el-table v-show="switchDeviceDetail" v-if="displayDeviceDetailData.length > 0" ref="deviceDetailTable"
+          :data="displayDeviceDetailData" :span-method="deviceDetailSpanMethod" :summary-method="getDeviceDetailSummaries"
+          show-summary height="70vh" :highlight-current-row="true" :row-class-name="statisticsRowClassName">
+          <el-table-column min-width="140" :label="$t('electricityReport.colDate')">
             <template slot-scope="scope">{{ scope.row.occurDate }}</template>
           </el-table-column>
-          <el-table-column min-width="120" label="电费（元）" prop="useAmount" align="right" />
-          <el-table-column min-width="120" label="室内电费（元）" prop="meterBalance" align="right" />
-          <el-table-column min-width="120" label="空调电费（元）" prop="airBalance" align="right" />
-          <el-table-column min-width="120" label="总电量（度）" prop="useElec" align="right" />
-          <el-table-column min-width="120" label="室内电量（度）" prop="meterUseElec" align="right" />
-          <el-table-column min-width="120" label="空调电量（度）" prop="airUseElec" align="right" />
-          <el-table-column min-width="120" label="尖电量（度）" prop="useElecPeak" align="right" />
-          <el-table-column min-width="120" label="峰电量（度）" prop="useElecTop" align="right" />
-          <el-table-column min-width="120" label="平电量（度）" prop="useElecFlat" align="right" />
-          <el-table-column min-width="120" label="谷电量（度）" prop="useElecValley" align="right" />
-          <el-table-column label="设备" width="160">
+          <el-table-column min-width="120" :label="$t('electricityReport.colFeeYuan')" prop="useAmount" align="right" />
+          <el-table-column min-width="120" :label="$t('electricityReport.colIndoorFeeYuan')" prop="meterBalance" align="right" />
+          <el-table-column min-width="120" :label="$t('electricityReport.colAcFeeYuan')" prop="airBalance" align="right" />
+          <el-table-column min-width="120" :label="$t('electricityReport.colTotalKwh')" prop="useElec" align="right" />
+          <el-table-column
+            v-if="airSysElecColsVisible"
+            min-width="120"
+            :label="$t('electricityReport.colSysTotalKwh')"
+            prop="sysElec"
+            align="right"
+          />
+          <el-table-column min-width="120" :label="$t('electricityReport.colIndoorKwh')" prop="meterUseElec" align="right" />
+          <el-table-column min-width="120" :label="$t('electricityReport.colAcKwh')" prop="airUseElec" align="right" />
+          <el-table-column
+            v-if="airSysElecColsVisible"
+            min-width="130"
+            :label="$t('electricityReport.colAirSysKwh')"
+            prop="airSysElec"
+            align="right"
+          />
+          <el-table-column min-width="120" :label="$t('electricityReport.colPeakKwh')" prop="useElecPeak" align="right" />
+          <el-table-column min-width="120" :label="$t('electricityReport.colTopKwh')" prop="useElecTop" align="right" />
+          <el-table-column min-width="120" :label="$t('electricityReport.colFlatKwh')" prop="useElecFlat" align="right" />
+          <el-table-column min-width="120" :label="$t('electricityReport.colValleyKwh')" prop="useElecValley" align="right" />
+          <el-table-column :label="$t('electricityReport.colDevice')" width="160">
             <template slot-scope="scope">{{
-              scope.row.deviceUseDtoList.meterName || "-"
+              $displayBizHybrid(scope.row.deviceUseDtoList.meterName) || "-"
             }}</template>
           </el-table-column>
-          <el-table-column label="结算方式" width="120">
+          <el-table-column :label="$t('electricityReport.colSettleWay')" width="120">
             <template slot-scope="scope">{{
               getSettleWayLabel(scope.row.deviceUseDtoList.settleWay)
             }}</template>
           </el-table-column>
-          <el-table-column label="费用" width="120" align="right">
+          <el-table-column :label="$t('electricityReport.colFee')" width="120" align="right">
             <template slot-scope="scope">{{
               scope.row.deviceUseDtoList.useAmount !== undefined
                 ? scope.row.deviceUseDtoList.useAmount
                 : "-"
             }}</template>
           </el-table-column>
-          <el-table-column label="电量" align="center">
-            <el-table-column label="总计" width="100" align="right">
+          <el-table-column :label="$t('electricityReport.colElecGroup')" align="center">
+            <el-table-column :label="$t('electricityReport.colGrandTotal')" width="100" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.useElec !== undefined
                   ? scope.row.deviceUseDtoList.useElec
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="尖" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colSpikeShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.useElecPeak !== undefined
                   ? scope.row.deviceUseDtoList.useElecPeak
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="峰" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colPeakShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.useElecTop !== undefined
                   ? scope.row.deviceUseDtoList.useElecTop
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="平" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colFlatShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.useElecFlat !== undefined
                   ? scope.row.deviceUseDtoList.useElecFlat
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="谷" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colValleyShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.useElecValley !== undefined
                   ? scope.row.deviceUseDtoList.useElecValley
@@ -362,43 +420,43 @@
               }}</template>
             </el-table-column>
           </el-table-column>
-          <el-table-column label="起始读数" align="center">
-            <el-table-column label="时间" width="160">
+          <el-table-column :label="$t('electricityReport.colStartReading')" align="center">
+            <el-table-column :label="$t('electricityReport.colTime')" width="160">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.startUseDto
                   ? scope.row.deviceUseDtoList.startUseDto.occurTime
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="总电量" width="100" align="right">
+            <el-table-column :label="$t('electricityReport.colTotalElecShort')" width="100" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.startUseDto
                   ? scope.row.deviceUseDtoList.startUseDto.powerAll
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="尖" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colSpikeShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.startUseDto
                   ? scope.row.deviceUseDtoList.startUseDto.powerPeak
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="峰" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colPeakShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.startUseDto
                   ? scope.row.deviceUseDtoList.startUseDto.powerTop
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="平" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colFlatShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.startUseDto
                   ? scope.row.deviceUseDtoList.startUseDto.powerFlat
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="谷" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colValleyShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.startUseDto
                   ? scope.row.deviceUseDtoList.startUseDto.powerValley
@@ -406,43 +464,43 @@
               }}</template>
             </el-table-column>
           </el-table-column>
-          <el-table-column label="截止读数" align="center">
-            <el-table-column label="时间" width="160">
+          <el-table-column :label="$t('electricityReport.colEndReading')" align="center">
+            <el-table-column :label="$t('electricityReport.colTime')" width="160">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.stopUseDto
                   ? scope.row.deviceUseDtoList.stopUseDto.occurTime
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="总电量" width="100" align="right">
+            <el-table-column :label="$t('electricityReport.colTotalElecShort')" width="100" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.stopUseDto
                   ? scope.row.deviceUseDtoList.stopUseDto.powerAll
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="尖" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colSpikeShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.stopUseDto
                   ? scope.row.deviceUseDtoList.stopUseDto.powerPeak
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="峰" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colPeakShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.stopUseDto
                   ? scope.row.deviceUseDtoList.stopUseDto.powerTop
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="平" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colFlatShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.stopUseDto
                   ? scope.row.deviceUseDtoList.stopUseDto.powerFlat
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="谷" width="80" align="right">
+            <el-table-column :label="$t('electricityReport.colValleyShort')" width="80" align="right">
               <template slot-scope="scope">{{
                 scope.row.deviceUseDtoList.stopUseDto
                   ? scope.row.deviceUseDtoList.stopUseDto.powerValley
@@ -452,37 +510,37 @@
           </el-table-column>
         </el-table>
 
-        <div class="empty-state" v-if="!loading && tableData.length === 0 && !switchDeviceDetail">
+        <div class="empty-state" v-if="!loading && displayTableData.length === 0 && !switchDeviceDetail">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M9 17V7m0 10l-3-3m3 3l3-3m5-1V7m0 10l-3-3m3 3l3-3" />
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
-          <p>暂无数据</p>
+          <p>{{ $t('electricityReport.emptyNoData') }}</p>
         </div>
-        <div class="empty-state" v-if="!loading && deviceDetailData.length === 0 && switchDeviceDetail">
+        <div class="empty-state" v-if="!loading && displayDeviceDetailData.length === 0 && switchDeviceDetail">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="7" width="18" height="14" rx="2" />
             <path d="M8 3v4m8-4v4M3 11h18" />
           </svg>
-          <p>暂无设备明细数据</p>
+          <p>{{ $t('electricityReport.emptyNoDeviceDetail') }}</p>
         </div>
       </div>
 
       <!-- 租户用电明细 - 租户列表表格 -->
       <div class="table-section" v-if="reportType === 'detail' && !detailSwitchDeviceDetail">
         <div class="section-header">
-          <h2 class="section-title">租户用电明细</h2>
+          <h2 class="section-title">{{ $t('electricityReport.sectionDetailTitle') }}</h2>
         </div>
         <el-table v-if="tenantDetailData.length > 0" :data="tenantDetailData" height="calc(100vh - 400px)"
           :highlight-current-row="true" :row-class-name="tableRowClassName">
-          <el-table-column label="租户编号" width="120">
+          <el-table-column :label="$t('electricityReport.colTenantId')" width="120">
             <template slot-scope="scope">{{
-              scope.row.tenantId !== -1 ? scope.row.tenantId : "总计"
+              scope.row.tenantId !== -1 ? scope.row.tenantId : $t('electricityReport.summaryTotal')
             }}</template>
           </el-table-column>
-          <el-table-column label="租户名称" min-width="200">
+          <el-table-column :label="$t('electricityReport.colTenantName')" min-width="200">
             <template slot-scope="scope">{{
-              scope.row.tenantName || "-"
+              $displayBizHybrid(scope.row.tenantName) || "-"
             }}</template>
           </el-table-column>
           <!-- <el-table-column label="区域标签" width="180">
@@ -495,32 +553,32 @@
               <div v-else>-</div>
             </template>
           </el-table-column> -->
-          <el-table-column label="电费(元)" width="140" align="right">
+          <el-table-column :label="$t('electricityReport.colElecFee')" width="140" align="right">
             <template slot-scope="scope">{{
               formatNumber(scope.row.useAmount)
             }}</template>
           </el-table-column>
-          <el-table-column label="电量(度)" width="140" align="right">
+          <el-table-column :label="$t('electricityReport.colElecKwh')" width="140" align="right">
             <template slot-scope="scope">{{
               formatNumber(scope.row.useElec)
             }}</template>
           </el-table-column>
-          <el-table-column label="尖电量(度)" width="140" align="right">
+          <el-table-column :label="$t('electricityReport.colPeakElec')" width="140" align="right">
             <template slot-scope="scope">{{
               formatNumber(scope.row.useElecPeak)
             }}</template>
           </el-table-column>
-          <el-table-column label="峰电量(度)" width="140" align="right">
+          <el-table-column :label="$t('electricityReport.colTopElec')" width="140" align="right">
             <template slot-scope="scope">{{
               formatNumber(scope.row.useElecTop)
             }}</template>
           </el-table-column>
-          <el-table-column label="平电量(度)" width="140" align="right">
+          <el-table-column :label="$t('electricityReport.colFlatElec')" width="140" align="right">
             <template slot-scope="scope">{{
               formatNumber(scope.row.useElecFlat)
             }}</template>
           </el-table-column>
-          <el-table-column label="谷电量(度)" width="140" align="right">
+          <el-table-column :label="$t('electricityReport.colValleyElec')" width="140" align="right">
             <template slot-scope="scope">{{
               formatNumber(scope.row.useElecValley)
             }}</template>
@@ -531,26 +589,26 @@
             <path d="M9 17V7m0 10l-3-3m3 3l3-3m5-1V7m0 10l-3-3m3 3l3-3" />
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
-          <p>暂无数据</p>
+          <p>{{ $t('electricityReport.emptyNoData') }}</p>
         </div>
       </div>
 
       <!-- 租户用电明细 - 设备明细表格 -->
       <div class="table-section" v-if="reportType === 'detail' && detailSwitchDeviceDetail">
         <div class="section-header">
-          <h2 class="section-title">租户设备用电明细</h2>
+          <h2 class="section-title">{{ $t('electricityReport.sectionDeviceDetailTitle') }}</h2>
         </div>
         <el-table v-if="tenantDeviceDetailTableData.length > 0" :data="tenantDeviceDetailTableData"
           :span-method="objectSpanMethod" height="calc(100vh - 400px)" :highlight-current-row="true"
           :row-class-name="tableRowClassName">
-          <el-table-column label="租户编号" width="120">
+          <el-table-column :label="$t('electricityReport.colTenantId')" width="120">
             <template slot-scope="scope">{{
-              scope.row.tenantId !== -1 ? scope.row.tenantId : "总计"
+              scope.row.tenantId !== -1 ? scope.row.tenantId : $t('electricityReport.summaryTotal')
             }}</template>
           </el-table-column>
-          <el-table-column label="租户名称" min-width="200">
+          <el-table-column :label="$t('electricityReport.colTenantName')" min-width="200">
             <template slot-scope="scope">{{
-              scope.row.tenantName || "-"
+              $displayBizHybrid(scope.row.tenantName) || "-"
             }}</template>
           </el-table-column>
           <!-- <el-table-column label="区域标签" width="180">
@@ -563,48 +621,48 @@
               <div v-else>-</div>
             </template>
           </el-table-column> -->
-          <el-table-column label="电表" width="180">
+          <el-table-column :label="$t('electricityReport.colMeter')" width="180">
             <template slot-scope="scope">{{
-              scope.row.meterName || "-"
+              $displayBizHybrid(scope.row.meterName) || "-"
             }}</template>
           </el-table-column>
-          <el-table-column label="明细" align="center">
-            <el-table-column label="电费(元)" width="140" align="right">
+          <el-table-column :label="$t('electricityReport.colDetail')" align="center">
+            <el-table-column :label="$t('electricityReport.colElecFee')" width="140" align="right">
               <template slot-scope="scope">{{
                 scope.row.tenantId === -1
                   ? formatNumber(scope.row.useAmount)
                   : formatNumber(scope.row.elecAmt)
               }}</template>
             </el-table-column>
-            <el-table-column label="电量(度)" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colElecKwh')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.tenantId === -1
                   ? formatNumber(scope.row.useElec)
                   : formatNumber(scope.row.elecUse)
               }}</template>
             </el-table-column>
-            <el-table-column label="尖电量" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colPeakElecShort')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.tenantId === -1
                   ? formatNumber(scope.row.useElecPeak)
                   : formatNumber(scope.row.elecUsePeak)
               }}</template>
             </el-table-column>
-            <el-table-column label="峰电量" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colTopElecShort')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.tenantId === -1
                   ? formatNumber(scope.row.useElecTop)
                   : formatNumber(scope.row.elecUseTop)
               }}</template>
             </el-table-column>
-            <el-table-column label="平电量" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colFlatElecShort')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.tenantId === -1
                   ? formatNumber(scope.row.useElecFlat)
                   : formatNumber(scope.row.elecUseFlat)
               }}</template>
             </el-table-column>
-            <el-table-column label="谷电量" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colValleyElecShort')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.tenantId === -1
                   ? formatNumber(scope.row.useElecValley)
@@ -612,8 +670,8 @@
               }}</template>
             </el-table-column>
           </el-table-column>
-          <el-table-column label="统计" align="center">
-            <el-table-column label="电费(元)" width="140" align="right">
+          <el-table-column :label="$t('electricityReport.colStatistics')" align="center">
+            <el-table-column :label="$t('electricityReport.colElecFee')" width="140" align="right">
               <template slot-scope="scope">{{
                 scope.row.meterUseDetail && scope.row.meterUseDetail.length
                   ? formatNumber(
@@ -624,7 +682,7 @@
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="电量(度)" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colElecKwh')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.meterUseDetail && scope.row.meterUseDetail.length
                   ? formatNumber(
@@ -635,7 +693,7 @@
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="尖电量" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colPeakElecShort')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.meterUseDetail && scope.row.meterUseDetail.length
                   ? formatNumber(
@@ -646,7 +704,7 @@
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="峰电量" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colTopElecShort')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.meterUseDetail && scope.row.meterUseDetail.length
                   ? formatNumber(
@@ -657,7 +715,7 @@
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="平电量" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colFlatElecShort')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.meterUseDetail && scope.row.meterUseDetail.length
                   ? formatNumber(
@@ -668,7 +726,7 @@
                   : "-"
               }}</template>
             </el-table-column>
-            <el-table-column label="谷电量" width="120" align="right">
+            <el-table-column :label="$t('electricityReport.colValleyElecShort')" width="120" align="right">
               <template slot-scope="scope">{{
                 scope.row.meterUseDetail && scope.row.meterUseDetail.length
                   ? formatNumber(
@@ -686,7 +744,7 @@
             <rect x="3" y="7" width="18" height="14" rx="2" />
             <path d="M8 3v4m8-4v4M3 11h18" />
           </svg>
-          <p>暂无设备明细数据</p>
+          <p>{{ $t('electricityReport.emptyNoDeviceDetail') }}</p>
         </div>
       </div>
     </div>
@@ -695,37 +753,45 @@
   </div>
 </template>
 <script>
-import { mapGetters } from "vuex";
+import { mapGetters } from 'vuex'
 import {
   getSimpleTenantList,
   queryTenantUse,
-  useReportQueryTenantUseStatis,
-} from "@/api/useReport";
-import moment from "moment";
-import TableFocusMode from './components/TableFocusMode.vue';
-import * as XLSX from 'xlsx';
+  useReportQueryTenantUseStatis
+} from '@/api/useReport'
+import { queryCwTenantTodayUse } from '@/api/newDashboard'
+import moment from 'moment'
+import TableFocusMode from './components/TableFocusMode.vue'
+import * as XLSX from 'xlsx'
+
+/** 明细 Tab 多选下拉内「全选 / 取消全选」哨兵值 */
+const TENANT_SELECT_CLEAR_ALL = '__CLEAR_ALL__'
+const TENANT_SELECT_SELECT_ALL = '__SELECT_ALL__'
 
 export default {
-  name: "ElectricityReport",
+  name: 'ElectricityReport',
   components: {
     TableFocusMode
   },
-  data() {
+  data () {
     return {
-      reportType: "statistics",
-      dateType: "day",
+      TENANT_SELECT_CLEAR_ALL,
+      TENANT_SELECT_SELECT_ALL,
+      reportType: 'statistics',
+      dateType: 'day',
       queryParams: {
         dateRange: [],
         tenantIds: [],
-        tenantId: "",
+        tenantId: '',
+        tenantType: 0
       },
       tenantList: [],
       tenantLoading: false,
       loading: false,
-      loadingText: "数据加载中...",
       exportLoading: false,
       chartData: [],
       tableData: [],
+      todayVirtualRow: null,
       deviceDetailData: [],
       tenantDetailData: [],
       tenantDeviceDetailTableData: [],
@@ -733,54 +799,50 @@ export default {
       detailSwitchDeviceDetail: false,
       mainChartInstance: null,
       monitorChartInstance: null,
-      settleWayMap: {
-        0: "普通结算",
-        1: "手动扣款",
-        2: "系统补单",
-        3: "浮动电价",
-        4: "分摊结算",
-        5: "设备扣款",
-      },
       pickerOptions: {
-        disabledDate(time) {
-          return time.getTime() > Date.now();
-        },
+        disabledDate (time) {
+          return time.getTime() > Date.now()
+        }
       },
       resizeObserver: null,
-      fullscreenVisible: false,
-    };
+      fullscreenVisible: false
+    }
   },
   computed: {
-    ...mapGetters("manager", ["currentManagerId"]),
-    datePickerType() {
-      if (this.reportType === "statistics") {
-        return "daterange";
-      }
-      return this.dateType === "day" ? "daterange" : "monthrange";
+    ...mapGetters('manager', ['currentManagerId', 'isAirSysElecManager']),
+    /** 系统总电量 / 空调系统电量列：与 getAirSysElecCoefKeys 白名单一致 */
+    airSysElecColsVisible () {
+      return this.isAirSysElecManager(this.currentManagerId)
     },
-    dateFormat() {
-      if (this.reportType === "statistics") {
-        return "yyyy-MM-dd";
+    datePickerType () {
+      if (this.reportType === 'statistics') {
+        return 'daterange'
       }
-      return this.dateType === "day" ? "yyyy-MM-dd" : "yyyy-MM";
+      return this.dateType === 'day' ? 'daterange' : 'monthrange'
     },
-    dateValueFormat() {
-      if (this.reportType === "statistics") {
-        return "yyyy-MM-dd";
+    dateFormat () {
+      if (this.reportType === 'statistics') {
+        return 'yyyy-MM-dd'
       }
-      return this.dateType === "day" ? "yyyy-MM-dd" : "yyyy-MM";
+      return this.dateType === 'day' ? 'yyyy-MM-dd' : 'yyyy-MM'
     },
-    formatDateRange() {
+    dateValueFormat () {
+      if (this.reportType === 'statistics') {
+        return 'yyyy-MM-dd'
+      }
+      return this.dateType === 'day' ? 'yyyy-MM-dd' : 'yyyy-MM'
+    },
+    formatDateRange () {
       if (
         !this.queryParams.dateRange ||
         this.queryParams.dateRange.length !== 2
       ) {
-        return "";
+        return ''
       }
-      const [start, end] = this.queryParams.dateRange;
-      return `${start} - ${end}`;
+      const [start, end] = this.queryParams.dateRange
+      return `${start} - ${end}`
     },
-    totalStats() {
+    totalStats () {
       const stats = {
         amount: 0,
         elec: 0,
@@ -792,392 +854,564 @@ export default {
         airBalance: 0,
         meterUseElec: 0,
         airUseElec: 0,
-      };
+        sysElec: 0,
+        airSysElec: 0
+      }
       this.tableData.forEach((item) => {
-        stats.amount += Number(item.useAmount) || 0;
-        stats.elec += Number(item.useElec) || 0;
-        stats.elecPeak += Number(item.useElecPeak) || 0;
-        stats.elecTop += Number(item.useElecTop) || 0;
-        stats.elecFlat += Number(item.useElecFlat) || 0;
-        stats.elecValley += Number(item.useElecValley) || 0;
-        stats.meterBalance += Number(item.meterBalance) || 0;
-        stats.airBalance += Number(item.airBalance) || 0;
-        stats.meterUseElec += Number(item.meterUseElec) || 0;
-        stats.airUseElec += Number(item.airUseElec) || 0;
-      });
-      return stats;
+        stats.amount += Number(item.useAmount) || 0
+        stats.elec += Number(item.useElec) || 0
+        stats.elecPeak += Number(item.useElecPeak) || 0
+        stats.elecTop += Number(item.useElecTop) || 0
+        stats.elecFlat += Number(item.useElecFlat) || 0
+        stats.elecValley += Number(item.useElecValley) || 0
+        stats.meterBalance += Number(item.meterBalance) || 0
+        stats.airBalance += Number(item.airBalance) || 0
+        stats.meterUseElec += Number(item.meterUseElec) || 0
+        stats.airUseElec += Number(item.airUseElec) || 0
+        stats.sysElec += Number(item.sysElec) || 0
+        stats.airSysElec += Number(item.airSysElec) || 0
+      })
+      return stats
     },
-    isAllSelected() {
+    displayChartData () {
+      if (!this.todayVirtualRow) return this.chartData
+      const today = this.todayVirtualRow.occurDate
+      return [...this.chartData.filter(item => item.occurDate !== today), this.todayVirtualRow].sort(
+        (a, b) => new Date(a.occurDate) - new Date(b.occurDate)
+      )
+    },
+    displayTableData () {
+      if (!this.todayVirtualRow) return this.tableData
+      const today = this.todayVirtualRow.occurDate
+      return [...this.tableData.filter(item => item.occurDate !== today), this.todayVirtualRow].sort(
+        (a, b) => new Date(b.occurDate) - new Date(a.occurDate)
+      )
+    },
+    displayDeviceDetailData () {
+      if (!this.todayVirtualRow) return this.deviceDetailData
+      const today = this.todayVirtualRow.occurDate
+      const virtualRow = {
+        ...this.todayVirtualRow,
+        col: 1,
+        deviceUseDtoList: {}
+      }
+      return [virtualRow, ...this.deviceDetailData.filter(item => item.occurDate !== today)]
+    },
+    realTenantList () {
+      return this.tenantList.filter(item => item.tenantId !== '')
+    },
+    isAllDetailTenantsSelected () {
       return (
         this.realTenantList.length > 0 &&
         this.queryParams.tenantIds.length === this.realTenantList.length
-      );
+      )
     },
-    realTenantList() {
-      return this.tenantList.filter(item => item.tenantId !== "");
+    loadingText () {
+      return this.$t('electricityReport.loadingText')
     },
-    currentPickerOptions() {
+    chartSeriesNames () {
+      const t = (k) => this.$t(`electricityReport.${k}`)
+      return {
+        totalFee: t('seriesTotalFee'),
+        indoorElec: t('seriesIndoorElec'),
+        acElec: t('seriesAcElec'),
+        todayCombo: t('seriesTodayCombo'),
+        peakElec: t('seriesPeakElec'),
+        topElec: t('seriesTopElec'),
+        flatElec: t('seriesFlatElec'),
+        valleyElec: t('seriesValleyElec'),
+        todayShort: t('todayShort')
+      }
+    },
+    currentPickerOptions () {
+      const t = (k) => this.$t(`electricityReport.${k}`)
       const shortcuts = [
         {
-          text: "昨天",
-          onClick(picker) {
-            const start = new Date();
-            start.setTime(start.getTime() - 3600 * 1000 * 24);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date();
-            end.setTime(end.getTime() - 3600 * 1000 * 24);
-            end.setHours(23, 59, 59, 999);
-            picker.$emit("pick", [start, end]);
-          },
+          text: t('pickerYesterday'),
+          onClick (picker) {
+            const start = new Date()
+            start.setTime(start.getTime() - 3600 * 1000 * 24)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date()
+            end.setTime(end.getTime() - 3600 * 1000 * 24)
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
+          }
         },
         {
-          text: "本周",
-          onClick(picker) {
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const start = new Date(now);
-            const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-            start.setDate(now.getDate() + diff);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date();
-            end.setHours(23, 59, 59, 999);
-            picker.$emit("pick", [start, end]);
-          },
+          text: t('pickerThisWeek'),
+          onClick (picker) {
+            const now = new Date()
+            const dayOfWeek = now.getDay()
+            const start = new Date(now)
+            const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+            start.setDate(now.getDate() + diff)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date()
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
+          }
         },
         {
-          text: "上周",
-          onClick(picker) {
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const start = new Date(now);
-            const diff = dayOfWeek === 0 ? -13 : -6 - dayOfWeek;
-            start.setDate(now.getDate() + diff);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(start);
-            end.setDate(start.getDate() + 6);
-            end.setHours(23, 59, 59, 999);
-            picker.$emit("pick", [start, end]);
-          },
+          text: t('pickerLastWeek'),
+          onClick (picker) {
+            const now = new Date()
+            const dayOfWeek = now.getDay()
+            const start = new Date(now)
+            const diff = dayOfWeek === 0 ? -13 : -6 - dayOfWeek
+            start.setDate(now.getDate() + diff)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date(start)
+            end.setDate(start.getDate() + 6)
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
+          }
         },
         {
-          text: "本月",
-          onClick(picker) {
-            const start = new Date();
-            start.setDate(1);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date();
-            end.setHours(23, 59, 59, 999);
-            picker.$emit("pick", [start, end]);
-          },
+          text: t('pickerThisMonth'),
+          onClick (picker) {
+            const start = new Date()
+            start.setDate(1)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date()
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
+          }
         },
         {
-          text: "上月",
-          onClick(picker) {
-            const start = new Date();
-            start.setMonth(start.getMonth() - 1);
-            start.setDate(1);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date();
-            end.setDate(0);
-            end.setHours(23, 59, 59, 999);
-            picker.$emit("pick", [start, end]);
-          },
+          text: t('pickerLastMonth'),
+          onClick (picker) {
+            const start = new Date()
+            start.setMonth(start.getMonth() - 1)
+            start.setDate(1)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date()
+            end.setDate(0)
+            end.setHours(23, 59, 59, 999)
+            picker.$emit('pick', [start, end])
+          }
         },
         {
-          text: "近三个月",
-          onClick(picker) {
-            const end = new Date();
-            end.setHours(23, 59, 59, 999);
-            const start = new Date();
-            start.setMonth(start.getMonth() - 3);
-            start.setHours(0, 0, 0, 0);
-            picker.$emit("pick", [start, end]);
-          },
-        },
-      ];
+          text: t('pickerLast3Months'),
+          onClick (picker) {
+            const end = new Date()
+            end.setHours(23, 59, 59, 999)
+            const start = new Date()
+            start.setMonth(start.getMonth() - 3)
+            start.setHours(0, 0, 0, 0)
+            picker.$emit('pick', [start, end])
+          }
+        }
+      ]
 
       // 如果不是日统计模式（即租户明细模式，允许查一年），添加“近一年”选项
-      if (this.reportType !== "statistics") {
+      if (this.reportType !== 'statistics') {
         shortcuts.push({
-          text: "近一年",
-          onClick(picker) {
-            const end = new Date();
-            end.setHours(23, 59, 59, 999);
-            const start = new Date();
-            start.setFullYear(start.getFullYear() - 1);
-            start.setHours(0, 0, 0, 0);
-            picker.$emit("pick", [start, end]);
-          },
-        });
+          text: t('pickerLastYear'),
+          onClick (picker) {
+            const end = new Date()
+            end.setHours(23, 59, 59, 999)
+            const start = new Date()
+            start.setFullYear(start.getFullYear() - 1)
+            start.setHours(0, 0, 0, 0)
+            picker.$emit('pick', [start, end])
+          }
+        })
       }
 
       return {
         shortcuts,
-        disabledDate: this.pickerOptions.disabledDate,
-      };
-    },
+        disabledDate: this.pickerOptions.disabledDate
+      }
+    }
   },
   watch: {
     currentManagerId: {
-      handler(val) {
+      handler (val) {
         if (val) {
-          this.initializeData();
+          this.initializeData()
         }
       },
-      immediate: true,
+      immediate: true
     },
+    '$route' (to) {
+      if (!to.path.includes('electricity-report')) return
+      if (!this.currentManagerId) return
+      if (this.applyDateRangeFromRoute(to)) {
+        this.handleSearch()
+      }
+    }
   },
-  mounted() {
-    window.addEventListener("resize", this.handleResize);
+  mounted () {
+    window.addEventListener('resize', this.handleResize)
     this.$nextTick(() => {
       if (window.ResizeObserver) {
-        this.resizeObserver = new ResizeObserver(this.handleResize);
-        const mainContent = this.$el.querySelector(".main-content");
+        this.resizeObserver = new ResizeObserver(this.handleResize)
+        const mainContent = this.$el.querySelector('.main-content')
         if (mainContent) {
-          this.resizeObserver.observe(mainContent);
+          this.resizeObserver.observe(mainContent)
         }
       }
-    });
+    })
   },
-  beforeDestroy() {
-    window.removeEventListener("resize", this.handleResize);
+  beforeDestroy () {
+    window.removeEventListener('resize', this.handleResize)
     if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-      this.resizeObserver = null;
+      this.resizeObserver.disconnect()
+      this.resizeObserver = null
     }
     if (this.mainChartInstance) {
-      this.mainChartInstance.dispose();
+      this.mainChartInstance.dispose()
     }
     if (this.monitorChartInstance) {
-      this.monitorChartInstance.dispose();
+      this.monitorChartInstance.dispose()
     }
   },
   methods: {
-    async initializeData() {
-      this.setDefaultDateRange();
-      await this.getTenantList();
-      this.queryParams.tenantId = "";
-      this.queryParams.tenantIds = this.realTenantList.map(item => item.tenantId);
-      this.handleSearch();
+    tenantOptionLabel (tenant) {
+      if (!tenant || tenant.tenantId === '') return this.$t('electricityReport.tenantAll')
+      return this.$displayBizHybrid(tenant.name)
     },
 
-    setDefaultDateRange() {
-      if (this.reportType === "statistics" || this.dateType === "day") {
-        this.queryParams.dateRange = [
-          moment().subtract(30, "days").format("YYYY-MM-DD"),
-          moment().format("YYYY-MM-DD"),
-        ];
-      } else {
-        this.queryParams.dateRange = [
-          moment().subtract(1, "months").format("YYYY-MM"),
-          moment().format("YYYY-MM"),
-        ];
+    toggleSeriesByKey (key) {
+      const name = this.chartSeriesNames[key]
+      if (name) this.toggleSeries(name)
+    },
+
+    isSummaryMeterName (name) {
+      if (name == null) return false
+      const s = String(name)
+      return s === '总计' || s === this.$t('electricityReport.summaryTotal')
+    },
+
+    async initializeData () {
+      const applied = this.applyDateRangeFromRoute(this.$route)
+      if (!applied) {
+        this.setDefaultDateRange()
+      }
+      await this.getTenantList()
+      this.queryParams.tenantType = 0
+      this.queryParams.tenantId = ''
+      this.clearDetailTenants()
+      if (this.reportType === 'statistics') {
+        this.handleSearch()
       }
     },
 
-    async getTenantList() {
-      this.tenantLoading = true;
+    /**
+     * 从路由带入统计区间（如大屏跳转：?startDate=&endDate=）
+     * 与 TrendChart 一致：近七天含「今日」→ [今日-7天, 今日]，动态按当天计算
+     */
+    applyDateRangeFromRoute (route) {
+      if (!route || !route.query) return false
+      if (this.reportType !== 'statistics' && !(this.reportType === 'detail' && this.dateType === 'day')) {
+        return false
+      }
+      const q = route.query
+      const start = q.startDate || q.start
+      const end = q.endDate || q.end
+      if (!start || !end) return false
+      const ms = moment(start, 'YYYY-MM-DD', true)
+      const me = moment(end, 'YYYY-MM-DD', true)
+      if (!ms.isValid() || !me.isValid()) return false
+      if (ms.isAfter(me)) return false
+      const next = [start, end]
+      if (
+        this.queryParams.dateRange &&
+        this.queryParams.dateRange.length === 2 &&
+        this.queryParams.dateRange[0] === next[0] &&
+        this.queryParams.dateRange[1] === next[1]
+      ) {
+        return false
+      }
+      this.queryParams.dateRange = next
+      return true
+    },
+
+    setDefaultDateRange () {
+      if (this.reportType === 'statistics' || this.dateType === 'day') {
+        this.queryParams.dateRange = [
+          moment().subtract(30, 'days').format('YYYY-MM-DD'),
+          moment().format('YYYY-MM-DD')
+        ]
+      } else {
+        this.queryParams.dateRange = [
+          moment().subtract(1, 'months').format('YYYY-MM'),
+          moment().format('YYYY-MM')
+        ]
+      }
+    },
+
+    async getTenantList () {
+      this.tenantLoading = true
       try {
         const { data } = await getSimpleTenantList({
           managerId: this.currentManagerId,
           tenantStatus: 0,
-        });
+          tenantType: this.getTenantListTenantType()
+        })
         this.tenantList = [
-          { tenantId: "", name: "全部" },
+          { tenantId: '', name: this.$t('electricityReport.tenantAll') },
           ...(data || [])
-        ];
+        ]
       } catch (error) {
-        this.$message.error("获取租户列表失败");
-        console.error("获取租户列表失败:", error);
+        this.$apiError.notify(error, this.$t('electricityReport.msgTenantListFail'))
+        console.error('获取租户列表失败:', error)
       } finally {
-        this.tenantLoading = false;
+        this.tenantLoading = false
       }
     },
 
-    handleDateRangeChange(val) {
+    handleDateRangeChange (val) {
       if (val && val.length === 2 && val[0] && val[1]) {
-        if (this.reportType === "statistics" || this.dateType === "day") {
-          const [start, end] = val;
-          const startDate = new Date(start);
-          const endDate = new Date(end);
-          const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000));
+        if (this.reportType === 'statistics' || this.dateType === 'day') {
+          const [start, end] = val
+          const startDate = new Date(start)
+          const endDate = new Date(end)
+          const diffDays = Math.floor((endDate - startDate) / (24 * 3600 * 1000))
 
           // 租户用电统计模式(Tab 1)下限制100天
           // 租户用电明细模式(Tab 2)下限制1年(366天)
-          const limitDays = this.reportType === "statistics" ? 100 : 366;
-          const limitText = this.reportType === "statistics" ? "100天" : "1年";
+          const limitDays = this.reportType === 'statistics' ? 100 : 366
+          const limitSpan = this.reportType === 'statistics'
+            ? this.$t('electricityReport.dateSpan100Days')
+            : this.$t('electricityReport.dateSpan1Year')
 
           if (diffDays > limitDays) {
-            this.$message.warning(`日统计最多只能选择${limitText}的数据`);
-            const newEndDate = new Date(startDate.getTime() + limitDays * 24 * 3600 * 1000);
+            this.$message.warning(this.$t('electricityReport.msgDateRangeLimit', { span: limitSpan }))
+            const newEndDate = new Date(startDate.getTime() + limitDays * 24 * 3600 * 1000)
             this.queryParams.dateRange = [
               start,
-              moment(newEndDate).format("YYYY-MM-DD"),
-            ];
-            return;
+              moment(newEndDate).format('YYYY-MM-DD')
+            ]
+            this.handleSearch()
+            return
           }
         }
-        this.handleSearch();
+        this.handleSearch()
       }
     },
 
-    toggleSelectAll() {
-      if (this.isAllSelected) {
-        this.queryParams.tenantIds = [];
-      } else {
-        this.queryParams.tenantIds = this.realTenantList.map(item => item.tenantId);
+    openFullscreen () {
+      this.fullscreenVisible = true
+    },
+
+    closeFullscreen () {
+      this.fullscreenVisible = false
+    },
+
+    handleFullscreenSwitchChange (value) {
+      this.switchDeviceDetail = value
+      this.handleSwitchChange()
+    },
+
+    switchReportType (type) {
+      if (this.reportType === type) return
+      this.reportType = type
+
+      if (type === 'statistics') {
+        this.dateType = 'day'
+        // 切回日统计须使用 yyyy-MM-dd；保留明细下的月份值会导致日期框空白
+        const range = this.queryParams.dateRange
+        const isDayFormat =
+          range &&
+          range.length === 2 &&
+          /^\d{4}-\d{2}-\d{2}$/.test(range[0]) &&
+          /^\d{4}-\d{2}-\d{2}$/.test(range[1])
+        if (!isDayFormat) {
+          this.setDefaultDateRange()
+        } else {
+          const diffDays = Math.floor(
+            (new Date(range[1]) - new Date(range[0])) / (24 * 3600 * 1000)
+          )
+          if (diffDays > 100) {
+            this.setDefaultDateRange()
+          }
+        }
       }
-    },
 
-    openFullscreen() {
-      this.fullscreenVisible = true;
-    },
+      this.switchDeviceDetail = false
+      this.detailSwitchDeviceDetail = false
 
-    closeFullscreen() {
-      this.fullscreenVisible = false;
-    },
+      this.tableData = []
+      this.chartData = []
+      this.deviceDetailData = []
+      this.tenantDetailData = []
+      this.tenantDeviceDetailTableData = []
 
-    handleFullscreenSwitchChange(value) {
-      this.switchDeviceDetail = value;
-      this.handleSwitchChange();
-    },
-
-    switchReportType(type) {
-      if (this.reportType === type) return;
-      this.reportType = type;
-
-      if (type === "statistics") {
-        this.dateType = "day";
-        this.setDefaultDateRange();
+      if (type === 'detail') {
+        this.initDetailTenantQueryMode()
+        this.handleSearch()
+        return
       }
-
-      this.switchDeviceDetail = false;
-      this.detailSwitchDeviceDetail = false;
-
-      this.tableData = [];
-      this.chartData = [];
-      this.deviceDetailData = [];
-      this.tenantDetailData = [];
-      this.tenantDeviceDetailTableData = [];
-
-      this.handleSearch();
+      this.handleSearch()
     },
 
-    switchDateType(type) {
-      if (this.dateType === type) return;
-      this.dateType = type;
-      this.setDefaultDateRange();
+    switchDateType (type) {
+      if (this.dateType === type) return
+      this.dateType = type
+      this.setDefaultDateRange()
 
-      this.tenantDetailData = [];
-      this.tenantDeviceDetailTableData = [];
+      this.tenantDetailData = []
+      this.tenantDeviceDetailTableData = []
 
-      this.handleSearch();
+      this.handleSearch()
     },
 
-    toggleSeries(seriesName) {
+    toggleSeries (seriesName) {
       if (this.mainChartInstance) {
         this.mainChartInstance.dispatchAction({
-          type: "legendToggleSelect",
-          name: seriesName,
-        });
+          type: 'legendToggleSelect',
+          name: seriesName
+        })
       }
     },
 
-    async handleSearch() {
+    async handleSearch () {
       if (
         !this.queryParams.dateRange ||
         this.queryParams.dateRange.length !== 2
       ) {
-        this.$message.warning("请选择统计时间");
-        return;
+        this.$message.warning(this.$t('electricityReport.msgPickPeriod'))
+        return
       }
-      if (this.reportType === "statistics") {
+      if (this.reportType === 'statistics') {
         if (this.switchDeviceDetail && !this.queryParams.tenantId) {
-          this.$message.warning("设备明细模式下请选择具体租户");
-          return;
+          this.$message.warning(this.$t('electricityReport.msgDeviceNeedTenant'))
+          return
         }
       } else {
-        if (this.queryParams.tenantIds.length === 0) {
-          this.$message.warning("请选择租户");
-          return;
+        const tenantIdList = this.buildDetailTenantIdList()
+        const canQueryWithoutTenantIds =
+          this.isDetailQueryByTenantTypeOnly() && this.queryParams.tenantIds.length === 0
+        if (tenantIdList.length === 0 && !canQueryWithoutTenantIds) {
+          this.$message.warning(this.$t('electricityReport.msgPickTenant'))
+          return
         }
       }
-      this.loading = true;
+      this.loading = true
       try {
-        if (this.reportType === "statistics") {
-          await this.getStatisticsData();
+        if (this.reportType === 'statistics') {
+          await this.fetchTodayVirtualData()
+          await this.getStatisticsData()
           if (this.switchDeviceDetail) {
-            await this.getDeviceDetailData();
+            await this.getDeviceDetailData()
           }
         } else {
+          this.todayVirtualRow = null
           if (this.detailSwitchDeviceDetail) {
-            await this.getTenantDeviceDetailData();
+            await this.getTenantDeviceDetailData()
           } else {
-            await this.getTenantDetailData();
+            await this.getTenantDetailData()
           }
         }
       } catch (error) {
-        this.$message.error("获取数据失败");
-        console.error("获取数据失败:", error);
+        this.$apiError.notify(error, this.$t('electricityReport.msgFetchFail'))
+        console.error('获取数据失败:', error)
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
-    async getStatisticsData() {
-      const startDate = this.queryParams.dateRange[0];
-      const endDate = this.queryParams.dateRange[1];
+    async getStatisticsData () {
+      const startDate = this.queryParams.dateRange[0]
+      const endDate = this.queryParams.dateRange[1]
       const params = {
         managerId: this.currentManagerId,
         startDate,
         endDate,
         dataType: 2,
         useType: 1,
-        selectType: this.switchDeviceDetail ? 0 : 2,
-        tenantIdList: this.queryParams.tenantId ? [this.queryParams.tenantId] : [],
-      };
-      const { data } = await useReportQueryTenantUseStatis(params);
+        selectType: this.switchDeviceDetail ? 0 : 2
+      }
+      this.appendStatisticsTenantParams(params)
+      const { data } = await useReportQueryTenantUseStatis(params)
 
       // 原始数据(API返回的顺序)
-      const originalData = data || [];
+      const originalData = data || []
 
       // 图表数据: 保持正序(时间从早到晚,用于图表展示)
       this.chartData = [...originalData].sort((a, b) => {
-        return new Date(a.occurDate) - new Date(b.occurDate);
-      });
+        return new Date(a.occurDate) - new Date(b.occurDate)
+      })
 
       // 表格数据: 倒序(最新日期在前,用于表格展示)
       this.tableData = [...originalData].sort((a, b) => {
-        return new Date(b.occurDate) - new Date(a.occurDate);
-      });
+        return new Date(b.occurDate) - new Date(a.occurDate)
+      })
 
       this.$nextTick(() => {
-        this.initializeMainChart();
-        this.initializeMonitorChart();
-        this.updateCharts();
-      });
+        this.initializeMainChart()
+        this.initializeMonitorChart()
+        this.updateCharts()
+      })
     },
 
-    async getDeviceDetailData() {
-      const startDate = this.queryParams.dateRange[0];
-      const endDate = this.queryParams.dateRange[1];
+    async fetchTodayVirtualData () {
+      this.todayVirtualRow = null
+      if (!this.currentManagerId) return
+      if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) return
+      const today = moment().format('YYYY-MM-DD')
+      const start = moment(this.queryParams.dateRange[0], 'YYYY-MM-DD')
+      const end = moment(this.queryParams.dateRange[1], 'YYYY-MM-DD')
+      const todayMoment = moment(today, 'YYYY-MM-DD')
+      // 统计区间不包含今天时，不展示“今日”数据
+      if (!start.isValid() || !end.isValid() || todayMoment.isBefore(start, 'day') || todayMoment.isAfter(end, 'day')) {
+        return
+      }
+      try {
+        const params = { managerId: this.currentManagerId }
+        if (this.queryParams.tenantId) {
+          params.tenantId = this.queryParams.tenantId
+        } else if (this.hasTenantTypeFilter()) {
+          params.tenantType = this.queryParams.tenantType
+        }
+        const res = await queryCwTenantTodayUse(params)
+        const dto = res && res.code === 200 ? (res.data || null) : null
+        if (!dto) return
+        const useAmount = Number(dto.useAmount)
+        const useElec = Number(dto.useElec)
+        this.todayVirtualRow = {
+          occurDate: today,
+          useAmount: Number.isFinite(useAmount) ? Number(useAmount.toFixed(2)) : 0,
+          meterBalance: 0,
+          airBalance: 0,
+          useElec: Number.isFinite(useElec) ? Number(useElec.toFixed(2)) : 0,
+          meterUseElec: 0,
+          airUseElec: 0,
+          sysElec: dto.sysElec != null && dto.sysElec !== '' ? Number(Number(dto.sysElec).toFixed(2)) : 0,
+          airSysElec: dto.airSysElec != null && dto.airSysElec !== '' ? Number(Number(dto.airSysElec).toFixed(2)) : 0,
+          useElecPeak: 0,
+          useElecTop: 0,
+          useElecFlat: 0,
+          useElecValley: 0,
+          isVirtualToday: true
+        }
+      } catch (error) {
+        this.todayVirtualRow = null
+      }
+    },
+
+    async getDeviceDetailData () {
+      const startDate = this.queryParams.dateRange[0]
+      const endDate = this.queryParams.dateRange[1]
       const params = {
         managerId: this.currentManagerId,
         startDate,
         endDate,
         dataType: 2,
         useType: 1,
-        selectType: 0,
-        tenantIdList: this.queryParams.tenantId ? [this.queryParams.tenantId] : [],
-      };
-      const { data } = await useReportQueryTenantUseStatis(params);
+        selectType: 0
+      }
+      this.appendStatisticsTenantParams(params)
+      const { data } = await useReportQueryTenantUseStatis(params)
 
       // 先对原始数据按日期倒序排序
       const sortedData = (data || []).sort((a, b) => {
-        return new Date(b.occurDate) - new Date(a.occurDate);
-      });
+        return new Date(b.occurDate) - new Date(a.occurDate)
+      })
 
-      const detailArray = [];
+      const detailArray = []
       if (sortedData && sortedData.length > 0) {
         sortedData.forEach((item) => {
           if (item.deviceUseDtoList && item.deviceUseDtoList.length > 0) {
@@ -1189,18 +1423,20 @@ export default {
               useElec: item.useElec,
               meterUseElec: item.meterUseElec,
               airUseElec: item.airUseElec,
+              sysElec: item.sysElec,
+              airSysElec: item.airSysElec,
               useElecPeak: item.useElecPeak,
               useElecTop: item.useElecTop,
               useElecFlat: item.useElecFlat,
-              useElecValley: item.useElecValley,
-            };
+              useElecValley: item.useElecValley
+            }
             item.deviceUseDtoList.forEach((device, idx) => {
               detailArray.push({
                 ...baseObj,
                 col: idx === 0 ? item.deviceUseDtoList.length : 0,
-                deviceUseDtoList: device,
-              });
-            });
+                deviceUseDtoList: device
+              })
+            })
           } else {
             detailArray.push({
               occurDate: item.occurDate,
@@ -1210,262 +1446,410 @@ export default {
               useElec: item.useElec,
               meterUseElec: item.meterUseElec,
               airUseElec: item.airUseElec,
+              sysElec: item.sysElec,
+              airSysElec: item.airSysElec,
               useElecPeak: item.useElecPeak,
               useElecTop: item.useElecTop,
               useElecFlat: item.useElecFlat,
               useElecValley: item.useElecValley,
               col: 1,
-              deviceUseDtoList: {},
-            });
+              deviceUseDtoList: {}
+            })
           }
-        });
+        })
       }
-      this.deviceDetailData = detailArray;
+      this.deviceDetailData = detailArray
     },
 
-    async getTenantDetailData() {
-      let startDate = this.queryParams.dateRange[0];
-      let endDate = this.queryParams.dateRange[1];
-      if (this.dateType === "month" && startDate.length === 7) {
-        startDate = startDate + "-01";
-        endDate = endDate + "-01";
+    async getTenantDetailData () {
+      let startDate = this.queryParams.dateRange[0]
+      let endDate = this.queryParams.dateRange[1]
+      if (this.dateType === 'month' && startDate.length === 7) {
+        startDate = startDate + '-01'
+        endDate = endDate + '-01'
       }
       const params = {
         managerId: this.currentManagerId,
         startDate,
         endDate,
         dataType: 1,
-        useType: this.dateType === "day" ? 1 : 2,
-        isMeterDetail: false,
-        tenantIdList: this.queryParams.tenantIds,
-      };
-      const { data } = await queryTenantUse(params);
-      this.tenantDetailData = data || [];
+        useType: this.dateType === 'day' ? 1 : 2,
+        isMeterDetail: false
+      }
+      this.appendDetailTenantParams(params)
+      const { data } = await queryTenantUse(params)
+      this.tenantDetailData = data || []
     },
 
-    async getTenantDeviceDetailData() {
-      let startDate = this.queryParams.dateRange[0];
-      let endDate = this.queryParams.dateRange[1];
-      if (this.dateType === "month" && startDate.length === 7) {
-        startDate = startDate + "-01";
-        endDate = endDate + "-01";
+    async getTenantDeviceDetailData () {
+      let startDate = this.queryParams.dateRange[0]
+      let endDate = this.queryParams.dateRange[1]
+      if (this.dateType === 'month' && startDate.length === 7) {
+        startDate = startDate + '-01'
+        endDate = endDate + '-01'
       }
       const params = {
         managerId: this.currentManagerId,
         startDate,
         endDate,
         dataType: 1,
-        useType: this.dateType === "day" ? 1 : 2,
-        isMeterDetail: true,
-        tenantIdList: this.queryParams.tenantIds,
-      };
-      const { data } = await queryTenantUse(params);
-      const tableDataType = [];
+        useType: this.dateType === 'day' ? 1 : 2,
+        isMeterDetail: true
+      }
+      this.appendDetailTenantParams(params)
+      const { data } = await queryTenantUse(params)
+      const tableDataType = []
       if (data && data.length > 0) {
         data.forEach((item) => {
           if (item.meterUseDetail && item.meterUseDetail.length) {
             item.meterUseDetail.forEach((meter, idx) => {
-              if (meter.name !== "总计") {
-                const tip = idx === 0 ? item.meterUseDetail.length - 1 : 0;
+              if (!this.isSummaryMeterName(meter.name)) {
+                const tip = idx === 0 ? item.meterUseDetail.length - 1 : 0
                 tableDataType.push({
                   ...item,
                   ...meter,
                   meterName: meter.name,
-                  tip,
-                });
+                  tip
+                })
               }
-            });
+            })
           } else {
             tableDataType.push({
               ...item,
-              meterName: "-",
-              tip: 1,
-            });
+              meterName: '-',
+              tip: 1
+            })
           }
-        });
+        })
       }
-      this.tenantDeviceDetailTableData = tableDataType;
+      this.tenantDeviceDetailTableData = tableDataType
     },
 
-    handleTenantChange() {
-      this.handleSearch();
+    /** 租户类型、租户选择二选一：有 tenantType 时不传 tenantIdList，选了租户时不传 tenantType */
+    hasTenantTypeFilter () {
+      const t = this.queryParams.tenantType
+      return t === 0 || t === 1 || t === 2
     },
 
-    handleReset() {
-      this.setDefaultDateRange();
-      this.switchDeviceDetail = false;
-      this.detailSwitchDeviceDetail = false;
-      this.queryParams.tenantId = "";
-      this.queryParams.tenantIds = this.realTenantList.map(item => item.tenantId);
-      this.handleSearch();
+    getTenantListTenantType () {
+      return this.hasTenantTypeFilter() ? this.queryParams.tenantType : 0
+    },
+
+    clearTenantType () {
+      this.queryParams.tenantType = null
+    },
+
+    resetTenantTypeDefault () {
+      this.queryParams.tenantType = 0
+    },
+
+    appendStatisticsTenantParams (params) {
+      if (this.queryParams.tenantId) {
+        params.tenantIdList = [this.queryParams.tenantId]
+      } else if (this.hasTenantTypeFilter()) {
+        params.tenantType = this.queryParams.tenantType
+      }
+    },
+
+    isDetailQueryByTenantTypeOnly () {
+      return this.queryParams.tenantIds.length === 0 && this.hasTenantTypeFilter()
+    },
+
+    buildDetailTenantIdList () {
+      if (this.queryParams.tenantIds.length > 0) {
+        return [...this.queryParams.tenantIds]
+      }
+      return []
+    },
+
+    appendDetailTenantParams (params) {
+      const tenantIdList = this.buildDetailTenantIdList()
+      if (tenantIdList.length > 0) {
+        params.tenantIdList = tenantIdList
+      } else if (this.hasTenantTypeFilter()) {
+        params.tenantType = this.queryParams.tenantType
+      }
+    },
+
+    initDetailTenantQueryMode () {
+      this.clearDetailTenants()
+      if (!this.hasTenantTypeFilter()) {
+        this.resetTenantTypeDefault()
+      }
+    },
+
+    selectAllDetailTenants () {
+      this.queryParams.tenantIds = this.realTenantList.map(item => item.tenantId)
+    },
+
+    clearDetailTenants () {
+      this.queryParams.tenantIds = []
+    },
+
+    clearDetailTableData () {
+      this.tenantDetailData = []
+      this.tenantDeviceDetailTableData = []
+    },
+
+    handleTenantChange (tenantId) {
+      if (tenantId) {
+        this.clearTenantType()
+      } else {
+        this.resetTenantTypeDefault()
+      }
+      this.handleSearch()
+    },
+
+    handleDetailTenantChange (val) {
+      if (!Array.isArray(val)) return
+      if (val.includes(TENANT_SELECT_CLEAR_ALL)) {
+        this.clearDetailTenants()
+        this.resetTenantTypeDefault()
+        this.clearDetailTableData()
+        return
+      }
+      if (val.includes(TENANT_SELECT_SELECT_ALL)) {
+        this.selectAllDetailTenants()
+        this.clearTenantType()
+        this.handleSearch()
+        return
+      }
+      this.queryParams.tenantIds = val.filter(
+        (id) => id !== TENANT_SELECT_CLEAR_ALL && id !== TENANT_SELECT_SELECT_ALL
+      )
+      this.clearTenantType()
+      this.handleSearch()
+    },
+
+    async handleTenantTypeChange () {
+      this.queryParams.tenantId = ''
+      this.clearDetailTenants()
+      await this.getTenantList()
+      this.handleSearch()
+    },
+
+    async handleReset () {
+      if (this.$route.query && (this.$route.query.startDate || this.$route.query.endDate)) {
+        this.$router.replace({ path: this.$route.path, query: {} })
+      }
+      this.setDefaultDateRange()
+      this.switchDeviceDetail = false
+      this.detailSwitchDeviceDetail = false
+      this.queryParams.tenantType = 0
+      this.queryParams.tenantId = ''
+      await this.getTenantList()
+      if (this.reportType === 'detail') {
+        this.initDetailTenantQueryMode()
+        this.handleSearch()
+      } else {
+        this.clearDetailTenants()
+        this.handleSearch()
+      }
     },
 
     // ==================== 导出功能 ====================
 
-    formatExportNumber(num) {
+    formatExportNumber (num) {
       if (num === undefined || num === null || num === '' || num === '-') {
-        return 0;
+        return 0
       }
 
-      const numValue = typeof num === 'string' ? parseFloat(num) : num;
+      const numValue = typeof num === 'string' ? parseFloat(num) : num
 
       if (isNaN(numValue)) {
-        return 0;
+        return 0
       }
 
-      return numValue;
+      return numValue
     },
 
-    handleExport() {
+    handleExport () {
       if (this.reportType === 'statistics') {
         if (!this.switchDeviceDetail && (!this.tableData || this.tableData.length === 0)) {
-          this.$message.warning('暂无数据可导出');
-          return;
+          this.$message.warning(this.$t('electricityReport.msgExportEmpty'))
+          return
         }
         if (this.switchDeviceDetail && (!this.deviceDetailData || this.deviceDetailData.length === 0)) {
-          this.$message.warning('暂无设备明细数据可导出');
-          return;
+          this.$message.warning(this.$t('electricityReport.msgExportEmptyDevice'))
+          return
         }
       } else {
         if (!this.detailSwitchDeviceDetail && (!this.tenantDetailData || this.tenantDetailData.length === 0)) {
-          this.$message.warning('暂无数据可导出');
-          return;
+          this.$message.warning(this.$t('electricityReport.msgExportEmpty'))
+          return
         }
         if (this.detailSwitchDeviceDetail && (!this.tenantDeviceDetailTableData || this.tenantDeviceDetailTableData.length === 0)) {
-          this.$message.warning('暂无设备明细数据可导出');
-          return;
+          this.$message.warning(this.$t('electricityReport.msgExportEmptyDevice'))
+          return
         }
       }
 
-      this.exportLoading = true;
+      this.exportLoading = true
 
       setTimeout(() => {
         try {
           if (this.reportType === 'statistics') {
             if (this.switchDeviceDetail) {
-              this.exportStatisticsDeviceDetail();
+              this.exportStatisticsDeviceDetail()
             } else {
-              this.exportStatisticsNormal();
+              this.exportStatisticsNormal()
             }
           } else {
             if (this.detailSwitchDeviceDetail) {
-              this.exportDetailDeviceDetail();
+              this.exportDetailDeviceDetail()
             } else {
-              this.exportDetailNormal();
+              this.exportDetailNormal()
             }
           }
 
-          this.$message.success('导出成功！');
+          this.$message.success(this.$t('electricityReport.msgExportOk'))
         } catch (error) {
-          console.error('导出失败:', error);
-          this.$message.error(`导出失败: ${error.message || '请重试'}`);
+          console.error('导出失败:', error)
+          this.$message.error(
+            `${this.$t('electricityReport.msgExportFail')}: ${error.message || this.$t('electricityReport.msgExportRetry')}`
+          )
         } finally {
-          this.exportLoading = false;
+          this.exportLoading = false
         }
-      }, 100);
+      }, 100)
     },
 
-    exportStatisticsNormal() {
-      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId);
-      const tenantName = tenant ? tenant.name : this.queryParams.tenantId;
+    exportStatisticsNormal () {
+      const t = (k) => this.$t(`electricityReport.${k}`)
+      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId)
+      const tenantName = tenant ? this.$displayBizHybrid(tenant.name) : this.queryParams.tenantId
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}`,
-        `租户: ${tenantName}`,
-      ];
+        this.$t('electricityReport.expFilterTime', { start: this.queryParams.dateRange[0], end: this.queryParams.dateRange[1] }),
+        this.$t('electricityReport.expFilterTenant', { tenant: tenantName })
+      ]
 
-      const headers = ['日期', '电费（元）', '室内电费（元）', '空调电费（元）', '总电量（度）', '室内电量（度）', '空调电量（度）', '尖电量（度）', '峰电量（度）', '平电量（度）', '谷电量（度）'];
+      const headers = [
+        t('expColDate'),
+        t('expColTotalFee'),
+        t('expColIndoorFee'),
+        t('expColAcFee'),
+        t('expColTotalKwh'),
+        ...(this.airSysElecColsVisible ? [t('expColSysTotalKwh')] : []),
+        t('expColIndoorKwh'),
+        t('expColAcKwh'),
+        ...(this.airSysElecColsVisible ? [t('expColAirSysKwh')] : []),
+        t('expColPeakKwh'),
+        t('expColTopKwh'),
+        t('expColFlatKwh'),
+        t('expColValleyKwh')
+      ]
 
-      const dataRows = this.tableData.map(row => [
-        row.occurDate || '',
-        this.formatExportNumber(row.useAmount),
-        this.formatExportNumber(row.meterBalance),
-        this.formatExportNumber(row.airBalance),
-        this.formatExportNumber(row.useElec),
-        this.formatExportNumber(row.meterUseElec),
-        this.formatExportNumber(row.airUseElec),
-        this.formatExportNumber(row.useElecPeak),
-        this.formatExportNumber(row.useElecTop),
-        this.formatExportNumber(row.useElecFlat),
-        this.formatExportNumber(row.useElecValley),
-      ]);
+      const dataRows = this.tableData.map(row => {
+        const lead = [
+          row.occurDate || '',
+          this.formatExportNumber(row.useAmount),
+          this.formatExportNumber(row.meterBalance),
+          this.formatExportNumber(row.airBalance),
+          this.formatExportNumber(row.useElec)
+        ]
+        if (this.airSysElecColsVisible) {
+          lead.push(this.formatExportNumber(row.sysElec))
+        }
+        lead.push(
+          this.formatExportNumber(row.meterUseElec),
+          this.formatExportNumber(row.airUseElec)
+        )
+        if (this.airSysElecColsVisible) {
+          lead.push(this.formatExportNumber(row.airSysElec))
+        }
+        lead.push(
+          this.formatExportNumber(row.useElecPeak),
+          this.formatExportNumber(row.useElecTop),
+          this.formatExportNumber(row.useElecFlat),
+          this.formatExportNumber(row.useElecValley)
+        )
+        return lead
+      })
 
       const totalRow = [
-        '总计',
+        this.$t('electricityReport.summaryTotal'),
         this.formatExportNumber(this.totalStats.amount),
         this.formatExportNumber(this.totalStats.meterBalance),
         this.formatExportNumber(this.totalStats.airBalance),
         this.formatExportNumber(this.totalStats.elec),
+        ...(this.airSysElecColsVisible ? [this.formatExportNumber(this.totalStats.sysElec)] : []),
         this.formatExportNumber(this.totalStats.meterUseElec),
         this.formatExportNumber(this.totalStats.airUseElec),
+        ...(this.airSysElecColsVisible ? [this.formatExportNumber(this.totalStats.airSysElec)] : []),
         this.formatExportNumber(this.totalStats.elecPeak),
         this.formatExportNumber(this.totalStats.elecTop),
         this.formatExportNumber(this.totalStats.elecFlat),
-        this.formatExportNumber(this.totalStats.elecValley),
-      ];
+        this.formatExportNumber(this.totalStats.elecValley)
+      ]
 
       const wsData = [
         filterRow,
         [],
         headers,
         ...dataRows,
-        totalRow,
-      ];
+        totalRow
+      ]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
-      ws['!cols'] = [
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-      ];
+      const colCount = 11 + (this.airSysElecColsVisible ? 2 : 0)
+      ws['!cols'] = Array.from({ length: colCount }, () => ({ wch: 15 }))
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '租户用电统计');
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('electricityReport.expSheetStat'))
 
-      const fileName = this.generateFileName('租户用电统计');
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(this.$t('electricityReport.expSheetStat'))
+      XLSX.writeFile(wb, fileName)
     },
 
-    exportStatisticsDeviceDetail() {
-      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId);
-      const tenantName = tenant ? tenant.name : this.queryParams.tenantId;
+    exportStatisticsDeviceDetail () {
+      const t = (k) => this.$t(`electricityReport.${k}`)
+      const ext = this.airSysElecColsVisible ? 2 : 0
+      const LEAD = 11 + ext
+      const LAST_COL = 30 + ext
+      const tailPad = () => [...Array(8).fill(''), ...Array(6).fill(''), ...Array(6).fill('')]
+
+      const tenant = this.tenantList.find(t => t.tenantId === this.queryParams.tenantId)
+      const tenantName = tenant ? this.$displayBizHybrid(tenant.name) : this.queryParams.tenantId
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}  |  租户: ${tenantName}  |  设备明细`
-      ];
+        this.$t('electricityReport.expFilterTime', { start: this.queryParams.dateRange[0], end: this.queryParams.dateRange[1] }) +
+          '  |  ' + this.$t('electricityReport.expFilterTenant', { tenant: tenantName }) +
+          '  |  ' + this.$t('electricityReport.expFilterDeviceDetail')
+      ]
+
+      const leadHeaders = [
+        t('expColDate'), t('expColTotalFee'), t('expColIndoorFee'), t('expColAcFee'), t('expColTotalKwh'),
+        ...(ext ? [t('expColSysTotalKwh')] : []),
+        t('expColIndoorKwh'), t('expColAcKwh'),
+        ...(ext ? [t('expColAirSysKwh')] : []),
+        t('expColPeakKwh'), t('expColTopKwh'), t('expColFlatKwh'), t('expColValleyKwh')
+      ]
 
       const header1 = [
-        '日期', '电费（元）', '室内电费（元）', '空调电费（元）', '总电量（度）', '室内电量（度）', '空调电量（度）', '尖电量（度）', '峰电量（度）', '平电量（度）', '谷电量（度）',
-        '设备', '结算方式', '费用',
-        '电量', '', '', '', '',
-        '起始读数', '', '', '', '', '',
-        '截止读数', '', '', '', '', '',
-      ];
+        ...leadHeaders,
+        t('expColDevice'), t('expColSettleWay'), t('expColFee'),
+        t('expColElec'), '', '', '', '',
+        t('colStartReading'), '', '', '', '', '',
+        t('colEndReading'), '', '', '', '', ''
+      ]
 
       const header2 = [
-        '', '', '', '', '', '', '', '', '', '', '',
+        ...Array(LEAD).fill(''),
         '', '', '',
-        '总计', '尖', '峰', '平', '谷',
-        '时间', '总电量', '尖', '峰', '平', '谷',
-        '时间', '总电量', '尖', '峰', '平', '谷',
-      ];
+        t('colGrandTotal'), t('colSpikeShort'), t('colPeakShort'), t('colFlatShort'), t('colValleyShort'),
+        t('colTime'), t('colTotalElecShort'), t('colSpikeShort'), t('colPeakShort'), t('colFlatShort'), t('colValleyShort'),
+        t('colTime'), t('colTotalElecShort'), t('colSpikeShort'), t('colPeakShort'), t('colFlatShort'), t('colValleyShort')
+      ]
 
       if (!this.deviceDetailData || this.deviceDetailData.length === 0) {
-        throw new Error('没有可导出的设备明细数据');
+        throw new Error(this.$t('electricityReport.errNoDeviceExport'))
       }
 
-      const dateGroups = {};
+      const dateGroups = {}
       this.deviceDetailData.forEach(row => {
-        const date = row.occurDate;
+        const date = row.occurDate
         if (!dateGroups[date]) {
           dateGroups[date] = {
             summary: {
@@ -1476,60 +1860,64 @@ export default {
               useElec: row.useElec,
               meterUseElec: row.meterUseElec,
               airUseElec: row.airUseElec,
+              sysElec: row.sysElec,
+              airSysElec: row.airSysElec,
               useElecPeak: row.useElecPeak,
               useElecTop: row.useElecTop,
               useElecFlat: row.useElecFlat,
-              useElecValley: row.useElecValley,
+              useElecValley: row.useElecValley
             },
             devices: []
-          };
+          }
         }
         if (row.deviceUseDtoList && Object.keys(row.deviceUseDtoList).length > 0) {
-          dateGroups[date].devices.push(row.deviceUseDtoList);
+          dateGroups[date].devices.push(row.deviceUseDtoList)
         }
-      });
+      })
 
-      const dataRows = [];
+      const summaryStatCells = (s) => {
+        const cells = [
+          this.formatExportNumber(s.useAmount),
+          this.formatExportNumber(s.meterBalance),
+          this.formatExportNumber(s.airBalance),
+          this.formatExportNumber(s.useElec)
+        ]
+        if (ext) cells.push(this.formatExportNumber(s.sysElec))
+        cells.push(
+          this.formatExportNumber(s.meterUseElec),
+          this.formatExportNumber(s.airUseElec)
+        )
+        if (ext) cells.push(this.formatExportNumber(s.airSysElec))
+        cells.push(
+          this.formatExportNumber(s.useElecPeak),
+          this.formatExportNumber(s.useElecTop),
+          this.formatExportNumber(s.useElecFlat),
+          this.formatExportNumber(s.useElecValley)
+        )
+        return cells
+      }
+
+      const dataRows = []
       Object.keys(dateGroups).sort().forEach(date => {
-        const group = dateGroups[date];
-        const deviceCount = group.devices.length;
+        const group = dateGroups[date]
+        const deviceCount = group.devices.length
 
         if (deviceCount === 0) {
           dataRows.push([
             group.summary.occurDate,
-            this.formatExportNumber(group.summary.useAmount),
-            this.formatExportNumber(group.summary.meterBalance),
-            this.formatExportNumber(group.summary.airBalance),
-            this.formatExportNumber(group.summary.useElec),
-            this.formatExportNumber(group.summary.meterUseElec),
-            this.formatExportNumber(group.summary.airUseElec),
-            this.formatExportNumber(group.summary.useElecPeak),
-            this.formatExportNumber(group.summary.useElecTop),
-            this.formatExportNumber(group.summary.useElecFlat),
-            this.formatExportNumber(group.summary.useElecValley),
-            '', '', '', '', '', '', '', '',
-            '', '', '', '', '', '',
-            '', '', '', '', '', '',
-          ]);
+            ...summaryStatCells(group.summary),
+            ...tailPad()
+          ])
         } else {
           group.devices.forEach((device, idx) => {
-            const startDto = device.startUseDto || {};
-            const stopDto = device.stopUseDto || {};
+            const startDto = device.startUseDto || {}
+            const stopDto = device.stopUseDto || {}
 
             if (idx === 0) {
               dataRows.push([
                 group.summary.occurDate,
-                this.formatExportNumber(group.summary.useAmount),
-                this.formatExportNumber(group.summary.meterBalance),
-                this.formatExportNumber(group.summary.airBalance),
-                this.formatExportNumber(group.summary.useElec),
-                this.formatExportNumber(group.summary.meterUseElec),
-                this.formatExportNumber(group.summary.airUseElec),
-                this.formatExportNumber(group.summary.useElecPeak),
-                this.formatExportNumber(group.summary.useElecTop),
-                this.formatExportNumber(group.summary.useElecFlat),
-                this.formatExportNumber(group.summary.useElecValley),
-                device.meterName || '',
+                ...summaryStatCells(group.summary),
+                this.$displayBizHybrid(device.meterName || ''),
                 this.getSettleWayLabel(device.settleWay) || '',
                 this.formatExportNumber(device.useAmount),
                 this.formatExportNumber(device.useElec),
@@ -1548,12 +1936,12 @@ export default {
                 this.formatExportNumber(stopDto.powerPeak),
                 this.formatExportNumber(stopDto.powerTop),
                 this.formatExportNumber(stopDto.powerFlat),
-                this.formatExportNumber(stopDto.powerValley),
-              ]);
+                this.formatExportNumber(stopDto.powerValley)
+              ])
             } else {
               dataRows.push([
-                '', '', '', '', '', '', '', '', '', '', '',
-                device.meterName || '',
+                ...Array(LEAD).fill(''),
+                this.$displayBizHybrid(device.meterName || ''),
                 this.getSettleWayLabel(device.settleWay) || '',
                 this.formatExportNumber(device.useAmount),
                 this.formatExportNumber(device.useElec),
@@ -1572,28 +1960,32 @@ export default {
                 this.formatExportNumber(stopDto.powerPeak),
                 this.formatExportNumber(stopDto.powerTop),
                 this.formatExportNumber(stopDto.powerFlat),
-                this.formatExportNumber(stopDto.powerValley),
-              ]);
+                this.formatExportNumber(stopDto.powerValley)
+              ])
             }
-          });
+          })
         }
-      });
+      })
 
       const totalRow = [
-        '总计',
-        this.formatExportNumber(this.totalStats.amount),
-        this.formatExportNumber(this.totalStats.meterBalance),
-        this.formatExportNumber(this.totalStats.airBalance),
-        this.formatExportNumber(this.totalStats.elec),
-        this.formatExportNumber(this.totalStats.meterUseElec),
-        this.formatExportNumber(this.totalStats.airUseElec),
-        this.formatExportNumber(this.totalStats.elecPeak),
-        this.formatExportNumber(this.totalStats.elecTop),
-        this.formatExportNumber(this.totalStats.elecFlat),
-        this.formatExportNumber(this.totalStats.elecValley),
-      ];
-      while (totalRow.length < 31) {
-        totalRow.push('');
+        this.$t('electricityReport.summaryTotal'),
+        ...summaryStatCells({
+          useAmount: this.totalStats.amount,
+          meterBalance: this.totalStats.meterBalance,
+          airBalance: this.totalStats.airBalance,
+          useElec: this.totalStats.elec,
+          meterUseElec: this.totalStats.meterUseElec,
+          airUseElec: this.totalStats.airUseElec,
+          sysElec: this.totalStats.sysElec,
+          airSysElec: this.totalStats.airSysElec,
+          useElecPeak: this.totalStats.elecPeak,
+          useElecTop: this.totalStats.elecTop,
+          useElecFlat: this.totalStats.elecFlat,
+          useElecValley: this.totalStats.elecValley
+        })
+      ]
+      while (totalRow.length < LAST_COL + 1) {
+        totalRow.push('')
       }
 
       const wsData = [
@@ -1602,100 +1994,107 @@ export default {
         header1,
         header2,
         ...dataRows,
-        totalRow,
-      ];
+        totalRow
+      ]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
+      const leadColWidths = Array.from({ length: LEAD }, (_, i) => ({ wch: i === 0 ? 15 : 12 }))
       ws['!cols'] = [
-        { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+        ...leadColWidths,
         { wch: 18 }, { wch: 12 }, { wch: 12 },
         { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
         { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-        { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-      ];
+        { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }
+      ]
 
       const merges = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 30 } },
-        { s: { r: 2, c: 0 }, e: { r: 3, c: 0 } },
-        { s: { r: 2, c: 1 }, e: { r: 3, c: 1 } },
-        { s: { r: 2, c: 2 }, e: { r: 3, c: 2 } },
-        { s: { r: 2, c: 3 }, e: { r: 3, c: 3 } },
-        { s: { r: 2, c: 4 }, e: { r: 3, c: 4 } },
-        { s: { r: 2, c: 5 }, e: { r: 3, c: 5 } },
-        { s: { r: 2, c: 6 }, e: { r: 3, c: 6 } },
-        { s: { r: 2, c: 7 }, e: { r: 3, c: 7 } },
-        { s: { r: 2, c: 8 }, e: { r: 3, c: 8 } },
-        { s: { r: 2, c: 9 }, e: { r: 3, c: 9 } },
-        { s: { r: 2, c: 10 }, e: { r: 3, c: 10 } },
-        { s: { r: 2, c: 11 }, e: { r: 3, c: 11 } },
-        { s: { r: 2, c: 12 }, e: { r: 3, c: 12 } },
-        { s: { r: 2, c: 13 }, e: { r: 3, c: 13 } },
-        { s: { r: 2, c: 14 }, e: { r: 2, c: 18 } },
-        { s: { r: 2, c: 19 }, e: { r: 2, c: 24 } },
-        { s: { r: 2, c: 25 }, e: { r: 2, c: 30 } },
-      ];
+        { s: { r: 0, c: 0 }, e: { r: 0, c: LAST_COL } }
+      ]
+      for (let c = 0; c <= LEAD + 2; c++) {
+        merges.push({ s: { r: 2, c }, e: { r: 3, c } })
+      }
+      const elecStart = LEAD + 3
+      merges.push(
+        { s: { r: 2, c: elecStart }, e: { r: 2, c: elecStart + 4 } },
+        { s: { r: 2, c: elecStart + 5 }, e: { r: 2, c: elecStart + 10 } },
+        { s: { r: 2, c: elecStart + 11 }, e: { r: 2, c: elecStart + 16 } }
+      )
 
-      let currentRow = 4;
+      let currentRow = 4
       Object.keys(dateGroups).sort().forEach(date => {
-        const group = dateGroups[date];
-        const deviceCount = group.devices.length;
+        const group = dateGroups[date]
+        const deviceCount = group.devices.length
 
         if (deviceCount > 1) {
-          for (let col = 0; col <= 10; col++) {
+          for (let col = 0; col < LEAD; col++) {
             merges.push({
               s: { r: currentRow, c: col },
               e: { r: currentRow + deviceCount - 1, c: col }
-            });
+            })
           }
         }
 
-        currentRow += deviceCount > 0 ? deviceCount : 1;
-      });
+        currentRow += deviceCount > 0 ? deviceCount : 1
+      })
 
-      ws['!merges'] = merges;
+      ws['!merges'] = merges
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '租户用电统计-设备明细');
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('electricityReport.expSheetStatDevice'))
 
-      const fileName = this.generateFileName('租户用电统计-设备明细');
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(this.$t('electricityReport.expSheetStatDevice'))
+      XLSX.writeFile(wb, fileName)
     },
 
-    exportDetailNormal() {
+    exportDetailNormal () {
+      const t = (k) => this.$t(`electricityReport.${k}`)
+      const sep = this.$t('electricityReport.listSep')
       const selectedTenants = this.tenantList
         .filter(t => this.queryParams.tenantIds.includes(t.tenantId))
-        .map(t => t.name)
-        .join('、');
+        .map(t => this.$displayBizHybrid(t.name))
+        .join(sep)
+
+      const statLabel = this.dateType === 'day' ? this.$t('electricityReport.statTypeDay') : this.$t('electricityReport.statTypeMonth')
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}`,
-        `租户: ${selectedTenants || '全部'}`,
-        `统计类型: ${this.dateType === 'day' ? '日统计' : '月统计'}`,
-      ];
+        this.$t('electricityReport.expFilterTime', { start: this.queryParams.dateRange[0], end: this.queryParams.dateRange[1] }),
+        this.$t('electricityReport.expFilterTenant', { tenant: selectedTenants || this.$t('electricityReport.tenantAll') }),
+        this.$t('electricityReport.expFilterStatType', { type: statLabel })
+      ]
 
-      const headers = ['租户编号', '租户名称', '区域标签', '电费(元)', '电量(度)', '尖电量(度)', '峰电量(度)', '平电量(度)', '谷电量(度)'];
+      const headers = [
+        t('expColTenantId'),
+        t('expColTenantName'),
+        t('expColRegion'),
+        t('colElecFee'),
+        t('colElecKwh'),
+        t('colPeakElec'),
+        t('colTopElec'),
+        t('colFlatElec'),
+        t('colValleyElec')
+      ]
 
       const dataRows = this.tenantDetailData.map(row => [
-        row.tenantId !== -1 ? row.tenantId : '总计',
-        row.tenantName || '',
+        row.tenantId !== -1 ? row.tenantId : this.$t('electricityReport.summaryTotal'),
+        this.$displayBizHybrid(row.tenantName) || '',
         row.labelNames && row.labelNames.length ? row.labelNames[0] : '',
         this.formatExportNumber(row.useAmount),
         this.formatExportNumber(row.useElec),
         this.formatExportNumber(row.useElecPeak),
         this.formatExportNumber(row.useElecTop),
         this.formatExportNumber(row.useElecFlat),
-        this.formatExportNumber(row.useElecValley),
-      ]);
+        this.formatExportNumber(row.useElecValley)
+      ])
 
       const wsData = [
         filterRow,
         [],
         headers,
-        ...dataRows,
-      ];
+        ...dataRows
+      ]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
       ws['!cols'] = [
         { wch: 12 },
@@ -1706,48 +2105,55 @@ export default {
         { wch: 15 },
         { wch: 15 },
         { wch: 15 },
-        { wch: 15 },
-      ];
+        { wch: 15 }
+      ]
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '租户用电明细');
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('electricityReport.expSheetDetail'))
 
-      const fileName = this.generateFileName('租户用电明细');
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(this.$t('electricityReport.expSheetDetail'))
+      XLSX.writeFile(wb, fileName)
     },
 
-    exportDetailDeviceDetail() {
+    exportDetailDeviceDetail () {
+      const t = (k) => this.$t(`electricityReport.${k}`)
+      const sep = this.$t('electricityReport.listSep')
       const selectedTenants = this.tenantList
         .filter(t => this.queryParams.tenantIds.includes(t.tenantId))
-        .map(t => t.name)
-        .join('、');
+        .map(t => this.$displayBizHybrid(t.name))
+        .join(sep)
+
+      const statLabel = this.dateType === 'day' ? this.$t('electricityReport.statTypeDay') : this.$t('electricityReport.statTypeMonth')
 
       const filterRow = [
-        `统计时间: ${this.queryParams.dateRange[0]} 至 ${this.queryParams.dateRange[1]}  |  租户: ${selectedTenants || '全部'}  |  统计类型: ${this.dateType === 'day' ? '日统计' : '月统计'}  |  设备明细`
-      ];
+        this.$t('electricityReport.expFilterTime', { start: this.queryParams.dateRange[0], end: this.queryParams.dateRange[1] }) +
+          '  |  ' + this.$t('electricityReport.expFilterTenant', { tenant: selectedTenants || this.$t('electricityReport.tenantAll') }) +
+          '  |  ' + this.$t('electricityReport.expFilterStatType', { type: statLabel }) +
+          '  |  ' + this.$t('electricityReport.expFilterDeviceDetail')
+      ]
 
       const header1 = [
-        '租户编号', '租户名称', '电表',
-        '明细', '', '', '', '', '',
-        '统计', '', '', '', '', '',
-      ];
+        t('expColTenantId'), t('expColTenantName'), t('expColMeter'),
+        t('colDetail'), '', '', '', '', '',
+        t('colStatistics'), '', '', '', '', ''
+      ]
 
       const header2 = [
         '', '', '',
-        '电费(元)', '电量(度)', '尖电量', '峰电量', '平电量', '谷电量',
-        '电费(元)', '电量(度)', '尖电量', '峰电量', '平电量', '谷电量',
-      ];
+        t('colElecFee'), t('colElecKwh'), t('colPeakElecShort'), t('colTopElecShort'), t('colFlatElecShort'), t('colValleyElecShort'),
+        t('colElecFee'), t('colElecKwh'), t('colPeakElecShort'), t('colTopElecShort'), t('colFlatElecShort'), t('colValleyElecShort')
+      ]
 
       if (!this.tenantDeviceDetailTableData || this.tenantDeviceDetailTableData.length === 0) {
-        throw new Error('没有可导出的租户设备明细数据');
+        throw new Error(this.$t('electricityReport.errNoTenantMeterExport'))
       }
 
       // 按租户分组
-      const tenantGroups = {};
+      const tenantGroups = {}
       this.tenantDeviceDetailTableData.forEach(row => {
-        if (row.tenantId === -1) return; // 跳过总计行
+        if (row.tenantId === -1) return // 跳过总计行
 
-        const key = row.tenantId;
+        const key = row.tenantId
         if (!tenantGroups[key]) {
           tenantGroups[key] = {
             tenantId: row.tenantId,
@@ -1760,7 +2166,7 @@ export default {
             totalUseElecFlat: row.useElecFlat || 0,
             totalUseElecValley: row.useElecValley || 0,
             meters: []
-          };
+          }
         }
 
         // 收集电表数据（明细列）
@@ -1771,24 +2177,24 @@ export default {
           elecUsePeak: row.elecUsePeak,
           elecUseTop: row.elecUseTop,
           elecUseFlat: row.elecUseFlat,
-          elecUseValley: row.elecUseValley,
-        });
-      });
+          elecUseValley: row.elecUseValley
+        })
+      })
 
-      const dataRows = [];
+      const dataRows = []
 
       // 生成数据行
       Object.keys(tenantGroups).sort((a, b) => a - b).forEach(tenantId => {
-        const group = tenantGroups[tenantId];
-        const meterCount = group.meters.length;
+        const group = tenantGroups[tenantId]
+        const meterCount = group.meters.length
 
         group.meters.forEach((meter, idx) => {
           if (idx === 0) {
             // 第一行：显示租户信息 + 电表明细 + 租户统计
             dataRows.push([
               group.tenantId,
-              group.tenantName || '',
-              meter.meterName || '',
+              this.$displayBizHybrid(group.tenantName) || '',
+              this.$displayBizHybrid(meter.meterName) || '',
               // 明细：单个电表数据
               this.formatExportNumber(meter.elecAmt),
               this.formatExportNumber(meter.elecUse),
@@ -1802,13 +2208,13 @@ export default {
               this.formatExportNumber(group.totalUseElecPeak),
               this.formatExportNumber(group.totalUseElecTop),
               this.formatExportNumber(group.totalUseElecFlat),
-              this.formatExportNumber(group.totalUseElecValley),
-            ]);
+              this.formatExportNumber(group.totalUseElecValley)
+            ])
           } else {
             // 后续行：只显示电表明细
             dataRows.push([
               '', '', // 租户编号和名称已合并
-              meter.meterName || '',
+              this.$displayBizHybrid(meter.meterName) || '',
               // 明细：单个电表数据
               this.formatExportNumber(meter.elecAmt),
               this.formatExportNumber(meter.elecUse),
@@ -1817,17 +2223,17 @@ export default {
               this.formatExportNumber(meter.elecUseFlat),
               this.formatExportNumber(meter.elecUseValley),
               // 统计：空（已合并）
-              '', '', '', '', '', '',
-            ]);
+              '', '', '', '', '', ''
+            ])
           }
-        });
-      });
+        })
+      })
 
       // 添加总计行
-      const totalRow = this.tenantDeviceDetailTableData.find(row => row.tenantId === -1);
+      const totalRow = this.tenantDeviceDetailTableData.find(row => row.tenantId === -1)
       if (totalRow) {
         dataRows.push([
-          '总计',
+          this.$t('electricityReport.summaryTotal'),
           '',
           '',
           '', '', '', '', '', '', // 明细列留空
@@ -1836,8 +2242,8 @@ export default {
           this.formatExportNumber(totalRow.useElecPeak),
           this.formatExportNumber(totalRow.useElecTop),
           this.formatExportNumber(totalRow.useElecFlat),
-          this.formatExportNumber(totalRow.useElecValley),
-        ]);
+          this.formatExportNumber(totalRow.useElecValley)
+        ])
       }
 
       const wsData = [
@@ -1845,16 +2251,16 @@ export default {
         [],
         header1,
         header2,
-        ...dataRows,
-      ];
+        ...dataRows
+      ]
 
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
 
       ws['!cols'] = [
         { wch: 12 }, { wch: 20 }, { wch: 18 },
         { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-      ];
+        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
+      ]
 
       // 合并单元格
       const merges = [
@@ -1864,208 +2270,254 @@ export default {
         { s: { r: 2, c: 0 }, e: { r: 3, c: 0 } }, // 租户编号
         { s: { r: 2, c: 1 }, e: { r: 3, c: 1 } }, // 租户名称
         { s: { r: 2, c: 2 }, e: { r: 3, c: 2 } }, // 电表
-        { s: { r: 2, c: 3 }, e: { r: 2, c: 8 } },  // 明细
-        { s: { r: 2, c: 9 }, e: { r: 2, c: 14 } }, // 统计
-      ];
+        { s: { r: 2, c: 3 }, e: { r: 2, c: 8 } }, // 明细
+        { s: { r: 2, c: 9 }, e: { r: 2, c: 14 } } // 统计
+      ]
 
       // 合并数据行中的租户信息和统计列
-      let currentRow = 4;
+      let currentRow = 4
       Object.keys(tenantGroups).sort((a, b) => a - b).forEach(tenantId => {
-        const group = tenantGroups[tenantId];
-        const meterCount = group.meters.length;
+        const group = tenantGroups[tenantId]
+        const meterCount = group.meters.length
 
         if (meterCount > 1) {
           // 合并租户编号和名称
           merges.push(
             { s: { r: currentRow, c: 0 }, e: { r: currentRow + meterCount - 1, c: 0 } },
             { s: { r: currentRow, c: 1 }, e: { r: currentRow + meterCount - 1, c: 1 } }
-          );
+          )
           // 合并统计列
           for (let col = 9; col <= 14; col++) {
             merges.push({
               s: { r: currentRow, c: col },
               e: { r: currentRow + meterCount - 1, c: col }
-            });
+            })
           }
         }
 
-        currentRow += meterCount;
-      });
+        currentRow += meterCount
+      })
 
-      ws['!merges'] = merges;
+      ws['!merges'] = merges
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '租户用电明细-设备明细');
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('electricityReport.expSheetDetailDevice'))
 
-      const fileName = this.generateFileName('租户用电明细-设备明细');
-      XLSX.writeFile(wb, fileName);
+      const fileName = this.generateFileName(this.$t('electricityReport.expSheetDetailDevice'))
+      XLSX.writeFile(wb, fileName)
     },
 
-    generateFileName(prefix) {
-      const now = new Date();
+    generateFileName (prefix) {
+      const now = new Date()
       const timeStr = now.getFullYear() +
         String(now.getMonth() + 1).padStart(2, '0') +
         String(now.getDate()).padStart(2, '0') + '_' +
         String(now.getHours()).padStart(2, '0') +
         String(now.getMinutes()).padStart(2, '0') +
-        String(now.getSeconds()).padStart(2, '0');
+        String(now.getSeconds()).padStart(2, '0')
 
-      return `${prefix}_${timeStr}.xlsx`;
+      return `${prefix}_${timeStr}.xlsx`
     },
 
     // ==================== 其他方法 ====================
 
-    handleSwitchChange() {
+    handleSwitchChange () {
       if (this.switchDeviceDetail && !this.queryParams.tenantId) {
         if (this.realTenantList.length > 0) {
-          this.queryParams.tenantId = this.realTenantList[0].tenantId;
-          this.$message.info("设备明细模式已自动选择第一个租户");
+          this.queryParams.tenantId = this.realTenantList[0].tenantId
+          this.clearTenantType()
+          this.$message.info(this.$t('electricityReport.msgDeviceAutoTenant'))
         } else {
-          this.$message.warning("暂无可用租户");
-          this.switchDeviceDetail = false;
-          return;
+          this.$message.warning(this.$t('electricityReport.msgNoTenantAvailable'))
+          this.switchDeviceDetail = false
+          return
         }
       }
-      this.handleSearch();
+      this.handleSearch()
     },
 
-    handleDetailSwitchChange() {
-      this.handleSearch();
+    handleDetailSwitchChange () {
+      this.handleSearch()
     },
 
-    tableRowClassName({ row }) {
+    tableRowClassName ({ row }) {
       if (row.tenantId === -1) {
-        return "total-row";
+        return 'total-row'
       }
-      return "";
+      return ''
+    },
+    statisticsRowClassName ({ row }) {
+      if (row && row.isVirtualToday) {
+        return 'today-virtual-row'
+      }
+      return ''
     },
 
-    deviceDetailSpanMethod({ row, columnIndex }) {
-      if (columnIndex < 11) {
+    deviceDetailSpanMethod ({ row, columnIndex }) {
+      const leadCols = this.airSysElecColsVisible ? 13 : 11
+      if (columnIndex < leadCols) {
         return {
           rowspan: row.col,
-          colspan: row.col > 0 ? 1 : 0,
-        };
+          colspan: row.col > 0 ? 1 : 0
+        }
       }
     },
 
-    objectSpanMethod({ row, columnIndex }) {
+    objectSpanMethod ({ row, columnIndex }) {
       if (columnIndex < 2) {
         return {
           rowspan: row.tip,
-          colspan: row.tip > 0 ? 1 : 0,
-        };
+          colspan: row.tip > 0 ? 1 : 0
+        }
       }
     },
 
-    getStatisticsSummaries(param) {
-      const { columns, data } = param;
-      const sums = [];
+    getStatisticsSummaries (param) {
+      const { columns, data } = param
+      const calcData = (data || []).filter(item => !item.isVirtualToday)
+      const sums = []
       columns.forEach((column, index) => {
         if (index === 0) {
-          sums[index] = "总计";
-          return;
+          sums[index] = this.$t('electricityReport.summaryTotal')
+          return
         }
-        const values = data.map((item) => Number(item[column.property]));
+        const values = calcData.map((item) => Number(item[column.property]))
         if (!values.every((value) => isNaN(value))) {
           sums[index] = values
             .reduce((prev, curr) => {
-              const value = Number(curr);
+              const value = Number(curr)
               if (!isNaN(value)) {
-                return prev + curr;
+                return prev + curr
               }
-              return prev;
+              return prev
             }, 0)
-            .toFixed(2);
+            .toFixed(2)
         } else {
-          sums[index] = "";
+          sums[index] = ''
         }
-      });
-      return sums;
+      })
+      return sums
     },
 
-    getDeviceDetailSummaries(param) {
-      const { columns, data } = param;
-      const sums = [];
-      const uniqueData = [];
-      const dateSet = [];
+    getDeviceDetailSummaries (param) {
+      const { columns, data } = param
+      const sums = []
+      const uniqueData = []
+      const dateSet = []
       data.forEach((item) => {
+        if (item.isVirtualToday) return
         if (dateSet.indexOf(item.occurDate) === -1) {
-          uniqueData.push(item);
-          dateSet.push(item.occurDate);
+          uniqueData.push(item)
+          dateSet.push(item.occurDate)
         }
-      });
+      })
       columns.forEach((column, index) => {
         if (index === 0) {
-          sums[index] = "总计";
-          return;
+          sums[index] = this.$t('electricityReport.summaryTotal')
+          return
         }
-        const values = uniqueData.map((item) => Number(item[column.property]));
+        const values = uniqueData.map((item) => Number(item[column.property]))
         if (!values.every((value) => isNaN(value))) {
           sums[index] = values
             .reduce((prev, curr) => {
-              const value = Number(curr);
+              const value = Number(curr)
               if (!isNaN(value)) {
-                return prev + curr;
+                return prev + curr
               }
-              return prev;
+              return prev
             }, 0)
-            .toFixed(2);
+            .toFixed(2)
         } else {
-          sums[index] = "";
+          sums[index] = ''
         }
-      });
-      return sums;
+      })
+      return sums
     },
 
-    initializeMainChart() {
-      if (!this.$refs.mainChartContainer) return;
+    initializeMainChart () {
+      if (!this.$refs.mainChartContainer) return
       if (this.mainChartInstance) {
-        this.mainChartInstance.dispose();
+        this.mainChartInstance.dispose()
       }
       this.mainChartInstance = this.$echarts.init(
         this.$refs.mainChartContainer
-      );
+      )
     },
 
-    initializeMonitorChart() {
-      if (!this.$refs.monitorChartContainer) return;
+    initializeMonitorChart () {
+      if (!this.$refs.monitorChartContainer) return
       if (this.monitorChartInstance) {
-        this.monitorChartInstance.dispose();
+        this.monitorChartInstance.dispose()
       }
       this.monitorChartInstance = this.$echarts.init(
         this.$refs.monitorChartContainer
-      );
+      )
     },
 
-    updateCharts() {
-      this.updateMainChart();
-      this.updateMonitorChart();
+    updateCharts () {
+      this.updateMainChart()
+      this.updateMonitorChart()
     },
 
-    updateMainChart() {
-      if (!this.mainChartInstance || this.chartData.length === 0) return;
-      const xAxisData = this.chartData.map((item) =>
-        moment(item.occurDate).format("MM-DD")
-      );
+    updateMainChart () {
+      if (!this.mainChartInstance || this.displayChartData.length === 0) return
+      const SN = this.chartSeriesNames
+      const sufYuan = ' ' + this.$t('electricityReport.unitYuan')
+      const sufKwh = ' ' + this.$t('electricityReport.unitKwhDisplay')
+      const xAxisData = this.displayChartData.map((item) =>
+        (item.isVirtualToday ? SN.todayShort : moment(item.occurDate).format('MM-DD'))
+      )
+      const todayFeeLineData = this.displayChartData.map((item) => (item.isVirtualToday ? null : item.useAmount))
+      const meterBarData = this.displayChartData.map((item) => (item.isVirtualToday ? null : item.meterUseElec))
+      const airBarData = this.displayChartData.map((item) => (item.isVirtualToday ? null : item.airUseElec))
+      const todayElecBarData = this.displayChartData.map((item) => (item.isVirtualToday ? Number(item.useElec) || 0 : null))
+      const todayFeeData = this.displayChartData.map((item) => (item.isVirtualToday ? Number(item.useAmount) || 0 : null))
       const option = {
-        color: ["#52c41a", "#5b9bd5", "#ff9f5a"],
+        color: ['#52c41a', '#5b9bd5', '#ff9f5a', '#6366f1'],
         tooltip: {
-          trigger: "axis",
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
-          borderColor: "#e8e8e8",
+          trigger: 'axis',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderColor: '#e8e8e8',
           borderWidth: 1,
           padding: [12, 16],
-          textStyle: { color: "#333", fontSize: 14 },
-          axisPointer: { type: "cross", crossStyle: { color: "#999" } },
+          textStyle: { color: '#333', fontSize: 14 },
+          axisPointer: { type: 'cross', crossStyle: { color: '#999' } },
           formatter: (params) => {
-            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`;
+            if (!params || !params.length) return ''
+            const first = params[0]
+            const dataIndex = first.dataIndex
+            const axisName = first.axisValue !== undefined && first.axisValue !== null ? first.axisValue : first.name
+            const isToday =
+              axisName === SN.todayShort ||
+              (dataIndex != null && this.displayChartData[dataIndex] && this.displayChartData[dataIndex].isVirtualToday)
+            if (isToday && dataIndex != null) {
+              const elec = todayElecBarData[dataIndex]
+              const fee = todayFeeData[dataIndex]
+              if (Number.isFinite(Number(elec))) {
+                const elecN = Number(elec)
+                const feeN = Number(fee)
+                const h = axisName || SN.todayShort
+                return `<div style="font-weight:600;margin-bottom:8px">${h}</div>
+                <div style="display:flex;align-items:center;margin-bottom:4px">
+                  <span style="display:inline-block;width:10px;height:10px;background:#6366F1;border-radius:50%;margin-right:8px"></span>
+                  <span style="color:#475569;">${this.$t('electricityReport.tooltipElecLabel')}</span>
+                  <span style="font-weight:600;margin-left:6px">${elecN.toFixed(1)} kWh</span>
+                </div>
+                <div style="display:flex;align-items:center;">
+                  <span style="display:inline-block;width:10px;height:10px;background:#6366F1;border-radius:50%;margin-right:8px"></span>
+                  <span style="color:#94A3B8;">${this.$t('electricityReport.tooltipFeeLabel')}</span>
+                  <span style="font-weight:600;margin-left:6px">${Number.isFinite(feeN) ? feeN.toFixed(2) : '--'}${sufYuan}</span>
+                </div>`
+              }
+            }
+            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`
             params.forEach((item) => {
-              let suffix = "";
-              if (item.seriesName === "总电费") {
-                suffix = " 元";
+              if (item.seriesName === SN.todayCombo) return
+              let suffix = ''
+              if (item.seriesName === SN.totalFee) {
+                suffix = sufYuan
               } else {
-                suffix = " 度";
+                suffix = sufKwh
               }
               html += `<div style="display: flex; align-items: center; margin-bottom: 4px">
                 <span style="display: inline-block; width: 10px; height: 10px; background: ${item.color
@@ -2074,138 +2526,170 @@ export default {
                 <span style="font-weight: 500">${this.formatNumber(
                   item.value
                 )}${suffix}</span>
-              </div>`;
-            });
-            return html;
-          },
+              </div>`
+            })
+            return html
+          }
         },
         legend: {
-          data: ["总电费", "室内电量", "空调电量"],
+          data: [SN.totalFee, SN.indoorElec, SN.acElec],
           bottom: 35,
           itemGap: 20,
-          textStyle: { color: "#666" },
+          textStyle: { color: '#666' }
         },
         grid: { top: 30, left: 50, right: 50, bottom: 75, containLabel: true },
         dataZoom: [
-          { type: "inside", start: 0, end: 100 },  // ← 改为 0-100
+          { type: 'inside', start: 0, end: 100 }, // ← 改为 0-100
           {
-            type: "slider",
-            start: 0,                                // ← 改为 0
+            type: 'slider',
+            start: 0, // ← 改为 0
             end: 100,
             height: 6,
             bottom: 5,
-            borderColor: "transparent",
-            backgroundColor: "#f0f0f0",
+            borderColor: 'transparent',
+            backgroundColor: '#f0f0f0',
             handleSize: 12,
             showDetail: false,
             showDataShadow: false,
-            fillerColor: "rgba(24, 144, 255, 0.15)",
-          },
+            fillerColor: 'rgba(24, 144, 255, 0.15)'
+          }
         ],
         xAxis: {
-          type: "category",
+          type: 'category',
           data: xAxisData,
           boundaryGap: true,
           axisTick: { show: false },
-          axisLine: { lineStyle: { color: "#e8e8e8" } },
-          axisLabel: { color: "#666", fontSize: 12 },
+          axisLine: { lineStyle: { color: '#e8e8e8' } },
+          axisLabel: { color: '#666', fontSize: 12 }
         },
         yAxis: [
           {
-            type: "value",
-            name: "电费 (元)",
-            nameTextStyle: { color: "#666", padding: [0, 0, 0, 20] },
-            splitLine: { lineStyle: { color: "#f0f0f0", type: "dashed" } },
+            type: 'value',
+            name: this.$t('electricityReport.yAxisFee'),
+            nameTextStyle: { color: '#666', padding: [0, 0, 0, 20] },
+            splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
             axisLine: { show: false },
             axisTick: { show: false },
             axisLabel: {
-              color: "#666",
+              color: '#666',
               fontSize: 12,
-              formatter: (v) => (v >= 1000 ? v / 1000 + "k" : v),
-            },
+              formatter: (v) => (v >= 1000 ? v / 1000 + 'k' : v)
+            }
           },
           {
-            type: "value",
-            name: "电量 (度)",
-            nameTextStyle: { color: "#666", padding: [0, 20, 0, 0] },
+            type: 'value',
+            name: this.$t('electricityReport.yAxisElec'),
+            nameTextStyle: { color: '#666', padding: [0, 20, 0, 0] },
             splitLine: { show: false },
             axisLine: { show: false },
             axisTick: { show: false },
             axisLabel: {
-              color: "#666",
+              color: '#666',
               fontSize: 12,
-              formatter: (v) => (v >= 1000 ? v / 1000 + "k" : v),
-            },
-          },
+              formatter: (v) => (v >= 1000 ? v / 1000 + 'k' : v)
+            }
+          }
         ],
         series: [
           {
-            name: "总电费",
-            type: "line",
-            data: this.chartData.map((item) => item.useAmount),
+            name: SN.totalFee,
+            type: 'line',
+            data: todayFeeLineData,
             smooth: true,
-            symbol: "none",
+            symbol: 'none',
             lineStyle: { width: 2 },
             areaStyle: {
               opacity: 0.3,
               color: {
-                type: "linear",
+                type: 'linear',
                 x: 0,
                 y: 0,
                 x2: 0,
                 y2: 1,
                 colorStops: [
-                  { offset: 0, color: "rgba(82, 196, 26, 0.3)" },
-                  { offset: 1, color: "rgba(82, 196, 26, 0.05)" },
-                ],
-              },
-            },
+                  { offset: 0, color: 'rgba(82, 196, 26, 0.3)' },
+                  { offset: 1, color: 'rgba(82, 196, 26, 0.05)' }
+                ]
+              }
+            }
           },
           {
-            name: "室内电量",
-            type: "bar",
+            name: SN.indoorElec,
+            type: 'bar',
             yAxisIndex: 1,
-            data: this.chartData.map((item) => item.meterUseElec),
-            stack: "usage",
+            data: meterBarData,
+            stack: 'usage',
             barMaxWidth: 18,
             itemStyle: {
-              color: "rgba(135, 206, 235, 0.65)",
-              borderRadius: [2, 2, 0, 0],
-            },
+              color: 'rgba(135, 206, 235, 0.65)',
+              borderRadius: [2, 2, 0, 0]
+            }
           },
           {
-            name: "空调电量",
-            type: "bar",
+            name: SN.acElec,
+            type: 'bar',
             yAxisIndex: 1,
-            data: this.chartData.map((item) => item.airUseElec),
-            stack: "usage",
+            data: airBarData,
+            stack: 'usage',
             barMaxWidth: 18,
             itemStyle: {
-              color: "rgba(255, 160, 122, 0.65)",
-              borderRadius: [2, 2, 0, 0],
-            },
+              color: 'rgba(255, 160, 122, 0.65)',
+              borderRadius: [2, 2, 0, 0]
+            }
           },
-        ],
-      };
-      this.mainChartInstance.setOption(option);
+          {
+            name: SN.todayCombo,
+            type: 'bar',
+            yAxisIndex: 1,
+            data: todayElecBarData,
+            // 与其他电量柱同栈，避免类目横向偏移导致“今日”错位
+            stack: 'usage',
+            barMaxWidth: 18,
+            z: 12,
+            itemStyle: {
+              color: 'rgba(99, 102, 241, 0.35)',
+              borderColor: 'rgba(99, 102, 241, 0.75)',
+              borderWidth: 1,
+              borderRadius: [3, 3, 0, 0]
+            },
+            label: {
+              show: true,
+              position: 'top',
+              color: '#4f46e5',
+              fontSize: 12,
+              lineHeight: 18,
+              formatter: (params) => {
+                const idx = params.dataIndex
+                const elec = todayElecBarData[idx]
+                const fee = todayFeeData[idx]
+                if (!Number.isFinite(Number(elec))) return ''
+                return `${Number(elec).toFixed(1)} kWh\n¥${Number.isFinite(Number(fee)) ? Number(fee).toFixed(2) : '--'}`
+              }
+            }
+          }
+        ]
+      }
+      this.mainChartInstance.setOption(option)
     },
 
-    updateMonitorChart() {
-      if (!this.monitorChartInstance || this.chartData.length === 0) return;
-      const xAxisData = this.chartData.map((item) =>
-        moment(item.occurDate).format("MM-DD")
-      );
+    updateMonitorChart () {
+      if (!this.monitorChartInstance || this.displayChartData.length === 0) return
+      const SN = this.chartSeriesNames
+      const sufKwh = ' ' + this.$t('electricityReport.unitKwhDisplay')
+      const xAxisData = this.displayChartData.map((item) =>
+        moment(item.occurDate).format('MM-DD')
+      )
       const option = {
-        color: ["#ff6b6b", "#ff922b", "#51cf66", "#339af0"],
+        color: ['#ff6b6b', '#ff922b', '#51cf66', '#339af0'],
         tooltip: {
-          trigger: "axis",
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
-          borderColor: "#e8e8e8",
+          trigger: 'axis',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderColor: '#e8e8e8',
           borderWidth: 1,
           padding: [12, 16],
-          textStyle: { color: "#333", fontSize: 14 },
+          textStyle: { color: '#333', fontSize: 14 },
           formatter: (params) => {
-            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`;
+            let html = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].name}</div>`
             params.forEach((item) => {
               html += `<div style="display: flex; align-items: center; margin-bottom: 4px">
                 <span style="display: inline-block; width: 10px; height: 10px; background: ${item.color
@@ -2213,162 +2697,163 @@ export default {
                 <span style="flex: 1">${item.seriesName}</span>
                 <span style="font-weight: 500">${this.formatNumber(
                   item.value
-                )} 度</span>
-              </div>`;
-            });
-            return html;
-          },
+                )}${sufKwh}</span>
+              </div>`
+            })
+            return html
+          }
         },
         legend: { show: false },
         grid: { top: 15, left: 45, right: 15, bottom: 35, containLabel: true },
         dataZoom: [
-          { type: "inside", start: 70, end: 100 },
+          { type: 'inside', start: 70, end: 100 },
           {
-            type: "slider",
+            type: 'slider',
             start: 70,
             end: 100,
             height: 6,
             bottom: 5,
-            borderColor: "transparent",
-            backgroundColor: "#f0f0f0",
+            borderColor: 'transparent',
+            backgroundColor: '#f0f0f0',
             handleSize: 12,
             showDetail: false,
             showDataShadow: false,
-            fillerColor: "rgba(24, 144, 255, 0.15)",
-          },
+            fillerColor: 'rgba(24, 144, 255, 0.15)'
+          }
         ],
         xAxis: {
-          type: "category",
+          type: 'category',
           data: xAxisData,
           boundaryGap: false,
           axisTick: { show: false },
-          axisLine: { lineStyle: { color: "#e8e8e8" } },
-          axisLabel: { color: "#666", fontSize: 11 },
+          axisLine: { lineStyle: { color: '#e8e8e8' } },
+          axisLabel: { color: '#666', fontSize: 11 }
         },
         yAxis: {
-          type: "value",
-          splitLine: { lineStyle: { color: "#f0f0f0", type: "dashed" } },
+          type: 'value',
+          splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
           axisLine: { show: false },
           axisTick: { show: false },
           axisLabel: {
-            color: "#666",
+            color: '#666',
             fontSize: 11,
-            formatter: (v) => (v >= 1000 ? v / 1000 + "k" : v),
-          },
+            formatter: (v) => (v >= 1000 ? v / 1000 + 'k' : v)
+          }
         },
         series: [
           {
-            name: "尖电量",
-            type: "line",
-            data: this.chartData.map((item) => item.useElecPeak),
+            name: SN.peakElec,
+            type: 'line',
+            data: this.displayChartData.map((item) => item.useElecPeak),
             smooth: true,
-            symbol: "none",
+            symbol: 'none',
             lineStyle: { width: 2 },
             areaStyle: {
               opacity: 0.6,
               color: {
-                type: "linear",
+                type: 'linear',
                 x: 0,
                 y: 0,
                 x2: 0,
                 y2: 1,
                 colorStops: [
-                  { offset: 0, color: "rgba(255, 107, 107, 0.3)" },
-                  { offset: 1, color: "rgba(255, 107, 107, 0.05)" },
-                ],
-              },
-            },
+                  { offset: 0, color: 'rgba(255, 107, 107, 0.3)' },
+                  { offset: 1, color: 'rgba(255, 107, 107, 0.05)' }
+                ]
+              }
+            }
           },
           {
-            name: "峰电量",
-            type: "line",
-            data: this.chartData.map((item) => item.useElecTop),
+            name: SN.topElec,
+            type: 'line',
+            data: this.displayChartData.map((item) => item.useElecTop),
             smooth: true,
-            symbol: "none",
+            symbol: 'none',
             lineStyle: { width: 2 },
             areaStyle: {
               opacity: 0.6,
               color: {
-                type: "linear",
+                type: 'linear',
                 x: 0,
                 y: 0,
                 x2: 0,
                 y2: 1,
                 colorStops: [
-                  { offset: 0, color: "rgba(255, 146, 43, 0.3)" },
-                  { offset: 1, color: "rgba(255, 146, 43, 0.05)" },
-                ],
-              },
-            },
+                  { offset: 0, color: 'rgba(255, 146, 43, 0.3)' },
+                  { offset: 1, color: 'rgba(255, 146, 43, 0.05)' }
+                ]
+              }
+            }
           },
           {
-            name: "平电量",
-            type: "line",
-            data: this.chartData.map((item) => item.useElecFlat),
+            name: SN.flatElec,
+            type: 'line',
+            data: this.displayChartData.map((item) => item.useElecFlat),
             smooth: true,
-            symbol: "none",
+            symbol: 'none',
             lineStyle: { width: 2 },
             areaStyle: {
               opacity: 0.6,
               color: {
-                type: "linear",
+                type: 'linear',
                 x: 0,
                 y: 0,
                 x2: 0,
                 y2: 1,
                 colorStops: [
-                  { offset: 0, color: "rgba(81, 207, 102, 0.3)" },
-                  { offset: 1, color: "rgba(81, 207, 102, 0.05)" },
-                ],
-              },
-            },
+                  { offset: 0, color: 'rgba(81, 207, 102, 0.3)' },
+                  { offset: 1, color: 'rgba(81, 207, 102, 0.05)' }
+                ]
+              }
+            }
           },
           {
-            name: "谷电量",
-            type: "line",
-            data: this.chartData.map((item) => item.useElecValley),
+            name: SN.valleyElec,
+            type: 'line',
+            data: this.displayChartData.map((item) => item.useElecValley),
             smooth: true,
-            symbol: "none",
+            symbol: 'none',
             lineStyle: { width: 2 },
             areaStyle: {
               opacity: 0.6,
               color: {
-                type: "linear",
+                type: 'linear',
                 x: 0,
                 y: 0,
                 x2: 0,
                 y2: 1,
                 colorStops: [
-                  { offset: 0, color: "rgba(51, 154, 240, 0.3)" },
-                  { offset: 1, color: "rgba(51, 154, 240, 0.05)" },
-                ],
-              },
-            },
-          },
-        ],
-      };
-      this.monitorChartInstance.setOption(option);
+                  { offset: 0, color: 'rgba(51, 154, 240, 0.3)' },
+                  { offset: 1, color: 'rgba(51, 154, 240, 0.05)' }
+                ]
+              }
+            }
+          }
+        ]
+      }
+      this.monitorChartInstance.setOption(option)
     },
 
-    handleResize() {
+    handleResize () {
       this.$nextTick(() => {
-        if (this.mainChartInstance) this.mainChartInstance.resize();
-        if (this.monitorChartInstance) this.monitorChartInstance.resize();
-      });
+        if (this.mainChartInstance) this.mainChartInstance.resize()
+        if (this.monitorChartInstance) this.monitorChartInstance.resize()
+      })
     },
 
-    formatNumber(num) {
-      if (num === undefined || num === null) return "-";
-      if (num === 0) return "0.00";
-      return Number(num).toFixed(2);
+    formatNumber (num) {
+      if (num === undefined || num === null) return '-'
+      if (num === 0) return '0.00'
+      return Number(num).toFixed(2)
     },
 
-    getSettleWayLabel(settleWay) {
-      if (settleWay === undefined || settleWay === null) return "";
-      return this.settleWayMap[settleWay] || "";
-    },
-  },
-};
+    getSettleWayLabel (settleWay) {
+      if (settleWay === undefined || settleWay === null) return ''
+      const key = ['settleWay0', 'settleWay1', 'settleWay2', 'settleWay3', 'settleWay4', 'settleWay5'][settleWay]
+      return key ? this.$t(`electricityReport.${key}`) : ''
+    }
+  }
+}
 </script>
 <style lang="scss" scoped>
 .electricity-dashboard {
@@ -2524,8 +3009,18 @@ export default {
     max-width: 320px;
   }
 
-  &.tenant-filter {
+  &.tenant-filter,
+  &.tenant-type-filter {
     max-width: 360px;
+  }
+}
+
+::v-deep .tenant-select-action-option {
+  color: #409eff;
+  font-weight: 500;
+
+  &.tenant-select-action-option--clear {
+    border-bottom: 1px solid #ebeef5;
   }
 }
 
@@ -2655,6 +3150,19 @@ export default {
   margin-bottom: 24px;
 }
 
+.card-top-badge {
+  margin: 12px 12px 0;
+  padding: 9px 14px;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 8px;
+  color: #c2410c;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
 .formula-card {
   background: white;
   border-radius: 12px;
@@ -2671,6 +3179,33 @@ export default {
     .main-indicator {
       background: linear-gradient(135deg, #5B8FF9 0%, #4A7FD9 100%);
       box-shadow: 0 4px 12px rgba(91, 143, 249, 0.2);
+    }
+
+    .formula-cost-side-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      align-self: center;
+      margin-left: auto;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: #1e4db8;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      background: linear-gradient(180deg, #f4f8ff 0%, #e8f0ff 100%);
+      border: 1px solid #8eb4f5;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(74, 127, 217, 0.18);
+      cursor: default;
+
+      .el-icon-info {
+        flex-shrink: 0;
+        font-size: 16px;
+        color: #3a7def;
+      }
     }
   }
 
@@ -3000,6 +3535,13 @@ export default {
   margin-bottom: 20px;
 }
 
+.today-exclude-note {
+  margin-left: auto;
+  margin-right: 12px;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
 .section-title {
   font-size: 18px;
   font-weight: 600;
@@ -3060,6 +3602,21 @@ export default {
 ::v-deep .custom-date-picker {
   width: 100%;
 
+  &.el-date-editor--daterange {
+    width: 100%;
+  }
+
+  .el-range-editor {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .el-range-input {
+    flex: 1;
+    min-width: 0;
+    color: #303133;
+  }
+
   .el-input__inner {
     height: 40px;
     border: 1px solid #e5e7eb;
@@ -3112,6 +3669,14 @@ export default {
 
     td {
       background: #fafafa !important;
+    }
+  }
+
+  .today-virtual-row {
+    td {
+      background: #fff7ed !important;
+      color: #c2410c;
+      font-weight: 600;
     }
   }
 

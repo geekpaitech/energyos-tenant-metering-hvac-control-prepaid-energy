@@ -7,10 +7,9 @@ import manager from './modules/manager'
 import tagsView from './modules/tagsView'
 import treeSelection from './modules/treeSelection'
 import enumData from './modules/enumData' // ✅ 添加这一行
+import adminAirEnum from './modules/adminAirEnum'
 
 Vue.use(Vuex)
-
-
 
 const store = new Vuex.Store({
   modules: {
@@ -20,7 +19,8 @@ const store = new Vuex.Store({
     manager,
     tagsView,
     treeSelection,
-    enumData // ✅ 注册模块
+    enumData, // ✅ 注册模块
+    adminAirEnum
   },
   getters: {
     sidebar: state => state.app.sidebar,
@@ -33,6 +33,7 @@ const store = new Vuex.Store({
     phone: state => state.user.phone,
     permission_routes: state => state.permission.routes,
     permissions: state => state.user.permissions,
+    kztMenuNos: state => state.permission.kztMenuNos,
     isInitPassword: state => state.user.isInitPassword,
     userInfoLoaded: state => state.user.userInfoLoaded,
     addRoutes: state => state.permission.addRoutes,
@@ -49,6 +50,5 @@ const store = new Vuex.Store({
     hasTreeSelection: state => state.treeSelection ? state.treeSelection.selectedIds.length > 0 : false
   }
 })
-
 
 export default store

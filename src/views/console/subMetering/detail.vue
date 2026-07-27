@@ -7,7 +7,7 @@
           <div class="panel-header">
             <h3 class="panel-title">分项设置</h3>
           </div>
-          
+
           <!-- 工具栏 -->
           <div class="panel-toolbar">
             <el-input
@@ -20,29 +20,29 @@
             />
             <div class="toolbar-right">
               <el-button type="primary" size="small" icon="el-icon-plus" @click="openAddDialog(null)">新增分项</el-button>
-              <el-button 
-                v-if="!isSortMode" 
-                type="warning" 
-                size="small" 
-                icon="el-icon-sort" 
+              <el-button
+                v-if="!isSortMode"
+                type="warning"
+                size="small"
+                icon="el-icon-sort"
                 @click="enterSortMode"
               >排序</el-button>
-              <el-button 
-                v-else 
-                type="success" 
-                size="small" 
-                icon="el-icon-check" 
+              <el-button
+                v-else
+                type="success"
+                size="small"
+                icon="el-icon-check"
                 @click="saveSortOrder"
                 :loading="sortLoading"
               >保存排序</el-button>
-              <el-button 
-                v-if="isSortMode" 
-                size="small" 
+              <el-button
+                v-if="isSortMode"
+                size="small"
                 @click="cancelSortMode"
               >取消</el-button>
             </div>
           </div>
-          
+
           <!-- 分项树 -->
           <div class="tree-container" v-loading="treeLoading">
             <el-tree
@@ -66,18 +66,18 @@
                       <el-tag size="mini" type="info">子{{ data.subMeterCount || 0 }}</el-tag>
                     </span>
                   </div>
-                  
+
                   <!-- 普通模式：操作按钮 -->
                   <div class="node-actions" v-if="!isSortMode">
                     <el-button type="text" size="mini" icon="el-icon-plus" @click.stop="openAddDialog(data)" title="添加子项"></el-button>
                     <el-button type="text" size="mini" icon="el-icon-edit" @click.stop="openEditDialog(data)" title="修改"></el-button>
                     <el-button type="text" size="mini" icon="el-icon-delete" class="danger-btn" @click.stop="handleDelete(data)" title="删除"></el-button>
                   </div>
-                  
+
                   <!-- 排序模式：上下移动按钮 -->
                   <div class="node-sort-actions" v-else>
-                    <el-button 
-                      type="text" 
+                    <el-button
+                      type="text"
                       size="mini"
                       :disabled="!canMoveUp(node)"
                       @click.stop="handleMoveUp(node)"
@@ -85,8 +85,8 @@
                     >
                       <i class="el-icon-top"></i>
                     </el-button>
-                    <el-button 
-                      type="text" 
+                    <el-button
+                      type="text"
                       size="mini"
                       :disabled="!canMoveDown(node)"
                       @click.stop="handleMoveDown(node)"
@@ -98,12 +98,12 @@
                 </div>
               </template>
             </el-tree>
-            
+
             <el-empty v-if="!treeData.length && !treeLoading" description="暂无分项数据" :image-size="80" />
           </div>
         </div>
       </el-col>
-      
+
       <!-- 右侧：已绑电表 -->
       <el-col :span="14">
         <div class="panel">
@@ -114,7 +114,7 @@
               <span v-if="currentNode.name" class="current-name">（{{ currentNode.name }}）</span>
             </div>
           </div>
-          
+
           <!-- 工具栏 -->
           <div class="panel-toolbar">
             <el-input
@@ -131,7 +131,7 @@
               <el-button type="danger" size="small" icon="el-icon-delete" :disabled="!selectedMeters.length" @click="handleUnbind">解绑</el-button>
             </div>
           </div>
-          
+
           <!-- 已绑电表列表 -->
           <div class="table-container">
             <el-table
@@ -166,7 +166,7 @@
         </div>
       </el-col>
     </el-row>
-    
+
     <!-- 新增/编辑分项弹窗 -->
     <el-dialog
       :title="dialogTitle"
@@ -203,7 +203,7 @@
         </div>
       </template>
     </el-dialog>
-    
+
     <!-- 绑定电表弹窗 -->
     <el-dialog
       :title="bindDialog.subType === 'MAIN' ? '绑定总表' : '绑定子表'"
@@ -226,7 +226,7 @@
         />
         <el-button type="primary" size="small" icon="el-icon-search" @click="fetchUnbindMeterList">搜索</el-button>
       </div>
-      
+
       <div class="bind-table" v-loading="bindDialog.loading">
         <el-table
           v-if="unbindMeterList.length"
@@ -250,7 +250,7 @@
         </el-table>
         <el-empty v-else description="暂无可绑定电表" :image-size="60" />
       </div>
-      
+
       <el-pagination
         v-if="unbindMeterQuery.total > 0"
         :current-page.sync="unbindMeterQuery.current"
@@ -262,7 +262,7 @@
         @size-change="fetchUnbindMeterList"
         @current-change="fetchUnbindMeterList"
       />
-      
+
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="bindDialog.visible = false">取 消</el-button>
@@ -279,8 +279,8 @@ import { getSubTree, addSub, updateSub, deleteSub, pageSubMeter, bindSubMeter, r
 
 export default {
   name: 'SubMeteringDetail',
-  
-  data() {
+
+  data () {
     return {
       managerId: '',
       filterText: '',
@@ -289,24 +289,23 @@ export default {
       treeLoading: false,
       treeProps: { label: 'name', children: 'subTreeList' },
       currentNode: {},
-      
+
       // 排序模式
       isSortMode: false,
       sortLoading: false,
       sortedNodes: new Map(), // 记录排序变化的节点
-      
+
       // 已绑电表
       meterFilterText: '',
       boundMeterList: [],
       selectedMeters: [],
-      
+
       // 新增/编辑弹窗
       subDialog: { visible: false, isAdd: true, parentData: null, showParent: false, loading: false },
       subForm: { id: '', parentId: -1, parentIdArr: [], name: '', remark: '' },
       subRules: { name: [{ required: true, message: '请输入名称', trigger: 'blur' }] },
       parentTreeData: [],
-      
-      
+
       // 绑定电表弹窗
       bindDialog: { visible: false, subType: '', loading: false, submitLoading: false },
       unbindMeterQuery: { queryWord: '', current: 1, pageSize: 20, total: 0 },
@@ -314,45 +313,45 @@ export default {
       selectedUnbindMeters: []
     }
   },
-  
+
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
-    
-    dialogTitle() {
+
+    dialogTitle () {
       if (!this.subDialog.isAdd) return '编辑分项'
       return this.subDialog.parentData ? '新增子项' : '新增分项'
     },
-    
-    filteredMeterList() {
+
+    filteredMeterList () {
       if (!this.meterFilterText) return this.boundMeterList
       const kw = this.meterFilterText.toLowerCase()
-      return this.boundMeterList.filter(m => 
-        m.serial?.toLowerCase().includes(kw) || 
+      return this.boundMeterList.filter(m =>
+        m.serial?.toLowerCase().includes(kw) ||
         m.meterName?.toLowerCase().includes(kw)
       )
     }
   },
-  
+
   watch: {
-    filterText(val) {
+    filterText (val) {
       this.$refs.treeRef?.filter(val)
     }
   },
-  
-  created() {
+
+  created () {
     this.managerId = this.$route.params.id || this.currentManagerId
     this.fetchTreeData()
   },
-  
+
   methods: {
     // ========== 树相关 ==========
-    async fetchTreeData() {
+    async fetchTreeData () {
       this.treeLoading = true
       try {
         const { data } = await getSubTree({ managerId: this.managerId })
         this.treeData = data || []
         this.originalTreeData = JSON.parse(JSON.stringify(this.treeData))
-        
+
         // 默认选中第一个
         if (this.treeData.length && !this.currentNode.id) {
           this.$nextTick(() => {
@@ -374,8 +373,8 @@ export default {
         this.treeLoading = false
       }
     },
-    
-    findNodeById(nodes, id) {
+
+    findNodeById (nodes, id) {
       for (const node of nodes) {
         if (node.id === id) return node
         if (node.subTreeList?.length) {
@@ -385,97 +384,97 @@ export default {
       }
       return null
     },
-    
-    filterNode(value, data) {
+
+    filterNode (value, data) {
       if (!value) return true
       return data.name?.toLowerCase().includes(value.toLowerCase())
     },
-    
-    getNodeIcon(data) {
+
+    getNodeIcon (data) {
       if (data.subTreeList?.length) return 'el-icon-folder-opened'
       if (data.mainMeterCount || data.subMeterCount) return 'el-icon-folder'
       return 'el-icon-document'
     },
-    
-    handleNodeClick(data) {
+
+    handleNodeClick (data) {
       if (this.isSortMode) return // 排序模式下不切换选中
       this.currentNode = data
       this.$refs.treeRef?.setCurrentKey(data.id)
       this.updateBoundMeterList()
     },
-    
-    updateBoundMeterList() {
+
+    updateBoundMeterList () {
       const { mainMeterList = [], subMeterList = [] } = this.currentNode
       this.boundMeterList = [...mainMeterList, ...subMeterList]
       this.meterFilterText = ''
     },
-    
+
     // ========== 排序相关 ==========
-    enterSortMode() {
+    enterSortMode () {
       this.isSortMode = true
       this.sortedNodes.clear()
       this.$message.info('已进入排序模式，使用上下按钮调整顺序')
     },
-    
-    cancelSortMode() {
+
+    cancelSortMode () {
       this.isSortMode = false
       this.sortedNodes.clear()
       // 恢复原始数据
       this.treeData = JSON.parse(JSON.stringify(this.originalTreeData))
     },
-    
-    canMoveUp(node) {
+
+    canMoveUp (node) {
       const parent = node.parent
       const children = parent.data.subTreeList || parent.data
       const index = Array.isArray(children) ? children.findIndex(n => n.id === node.data.id) : -1
       return index > 0
     },
-    
-    canMoveDown(node) {
+
+    canMoveDown (node) {
       const parent = node.parent
       const children = parent.data.subTreeList || parent.data
       const index = Array.isArray(children) ? children.findIndex(n => n.id === node.data.id) : -1
       return index >= 0 && index < children.length - 1
     },
-    
-    handleMoveUp(node) {
+
+    handleMoveUp (node) {
       this.moveNode(node, -1)
     },
-    
-    handleMoveDown(node) {
+
+    handleMoveDown (node) {
       this.moveNode(node, 1)
     },
-    
-    moveNode(node, direction) {
+
+    moveNode (node, direction) {
       const parent = node.parent
       const children = parent.data.subTreeList || parent.data
       if (!Array.isArray(children)) return
-      
+
       const index = children.findIndex(n => n.id === node.data.id)
       const targetIndex = index + direction
-      
+
       if (targetIndex < 0 || targetIndex >= children.length) return
-      
+
       // 交换位置
       const temp = children[index]
       children[index] = children[targetIndex]
       children[targetIndex] = temp
-      
+
       // 记录这组兄弟节点需要保存
       const parentId = parent.data.id || 'root'
       this.sortedNodes.set(parentId, children.map(n => n.id))
-      
+
       // 强制刷新树
       this.treeData = [...this.treeData]
     },
-    
-    async saveSortOrder() {
+
+    async saveSortOrder () {
       if (this.sortedNodes.size === 0) {
         this.$message.warning('没有排序变化')
         this.isSortMode = false
         return
       }
-      
+
       this.sortLoading = true
       try {
         // 依次保存每组变化的排序
@@ -492,14 +491,14 @@ export default {
         this.sortLoading = false
       }
     },
-    
+
     // ========== 新增/编辑分项 ==========
-    openAddDialog(parentData) {
+    openAddDialog (parentData) {
       this.subDialog.isAdd = true
       this.subDialog.parentData = parentData
       this.subDialog.showParent = !!parentData
       this.parentTreeData = JSON.parse(JSON.stringify(this.treeData))
-      
+
       // 构建父级路径用于回显
       const parentPath = parentData ? this.getParentPath(parentData.id) : []
       this.subForm = {
@@ -511,13 +510,13 @@ export default {
       }
       this.subDialog.visible = true
     },
-    
-    openEditDialog(data) {
+
+    openEditDialog (data) {
       this.subDialog.isAdd = false
       this.subDialog.parentData = null
       this.subDialog.showParent = data.parentId && data.parentId !== -1
       this.parentTreeData = JSON.parse(JSON.stringify(this.treeData))
-      
+
       // 构建父级路径用于回显
       const parentPath = (data.parentId && data.parentId !== -1) ? this.getParentPath(data.parentId) : []
       this.subForm = {
@@ -529,9 +528,9 @@ export default {
       }
       this.subDialog.visible = true
     },
-    
+
     // 获取节点的完整父级路径（用于 cascader 回显）
-    getParentPath(targetId) {
+    getParentPath (targetId) {
       const path = []
       const findPath = (nodes, id, currentPath) => {
         for (const node of nodes) {
@@ -549,24 +548,24 @@ export default {
       findPath(this.treeData, targetId, [])
       return path
     },
-    
+
     // 上级分项选择变化
-    handleParentChange(val) {
+    handleParentChange (val) {
       this.subForm.parentId = val?.length ? val[val.length - 1] : -1
     },
-    
-    resetSubForm() {
+
+    resetSubForm () {
       this.$refs.subFormRef?.resetFields()
       this.subForm = { id: '', parentId: -1, parentIdArr: [], name: '', remark: '' }
     },
-    
-    async handleSubSubmit() {
+
+    async handleSubSubmit () {
       try {
         await this.$refs.subFormRef.validate()
       } catch (e) {
         return
       }
-      
+
       this.subDialog.loading = true
       try {
         const payload = {
@@ -575,7 +574,7 @@ export default {
           name: this.subForm.name,
           remark: this.subForm.remark
         }
-        
+
         if (this.subDialog.isAdd) {
           await addSub(payload)
           this.$message.success('新增成功')
@@ -584,7 +583,7 @@ export default {
           await updateSub(payload)
           this.$message.success('修改成功')
         }
-        
+
         this.subDialog.visible = false
         this.fetchTreeData()
       } catch (e) {
@@ -593,20 +592,20 @@ export default {
         this.subDialog.loading = false
       }
     },
-    
-    handleDelete(data) {
+
+    handleDelete (data) {
       const hasChildren = data.subTreeList?.length > 0
       const hasMeter = (data.mainMeterCount || 0) + (data.subMeterCount || 0) > 0
-      
+
       let msg = '确定删除该分项吗？'
       if (hasChildren) msg = '该分项包含子项，确定删除吗？'
       if (hasMeter) msg = '该分项已绑定电表，确定删除吗？'
-      
+
       this.$confirm(msg, '提示', { type: 'warning' }).then(async () => {
         try {
           await deleteSub({ id: data.id })
           this.$message.success('删除成功')
-          
+
           if (this.currentNode.id === data.id) {
             this.currentNode = {}
             this.boundMeterList = []
@@ -617,9 +616,9 @@ export default {
         }
       }).catch(() => {})
     },
-    
+
     // ========== 绑定电表 ==========
-    openBindDialog(subType) {
+    openBindDialog (subType) {
       if (!this.currentNode.id) {
         this.$message.warning('请先选择分项')
         return
@@ -627,8 +626,8 @@ export default {
       this.bindDialog.subType = subType
       this.bindDialog.visible = true
     },
-    
-    async fetchUnbindMeterList() {
+
+    async fetchUnbindMeterList () {
       this.bindDialog.loading = true
       try {
         const { data } = await pageSubMeter({
@@ -648,23 +647,23 @@ export default {
         this.bindDialog.loading = false
       }
     },
-    
-    handleUnbindMeterSelection(selection) {
+
+    handleUnbindMeterSelection (selection) {
       this.selectedUnbindMeters = selection
     },
-    
-    resetBindDialog() {
+
+    resetBindDialog () {
       this.unbindMeterQuery = { queryWord: '', current: 1, pageSize: 20, total: 0 }
       this.unbindMeterList = []
       this.selectedUnbindMeters = []
     },
-    
-    async handleBindSubmit() {
+
+    async handleBindSubmit () {
       if (!this.selectedUnbindMeters.length) {
         this.$message.warning('请选择要绑定的电表')
         return
       }
-      
+
       this.bindDialog.submitLoading = true
       try {
         await bindSubMeter({
@@ -683,18 +682,18 @@ export default {
         this.bindDialog.submitLoading = false
       }
     },
-    
+
     // ========== 解绑电表 ==========
-    handleMeterSelectionChange(selection) {
+    handleMeterSelectionChange (selection) {
       this.selectedMeters = selection
     },
-    
-    handleUnbind() {
+
+    handleUnbind () {
       if (!this.selectedMeters.length) {
         this.$message.warning('请选择要解绑的电表')
         return
       }
-      
+
       this.$confirm(`确定解绑选中的 ${this.selectedMeters.length} 个电表吗？`, '提示', { type: 'warning' })
         .then(async () => {
           try {
@@ -729,32 +728,32 @@ export default {
   height: calc(100vh - 152px);
   display: flex;
   flex-direction: column;
-  
+
   .panel-header {
     padding: 16px 20px;
     border-bottom: 1px solid #f0f0f0;
     flex-shrink: 0;
-    
+
     .panel-title {
       margin: 0;
       font-size: 16px;
       font-weight: 500;
       color: #1c1c1c;
     }
-    
+
     .header-title {
       display: flex;
       align-items: center;
       font-size: 16px;
       font-weight: 500;
       color: #1c1c1c;
-      
+
       .header-icon {
         font-size: 20px;
         color: #409EFF;
         margin-right: 8px;
       }
-      
+
       .current-name {
         color: #409EFF;
         font-weight: normal;
@@ -762,7 +761,7 @@ export default {
       }
     }
   }
-  
+
   .panel-toolbar {
     padding: 12px 20px;
     display: flex;
@@ -770,20 +769,20 @@ export default {
     gap: 12px;
     border-bottom: 1px solid #f0f0f0;
     flex-shrink: 0;
-    
+
     .toolbar-right {
       margin-left: auto;
       display: flex;
       gap: 8px;
     }
   }
-  
+
   .tree-container {
     flex: 1;
     overflow: auto;
     padding: 12px 16px;
   }
-  
+
   .table-container {
     flex: 1;
     overflow: hidden;
@@ -798,32 +797,32 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding-right: 8px;
-  
+
   .node-content {
     display: flex;
     align-items: center;
     min-width: 0;
     flex: 1;
-    
+
     .node-icon {
       font-size: 16px;
       color: #409EFF;
       margin-right: 6px;
       flex-shrink: 0;
     }
-    
+
     .node-label {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       margin-right: 8px;
     }
-    
+
     .node-count {
       display: flex;
       gap: 4px;
       flex-shrink: 0;
-      
+
       .el-tag {
         padding: 0 4px;
         height: 18px;
@@ -831,47 +830,46 @@ export default {
       }
     }
   }
-  
+
   .node-actions {
     display: none;
     flex-shrink: 0;
-    
+
     .el-button {
       padding: 4px;
       font-size: 14px;
     }
-    
+
     .danger-btn {
       color: #f56c6c;
       &:hover { color: #f89898; }
     }
   }
-  
+
   .node-sort-actions {
     display: flex;
     gap: 4px;
     flex-shrink: 0;
-    
+
     .el-button {
       padding: 4px 8px;
       font-size: 16px;
-      
+
       &.is-disabled {
         color: #c0c4cc;
       }
-      
+
       &:not(.is-disabled) {
         color: #409EFF;
         &:hover { color: #66b1ff; }
       }
     }
   }
-  
+
   &:hover .node-actions {
     display: flex;
   }
-  
-  
+
 }
 
 // 绑定弹窗样式
@@ -896,20 +894,20 @@ export default {
 ::v-deep {
   .el-tree {
     background: transparent;
-    
+
     .el-tree-node__content {
       height: 36px;
-      
+
       &:hover {
         background-color: #f5f7fa;
       }
     }
-    
+
     .el-tree-node.is-current > .el-tree-node__content {
       background-color: #ecf5ff;
     }
   }
-  
+
   .el-dialog__footer {
     padding: 15px 20px;
     border-top: 1px solid #f0f0f0;

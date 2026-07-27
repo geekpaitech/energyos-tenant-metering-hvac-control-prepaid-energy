@@ -3,12 +3,12 @@ import request from '@/utils/request'
 // 结算相关服务
 
 // 根据id查询租户每日账单
-export function settleGetTenantDailyBill(data) {
+export function settleGetTenantDailyBill (data) {
   return request({
     url: '/api/ebc-settle/settle/getSettleTenant',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: data
@@ -16,12 +16,12 @@ export function settleGetTenantDailyBill(data) {
 }
 
 // 获取租户账单算账单明细
-export function settleListTenantPrivateSettleDetail(query) {
+export function settleListTenantPrivateSettleDetail (query) {
   return request({
     url: '/api/ebc-settle/settle/listTenantPrivateSettleDetail',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: query
@@ -29,12 +29,12 @@ export function settleListTenantPrivateSettleDetail(query) {
 }
 
 // 分页查询租户每日账单
-export function settlePageTenantDailyBill(data) {
+export function settlePageTenantDailyBill (data) {
   return request({
     url: '/api/ebc-settle/settle/pageSettleTenant',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -42,12 +42,12 @@ export function settlePageTenantDailyBill(data) {
 }
 
 // 分页查询租户每日账单统计
-export function settleTenantSettleStatistics(data) {
+export function settleTenantSettleStatistics (data) {
   return request({
     url: '/api/ebc-settle/settle/tenantSettleStatistics',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data
@@ -55,12 +55,12 @@ export function settleTenantSettleStatistics(data) {
 }
 
 // 获取租户实时信息
-export function settleGetCurrentData(data) {
+export function settleGetCurrentData (data) {
   return request({
     url: '/api/ebc-settle/settle/getTenantCurrentUse',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: data
@@ -68,12 +68,12 @@ export function settleGetCurrentData(data) {
 }
 
 // 绑定公摊组-电表列表
-export function listTenantPublicSettleDetail(query) {
+export function listTenantPublicSettleDetail (query) {
   return request({
     url: '/api/ebc-settle/settle/listTenantPublicSettleDetail',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: query
@@ -81,12 +81,12 @@ export function listTenantPublicSettleDetail(query) {
 }
 
 // 虚拟设备账单详情
-export function settleListTenantVirdevSettleDetail(query) {
+export function settleListTenantVirdevSettleDetail (query) {
   return request({
     url: '/api/ebc-settle/settle/listTenantVirdevSettleDetail',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: query
@@ -94,12 +94,12 @@ export function settleListTenantVirdevSettleDetail(query) {
 }
 
 // 列表查询租户每日账单
-export function settleQuerySettleTenant(query) {
+export function settleQuerySettleTenant (query) {
   return request({
     url: '/api/ebc-settle/settle/querySettleTenant',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data: query
@@ -107,12 +107,12 @@ export function settleQuerySettleTenant(query) {
 }
 
 // 租户账单统计
-export function settleSettleTenantStatistics(query) {
+export function settleSettleTenantStatistics (query) {
   return request({
     url: '/api/ebc-settle/settle/settleTenantStatistics',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     data: query
@@ -120,12 +120,12 @@ export function settleSettleTenantStatistics(query) {
 }
 
 // 租户手动结算-执行
-export function settleHandSettleDo(query) {
+export function settleHandSettleDo (query) {
   return request({
     url: '/api/ebc-settle/settle/handSettleDo',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: query
@@ -133,12 +133,12 @@ export function settleHandSettleDo(query) {
 }
 
 // 租户账单统计
-export function settleHandSettlePreview(query) {
+export function settleHandSettlePreview (query) {
   return request({
     url: '/api/ebc-settle/settle/handSettlePreview',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: query
@@ -146,14 +146,25 @@ export function settleHandSettlePreview(query) {
 }
 
 // 电表服务费详情
-export function settleListTenantSettleDetail(query) {
+export function settleListTenantSettleDetail (query) {
   return request({
     url: '/api/ebc-settle/settle/listTenantSettleDetail',
     method: 'post',
     headers: {
-      'userDeviceType': 'PC',
+      userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
     params: query
+  })
+}
+
+/** 查询配置了空调系统电量系数的管理方 ID 列表；成功时 data 为 ID 数组，如 [1000107] */
+export function getAirSysElecCoefKeys () {
+  return request({
+    url: '/api/ebc-settle/open/settle/getAirSysElecCoefKeys',
+    method: 'get',
+    headers: {
+      userDeviceType: 'PC'
+    }
   })
 }

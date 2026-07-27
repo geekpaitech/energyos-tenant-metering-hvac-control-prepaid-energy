@@ -10,9 +10,9 @@
             <i class="icon iconfont icon-dianbiao" style="font-size: 26px;"></i>
           </div>
           <div class="card-info">
-            <div class="card-title">智能电表</div>
+            <div class="card-title">{{ $t('tenantDevicesPage.cardElectric') }}</div>
             <div class="card-stats">
-              专用 {{ electricMeterCount }} 公摊组 {{ electricGroupCount }}
+              {{ $t('tenantDevicesPage.cardStatsDedicatedGroups', { dedicated: electricMeterCount, groups: electricGroupCount }) }}
             </div>
           </div>
         </div>
@@ -24,9 +24,9 @@
             <i class="icon iconfont icon-shuibiao" style="font-size: 26px;"></i>
           </div>
           <div class="card-info">
-            <div class="card-title">智能水表</div>
+            <div class="card-title">{{ $t('tenantDevicesPage.cardWater') }}</div>
             <div class="card-stats">
-              专用 {{ waterMeterCount }} 公摊组 {{ waterGroupCount }}
+              {{ $t('tenantDevicesPage.cardStatsDedicatedGroups', { dedicated: waterMeterCount, groups: waterGroupCount }) }}
             </div>
           </div>
         </div>
@@ -38,8 +38,8 @@
             <i class="icon iconfont icon-kongtiao" style="font-size: 26px;"></i>
           </div>
           <div class="card-info">
-            <div class="card-title">空调</div>
-            <div class="card-stats">专用 {{ airConditionerCount }} 公摊组 {{ airShareGroupCount }}</div>
+            <div class="card-title">{{ $t('tenantDevicesPage.cardAir') }}</div>
+            <div class="card-stats">{{ $t('tenantDevicesPage.cardStatsDedicatedGroups', { dedicated: airConditionerCount, groups: airShareGroupCount }) }}</div>
           </div>
         </div>
 
@@ -50,8 +50,8 @@
             <i class="icon iconfont icon-zhaoming1" style="font-size: 26px;"></i>
           </div>
           <div class="card-info">
-            <div class="card-title">照明</div>
-            <div class="card-stats">灯组 -- 灯 --</div>
+            <div class="card-title">{{ $t('tenantDevicesPage.cardLighting') }}</div>
+            <div class="card-stats">{{ $t('tenantDevicesPage.cardLightingStats') }}</div>
           </div>
         </div>
 
@@ -62,8 +62,8 @@
             <i class="icon iconfont icon-fangjian" style="font-size: 26px;"></i>
           </div>
           <div class="card-info">
-            <div class="card-title">智能门锁</div>
-            <div class="card-stats">--</div>
+            <div class="card-title">{{ $t('tenantDevicesPage.cardDoorlock') }}</div>
+            <div class="card-stats">{{ $t('tenantDevicesPage.cardDoorlockPlaceholder') }}</div>
           </div>
         </div>
       </div>
@@ -76,9 +76,9 @@
         <!-- 专用电表 -->
         <div class="device-section">
           <div class="section-header">
-            <h4 class="section-title">专用电表</h4>
-            <el-button type="primary" size="small" @click="handleBindDevice('electric')">
-              绑定/解绑电表
+            <h4 class="section-title">{{ $t('tenantDevicesPage.sectionDedicatedElectric') }}</h4>
+            <el-button v-if="canBind" type="primary" size="small" @click="handleBindDevice('electric')">
+              {{ $t('tenantDevicesPage.btnBindUnbindElectric') }}
             </el-button>
           </div>
 
@@ -90,87 +90,87 @@
                 fontWeight: '600',
               }">
               <!-- 序列号 - 黑色可复制 -->
-              <el-table-column prop="serial" label="序列号" width="180" align="left">
+              <el-table-column prop="serial" :label="$t('tenantDevicesPage.colSerial')" width="180" align="left">
                 <template slot-scope="scope">
-                  <span class="serial-copy" @click="handleCopySerial(scope.row.serial)">
+                  <span class="serial-copy" :data-copy-hint="$t('tenantDevicesPage.copyHint')" @click="handleCopySerial(scope.row.serial)">
                     {{ scope.row.serial || "--" }}
                   </span>
                 </template>
               </el-table-column>
 
               <!-- 设备名称 - 蓝色链接 -->
-              <el-table-column prop="meterName" label="设备名称" min-width="120" align="left" show-overflow-tooltip>
+              <el-table-column prop="meterName" :label="$t('tenantDevicesPage.colDeviceName')" min-width="120" align="left" show-overflow-tooltip>
                 <template slot-scope="scope">
                   <el-link type="primary" @click="handleMeterMonitor(scope.row)">
-                    {{ scope.row.meterName || "--" }}
+                    {{ $displayBizHybrid(scope.row.meterName) || "--" }}
                   </el-link>
                 </template>
               </el-table-column>
 
               <!-- 类型 - 居中 -->
-              <el-table-column prop="bindType" label="类型" width="90" align="center">
+              <el-table-column prop="bindType" :label="$t('tenantDevicesPage.colType')" width="90" align="center">
                 <template slot-scope="scope">
                   <el-tag size="mini" :type="scope.row.bindType == 2 ? 'warning' : 'success'">
-                    {{ scope.row.bindType == 2 ? '公摊' : '专用' }}
+                    {{ scope.row.bindType == 2 ? $t('tenantDevicesPage.tagShared') : $t('tenantDevicesPage.tagDedicated') }}
                   </el-tag>
                 </template>
               </el-table-column>
 
               <!-- 付费模式 - 居中 -->
-              <el-table-column prop="logicPayType" label="付费模式" width="100" align="center">
+              <el-table-column prop="logicPayType" :label="$t('tenantDevicesPage.colPayMode')" width="100" align="center">
                 <template slot-scope="scope">
                   <el-tag v-if="scope.row.logicPayType == 0" type="success" size="mini">
-                    预付费
+                    {{ $t('tenantDevicesPage.tagPrepaid') }}
                   </el-tag>
                   <el-tag v-else-if="scope.row.logicPayType == 1" type="primary" size="mini">
-                    强控
+                    {{ $t('tenantDevicesPage.tagForceControl') }}
                   </el-tag>
                   <span v-else>--</span>
                 </template>
               </el-table-column>
 
               <!-- 分合闸状态 - 居中 -->
-              <el-table-column prop="switchStatus" label="分合闸状态" width="110" align="center">
+              <el-table-column prop="switchStatus" :label="$t('tenantDevicesPage.colSwitchState')" width="110" align="center">
                 <template slot-scope="scope">
                   <el-tag :type="scope.row.switchStatus == 1 ? 'success' : 'info'" size="mini" effect="plain">
-                    {{ scope.row.switchStatus == 1 ? "合闸" : "分闸" }}
+                    {{ scope.row.switchStatus == 1 ? $t('tenantDevicesPage.switchOn') : $t('tenantDevicesPage.switchOff') }}
                   </el-tag>
                 </template>
               </el-table-column>
 
               <!-- 在线状态 - 居中 -->
-              <el-table-column prop="onlineStatus" label="在线状态" width="100" align="center">
+              <el-table-column prop="onlineStatus" :label="$t('tenantDevicesPage.colOnline')" width="100" align="center">
                 <template slot-scope="scope">
                   <div class="status-wrapper">
                     <span :class="['status-dot', scope.row.onlineStatus == 1 ? 'online' : 'offline']"></span>
-                    {{ scope.row.onlineStatus == 1 ? "在线" : "离线" }}
+                    {{ scope.row.onlineStatus == 1 ? $t('tenantDevicesPage.online') : $t('tenantDevicesPage.offline') }}
                   </div>
                 </template>
               </el-table-column>
 
               <!-- 最新数据时间 -->
-              <el-table-column prop="syncTime" label="最新数据时间" width="160" align="center">
+              <el-table-column prop="syncTime" :label="$t('tenantDevicesPage.colLastDataTime')" width="160" align="center">
                 <template slot-scope="scope">
                   {{ formatDate(scope.row.syncTime) }}
                 </template>
               </el-table-column>
 
               <!-- 操作 - 居中 -->
-              <el-table-column label="操作" width="140" align="center" fixed="right">
+              <el-table-column :label="$t('tenantDevicesPage.colActions')" width="140" align="center" fixed="right">
                 <template slot-scope="scope">
                   <div class="operation-cell">
                     <!-- 分闸/合闸 - 统一蓝色 -->
-                    <el-button type="text" size="mini"
+                    <el-button v-if="canSwitch" type="text" size="mini"
                       @click="handleSwitch(scope.row, scope.row.switchStatus == 1 ? 0 : 1)" class="op-btn primary-btn">
                       <i :class="scope.row.switchStatus == 1 ? 'el-icon-switch-button' : 'el-icon-open'"></i>
-                      {{ scope.row.switchStatus == 1 ? "分闸" : "合闸" }}
+                      {{ scope.row.switchStatus == 1 ? $t('tenantDevicesPage.switchOff') : $t('tenantDevicesPage.switchOn') }}
                     </el-button>
 
                     <!-- <span class="op-divider">|</span> -->
 
                     <el-button type="text" size="mini" @click="handleMeterMonitor(scope.row)"
                       class="op-btn primary-btn">
-                      详情
+                      {{ $t('tenantDevicesPage.btnDetail') }}
                     </el-button>
                   </div>
                 </template>
@@ -182,29 +182,29 @@
         <!-- 电表公摊组 -->
         <div class="device-section">
           <div class="section-header">
-            <h4 class="section-title">公摊组</h4>
-            <el-button type="primary" size="small" @click="handleBindDevice('electricGroup')">
-              绑定/解绑公摊组
+            <h4 class="section-title">{{ $t('tenantDevicesPage.sectionShareGroup') }}</h4>
+            <el-button v-if="canBind" type="primary" size="small" @click="handleBindDevice('electricGroup')">
+              {{ $t('tenantDevicesPage.btnBindUnbindShare') }}
             </el-button>
           </div>
 
           <div class="table-wrapper">
             <el-table :data="electricGroups" v-loading="electricGroupLoading" border size="small"
               key="electric-groups-table">
-              <el-table-column prop="id" label="公摊组编号" min-width="130" align="center" />
-              <el-table-column prop="name" label="公摊组名称" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="shareType" label="公摊方式" width="100" align="center">
+              <el-table-column prop="id" :label="$t('tenantDevicesPage.colShareGroupId')" min-width="130" align="center" />
+              <el-table-column prop="name" :label="$t('tenantDevicesPage.colShareGroupName')" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="shareType" :label="$t('tenantDevicesPage.colShareMethod')" width="100" align="center">
                 <template slot-scope="scope">
                   {{ getShareTypeLabel(scope.row.shareType) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="deviceCount" label="公摊设备" width="90" align="center">
+              <el-table-column prop="deviceCount" :label="$t('tenantDevicesPage.colShareDevices')" width="90" align="center">
                 <template slot-scope="scope">{{ scope.row.deviceCount || "--" }}</template>
               </el-table-column>
-              <el-table-column prop="tenantCount" label="公摊租户" width="90" align="center">
+              <el-table-column prop="tenantCount" :label="$t('tenantDevicesPage.colShareTenants')" width="90" align="center">
                 <template slot-scope="scope">{{ scope.row.tenantCount || "--" }}</template>
               </el-table-column>
-              <el-table-column prop="createTime" label="更新时间" width="150" align="center">
+              <el-table-column prop="createTime" :label="$t('tenantDevicesPage.colUpdatedAt')" width="150" align="center">
                 <template slot-scope="scope">
                   {{ formatDate(scope.row.createTime) }}
                 </template>
@@ -219,9 +219,9 @@
         <!-- 专用水表 -->
         <div class="device-section">
           <div class="section-header">
-            <h4 class="section-title">专用水表</h4>
-            <el-button type="primary" size="small" @click="handleBindDevice('water')">
-              绑定/解绑水表
+            <h4 class="section-title">{{ $t('tenantDevicesPage.sectionDedicatedWater') }}</h4>
+            <el-button v-if="canBind" type="primary" size="small" @click="handleBindDevice('water')">
+              {{ $t('tenantDevicesPage.btnBindUnbindWater') }}
             </el-button>
           </div>
 
@@ -233,32 +233,32 @@
                 fontWeight: '600',
               }">
               <!-- 序列号 - 黑色可复制 -->
-              <el-table-column prop="serial" label="序列号" width="180" align="left">
+              <el-table-column prop="serial" :label="$t('tenantDevicesPage.colSerial')" width="180" align="left">
                 <template slot-scope="scope">
-                  <span class="serial-copy" @click="handleCopySerial(scope.row.serial)">
+                  <span class="serial-copy" :data-copy-hint="$t('tenantDevicesPage.copyHint')" @click="handleCopySerial(scope.row.serial)">
                     {{ scope.row.serial || "--" }}
                   </span>
                 </template>
               </el-table-column>
 
               <!-- 设备名称 - 蓝色链接 -->
-              <el-table-column prop="waterName" label="设备名称" min-width="180" align="left" show-overflow-tooltip>
+              <el-table-column prop="waterName" :label="$t('tenantDevicesPage.colDeviceName')" min-width="180" align="left" show-overflow-tooltip>
                 <template slot-scope="scope">
                   <el-link type="primary" @click="handleWaterMonitor(scope.row)">
-                    {{ scope.row.waterName || "--" }}
+                    {{ $displayBizHybrid(scope.row.waterName) || "--" }}
                   </el-link>
                 </template>
               </el-table-column>
 
               <!-- 类型 - 居中 -->
-              <el-table-column prop="bindType" label="类型" width="90" align="center">
-                <template slot-scope="scope">
-                  <el-tag size="mini" type="success">专用</el-tag>
+              <el-table-column prop="bindType" :label="$t('tenantDevicesPage.colType')" width="90" align="center">
+                <template slot-scope>
+                  <el-tag size="mini" type="success">{{ $t('tenantDevicesPage.tagDedicated') }}</el-tag>
                 </template>
               </el-table-column>
 
               <!-- 水价 - 居中 -->
-              <el-table-column prop="waterPriceDto" label="水价" width="120" align="center">
+              <el-table-column prop="waterPriceDto" :label="$t('tenantDevicesPage.colWaterPrice')" width="120" align="center">
                 <template slot-scope="scope">
                   <span v-if="scope.row.waterPriceDto">
                     ¥{{ scope.row.waterPriceDto.price }}/m³
@@ -267,27 +267,29 @@
                 </template>
               </el-table-column>
 
-              <!-- 结算方式 - 居中 -->
-              <el-table-column prop="settleRate" label="结算方式" width="100" align="center">
+              <!-- 结算方式 - 居中（UI 暂不展示，逻辑仍默认传加算 settleRate=1） -->
+              <!--
+              <el-table-column prop="settleRate" :label="$t('tenantDevicesPage.colSettleMode')" width="100" align="center">
                 <template slot-scope="scope">
                   <el-tag :type="scope.row.settleRate === 1 ? 'success' : 'danger'" size="mini" effect="plain">
-                    {{ scope.row.settleRate === 1 ? '+ 加算' : '- 减算' }}
+                    {{ scope.row.settleRate === 1 ? $t('tenantDevicesPage.settleAdd') : $t('tenantDevicesPage.settleSubtract') }}
                   </el-tag>
                 </template>
               </el-table-column>
+              -->
 
               <!-- 绑定时间 - 居中 -->
-              <el-table-column prop="createTime" label="绑定时间" width="160" align="center">
+              <el-table-column prop="createTime" :label="$t('tenantDevicesPage.colBindTime')" width="160" align="center">
                 <template slot-scope="scope">
                   {{ formatDate(scope.row.createTime) }}
                 </template>
               </el-table-column>
 
               <!-- 操作 - 居中 -->
-              <el-table-column label="操作" width="80" align="center" fixed="right">
+              <el-table-column :label="$t('tenantDevicesPage.colActions')" width="80" align="center" fixed="right">
                 <template slot-scope="scope">
                   <el-button type="text" size="mini" @click="handleWaterMonitor(scope.row)" class="op-btn primary-btn">
-                    详情
+                    {{ $t('tenantDevicesPage.btnDetail') }}
                   </el-button>
                 </template>
               </el-table-column>
@@ -298,27 +300,27 @@
         <!-- 水表公摊组 -->
         <div class="device-section">
           <div class="section-header">
-            <h4 class="section-title">公摊组</h4>
-            <el-button type="primary" size="small" @click="handleBindDevice('waterGroup')">
-              绑定/解绑公摊组
+            <h4 class="section-title">{{ $t('tenantDevicesPage.sectionShareGroup') }}</h4>
+            <el-button v-if="canBind" type="primary" size="small" @click="handleBindDevice('waterGroup')">
+              {{ $t('tenantDevicesPage.btnBindUnbindShare') }}
             </el-button>
           </div>
 
           <div class="table-wrapper">
             <el-table :data="waterGroups" v-loading="waterGroupLoading" border size="small" key="water-groups-table">
-              <el-table-column prop="id" label="公摊组编号" min-width="130" align="center" />
-              <el-table-column prop="name" label="公摊组名称" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="area" label="公摊面积" width="100" align="center">
+              <el-table-column prop="id" :label="$t('tenantDevicesPage.colShareGroupId')" min-width="130" align="center" />
+              <el-table-column prop="name" :label="$t('tenantDevicesPage.colShareGroupName')" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="area" :label="$t('tenantDevicesPage.colShareArea')" width="100" align="center">
                 <template slot-scope="scope">
                   {{ scope.row.area || "--" }}㎡
                 </template>
               </el-table-column>
-              <el-table-column prop="createTime" label="创建时间" width="150" align="center">
+              <el-table-column prop="createTime" :label="$t('tenantDevicesPage.colCreatedAt')" width="150" align="center">
                 <template slot-scope="scope">
                   {{ formatDate(scope.row.createTime) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="updateTime" label="更新时间" width="150" align="center">
+              <el-table-column prop="updateTime" :label="$t('tenantDevicesPage.colUpdatedAt')" width="150" align="center">
                 <template slot-scope="scope">
                   {{ formatDate(scope.row.updateTime) }}
                 </template>
@@ -333,9 +335,9 @@
         <!-- 专用空调 -->
         <div class="device-section">
           <div class="section-header">
-            <h4 class="section-title">专用空调</h4>
-            <el-button type="primary" size="small" @click="handleBindDevice('aircon')">
-              绑定/解绑空调
+            <h4 class="section-title">{{ $t('tenantDevicesPage.sectionDedicatedAir') }}</h4>
+            <el-button v-if="canBind" type="primary" size="small" @click="handleBindDevice('aircon')">
+              {{ $t('tenantDevicesPage.btnBindUnbindAir') }}
             </el-button>
           </div>
 
@@ -347,53 +349,53 @@
                 fontWeight: '600',
               }">
               <!-- 序列号 - 黑色可复制 -->
-              <el-table-column prop="indoorUnitId" label="序列号" width="180" align="left">
+              <el-table-column prop="indoorUnitId" :label="$t('tenantDevicesPage.colSerial')" width="180" align="left">
                 <template slot-scope="scope">
-                  <span class="serial-copy" @click="handleCopySerial(scope.row.indoorUnitId)">
+                  <span class="serial-copy" :data-copy-hint="$t('tenantDevicesPage.copyHint')" @click="handleCopySerial(scope.row.indoorUnitId)">
                     {{ scope.row.indoorUnitId || "--" }}
                   </span>
                 </template>
               </el-table-column>
 
               <!-- 设备名称 - 蓝色链接 -->
-              <el-table-column prop="name" label="设备名称" min-width="180" align="left" show-overflow-tooltip>
+              <el-table-column prop="name" :label="$t('tenantDevicesPage.colDeviceName')" min-width="180" align="left" show-overflow-tooltip>
                 <template slot-scope="scope">
                   <el-link type="primary" @click="handleAirMonitor(scope.row)">
-                    {{ scope.row.name || "--" }}
+                    {{ $displayBizHybrid(scope.row.name) || "--" }}
                   </el-link>
                 </template>
               </el-table-column>
 
               <!-- 类型 - 居中 -->
-              <el-table-column prop="bindType" label="类型" width="90" align="center">
+              <el-table-column prop="bindType" :label="$t('tenantDevicesPage.colType')" width="90" align="center">
                 <template slot-scope="scope">
                   <el-tag size="mini" :type="scope.row.bindType == 2 ? 'warning' : 'success'">
-                    {{ scope.row.bindType == 2 ? '公摊' : '专用' }}
+                    {{ scope.row.bindType == 2 ? $t('tenantDevicesPage.tagShared') : $t('tenantDevicesPage.tagDedicated') }}
                   </el-tag>
                 </template>
               </el-table-column>
 
               <!-- 在线状态 - 居中 -->
-              <el-table-column prop="state" label="在线状态" width="100" align="center">
+              <el-table-column prop="state" :label="$t('tenantDevicesPage.colOnline')" width="100" align="center">
                 <template slot-scope="scope">
                   <div class="status-wrapper">
                     <span :class="['status-dot', scope.row.state === 0 ? 'online' : 'offline']"></span>
-                    {{ scope.row.state === 0 ? "在线" : "离线" }}
+                    {{ scope.row.state === 0 ? $t('tenantDevicesPage.online') : $t('tenantDevicesPage.offline') }}
                   </div>
                 </template>
               </el-table-column>
 
               <!-- 开关状态 - 居中 -->
-              <el-table-column prop="powerStatus" label="开关状态" width="100" align="center">
+              <el-table-column prop="powerStatus" :label="$t('tenantDevicesPage.colPowerState')" width="100" align="center">
                 <template slot-scope="scope">
                   <el-tag :type="scope.row.powerStatus === 1 ? 'success' : 'info'" size="mini" effect="plain">
-                    {{ scope.row.powerStatus === 1 ? "开启" : "关闭" }}
+                    {{ scope.row.powerStatus === 1 ? $t('tenantDevicesPage.powerOn') : $t('tenantDevicesPage.powerOff') }}
                   </el-tag>
                 </template>
               </el-table-column>
 
               <!-- 运行模式 - 居中 -->
-              <el-table-column prop="operationMode" label="运行模式" width="100" align="center">
+              <el-table-column prop="operationMode" :label="$t('tenantDevicesPage.colRunMode')" width="100" align="center">
                 <template slot-scope="scope">
                   <el-tag :type="getOperationModeType(scope.row.operationMode)" size="mini" effect="plain">
                     {{ getOperationModeLabel(scope.row.operationMode) }}
@@ -402,24 +404,24 @@
               </el-table-column>
 
               <!-- 设定温度 - 居中 -->
-              <el-table-column prop="targetTemperature" label="设定温度" width="100" align="center">
+              <el-table-column prop="targetTemperature" :label="$t('tenantDevicesPage.colTargetTemp')" width="100" align="center">
                 <template slot-scope="scope">
                   <span>{{ scope.row.targetTemperature || "--" }}°C</span>
                 </template>
               </el-table-column>
 
               <!-- 室内温度 - 居中 -->
-              <el-table-column prop="roomTemperature" label="室内温度" width="100" align="center">
+              <el-table-column prop="roomTemperature" :label="$t('tenantDevicesPage.colRoomTemp')" width="100" align="center">
                 <template slot-scope="scope">
                   <span>{{ scope.row.roomTemperature || "--" }}°C</span>
                 </template>
               </el-table-column>
 
               <!-- 操作 - 居中 -->
-              <el-table-column label="操作" width="80" align="center" fixed="right">
+              <el-table-column :label="$t('tenantDevicesPage.colActions')" width="80" align="center" fixed="right">
                 <template slot-scope="scope">
                   <el-button type="text" size="mini" @click="handleAirMonitor(scope.row)" class="op-btn primary-btn">
-                    详情
+                    {{ $t('tenantDevicesPage.btnDetail') }}
                   </el-button>
                 </template>
               </el-table-column>
@@ -430,35 +432,35 @@
         <!-- 空调公摊组 -->
         <div class="device-section">
           <div class="section-header">
-            <h4 class="section-title">公摊组</h4>
-            <el-button type="primary" size="small" @click="handleBindDevice('airGroup')">
-              绑定/解绑公摊组
+            <h4 class="section-title">{{ $t('tenantDevicesPage.sectionShareGroup') }}</h4>
+            <el-button v-if="canBind" type="primary" size="small" @click="handleBindDevice('airGroup')">
+              {{ $t('tenantDevicesPage.btnBindUnbindShare') }}
             </el-button>
           </div>
 
           <div class="table-wrapper">
             <el-table :data="airShareGroups" v-loading="airShareLoading" border size="small"
               key="air-share-groups-table">
-              <el-table-column prop="id" label="公摊组编号" min-width="130" align="center" />
-              <el-table-column prop="name" label="公摊组名称" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="shareType" label="公摊方式" width="100" align="center">
+              <el-table-column prop="id" :label="$t('tenantDevicesPage.colShareGroupId')" min-width="130" align="center" />
+              <el-table-column prop="name" :label="$t('tenantDevicesPage.colShareGroupName')" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="shareType" :label="$t('tenantDevicesPage.colShareMethod')" width="100" align="center">
                 <template slot-scope="scope">
                   {{ getAirShareTypeLabel(scope.row.shareType) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="area" label="实际公摊面积" width="120" align="center">
+              <el-table-column prop="area" :label="$t('tenantDevicesPage.colActualShareArea')" width="120" align="center">
                 <template slot-scope="scope">
                   <div v-if="scope.row.shareType === 'ENERGY'">-</div>
                   <div v-else>{{ scope.row.area }}㎡</div>
                 </template>
               </el-table-column>
-              <el-table-column prop="airCount" label="公摊设备" width="90" align="center">
+              <el-table-column prop="airCount" :label="$t('tenantDevicesPage.colShareDevices')" width="90" align="center">
                 <template slot-scope="scope">{{ scope.row.airCount || "--" }}</template>
               </el-table-column>
-              <el-table-column prop="tenantCount" label="公摊租户" width="90" align="center">
+              <el-table-column prop="tenantCount" :label="$t('tenantDevicesPage.colShareTenants')" width="90" align="center">
                 <template slot-scope="scope">{{ scope.row.tenantCount || "--" }}</template>
               </el-table-column>
-              <el-table-column prop="createTime" label="创建时间" width="150" align="center">
+              <el-table-column prop="createTime" :label="$t('tenantDevicesPage.colCreatedAt')" width="150" align="center">
                 <template slot-scope="scope">
                   {{ formatDate(scope.row.createTime) }}
                 </template>
@@ -471,7 +473,7 @@
       <!-- 其他设备类型 - 暂未开放 -->
       <template v-else>
         <div class="empty-wrapper">
-          <el-empty description="暂未开放" :image-size="100" />
+          <el-empty :description="$t('tenantDevicesPage.emptyNotOpen')" :image-size="100" />
         </div>
       </template>
     </div>
@@ -481,86 +483,85 @@
       <div class="drawer-content" v-loading="drawerLoading">
         <!-- 电表管理 -->
         <template v-if="currentDeviceType === 'electric'">
-          <div class="section-title">已绑定电表</div>
-          <el-input v-model="boundMeterSearchQuery" placeholder="请输入电表名称或序列号搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerBoundMeters') }}</div>
+          <el-input v-model="boundMeterSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchMeter')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="meter-list">
             <div v-for="meter in filteredSelectedMeters" :key="meter.id" class="meter-item selected">
               <div class="meter-info">
-                <div class="meter-name">{{ meter.meterName }}</div>
-                <div class="meter-serial">编号: {{ meter.serial }}</div>
+                <div class="meter-name">{{ $displayBizHybrid(meter.meterName) }}</div>
+                <div class="meter-serial">{{ $t('tenantDevicesPage.labelSerialShort') }} {{ meter.serial }}</div>
                 <div class="meter-status">
                   <el-tag :type="meter.onlineStatus === 1 ? 'success' : 'danger'" size="mini">
-                    {{ meter.onlineStatus === 1 ? "在线" : "离线" }}
+                    {{ meter.onlineStatus === 1 ? $t('tenantDevicesPage.online') : $t('tenantDevicesPage.offline') }}
                   </el-tag>
-                  <span class="balance">余额: ¥{{ formatBalance(meter.balance) }}</span>
+                  <!-- <span class="balance">余额: ¥{{ formatBalance(meter.balance) }}</span> -->
                 </div>
               </div>
-              <el-button type="danger" size="mini" @click="handleMeterUnbind(meter)" :loading="meter.unbinding">
-                解绑
+              <el-button v-if="canBind" type="danger" size="mini" @click="handleMeterUnbind(meter)" :loading="meter.unbinding">
+                {{ $t('tenantDevicesPage.btnUnbind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectedMeters.length === 0" description="暂无已绑定的电表" :image-size="60" />
+            <el-empty v-if="selectedMeters.length === 0" :description="$t('tenantDevicesPage.emptyNoBoundMeters')" :image-size="60" />
           </div>
 
-          <div class="section-title">可选电表</div>
-          <el-input v-model="meterSearchQuery" placeholder="请输入电表名称或序列号搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerSelectableMeters') }}</div>
+          <el-input v-model="meterSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchMeter')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="meter-list">
             <div v-for="meter in filteredSelectableMeters" :key="meter.id" class="meter-item selectable">
               <div class="meter-info">
-                <div class="meter-name">{{ meter.meterName }}</div>
-                <div class="meter-serial">编号: {{ meter.serial }}</div>
+                <div class="meter-name">{{ $displayBizHybrid(meter.meterName) }}</div>
+                <div class="meter-serial">{{ $t('tenantDevicesPage.labelSerialShort') }} {{ meter.serial }}</div>
                 <div class="meter-status">
                   <el-tag :type="meter.onlineStatus === 1 ? 'success' : 'danger'" size="mini">
-                    {{ meter.onlineStatus === 1 ? "在线" : "离线" }}
+                    {{ meter.onlineStatus === 1 ? $t('tenantDevicesPage.online') : $t('tenantDevicesPage.offline') }}
                   </el-tag>
-                  <span class="balance">余额: ¥{{ formatBalance(meter.balance) }}</span>
                 </div>
               </div>
-              <el-button type="primary" size="mini" @click="handleMeterBind(meter)" :loading="meter.binding">
-                绑定
+              <el-button v-if="canBind" type="primary" size="mini" @click="handleMeterBind(meter)" :loading="meter.binding">
+                {{ $t('tenantDevicesPage.btnBind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectableMeters.length === 0" description="暂无可绑定的电表" :image-size="60" />
+            <el-empty v-if="selectableMeters.length === 0" :description="$t('tenantDevicesPage.emptyNoSelectableMeters')" :image-size="60" />
           </div>
         </template>
 
         <!-- 电表公摊组管理 -->
         <template v-if="currentDeviceType === 'electricGroup'">
-          <div class="section-title">已绑定公摊组</div>
-          <el-input v-model="boundShareSearchQuery" placeholder="请输入公摊组名称搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerBoundShares') }}</div>
+          <el-input v-model="boundShareSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchShare')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="share-list">
             <div v-for="share in filteredSelectedShares" :key="share.id" class="share-item selected">
               <div class="share-info">
-                <div class="share-name">{{ share.name }}</div>
+                <div class="share-name">{{ $displayBizHybrid(share.name) }}</div>
                 <div class="share-details">
-                  <span class="share-area">面积: {{ share.area }}㎡</span>
+                  <span class="share-area">{{ $t('tenantDevicesPage.labelArea') }} {{ share.area }}㎡</span>
                   <el-tag :type="getShareTypeTag(share.shareType)" size="mini">
                     {{ getShareTypeLabel(share.shareType) }}
                   </el-tag>
                 </div>
               </div>
-              <el-button type="danger" size="mini" @click="handleShareUnbind(share)" :loading="share.unbinding">
-                解绑
+              <el-button v-if="canBind" type="danger" size="mini" @click="handleShareUnbind(share)" :loading="share.unbinding">
+                {{ $t('tenantDevicesPage.btnUnbind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectedShares.length === 0" description="暂无已绑定的公摊组" :image-size="60" />
+            <el-empty v-if="selectedShares.length === 0" :description="$t('tenantDevicesPage.emptyNoBoundShares')" :image-size="60" />
           </div>
 
-          <div class="section-title">可选公摊组</div>
-          <el-input v-model="shareSearchQuery" placeholder="请输入公摊组名称搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerSelectableShares') }}</div>
+          <el-input v-model="shareSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchShare')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="share-list">
             <div v-for="share in filteredSelectableShares" :key="share.id" class="share-item selectable">
               <div class="share-info">
-                <div class="share-name">{{ share.name }}</div>
+                <div class="share-name">{{ $displayBizHybrid(share.name) }}</div>
                 <div class="share-details">
                   <div class="share-area-input">
-                    <span>公摊面积:</span>
+                    <span>{{ $t('tenantDevicesPage.labelShareArea') }}</span>
                     <el-input-number v-model="shareAreaInput[share.id]" :min="0" :precision="2" size="mini"
-                      placeholder="请输入" style="width: 100px; margin-left: 8px" />
+                      :placeholder="$t('tenantDevicesPage.phInput')" style="width: 100px; margin-left: 8px" />
                     <span style="margin-left: 4px">㎡</span>
                   </div>
                   <el-tag :type="getShareTypeTag(share.shareType)" size="mini">
@@ -568,211 +569,216 @@
                   </el-tag>
                 </div>
               </div>
-              <el-button type="primary" size="mini" @click="handleShareBind(share)" :loading="share.binding"
+              <el-button v-if="canBind" type="primary" size="mini" @click="handleShareBind(share)" :loading="share.binding"
                 :disabled="!shareAreaInput[share.id] || shareAreaInput[share.id] <= 0">
-                绑定
+                {{ $t('tenantDevicesPage.btnBind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectableShares.length === 0" description="暂无可绑定的公摊组" :image-size="60" />
+            <el-empty v-if="selectableShares.length === 0" :description="$t('tenantDevicesPage.emptyNoSelectableShares')" :image-size="60" />
           </div>
         </template>
 
         <!-- 水表管理 -->
         <template v-if="currentDeviceType === 'water'">
-          <div class="section-title">已绑定水表</div>
-          <el-input v-model="boundWaterSearchQuery" placeholder="请输入水表名称或序列号搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerBoundWaters') }}</div>
+          <el-input v-model="boundWaterSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchWater')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="water-list">
             <div v-for="water in filteredSelectedWaters" :key="water.id" class="water-item selected">
               <div class="water-info">
-                <div class="water-name">{{ water.waterName }}</div>
-                <div class="water-serial">编号: {{ water.serial }}</div>
+                <div class="water-name">{{ $displayBizHybrid(water.waterName) }}</div>
+                <div class="water-serial">{{ $t('tenantDevicesPage.labelSerialShort') }} {{ water.serial }}</div>
                 <div class="water-details">
                   <el-tag :type="water.bindType == 1 ? 'primary' : water.bindType == 2 ? 'warning' : 'info'"
                     size="mini">
-                    {{ water.bindType == 1 ? "专用表" : water.bindType == 2 ? "公摊表" : "公式表" }}
+                    {{ waterBindTypeLabel(water.bindType) }}
                   </el-tag>
                   <span v-if="water.waterPriceDto" class="price">
-                    {{ water.waterPriceDto.name }} (¥{{ water.waterPriceDto.price }}/m³)
+                    {{ $displayBizHybrid(water.waterPriceDto.name) }} (¥{{ water.waterPriceDto.price }}/m³)
                   </span>
-                  <span v-else class="price">未设置价格</span>
+                  <span v-else class="price">{{ $t('tenantDevicesPage.noPrice') }}</span>
+                  <!-- UI 暂不展示结算方式，逻辑仍默认传加算 settleRate=1 -->
+                  <!--
                   <el-tag :type="water.settleRate === 1 ? 'success' : 'danger'" size="mini" style="margin-left: 8px">
-                    {{ water.settleRate === 1 ? "+ 加算" : "- 减算" }}
+                    {{ water.settleRate === 1 ? $t('tenantDevicesPage.settleAdd') : $t('tenantDevicesPage.settleSubtract') }}
                   </el-tag>
+                  -->
                 </div>
               </div>
-              <el-button type="danger" size="mini" @click="handleWaterUnbind(water)" :loading="water.unbinding">
-                解绑
+              <el-button v-if="canBind" type="danger" size="mini" @click="handleWaterUnbind(water)" :loading="water.unbinding">
+                {{ $t('tenantDevicesPage.btnUnbind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectedWaters.length === 0" description="暂无已绑定的水表" :image-size="60" />
+            <el-empty v-if="selectedWaters.length === 0" :description="$t('tenantDevicesPage.emptyNoBoundWaters')" :image-size="60" />
           </div>
 
-          <div class="section-title">可选水表</div>
-          <el-input v-model="waterSearchQuery" placeholder="请输入水表名称或序列号搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerSelectableWaters') }}</div>
+          <el-input v-model="waterSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchWater')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="water-list">
             <div v-for="water in filteredSelectableWaters" :key="water.id" class="water-item selectable">
               <div class="water-info">
-                <div class="water-name">{{ water.waterName }}</div>
-                <div class="water-serial">编号: {{ water.serial }}</div>
+                <div class="water-name">{{ $displayBizHybrid(water.waterName) }}</div>
+                <div class="water-serial">{{ $t('tenantDevicesPage.labelSerialShort') }} {{ water.serial }}</div>
                 <div class="water-details">
                   <el-tag :type="water.bindType == 1 ? 'primary' : water.bindType == 2 ? 'warning' : 'info'"
                     size="mini">
-                    {{ water.bindType == 1 ? "专用表" : water.bindType == 2 ? "公摊表" : "公式表" }}
+                    {{ waterBindTypeLabel(water.bindType) }}
                   </el-tag>
                   <span v-if="water.waterPriceDto" class="price">
-                    {{ water.waterPriceDto.name }} (¥{{ water.waterPriceDto.price }}/m³)
+                    {{ $displayBizHybrid(water.waterPriceDto.name) }} (¥{{ water.waterPriceDto.price }}/m³)
                   </span>
-                  <span v-else class="price">未设置价格</span>
+                  <span v-else class="price">{{ $t('tenantDevicesPage.noPrice') }}</span>
                 </div>
+                <!-- UI 暂不展示结算方式选择，绑定仍默认传加算 settleRate=1 -->
+                <!--
                 <div class="settle-rate-input">
-                  <span>结算方式:</span>
+                  <span>{{ $t('tenantDevicesPage.labelSettleMode') }}</span>
                   <el-select v-model="waterSettleRates[water.id]" size="mini" style="width: 90px; margin-left: 8px"
-                    placeholder="选择">
-                    <el-option label="+ 加算" :value="1" />
-                    <el-option label="- 减算" :value="-1" />
+                    :placeholder="$t('tenantDevicesPage.phSelect')">
+                    <el-option :label="$t('tenantDevicesPage.settleAdd')" :value="1" />
+                    <el-option :label="$t('tenantDevicesPage.settleSubtract')" :value="-1" />
                   </el-select>
                 </div>
+                -->
               </div>
-              <el-button type="primary" size="mini" @click="handleWaterBind(water)" :loading="water.binding"
-                :disabled="!waterSettleRates[water.id]">
-                绑定
+              <el-button v-if="canBind" type="primary" size="mini" @click="handleWaterBind(water)" :loading="water.binding">
+                {{ $t('tenantDevicesPage.btnBind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectableWaters.length === 0" description="暂无可绑定的水表" :image-size="60" />
+            <el-empty v-if="selectableWaters.length === 0" :description="$t('tenantDevicesPage.emptyNoSelectableWaters')" :image-size="60" />
           </div>
         </template>
 
         <!-- 水表公摊组管理 -->
         <template v-if="currentDeviceType === 'waterGroup'">
-          <div class="section-title">已绑定水表公摊组</div>
-          <el-input v-model="boundWaterShareSearchQuery" placeholder="请输入公摊组名称搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerBoundWaterShares') }}</div>
+          <el-input v-model="boundWaterShareSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchShare')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="water-share-list">
             <div v-for="share in filteredSelectedWaterShares" :key="share.id" class="water-share-item selected">
               <div class="water-share-info">
-                <div class="water-share-name">{{ share.name }}</div>
+                <div class="water-share-name">{{ $displayBizHybrid(share.name) }}</div>
                 <div class="water-share-details">
-                  <span class="water-share-area">面积: {{ share.area }}㎡</span>
-                  <div class="water-share-time">创建时间: {{ formatDate(share.createTime) }}</div>
+                  <span class="water-share-area">{{ $t('tenantDevicesPage.labelArea') }} {{ share.area }}㎡</span>
+                  <div class="water-share-time">{{ $t('tenantDevicesPage.labelCreatedAt') }} {{ formatDate(share.createTime) }}</div>
                 </div>
               </div>
-              <el-button type="danger" size="mini" @click="handleWaterShareUnbind(share)" :loading="share.unbinding">
-                解绑
+              <el-button v-if="canBind" type="danger" size="mini" @click="handleWaterShareUnbind(share)" :loading="share.unbinding">
+                {{ $t('tenantDevicesPage.btnUnbind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectedWaterShares.length === 0" description="暂无已绑定的水表公摊组" :image-size="60" />
+            <el-empty v-if="selectedWaterShares.length === 0" :description="$t('tenantDevicesPage.emptyNoBoundWaterShares')" :image-size="60" />
           </div>
 
-          <div class="section-title">可选水表公摊组</div>
-          <el-input v-model="waterShareSearchQuery" placeholder="请输入公摊组名称搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerSelectableWaterShares') }}</div>
+          <el-input v-model="waterShareSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchShare')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="water-share-list">
             <div v-for="share in filteredSelectableWaterShares" :key="share.id" class="water-share-item selectable">
               <div class="water-share-info">
-                <div class="water-share-name">{{ share.name }}</div>
+                <div class="water-share-name">{{ $displayBizHybrid(share.name) }}</div>
                 <div class="water-share-details">
                   <div class="water-share-area-input">
-                    <span>公摊面积:</span>
+                    <span>{{ $t('tenantDevicesPage.labelShareArea') }}</span>
                     <el-input-number v-model="waterShareAreaInput[share.id]" :min="0" :precision="2" size="mini"
-                      placeholder="请输入" style="width: 100px; margin-left: 8px" />
+                      :placeholder="$t('tenantDevicesPage.phInput')" style="width: 100px; margin-left: 8px" />
                     <span style="margin-left: 4px">㎡</span>
                   </div>
-                  <div class="water-share-time">创建时间: {{ formatDate(share.createTime) }}</div>
+                  <div class="water-share-time">{{ $t('tenantDevicesPage.labelCreatedAt') }} {{ formatDate(share.createTime) }}</div>
                 </div>
               </div>
-              <el-button type="primary" size="mini" @click="handleWaterShareBind(share)" :loading="share.binding"
+              <el-button v-if="canBind" type="primary" size="mini" @click="handleWaterShareBind(share)" :loading="share.binding"
                 :disabled="!waterShareAreaInput[share.id] || waterShareAreaInput[share.id] <= 0">
-                绑定
+                {{ $t('tenantDevicesPage.btnBind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectableWaterShares.length === 0" description="暂无可绑定的水表公摊组" :image-size="60" />
+            <el-empty v-if="selectableWaterShares.length === 0" :description="$t('tenantDevicesPage.emptyNoSelectableWaterShares')" :image-size="60" />
           </div>
         </template>
 
         <!-- 空调管理 -->
         <template v-if="currentDeviceType === 'aircon'">
-          <div class="section-title">已绑定空调</div>
-          <el-input v-model="boundAirSearchQuery" placeholder="请输入空调名称或序列号搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerBoundAirs') }}</div>
+          <el-input v-model="boundAirSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchAir')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="air-list">
             <div v-for="air in filteredSelectedAirs" :key="air.id" class="air-item selected">
               <div class="air-info">
-                <div class="air-name">{{ air.name }}</div>
-                <div class="air-serial">编号: {{ air.indoorUnitId }}</div>
+                <div class="air-name">{{ $displayBizHybrid(air.name) }}</div>
+                <div class="air-serial">{{ $t('tenantDevicesPage.labelSerialShort') }} {{ air.indoorUnitId }}</div>
                 <div class="air-status">
                   <el-tag :type="air.state === 0 ? 'success' : 'danger'" size="mini">
-                    {{ air.state === 0 ? "在线" : "离线" }}
+                    {{ air.state === 0 ? $t('tenantDevicesPage.online') : $t('tenantDevicesPage.offline') }}
                   </el-tag>
                   <span class="air-mode">{{ getOperationModeLabel(air.operationMode) }}</span>
                 </div>
               </div>
-              <el-button type="danger" size="mini" @click="handleAirUnbind(air)" :loading="air.unbinding">
-                解绑
+              <el-button v-if="canBind" type="danger" size="mini" @click="handleAirUnbind(air)" :loading="air.unbinding">
+                {{ $t('tenantDevicesPage.btnUnbind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectedAirs.length === 0" description="暂无已绑定的空调" :image-size="60" />
+            <el-empty v-if="selectedAirs.length === 0" :description="$t('tenantDevicesPage.emptyNoBoundAirs')" :image-size="60" />
           </div>
 
-          <div class="section-title">可选空调</div>
-          <el-input v-model="airSearchQuery" placeholder="请输入空调名称或序列号搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerSelectableAirs') }}</div>
+          <el-input v-model="airSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchAir')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="air-list">
             <div v-for="air in filteredSelectableAirs" :key="air.id" class="air-item selectable">
               <div class="air-info">
-                <div class="air-name">{{ air.name }}</div>
-                <div class="air-serial">编号: {{ air.indoorUnitId }}</div>
+                <div class="air-name">{{ $displayBizHybrid(air.name) }}</div>
+                <div class="air-serial">{{ $t('tenantDevicesPage.labelSerialShort') }} {{ air.indoorUnitId }}</div>
                 <div class="air-status">
                   <el-tag :type="air.state === 0 ? 'success' : 'danger'" size="mini">
-                    {{ air.state === 0 ? "在线" : "离线" }}
+                    {{ air.state === 0 ? $t('tenantDevicesPage.online') : $t('tenantDevicesPage.offline') }}
                   </el-tag>
                   <span class="air-mode">{{ getOperationModeLabel(air.operationMode) }}</span>
                 </div>
               </div>
-              <el-button type="primary" size="mini" @click="handleAirBind(air)" :loading="air.binding">
-                绑定
+              <el-button v-if="canBind" type="primary" size="mini" @click="handleAirBind(air)" :loading="air.binding">
+                {{ $t('tenantDevicesPage.btnBind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectableAirs.length === 0" description="暂无可绑定的空调" :image-size="60" />
+            <el-empty v-if="selectableAirs.length === 0" :description="$t('tenantDevicesPage.emptyNoSelectableAirs')" :image-size="60" />
           </div>
         </template>
 
         <!-- 空调公摊组管理 -->
         <template v-if="currentDeviceType === 'airGroup'">
-          <div class="section-title">已绑定公摊组</div>
-          <el-input v-model="boundAirShareSearchQuery" placeholder="请输入公摊组名称搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerBoundAirShares') }}</div>
+          <el-input v-model="boundAirShareSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchShare')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="air-share-list">
             <div v-for="share in filteredSelectedAirShares" :key="share.id" class="air-share-item selected">
               <div class="air-share-info">
-                <div class="air-share-name">{{ share.name }}</div>
+                <div class="air-share-name">{{ $displayBizHybrid(share.name) }}</div>
                 <div class="air-share-details">
-                  <span v-if="share.shareType !== 'ENERGY'" class="air-share-area">面积: {{ share.area }}㎡</span>
+                  <span v-if="share.shareType !== 'ENERGY'" class="air-share-area">{{ $t('tenantDevicesPage.labelArea') }} {{ share.area }}㎡</span>
                   <el-tag :type="getAirShareTypeTag(share.shareType)" size="mini">
                     {{ getAirShareTypeLabel(share.shareType) }}
                   </el-tag>
                 </div>
               </div>
-              <el-button type="danger" size="mini" @click="handleAirShareUnbind(share)" :loading="share.unbinding">
-                解绑
+              <el-button v-if="canBind" type="danger" size="mini" @click="handleAirShareUnbind(share)" :loading="share.unbinding">
+                {{ $t('tenantDevicesPage.btnUnbind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectedAirShares.length === 0" description="暂无已绑定的公摊组" :image-size="60" />
+            <el-empty v-if="selectedAirShares.length === 0" :description="$t('tenantDevicesPage.emptyNoBoundAirShares')" :image-size="60" />
           </div>
 
-          <div class="section-title">可选公摊组</div>
-          <el-input v-model="airShareSearchQuery" placeholder="请输入公摊组名称搜索" size="small" clearable
+          <div class="section-title">{{ $t('tenantDevicesPage.drawerSelectableAirShares') }}</div>
+          <el-input v-model="airShareSearchQuery" :placeholder="$t('tenantDevicesPage.phSearchShare')" size="small" clearable
             style="margin-bottom: 12px;"></el-input>
           <div class="air-share-list">
             <div v-for="share in filteredSelectableAirShares" :key="share.id" class="air-share-item selectable">
               <div class="air-share-info">
-                <div class="air-share-name">{{ share.name }}</div>
+                <div class="air-share-name">{{ $displayBizHybrid(share.name) }}</div>
                 <div class="air-share-details">
                   <div v-if="share.shareType !== 'ENERGY'" class="air-share-area-input">
-                    <span>公摊面积:</span>
+                    <span>{{ $t('tenantDevicesPage.labelShareArea') }}</span>
                     <el-input-number v-model="airShareAreaInput[share.id]" :min="0" :precision="2" size="mini"
-                      placeholder="请输入" style="width: 100px; margin-left: 8px" />
+                      :placeholder="$t('tenantDevicesPage.phInput')" style="width: 100px; margin-left: 8px" />
                     <span style="margin-left: 4px">㎡</span>
                   </div>
                   <el-tag :type="getAirShareTypeTag(share.shareType)" size="mini">
@@ -780,12 +786,12 @@
                   </el-tag>
                 </div>
               </div>
-              <el-button type="primary" size="mini" @click="handleAirShareBind(share)" :loading="share.binding"
+              <el-button v-if="canBind" type="primary" size="mini" @click="handleAirShareBind(share)" :loading="share.binding"
                 :disabled="share.shareType !== 'ENERGY' && (!airShareAreaInput[share.id] || airShareAreaInput[share.id] <= 0)">
-                绑定
+                {{ $t('tenantDevicesPage.btnBind') }}
               </el-button>
             </div>
-            <el-empty v-if="selectableAirShares.length === 0" description="暂无可绑定的公摊组" :image-size="60" />
+            <el-empty v-if="selectableAirShares.length === 0" :description="$t('tenantDevicesPage.emptyNoSelectableAirShares')" :image-size="60" />
           </div>
         </template>
       </div>
@@ -801,31 +807,72 @@
     <air-detail-drawer :visible.sync="airDetailDrawer.visible" :device-id="airDetailDrawer.deviceId"
       :row-data="airDetailDrawer.rowData" @edit="handleAirEdit" @refresh="fetchAirConditioners" />
 
-    <!-- 添加编辑弹窗 -->
-    <el-dialog title="编辑空调" :visible.sync="airEditDialog.visible" width="600px" :close-on-click-modal="false">
-      <el-form ref="airEditForm" :model="airEditForm" label-width="120px">
-        <el-form-item label="设备名称" prop="name">
-          <el-input v-model="airEditForm.name" placeholder="请输入设备名称" />
+    <el-dialog
+      :title="switchVerifyTitle"
+      :visible.sync="switchVerifyDialog.visible"
+      width="520px"
+      :close-on-click-modal="false"
+      append-to-body
+      @close="closeSwitchVerifyDialog"
+    >
+      <el-form :label-width="localeFormLabelWidth">
+        <el-form-item :label="$t('tenantDevicesPage.switchDialogMeter')">
+          <span>{{ switchVerifyDialog.row ? (switchVerifyDialog.row.meterName || '--') : '--' }}</span>
         </el-form-item>
-        <el-form-item label="设备类型" prop="type">
-          <el-select v-model="airEditForm.type" placeholder="请选择设备类型" style="width: 100%">
-            <el-option label="多联机" :value="1" />
-          </el-select>
+        <el-form-item :label="$t('tenantDevicesPage.switchDialogAction')">
+          <span>{{ Number(switchVerifyDialog.switchType) === 1 ? $t('tenantDevicesPage.switchOn') : $t('tenantDevicesPage.switchOff') }}</span>
         </el-form-item>
-        <el-form-item label="公摊类型" prop="bindType">
-          <el-select v-model="airEditForm.bindType" placeholder="请选择公摊类型" style="width: 100%">
-            <el-option label="专用" :value="1" />
-            <el-option label="公摊" :value="2" />
-          </el-select>
+        <el-form-item :label="$t('tenantDevicesPage.switchDialogPhone')">
+          <span>{{ maskedPhone || '--' }}</span>
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="airEditForm.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+        <el-form-item :label="$t('tenantDevicesPage.switchDialogCode')">
+          <el-input
+            v-model="switchVerifyForm.code"
+            :placeholder="$t('tenantDevicesPage.phSmsCode')"
+            maxlength="6"
+            autocomplete="off"
+          >
+            <el-button
+              slot="append"
+              type="primary"
+              class="sms-code-btn"
+              :disabled="switchVerifySmsSeconds > 0 || !userPhone"
+              @click="sendSwitchVerifyCode"
+            >{{ switchVerifySmsButtonText }}</el-button>
+          </el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="airEditDialog.visible = false">取 消</el-button>
+        <el-button :disabled="switchSubmitting" @click="switchVerifyDialog.visible = false">{{ $t('tenantDevicesPage.btnCancel') }}</el-button>
+        <el-button type="primary" :loading="switchSubmitting" @click="confirmSwitchOperation">{{ $t('tenantDevicesPage.btnConfirm') }}</el-button>
+      </span>
+    </el-dialog>
+
+    <!-- 添加编辑弹窗 -->
+    <el-dialog :title="$t('tenantDevicesPage.airEditTitle')" :visible.sync="airEditDialog.visible" width="600px" :close-on-click-modal="false">
+      <el-form ref="airEditForm" :model="airEditForm" :label-width="localeFormLabelWidthWide">
+        <el-form-item :label="$t('tenantDevicesPage.labelDeviceName')" prop="name">
+          <el-input v-model="airEditForm.name" :placeholder="$t('tenantDevicesPage.phDeviceName')" />
+        </el-form-item>
+        <el-form-item :label="$t('tenantDevicesPage.labelDeviceType')" prop="type">
+          <el-select v-model="airEditForm.type" :placeholder="$t('tenantDevicesPage.phDeviceType')" style="width: 100%">
+            <el-option :label="$t('tenantDevicesPage.airTypeVrf')" :value="1" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('tenantDevicesPage.labelShareBindType')" prop="bindType">
+          <el-select v-model="airEditForm.bindType" :placeholder="$t('tenantDevicesPage.phShareBindType')" style="width: 100%">
+            <el-option :label="$t('tenantDevicesPage.tagDedicated')" :value="1" />
+            <el-option :label="$t('tenantDevicesPage.tagShared')" :value="2" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('tenantDevicesPage.labelRemark')" prop="remark">
+          <el-input v-model="airEditForm.remark" type="textarea" :rows="3" :placeholder="$t('tenantDevicesPage.phRemark')" />
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="airEditDialog.visible = false">{{ $t('tenantDevicesPage.btnCancel') }}</el-button>
         <el-button type="primary" :loading="airEditDialog.submitting" @click="handleAirEditSave">
-          确 定
+          {{ $t('tenantDevicesPage.btnConfirm') }}
         </el-button>
       </span>
     </el-dialog>
@@ -850,42 +897,44 @@ import {
   bindTenantAir,
   getTenantAirShareGroups,
   getTenantAirShareBindEdit,
-  bindAirShareTenant,
-} from "@/api/tenantDetail";
+  bindAirShareTenant
+} from '@/api/tenantDetail'
 
 // 导入分闸合闸API
 import {
   tenantDoMeterSwitchOffOn,
   meterUpdateLogicPayType
-} from "@/api/meter";
-import { airInfoUpdateAir } from "@/api/airCondition";
+} from '@/api/meter'
+import { authSendSmsCode } from '@/api/meterPrice'
+import { airInfoUpdateAir } from '@/api/airCondition'
+import { mapGetters } from 'vuex'
 import MeterDetailDrawer from '@/views/console/device/electricity/detail.vue'
 import WaterDetailDrawer from '@/views/console/device/watermeter/detail.vue'
 import AirDetailDrawer from '@/views/console/device/conditioning/drawer.vue'
 export default {
-  name: "TenantDevices",
+  name: 'TenantDevices',
 
   components: {
     MeterDetailDrawer,
     WaterDetailDrawer,
-    AirDetailDrawer,
+    AirDetailDrawer
   },
   props: {
     tenantId: {
       type: [String, Number],
-      required: true,
+      required: true
     },
     managerId: {
       type: [String, Number],
-      default: "",
-    },
+      default: ''
+    }
   },
-  data() {
+  data () {
     return {
       // 空调编辑弹窗
       airEditDialog: {
         visible: false,
-        submitting: false,
+        submitting: false
       },
       airEditForm: {
         id: null,
@@ -893,7 +942,7 @@ export default {
         name: '',
         type: 1,
         bindType: 1,
-        remark: '',
+        remark: ''
       },
       meterDetailDrawer: {
         visible: false,
@@ -907,25 +956,25 @@ export default {
       },
       airDetailDrawer: {
         visible: false,
-        deviceId: '',      // ✅ 改为 deviceId
+        deviceId: '', // ✅ 改为 deviceId
         rowData: null
       },
       // 搜索关键词
-      meterSearchQuery: "",
-      boundMeterSearchQuery: "",
-      shareSearchQuery: "",
-      boundShareSearchQuery: "",
-      waterSearchQuery: "",
-      boundWaterSearchQuery: "",
-      waterShareSearchQuery: "",
-      boundWaterShareSearchQuery: "",
-      airSearchQuery: "",
-      boundAirSearchQuery: "",
-      airShareSearchQuery: "",
-      boundAirShareSearchQuery: "",
+      meterSearchQuery: '',
+      boundMeterSearchQuery: '',
+      shareSearchQuery: '',
+      boundShareSearchQuery: '',
+      waterSearchQuery: '',
+      boundWaterSearchQuery: '',
+      waterShareSearchQuery: '',
+      boundWaterShareSearchQuery: '',
+      airSearchQuery: '',
+      boundAirSearchQuery: '',
+      airShareSearchQuery: '',
+      boundAirShareSearchQuery: '',
 
       // 设备类型
-      activeDeviceType: "electric", // electric | water | aircon | lighting | doorlock
+      activeDeviceType: 'electric', // electric | water | aircon | lighting | doorlock
 
       // 设备数量（用于卡片显示）
       electricMeterCount: 0,
@@ -953,7 +1002,7 @@ export default {
 
       // 抽屉状态
       bindDrawerVisible: false,
-      currentDeviceType: "",
+      currentDeviceType: '',
       drawerLoading: false,
 
       // 电表绑定数据
@@ -983,130 +1032,184 @@ export default {
       selectedAirShares: [],
       selectableAirShares: [],
       airShareAreaInput: {},
-    };
+
+      switchVerifyDialog: { visible: false, row: null, switchType: null },
+      switchVerifyForm: { code: '' },
+      switchVerifySmsSeconds: 0,
+      switchVerifyCountDownTimer: null,
+      switchSubmitting: false
+    }
   },
   computed: {
-    dialogTitle() {
-      const typeMap = {
-        electric: "电表关联/解绑",
-        electricGroup: "电表公摊组关联/解绑",
-        water: "水表关联/解绑",
-        waterGroup: "水表公摊组关联/解绑",
-        aircon: "空调关联/解绑",
-        airGroup: "空调公摊组关联/解绑",
-      };
-      return typeMap[this.currentDeviceType] || "关联设备";
+    ...mapGetters(['kztMenuNos']),
+    hasKztPermission () {
+      const allow = new Set((this.kztMenuNos || []).map((v) => String(v)))
+      return (menuNo) => allow.has(String(menuNo))
+    },
+    canView () {
+      return this.hasKztPermission('660011')
+    },
+    canBind () {
+      return this.hasKztPermission('660018')
+    },
+    canSwitch () {
+      return this.hasKztPermission('660017')
+    },
+    userPhone () {
+      return this.$store.state.user.phone || ''
+    },
+    maskedPhone () {
+      if (!this.userPhone) return ''
+      return this.userPhone.substr(0, 3) + '****' + this.userPhone.substr(7)
+    },
+    localeFormLabelWidth () {
+      return this.$i18n.locale === 'en' ? '118px' : '90px'
+    },
+    localeFormLabelWidthWide () {
+      return this.$i18n.locale === 'en' ? '140px' : '120px'
+    },
+    switchVerifySmsButtonText () {
+      if (this.switchVerifySmsSeconds > 0) {
+        return this.$t('tenantDevicesPage.smsCountdown', { seconds: this.switchVerifySmsSeconds })
+      }
+      return this.$t('tenantDevicesPage.sendSms')
+    },
+    switchVerifyTitle () {
+      if (!this.switchVerifyDialog.row) {
+        return this.$t('tenantDevicesPage.switchVerifyTitleDefault')
+      }
+      const actionKey = Number(this.switchVerifyDialog.switchType) === 1 ? 'switchOn' : 'switchOff'
+      return `${this.$t(`tenantDevicesPage.${actionKey}`)}${this.$t('tenantDevicesPage.switchVerifyTitleSuffix')}`
+    },
+    dialogTitle () {
+      const keyMap = {
+        electric: 'dialogDrawerElectric',
+        electricGroup: 'dialogDrawerElectricGroup',
+        water: 'dialogDrawerWater',
+        waterGroup: 'dialogDrawerWaterGroup',
+        aircon: 'dialogDrawerAir',
+        airGroup: 'dialogDrawerAirGroup'
+      }
+      const k = keyMap[this.currentDeviceType]
+      return k ? this.$t(`tenantDevicesPage.${k}`) : this.$t('tenantDevicesPage.dialogDrawerDefault')
     },
     // 过滤已绑定电表
-    filteredSelectedMeters() {
-      if (!this.boundMeterSearchQuery) return this.selectedMeters;
-      const query = this.boundMeterSearchQuery.toLowerCase();
-      return this.selectedMeters.filter(meter => 
+    filteredSelectedMeters () {
+      if (!this.boundMeterSearchQuery) return this.selectedMeters
+      const query = this.boundMeterSearchQuery.toLowerCase()
+      return this.selectedMeters.filter(meter =>
         (meter.meterName && meter.meterName.toLowerCase().includes(query)) ||
         (meter.serial && meter.serial.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤可选电表
-    filteredSelectableMeters() {
-      if (!this.meterSearchQuery) return this.selectableMeters;
-      const query = this.meterSearchQuery.toLowerCase();
-      return this.selectableMeters.filter(meter => 
+    filteredSelectableMeters () {
+      if (!this.meterSearchQuery) return this.selectableMeters
+      const query = this.meterSearchQuery.toLowerCase()
+      return this.selectableMeters.filter(meter =>
         (meter.meterName && meter.meterName.toLowerCase().includes(query)) ||
         (meter.serial && meter.serial.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤已绑定电表公摊组
-    filteredSelectedShares() {
-      if (!this.boundShareSearchQuery) return this.selectedShares;
-      const query = this.boundShareSearchQuery.toLowerCase();
-      return this.selectedShares.filter(share => 
+    filteredSelectedShares () {
+      if (!this.boundShareSearchQuery) return this.selectedShares
+      const query = this.boundShareSearchQuery.toLowerCase()
+      return this.selectedShares.filter(share =>
         (share.name && share.name.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤可选电表公摊组
-    filteredSelectableShares() {
-      if (!this.shareSearchQuery) return this.selectableShares;
-      const query = this.shareSearchQuery.toLowerCase();
-      return this.selectableShares.filter(share => 
+    filteredSelectableShares () {
+      if (!this.shareSearchQuery) return this.selectableShares
+      const query = this.shareSearchQuery.toLowerCase()
+      return this.selectableShares.filter(share =>
         (share.name && share.name.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤已绑定水表
-    filteredSelectedWaters() {
-      if (!this.boundWaterSearchQuery) return this.selectedWaters;
-      const query = this.boundWaterSearchQuery.toLowerCase();
-      return this.selectedWaters.filter(water => 
+    filteredSelectedWaters () {
+      if (!this.boundWaterSearchQuery) return this.selectedWaters
+      const query = this.boundWaterSearchQuery.toLowerCase()
+      return this.selectedWaters.filter(water =>
         (water.waterName && water.waterName.toLowerCase().includes(query)) ||
         (water.serial && water.serial.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤可选水表
-    filteredSelectableWaters() {
-      if (!this.waterSearchQuery) return this.selectableWaters;
-      const query = this.waterSearchQuery.toLowerCase();
-      return this.selectableWaters.filter(water => 
+    filteredSelectableWaters () {
+      if (!this.waterSearchQuery) return this.selectableWaters
+      const query = this.waterSearchQuery.toLowerCase()
+      return this.selectableWaters.filter(water =>
         (water.waterName && water.waterName.toLowerCase().includes(query)) ||
         (water.serial && water.serial.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤已绑定水表公摊组
-    filteredSelectedWaterShares() {
-      if (!this.boundWaterShareSearchQuery) return this.selectedWaterShares;
-      const query = this.boundWaterShareSearchQuery.toLowerCase();
-      return this.selectedWaterShares.filter(share => 
+    filteredSelectedWaterShares () {
+      if (!this.boundWaterShareSearchQuery) return this.selectedWaterShares
+      const query = this.boundWaterShareSearchQuery.toLowerCase()
+      return this.selectedWaterShares.filter(share =>
         (share.name && share.name.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤可选水表公摊组
-    filteredSelectableWaterShares() {
-      if (!this.waterShareSearchQuery) return this.selectableWaterShares;
-      const query = this.waterShareSearchQuery.toLowerCase();
-      return this.selectableWaterShares.filter(share => 
+    filteredSelectableWaterShares () {
+      if (!this.waterShareSearchQuery) return this.selectableWaterShares
+      const query = this.waterShareSearchQuery.toLowerCase()
+      return this.selectableWaterShares.filter(share =>
         (share.name && share.name.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤已绑定空调
-    filteredSelectedAirs() {
-      if (!this.boundAirSearchQuery) return this.selectedAirs;
-      const query = this.boundAirSearchQuery.toLowerCase();
-      return this.selectedAirs.filter(air => 
+    filteredSelectedAirs () {
+      if (!this.boundAirSearchQuery) return this.selectedAirs
+      const query = this.boundAirSearchQuery.toLowerCase()
+      return this.selectedAirs.filter(air =>
         (air.name && air.name.toLowerCase().includes(query)) ||
         (air.indoorUnitId && air.indoorUnitId.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤可选空调
-    filteredSelectableAirs() {
-      if (!this.airSearchQuery) return this.selectableAirs;
-      const query = this.airSearchQuery.toLowerCase();
-      return this.selectableAirs.filter(air => 
+    filteredSelectableAirs () {
+      if (!this.airSearchQuery) return this.selectableAirs
+      const query = this.airSearchQuery.toLowerCase()
+      return this.selectableAirs.filter(air =>
         (air.name && air.name.toLowerCase().includes(query)) ||
         (air.indoorUnitId && air.indoorUnitId.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤已绑定空调公摊组
-    filteredSelectedAirShares() {
-      if (!this.boundAirShareSearchQuery) return this.selectedAirShares;
-      const query = this.boundAirShareSearchQuery.toLowerCase();
-      return this.selectedAirShares.filter(share => 
+    filteredSelectedAirShares () {
+      if (!this.boundAirShareSearchQuery) return this.selectedAirShares
+      const query = this.boundAirShareSearchQuery.toLowerCase()
+      return this.selectedAirShares.filter(share =>
         (share.name && share.name.toLowerCase().includes(query))
-      );
+      )
     },
     // 过滤可选空调公摊组
-    filteredSelectableAirShares() {
-      if (!this.airShareSearchQuery) return this.selectableAirShares;
-      const query = this.airShareSearchQuery.toLowerCase();
-      return this.selectableAirShares.filter(share => 
+    filteredSelectableAirShares () {
+      if (!this.airShareSearchQuery) return this.selectableAirShares
+      const query = this.airShareSearchQuery.toLowerCase()
+      return this.selectableAirShares.filter(share =>
         (share.name && share.name.toLowerCase().includes(query))
-      );
-    },
+      )
+    }
   },
-  mounted() {
+  mounted () {
     // 初始化时加载所有设备数据
-    this.initAllDeviceData();
+    if (!this.canView) return
+    this.initAllDeviceData()
+  },
+  beforeDestroy () {
+    if (this.switchVerifyCountDownTimer) {
+      clearInterval(this.switchVerifyCountDownTimer)
+      this.switchVerifyCountDownTimer = null
+    }
   },
   methods: {
     // ==================== 初始化加载所有设备数据 ====================
-    async initAllDeviceData() {
+    async initAllDeviceData () {
       // 并行加载所有设备类型的数据，用于显示正确的设备数量
       await Promise.all([
         this.fetchElectricMeters(),
@@ -1114,37 +1217,44 @@ export default {
         this.fetchWaterMeters(),
         this.fetchWaterGroups(),
         this.fetchAirConditioners(),
-        this.fetchAirShareGroups(),
-      ]);
+        this.fetchAirShareGroups()
+      ])
     },
 
-    formatAirData(item) {
+    formatAirData (item) {
       // 格式化绑定信息
-      if (item.bindType == 2) {
-        item.bindData = item.bindId ? String(item.bindId) : '';
-      } else if (item.bindType == 1) {
+      if (Number(item.bindType) === 2) {
+        item.bindData = item.bindId ? String(item.bindId) : ''
+      } else if (Number(item.bindType) === 1) {
         item.bindData = item.tenantName
           ? `${item.bindId || ''}(${item.tenantName})`
-          : (item.bindId ? String(item.bindId) : '');
+          : (item.bindId ? String(item.bindId) : '')
       } else {
-        item.bindData = '';
+        item.bindData = ''
       }
 
       // 格式化设备类型
-      const typeMap = { 1: '多联机' };
-      item.typeLabel = typeMap[item.type] || '未知';
+      const typeMap = { 1: this.$t('tenantDevicesPage.airTypeVrf') }
+      item.typeLabel = typeMap[item.type] || this.$t('tenantDevicesPage.airTypeUnknown')
 
       // 格式化运行模式
       const operationModeMap = {
-        0: '自动', 1: '制热', 2: '制冷', 4: '送风', 8: '除湿'
-      };
-      item.operationModeLabel = operationModeMap[item.operationMode] || '--';
+        0: this.$t('tenantDevicesPage.airModeAuto'),
+        1: this.$t('tenantDevicesPage.airModeHeat'),
+        2: this.$t('tenantDevicesPage.airModeCool'),
+        4: this.$t('tenantDevicesPage.airModeFan'),
+        8: this.$t('tenantDevicesPage.airModeDry')
+      }
+      item.operationModeLabel = operationModeMap[item.operationMode] || '--'
 
       // 格式化风速
       const fanSpeedMap = {
-        0: '自动', 1: '低风', 2: '中风', 3: '高风'
-      };
-      item.fanSpeedLabel = fanSpeedMap[item.fanSpeed] || '--';
+        0: this.$t('tenantDevicesPage.fanAuto'),
+        1: this.$t('tenantDevicesPage.fanLow'),
+        2: this.$t('tenantDevicesPage.fanMid'),
+        3: this.$t('tenantDevicesPage.fanHigh')
+      }
+      item.fanSpeedLabel = fanSpeedMap[item.fanSpeed] || '--'
 
       // 判断是否锁定
       item.isLock = !!(
@@ -1153,16 +1263,16 @@ export default {
         item.lockPowerStatus ||
         item.minTemperature ||
         item.maxTemperature
-      );
+      )
 
       // ⬇️⬇️⬇️ 关键修改:将 meterId 和 serial 转换为 meterData 数组 ⬇️⬇️⬇️
       // 确保 meterId 和 serial 是字符串
       if (item.meterId !== undefined && item.meterId !== null) {
-        item.meterId = String(item.meterId);
+        item.meterId = String(item.meterId)
       }
 
       if (item.serial !== undefined && item.serial !== null) {
-        item.serial = String(item.serial);
+        item.serial = String(item.serial)
       }
 
       // 转换为 meterData 数组格式(drawer.vue 期望的格式)
@@ -1170,191 +1280,199 @@ export default {
         item.meterData = [{
           id: item.meterId,
           serial: item.serial
-        }];
+        }]
       } else {
-        item.meterData = [];
+        item.meterData = []
       }
 
-      return item;
+      return item
     },
 
     // ==================== 设备类型切换 ====================
-    async handleDeviceTypeClick(deviceType) {
-      if (deviceType === "lighting" || deviceType === "doorlock") {
-        this.$message.info("该功能暂未开放");
-        return;
+    async handleDeviceTypeClick (deviceType) {
+      if (deviceType === 'lighting' || deviceType === 'doorlock') {
+        this.$message.info(this.$t('tenantDevicesPage.msgFeatureNotOpen'))
+        return
       }
 
       // 如果点击的是当前已激活的类型，不做处理
       if (this.activeDeviceType === deviceType) {
-        return;
+        return
       }
 
-      this.activeDeviceType = deviceType;
+      this.activeDeviceType = deviceType
 
       // 根据设备类型重新加载数据
       try {
         switch (deviceType) {
           case 'electric':
             // 清空数据，显示加载状态
-            this.electricMeters = [];
-            this.electricGroups = [];
-            this.electricLoading = true;
-            this.electricGroupLoading = true;
+            this.electricMeters = []
+            this.electricGroups = []
+            this.electricLoading = true
+            this.electricGroupLoading = true
 
             await Promise.all([
               this.fetchElectricMeters(),
               this.fetchElectricGroups()
-            ]);
-            break;
+            ])
+            break
 
           case 'water':
-            this.waterMeters = [];
-            this.waterGroups = [];
-            this.waterLoading = true;
-            this.waterGroupLoading = true;
+            this.waterMeters = []
+            this.waterGroups = []
+            this.waterLoading = true
+            this.waterGroupLoading = true
 
             await Promise.all([
               this.fetchWaterMeters(),
               this.fetchWaterGroups()
-            ]);
-            break;
+            ])
+            break
 
           case 'aircon':
-            this.airConditioners = [];
-            this.airShareGroups = [];
-            this.airLoading = true;
-            this.airShareLoading = true;
+            this.airConditioners = []
+            this.airShareGroups = []
+            this.airLoading = true
+            this.airShareLoading = true
 
             await Promise.all([
               this.fetchAirConditioners(),
               this.fetchAirShareGroups()
-            ]);
-            break;
+            ])
+            break
         }
       } catch (error) {
-        console.error('加载设备数据失败:', error);
-        this.$message.error('加载数据失败，请重试');
+        console.error('加载设备数据失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgLoadFail'))
       }
     },
 
-    handleAirEdit(air) {
+    handleAirEdit (air) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       this.airEditForm = {
         id: air.id,
         indoorUnitId: air.indoorUnitId || '',
         name: air.name || '',
         type: air.type || 1,
         bindType: air.bindType || 1,
-        remark: air.remark || '',
-      };
-      this.airEditDialog.visible = true;
+        remark: air.remark || ''
+      }
+      this.airEditDialog.visible = true
     },
-    async handleAirEditSave() {
-      this.airEditDialog.submitting = true;
+    async handleAirEditSave () {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
+      this.airEditDialog.submitting = true
       try {
-        const response = await airInfoUpdateAir(this.airEditForm);
+        const response = await airInfoUpdateAir(this.airEditForm)
 
         if (response.code === 200) {
-          this.$message.success("编辑成功");
-          this.airEditDialog.visible = false;
+          this.$message.success(this.$t('tenantDevicesPage.msgEditOk'))
+          this.airEditDialog.visible = false
 
           // 刷新列表
-          await this.fetchAirConditioners();
+          await this.fetchAirConditioners()
 
           // 如果详情抽屉打开,更新详情
           if (this.airDetailDrawer.visible) {
-            const updatedAir = this.airConditioners.find(a => a.id === this.airEditForm.id);
+            const updatedAir = this.airConditioners.find(a => a.id === this.airEditForm.id)
             if (updatedAir) {
-              this.airDetailDrawer.rowData = updatedAir;
+              this.airDetailDrawer.rowData = updatedAir
             }
           }
         } else {
-          this.$message.error(response.msg || "编辑失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgEditFail'))
         }
       } catch (error) {
-        console.error("编辑空调失败:", error);
-        this.$message.error("编辑失败");
+        console.error('编辑空调失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgEditFail'))
       } finally {
-        this.airEditDialog.submitting = false;
+        this.airEditDialog.submitting = false
       }
     },
     // ==================== 复制序列号 ====================
-    handleCopySerial(serial) {
+    handleCopySerial (serial) {
       if (!serial || serial === '-' || serial === '--') {
-        this.$message.warning('无可复制内容');
-        return;
+        this.$message.warning(this.$t('tenantDevicesPage.msgNothingToCopy'))
+        return
       }
 
-      const input = document.createElement('input');
-      input.value = serial;
-      document.body.appendChild(input);
-      input.select();
+      const input = document.createElement('input')
+      input.value = serial
+      document.body.appendChild(input)
+      input.select()
 
       try {
-        document.execCommand('copy');
-        this.$message.success('序列号已复制');
+        document.execCommand('copy')
+        this.$message.success(this.$t('tenantDevicesPage.msgSerialCopied'))
       } catch (err) {
-        this.$message.error('复制失败');
+        this.$apiError.notify(err, this.$t('tenantDevicesPage.msgCopyFail'))
       }
 
-      document.body.removeChild(input);
+      document.body.removeChild(input)
     },
 
     // ==================== 公摊类型转换工具方法 ====================
 
     // 获取公摊类型标签文本
-    getShareTypeLabel(shareType) {
-      const typeStr = String(shareType).toUpperCase();
+    getShareTypeLabel (shareType) {
+      const typeStr = String(shareType).toUpperCase()
 
       if (typeStr === 'AREA') {
-        return '面积占比';
+        return this.$t('tenantDevicesPage.shareTypeArea')
       } else if (typeStr === 'ENERGY') {
-        return '能耗占比';
+        return this.$t('tenantDevicesPage.shareTypeEnergy')
       }
 
-      return '未知';
+      return this.$t('tenantDevicesPage.shareTypeUnknown')
     },
 
     // 获取公摊类型标签颜色
-    getShareTypeTag(shareType) {
-      const typeStr = String(shareType).toUpperCase();
+    getShareTypeTag (shareType) {
+      const typeStr = String(shareType).toUpperCase()
 
       if (typeStr === 'AREA') {
-        return 'primary';  // 面积占比 - 蓝色
+        return 'primary' // 面积占比 - 蓝色
       } else if (typeStr === 'ENERGY') {
-        return 'success';  // 能耗占比 - 绿色
+        return 'success' // 能耗占比 - 绿色
       }
 
-      return 'info';
+      return 'info'
     },
 
     // 获取空调公摊类型标签文本
-    getAirShareTypeLabel(shareType) {
-      const typeStr = String(shareType).toUpperCase();
+    getAirShareTypeLabel (shareType) {
+      const typeStr = String(shareType).toUpperCase()
       if (typeStr === 'AREA') {
-        return '面积占比';
+        return this.$t('tenantDevicesPage.shareTypeArea')
       } else if (typeStr === 'ENERGY') {
-        return '能耗占比';
+        return this.$t('tenantDevicesPage.shareTypeEnergy')
       }
-      return '未知';
+      return this.$t('tenantDevicesPage.shareTypeUnknown')
     },
 
     // 获取空调公摊类型标签颜色
-    getAirShareTypeTag(shareType) {
-      const typeStr = String(shareType).toUpperCase();
+    getAirShareTypeTag (shareType) {
+      const typeStr = String(shareType).toUpperCase()
       if (typeStr === 'AREA') {
-        return 'primary';  // 面积分摊 - 蓝色
+        return 'primary' // 面积分摊 - 蓝色
       } else if (typeStr === 'ENERGY') {
-        return 'success';  // 用能分摊 - 绿色
+        return 'success' // 用能分摊 - 绿色
       }
-      return 'info';
+      return 'info'
     },
 
     // ==================== 电表相关方法 ====================
 
     // 获取专用电表列表
-    async fetchElectricMeters() {
-      this.electricLoading = true;
+    async fetchElectricMeters () {
+      this.electricLoading = true
       try {
         const params = {
           bindType: 1,
@@ -1362,52 +1480,52 @@ export default {
           managerId: this.managerId,
           page: {
             size: 100,
-            current: 1,
-          },
-        };
+            current: 1
+          }
+        }
 
-        const response = await getTenantElectricMeters(params);
+        const response = await getTenantElectricMeters(params)
         if (response.code === 200) {
-          this.electricMeters = response.data.dataList || [];
-          this.electricMeterCount = this.electricMeters.length;
-          this.$emit("update-device-count", {
-            electricMeterCount: this.electricMeterCount,
-          });
+          this.electricMeters = response.data.dataList || []
+          this.electricMeterCount = this.electricMeters.length
+          this.$emit('update-device-count', {
+            electricMeterCount: this.electricMeterCount
+          })
         }
       } catch (error) {
-        console.error("获取专用电表列表失败:", error);
-        this.$message.error("获取专用电表列表失败");
+        console.error('获取专用电表列表失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchElectricFail'))
       } finally {
-        this.electricLoading = false;
+        this.electricLoading = false
       }
     },
 
     // 获取电表公摊组列表
-    async fetchElectricGroups() {
-      this.electricGroupLoading = true;
+    async fetchElectricGroups () {
+      this.electricGroupLoading = true
       try {
         const params = {
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantElectricGroups(params);
+        const response = await getTenantElectricGroups(params)
         if (response.code === 200) {
-          this.electricGroups = response.data || [];
-          this.electricGroupCount = this.electricGroups.length;
-          this.$emit("update-device-count", {
-            electricGroupCount: this.electricGroupCount,
-          });
+          this.electricGroups = response.data || []
+          this.electricGroupCount = this.electricGroups.length
+          this.$emit('update-device-count', {
+            electricGroupCount: this.electricGroupCount
+          })
         }
       } catch (error) {
-        console.error("获取电表公摊组列表失败:", error);
-        this.$message.error("获取电表公摊组列表失败");
+        console.error('获取电表公摊组列表失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchElectricGroupFail'))
       } finally {
-        this.electricGroupLoading = false;
+        this.electricGroupLoading = false
       }
     },
 
     // 电表监控 - 跳转详情
-    handleMeterMonitor(meter) {
+    handleMeterMonitor (meter) {
       this.meterDetailDrawer = {
         visible: true,
         meterId: meter.id,
@@ -1416,140 +1534,225 @@ export default {
     },
 
     // 分合闸操作
-    async handleSwitch(row, type) {
+    async handleSwitch (row, type) {
+      if (!this.canSwitch) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoSwitchPerm'))
+        return
+      }
       // 如果是预付费模式，需要先修改为强控
-      if (row.logicPayType === 0 || row.logicPayType === "0") {
+      if (row.logicPayType === 0 || row.logicPayType === '0') {
         try {
           await this.$confirm(
-            '该电表为预付费模式，需要先修改为强控模式才能进行分合闸操作。是否立即修改？',
-            '提示',
+            this.$t('tenantDevicesPage.confirmPrepaidToForceBody'),
+            this.$t('tenantDevicesPage.titleTip'),
             {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning',
+              confirmButtonText: this.$t('tenantDevicesPage.btnOk'),
+              cancelButtonText: this.$t('tenantDevicesPage.btnCancelPlain'),
+              type: 'warning'
             }
-          );
+          )
 
           // 修改为强控模式
           const updateResponse = await meterUpdateLogicPayType({
             meterId: row.id,
-            logicPayType: 1, // 改为强控
-          });
+            logicPayType: 1 // 改为强控
+          })
 
           if (updateResponse.code === 200) {
-            this.$message.success("付费模式修改成功");
+            this.$message.success(this.$t('tenantDevicesPage.msgPayModeOk'))
             // 刷新数据后执行分合闸
-            await this.fetchElectricMeters();
+            await this.fetchElectricMeters()
 
             // 延迟执行分合闸操作
             setTimeout(() => {
-              this.executeSwitchOperation(row, type);
-            }, 500);
+              this.executeSwitchOperation(row, type)
+            }, 500)
           } else {
-            this.$message.error(updateResponse.msg || "修改付费模式失败");
+            this.$message.error(updateResponse.msg || this.$t('tenantDevicesPage.msgPayModeFail'))
           }
         } catch (error) {
-          if (error !== "cancel") {
-            this.$message.error("修改付费模式失败");
-            console.error("修改失败:", error);
+          if (error !== 'cancel') {
+            this.$message.error(this.$t('tenantDevicesPage.msgPayModeFail'))
+            console.error('修改失败:', error)
           }
         }
-        return;
+        return
       }
 
       // 直接执行分合闸操作
-      this.executeSwitchOperation(row, type);
+      this.executeSwitchOperation(row, type)
     },
 
     // 执行分合闸操作
-    async executeSwitchOperation(row, type) {
-      const typeText = type === 1 ? "合闸" : "分闸";
+    async executeSwitchOperation (row, type) {
+      if (!this.canSwitch) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoSwitchPerm'))
+        return
+      }
+      this.openSwitchVerifyDialog(row, type)
+    },
+
+    openSwitchVerifyDialog (row, type) {
+      this.closeSwitchVerifyDialog()
+      this.switchVerifyDialog = { visible: true, row, switchType: type }
+    },
+
+    closeSwitchVerifyDialog () {
+      this.switchVerifyDialog.visible = false
+      this.switchVerifyDialog.row = null
+      this.switchVerifyDialog.switchType = null
+      this.switchVerifyForm.code = ''
+      this.switchSubmitting = false
+      if (this.switchVerifyCountDownTimer) {
+        clearInterval(this.switchVerifyCountDownTimer)
+        this.switchVerifyCountDownTimer = null
+      }
+      this.switchVerifySmsSeconds = 0
+    },
+
+    async sendSwitchVerifyCode () {
+      if (this.switchVerifySmsSeconds > 0) return
+      if (!this.userPhone) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoPhone'))
+        return
+      }
 
       try {
-        await this.$confirm(
-          `确定要对电表"${row.meterName}"执行${typeText}操作吗？`,
-          "提示",
-          {
-            confirmButtonText: "确定",
-            cancelButtonText: "取消",
-            type: "warning",
-          }
-        );
+        const { msg } = await authSendSmsCode({
+          phone: this.userPhone,
+          eventType: 'METER_SWITCH_OFF_ON'
+        })
+        this.$message.success(msg || this.$t('tenantDevicesPage.msgSmsSent'))
+      } catch (error) {
+        try {
+          const { msg } = await authSendSmsCode({
+            phone: this.userPhone,
+            eventType: 'METER_PRICE_MODIFY'
+          })
+          this.$message.success(msg || this.$t('tenantDevicesPage.msgSmsSent'))
+        } catch (error2) {
+          this.$message.error(error2?.msg || error?.msg || this.$t('tenantDevicesPage.msgSmsSendFail'))
+          return
+        }
+      }
 
-        const response = await tenantDoMeterSwitchOffOn({
+      let seconds = 60
+      this.switchVerifySmsSeconds = seconds
+      this.switchVerifyCountDownTimer = setInterval(() => {
+        seconds -= 1
+        if (seconds <= 0) {
+          clearInterval(this.switchVerifyCountDownTimer)
+          this.switchVerifyCountDownTimer = null
+          this.switchVerifySmsSeconds = 0
+          return
+        }
+        this.switchVerifySmsSeconds = seconds
+      }, 1000)
+    },
+
+    async confirmSwitchOperation () {
+      const row = this.switchVerifyDialog.row
+      const type = this.switchVerifyDialog.switchType
+      if (!row) return
+
+      const code = (this.switchVerifyForm.code || '').trim()
+      if (!code) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgEnterCode'))
+        return
+      }
+      if (!this.userPhone) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoPhone'))
+        return
+      }
+
+      const actionKey = Number(type) === 1 ? 'switchOn' : 'switchOff'
+      const typeText = this.$t(`tenantDevicesPage.${actionKey}`)
+      this.switchSubmitting = true
+      try {
+        await this.$confirm(
+          this.$t('tenantDevicesPage.confirmSwitchBody', {
+            name: this.$displayBizHybrid(row.meterName),
+            action: typeText
+          }),
+          this.$t('tenantDevicesPage.titleTip'),
+          {
+            confirmButtonText: this.$t('tenantDevicesPage.btnOk'),
+            cancelButtonText: this.$t('tenantDevicesPage.btnCancelPlain'),
+            type: 'warning'
+          }
+        )
+
+        await tenantDoMeterSwitchOffOn({
           meterId: row.id,
           switchStatus: type,
-          verifyCode: '',
-          verifyPhone: ''
-        });
-
-        if (response.code === 200) {
-          this.$message.success(`${typeText}操作成功`);
-          await this.fetchElectricMeters();
-        } else {
-          this.$message.error(response.msg || `${typeText}操作失败`);
-        }
+          verifyCode: code,
+          verifyPhone: this.userPhone
+        })
+        this.$message.success(this.$t('tenantDevicesPage.msgSwitchOk', { action: typeText }))
+        this.closeSwitchVerifyDialog()
+        await this.fetchElectricMeters()
       } catch (error) {
-        if (error !== "cancel") {
-          this.$message.error(`${typeText}操作失败`);
-          console.error("操作失败:", error);
+        if (error !== 'cancel') {
+          this.$message.error(error?.msg || this.$t('tenantDevicesPage.msgSwitchFail', { action: typeText }))
         }
+      } finally {
+        this.switchSubmitting = false
       }
     },
 
     // ==================== 水表相关方法 ====================
 
     // 获取专用水表列表
-    async fetchWaterMeters() {
-      this.waterLoading = true;
+    async fetchWaterMeters () {
+      this.waterLoading = true
       try {
         const params = {
           managerId: this.managerId,
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantWaterBindEdit(params);
+        const response = await getTenantWaterBindEdit(params)
         if (response.code === 200) {
-          this.waterMeters = response.data.selectedList || [];
-          this.waterMeterCount = this.waterMeters.length;
-          this.$emit("update-device-count", {
-            waterMeterCount: this.waterMeterCount,
-          });
+          this.waterMeters = response.data.selectedList || []
+          this.waterMeterCount = this.waterMeters.length
+          this.$emit('update-device-count', {
+            waterMeterCount: this.waterMeterCount
+          })
         }
       } catch (error) {
-        console.error("获取专用水表列表失败:", error);
-        this.$message.error("获取专用水表列表失败");
+        console.error('获取专用水表列表失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchWaterFail'))
       } finally {
-        this.waterLoading = false;
+        this.waterLoading = false
       }
     },
 
     // 获取水表公摊组列表
-    async fetchWaterGroups() {
-      this.waterGroupLoading = true;
+    async fetchWaterGroups () {
+      this.waterGroupLoading = true
       try {
         const params = {
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantWaterGroups(params);
+        const response = await getTenantWaterGroups(params)
         if (response.code === 200) {
-          this.waterGroups = response.data || [];
-          this.waterGroupCount = this.waterGroups.length;
-          this.$emit("update-device-count", {
-            waterGroupCount: this.waterGroupCount,
-          });
+          this.waterGroups = response.data || []
+          this.waterGroupCount = this.waterGroups.length
+          this.$emit('update-device-count', {
+            waterGroupCount: this.waterGroupCount
+          })
         }
       } catch (error) {
-        console.error("获取水表公摊组列表失败:", error);
-        this.$message.error("获取水表公摊组列表失败");
+        console.error('获取水表公摊组列表失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchWaterGroupFail'))
       } finally {
-        this.waterGroupLoading = false;
+        this.waterGroupLoading = false
       }
     },
 
     // 水表监控 - 跳转详情
-    handleWaterMonitor(water) {
+    handleWaterMonitor (water) {
       this.waterDetailDrawer = {
         visible: true,
         waterId: water.id,
@@ -1560,8 +1763,8 @@ export default {
     // ==================== 空调相关方法 ====================
 
     // 获取专用空调列表
-    async fetchAirConditioners() {
-      this.airLoading = true;
+    async fetchAirConditioners () {
+      this.airLoading = true
       try {
         const params = {
           bindId: String(this.tenantId),
@@ -1569,759 +1772,819 @@ export default {
           managerId: this.managerId,
           page: {
             size: 100,
-            current: 1,
-          },
-        };
+            current: 1
+          }
+        }
 
-        const response = await getTenantAirConditioners(params);
+        const response = await getTenantAirConditioners(params)
         if (response.code === 200) {
           // ✅ 添加这一行:格式化每条数据
           this.airConditioners = (response.data.dataList || []).map(item =>
             this.formatAirData(item)
-          );
+          )
 
-          this.airConditionerCount = this.airConditioners.length;
-          this.$emit("update-device-count", {
-            airConditionerCount: this.airConditionerCount,
-          });
+          this.airConditionerCount = this.airConditioners.length
+          this.$emit('update-device-count', {
+            airConditionerCount: this.airConditionerCount
+          })
         }
       } catch (error) {
-        console.error("获取专用空调列表失败:", error);
-        this.$message.error("获取专用空调列表失败");
+        console.error('获取专用空调列表失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchAirFail'))
       } finally {
-        this.airLoading = false;
+        this.airLoading = false
       }
     },
 
     // 获取空调公摊组列表
-    async fetchAirShareGroups() {
-      this.airShareLoading = true;
+    async fetchAirShareGroups () {
+      this.airShareLoading = true
       try {
         const params = {
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantAirShareGroups(params);
+        const response = await getTenantAirShareGroups(params)
         if (response.code === 200) {
-          this.airShareGroups = response.data || [];
-          this.airShareGroupCount = this.airShareGroups.length;
-          this.$emit("update-device-count", {
-            airShareGroupCount: this.airShareGroupCount,
-          });
+          this.airShareGroups = response.data || []
+          this.airShareGroupCount = this.airShareGroups.length
+          this.$emit('update-device-count', {
+            airShareGroupCount: this.airShareGroupCount
+          })
         }
       } catch (error) {
-        console.error("获取空调公摊组列表失败:", error);
-        this.$message.error("获取空调公摊组列表失败");
+        console.error('获取空调公摊组列表失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchAirGroupFail'))
       } finally {
-        this.airShareLoading = false;
+        this.airShareLoading = false
       }
     },
 
     // 空调监控 - 跳转详情
     // 空调监控 - 跳转详情
-    handleAirMonitor(air) {
-      console.log('🔍 完整空调数据:', air);
-      console.log('🔍 meterId:', air.meterId, 'typeof:', typeof air.meterId);
-      console.log('🔍 serial:', air.serial, 'typeof:', typeof air.serial);
-      console.log('🔍 bindData:', air.bindData);
+    handleAirMonitor (air) {
+      console.log('🔍 完整空调数据:', air)
+      console.log('🔍 meterId:', air.meterId, 'typeof:', typeof air.meterId)
+      console.log('🔍 serial:', air.serial, 'typeof:', typeof air.serial)
+      console.log('🔍 bindData:', air.bindData)
 
       this.airDetailDrawer = {
         visible: true,
         deviceId: air.id,
         rowData: air
-      };
+      }
 
       // ⬇️⬇️⬇️ 添加延迟检查 ⬇️⬇️⬇️
       setTimeout(() => {
-        console.log('🔍 500ms后检查 - airDetailDrawer.rowData:', this.airDetailDrawer.rowData);
-        console.log('🔍 500ms后检查 - rowData.meterId:', this.airDetailDrawer.rowData?.meterId);
-        console.log('🔍 500ms后检查 - rowData.serial:', this.airDetailDrawer.rowData?.serial);
-      }, 500);
+        console.log('🔍 500ms后检查 - airDetailDrawer.rowData:', this.airDetailDrawer.rowData)
+        console.log('🔍 500ms后检查 - rowData.meterId:', this.airDetailDrawer.rowData?.meterId)
+        console.log('🔍 500ms后检查 - rowData.serial:', this.airDetailDrawer.rowData?.serial)
+      }, 500)
     },
 
     // 获取空调运行模式标签
-    getOperationModeLabel(mode) {
+    getOperationModeLabel (mode) {
       const modeMap = {
-        0: '自动',
-        1: '制热',
-        2: '制冷',
-        4: '送风',
-        8: '除湿',
-      };
-      return modeMap[mode] || '--';
+        0: this.$t('tenantDevicesPage.airModeAuto'),
+        1: this.$t('tenantDevicesPage.airModeHeat'),
+        2: this.$t('tenantDevicesPage.airModeCool'),
+        4: this.$t('tenantDevicesPage.airModeFan'),
+        8: this.$t('tenantDevicesPage.airModeDry')
+      }
+      return modeMap[mode] || '--'
+    },
+
+    waterBindTypeLabel (bindType) {
+      const t = Number(bindType)
+      if (t === 1) return this.$t('tenantDevicesPage.waterBindDedicated')
+      if (t === 2) return this.$t('tenantDevicesPage.waterBindShared')
+      if (t === 3) return this.$t('tenantDevicesPage.waterBindFormula')
+      return '--'
     },
 
     // 获取空调运行模式标签类型
-    getOperationModeType(mode) {
+    getOperationModeType (mode) {
       const typeMap = {
-        0: 'info',      // 自动 - 灰色
-        1: 'danger',    // 制热 - 红色
-        2: 'primary',   // 制冷 - 蓝色
-        4: 'success',   // 送风 - 绿色
-        8: 'warning',   // 除湿 - 橙色
-      };
-      return typeMap[mode] || 'info';
+        0: 'info', // 自动 - 灰色
+        1: 'danger', // 制热 - 红色
+        2: 'primary', // 制冷 - 蓝色
+        4: 'success', // 送风 - 绿色
+        8: 'warning' // 除湿 - 橙色
+      }
+      return typeMap[mode] || 'info'
     },
 
     // ==================== 设备绑定/解绑相关方法 ====================
 
     // 打开绑定设备抽屉
-    async handleBindDevice(deviceType) {
-      this.currentDeviceType = deviceType;
-      this.bindDrawerVisible = true;
+    async handleBindDevice (deviceType) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
+      this.currentDeviceType = deviceType
+      this.bindDrawerVisible = true
 
       // 重置搜索关键词
-      this.meterSearchQuery = "";
-      this.boundMeterSearchQuery = "";
-      this.shareSearchQuery = "";
-      this.boundShareSearchQuery = "";
-      this.waterSearchQuery = "";
-      this.boundWaterSearchQuery = "";
-      this.waterShareSearchQuery = "";
-      this.boundWaterShareSearchQuery = "";
-      this.airSearchQuery = "";
-      this.boundAirSearchQuery = "";
-      this.airShareSearchQuery = "";
-      this.boundAirShareSearchQuery = "";
+      this.meterSearchQuery = ''
+      this.boundMeterSearchQuery = ''
+      this.shareSearchQuery = ''
+      this.boundShareSearchQuery = ''
+      this.waterSearchQuery = ''
+      this.boundWaterSearchQuery = ''
+      this.waterShareSearchQuery = ''
+      this.boundWaterShareSearchQuery = ''
+      this.airSearchQuery = ''
+      this.boundAirSearchQuery = ''
+      this.airShareSearchQuery = ''
+      this.boundAirShareSearchQuery = ''
 
-      if (deviceType === "electric") {
-        await this.loadMeterBindData();
-      } else if (deviceType === "electricGroup") {
-        await this.loadShareBindData();
-      } else if (deviceType === "water") {
-        await this.loadWaterBindData();
-      } else if (deviceType === "waterGroup") {
-        await this.loadWaterShareBindData();
-      } else if (deviceType === "aircon") {
-        await this.loadAirBindData();
-      } else if (deviceType === "airGroup") {
-        await this.loadAirShareBindData();
+      if (deviceType === 'electric') {
+        await this.loadMeterBindData()
+      } else if (deviceType === 'electricGroup') {
+        await this.loadShareBindData()
+      } else if (deviceType === 'water') {
+        await this.loadWaterBindData()
+      } else if (deviceType === 'waterGroup') {
+        await this.loadWaterShareBindData()
+      } else if (deviceType === 'aircon') {
+        await this.loadAirBindData()
+      } else if (deviceType === 'airGroup') {
+        await this.loadAirShareBindData()
       }
     },
 
     // 加载电表绑定数据
-    async loadMeterBindData() {
-      this.drawerLoading = true;
+    async loadMeterBindData () {
+      this.drawerLoading = true
       try {
         const params = {
           managerId: this.managerId,
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantMeterBindEdit(params);
+        const response = await getTenantMeterBindEdit(params)
         if (response.code === 200) {
-          this.selectedMeters = response.data.meterSelectedList || [];
-          this.selectableMeters = response.data.meterSelectableList || [];
+          this.selectedMeters = response.data.meterSelectedList || []
+          this.selectableMeters = response.data.meterSelectableList || []
         }
       } catch (error) {
-        console.error("获取电表绑定数据失败:", error);
-        this.$message.error("获取电表绑定数据失败");
+        console.error('获取电表绑定数据失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchMeterBindFail'))
       } finally {
-        this.drawerLoading = false;
+        this.drawerLoading = false
       }
     },
 
     // 绑定电表
-    async handleMeterBind(meter) {
+    async handleMeterBind (meter) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        this.$set(meter, "binding", true);
+        this.$set(meter, 'binding', true)
 
         const params = {
           meterId: meter.id,
           tenantId: this.tenantId,
-          type: "bind",
-        };
+          type: 'bind'
+        }
 
-        const response = await bindTenantMeter(params);
+        const response = await bindTenantMeter(params)
         if (response.code === 200) {
-          this.$message.success("绑定成功");
-          await this.loadMeterBindData();
-          await this.fetchElectricMeters();
+          this.$message.success(this.$t('tenantDevicesPage.msgBindOk'))
+          await this.loadMeterBindData()
+          await this.fetchElectricMeters()
         } else {
-          this.$message.error(response.msg || "绑定失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgBindFail'))
         }
       } catch (error) {
-        console.error("绑定电表失败:", error);
-        this.$message.error("绑定电表失败");
+        console.error('绑定电表失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgBindMeterFail'))
       } finally {
-        this.$set(meter, "binding", false);
+        this.$set(meter, 'binding', false)
       }
     },
 
     // 解绑电表
-    async handleMeterUnbind(meter) {
+    async handleMeterUnbind (meter) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        await this.$confirm(`确定要解绑电表 ${meter.meterName} 吗？`, "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
+        await this.$confirm(this.$t('tenantDevicesPage.confirmUnbindMeter', { name: this.$displayBizHybrid(meter.meterName) }), this.$t('tenantDevicesPage.titleTip'), {
+          confirmButtonText: this.$t('tenantDevicesPage.btnOk'),
+          cancelButtonText: this.$t('tenantDevicesPage.btnCancelPlain'),
+          type: 'warning'
+        })
 
-        this.$set(meter, "unbinding", true);
+        this.$set(meter, 'unbinding', true)
 
         const params = {
           meterId: meter.id,
           tenantId: this.tenantId,
-          type: "unbind",
-        };
+          type: 'unbind'
+        }
 
-        const response = await bindTenantMeter(params);
+        const response = await bindTenantMeter(params)
         if (response.code === 200) {
-          this.$message.success("解绑成功");
-          await this.loadMeterBindData();
-          await this.fetchElectricMeters();
+          this.$message.success(this.$t('tenantDevicesPage.msgUnbindOk'))
+          await this.loadMeterBindData()
+          await this.fetchElectricMeters()
         } else {
-          this.$message.error(response.msg || "解绑失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgUnbindFail'))
         }
       } catch (error) {
-        if (error !== "cancel") {
-          console.error("解绑电表失败:", error);
-          this.$message.error("解绑电表失败");
+        if (error !== 'cancel') {
+          console.error('解绑电表失败:', error)
+          this.$message.error(this.$t('tenantDevicesPage.msgUnbindMeterFail'))
         }
       } finally {
-        this.$set(meter, "unbinding", false);
+        this.$set(meter, 'unbinding', false)
       }
     },
 
     // 加载公摊组绑定数据
-    async loadShareBindData() {
-      this.drawerLoading = true;
-      this.shareAreaInput = {};
+    async loadShareBindData () {
+      this.drawerLoading = true
+      this.shareAreaInput = {}
       try {
         const params = {
           managerId: this.managerId,
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantShareBindEdit(params);
+        const response = await getTenantShareBindEdit(params)
         if (response.code === 200) {
-          this.selectedShares = response.data.shareSelectedList || [];
-          this.selectableShares = response.data.shareSelectableList || [];
+          this.selectedShares = response.data.shareSelectedList || []
+          this.selectableShares = response.data.shareSelectableList || []
 
           this.selectableShares.forEach((share) => {
-            this.$set(this.shareAreaInput, share.id, null);
-          });
+            this.$set(this.shareAreaInput, share.id, null)
+          })
         }
       } catch (error) {
-        console.error("获取公摊组绑定数据失败:", error);
-        this.$message.error("获取公摊组绑定数据失败");
+        console.error('获取公摊组绑定数据失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchShareBindFail'))
       } finally {
-        this.drawerLoading = false;
+        this.drawerLoading = false
       }
     },
 
     // 绑定公摊组
-    async handleShareBind(share) {
-      const area = this.shareAreaInput[share.id];
+    async handleShareBind (share) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
+      const area = this.shareAreaInput[share.id]
       if (!area || area <= 0) {
-        this.$message.warning("请输入有效的公摊面积");
-        return;
+        this.$message.warning(this.$t('tenantDevicesPage.msgInvalidShareArea'))
+        return
       }
 
       try {
-        this.$set(share, "binding", true);
+        this.$set(share, 'binding', true)
 
         const params = {
           tenantId: this.tenantId,
           managerId: this.managerId,
-          type: "bind",
+          type: 'bind',
           area: area,
           shareType: share.shareType,
-          shareId: share.id,
-        };
+          shareId: share.id
+        }
 
-        const response = await bindShareTenant(params);
+        const response = await bindShareTenant(params)
         if (response.code === 200) {
-          this.$message.success("绑定成功");
-          await this.loadShareBindData();
-          await this.fetchElectricGroups();
+          this.$message.success(this.$t('tenantDevicesPage.msgBindOk'))
+          await this.loadShareBindData()
+          await this.fetchElectricGroups()
         } else {
-          this.$message.error(response.msg || "绑定失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgBindFail'))
         }
       } catch (error) {
-        console.error("绑定公摊组失败:", error);
-        this.$message.error("绑定公摊组失败");
+        console.error('绑定公摊组失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgBindShareFail'))
       } finally {
-        this.$set(share, "binding", false);
+        this.$set(share, 'binding', false)
       }
     },
 
     // 解绑公摊组
-    async handleShareUnbind(share) {
+    async handleShareUnbind (share) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        await this.$confirm(`确定要解绑公摊组 ${share.name} 吗？`, "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
+        await this.$confirm(this.$t('tenantDevicesPage.confirmUnbindShare', { name: this.$displayBizHybrid(share.name) }), this.$t('tenantDevicesPage.titleTip'), {
+          confirmButtonText: this.$t('tenantDevicesPage.btnOk'),
+          cancelButtonText: this.$t('tenantDevicesPage.btnCancelPlain'),
+          type: 'warning'
+        })
 
-        this.$set(share, "unbinding", true);
+        this.$set(share, 'unbinding', true)
 
         const params = {
           tenantId: this.tenantId,
           managerId: this.managerId,
-          type: "unbind",
+          type: 'unbind',
           area: share.area,
           shareType: share.shareType,
-          shareId: share.id,
-        };
+          shareId: share.id
+        }
 
-        const response = await bindShareTenant(params);
+        const response = await bindShareTenant(params)
         if (response.code === 200) {
-          this.$message.success("解绑成功");
-          await this.loadShareBindData();
-          await this.fetchElectricGroups();
+          this.$message.success(this.$t('tenantDevicesPage.msgUnbindOk'))
+          await this.loadShareBindData()
+          await this.fetchElectricGroups()
         } else {
-          this.$message.error(response.msg || "解绑失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgUnbindFail'))
         }
       } catch (error) {
-        if (error !== "cancel") {
-          console.error("解绑公摊组失败:", error);
-          this.$message.error("解绑公摊组失败");
+        if (error !== 'cancel') {
+          console.error('解绑公摊组失败:', error)
+          this.$message.error(this.$t('tenantDevicesPage.msgUnbindShareFail'))
         }
       } finally {
-        this.$set(share, "unbinding", false);
+        this.$set(share, 'unbinding', false)
       }
     },
 
     // 加载水表绑定数据
-    async loadWaterBindData() {
-      this.drawerLoading = true;
-      this.waterSettleRates = {};
+    async loadWaterBindData () {
+      this.drawerLoading = true
+      this.waterSettleRates = {}
       try {
         const params = {
           managerId: this.managerId,
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantWaterBindEdit(params);
+        const response = await getTenantWaterBindEdit(params)
         if (response.code === 200) {
-          this.selectedWaters = response.data.selectedList || [];
-          this.selectableWaters = response.data.selectableList || [];
+          this.selectedWaters = response.data.selectedList || []
+          this.selectableWaters = response.data.selectableList || []
 
           this.selectableWaters.forEach((water) => {
-            this.$set(this.waterSettleRates, water.id, 1);
-          });
+            this.$set(this.waterSettleRates, water.id, 1)
+          })
         }
       } catch (error) {
-        console.error("获取水表绑定数据失败:", error);
-        this.$message.error("获取水表绑定数据失败");
+        console.error('获取水表绑定数据失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchWaterBindFail'))
       } finally {
-        this.drawerLoading = false;
+        this.drawerLoading = false
       }
     },
 
     // 绑定水表
-    async handleWaterBind(water) {
+    async handleWaterBind (water) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        this.$set(water, "binding", true);
+        this.$set(water, 'binding', true)
 
         const params = {
           waterId: water.id,
           settleRate: this.waterSettleRates[water.id] || 1,
-          type: "bind",
-          tenantId: this.tenantId,
-        };
+          type: 'bind',
+          tenantId: this.tenantId
+        }
 
-        const response = await bindTenantWater(params);
+        const response = await bindTenantWater(params)
         if (response.code === 200) {
-          this.$message.success("绑定成功");
-          await this.loadWaterBindData();
-          await this.fetchWaterMeters();
+          this.$message.success(this.$t('tenantDevicesPage.msgBindOk'))
+          await this.loadWaterBindData()
+          await this.fetchWaterMeters()
         } else {
-          this.$message.error(response.msg || "绑定失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgBindFail'))
         }
       } catch (error) {
-        console.error("绑定水表失败:", error);
-        this.$message.error("绑定水表失败");
+        console.error('绑定水表失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgBindWaterFail'))
       } finally {
-        this.$set(water, "binding", false);
+        this.$set(water, 'binding', false)
       }
     },
 
     // 解绑水表
-    async handleWaterUnbind(water) {
+    async handleWaterUnbind (water) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        await this.$confirm(`确定要解绑水表 ${water.waterName} 吗？`, "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
+        await this.$confirm(this.$t('tenantDevicesPage.confirmUnbindWater', { name: this.$displayBizHybrid(water.waterName) }), this.$t('tenantDevicesPage.titleTip'), {
+          confirmButtonText: this.$t('tenantDevicesPage.btnOk'),
+          cancelButtonText: this.$t('tenantDevicesPage.btnCancelPlain'),
+          type: 'warning'
+        })
 
-        this.$set(water, "unbinding", true);
+        this.$set(water, 'unbinding', true)
 
         const params = {
           waterId: water.id,
           settleRate: water.settleRate || 1,
-          type: "unbind",
-          tenantId: this.tenantId,
-        };
+          type: 'unbind',
+          tenantId: this.tenantId
+        }
 
-        const response = await bindTenantWater(params);
+        const response = await bindTenantWater(params)
         if (response.code === 200) {
-          this.$message.success("解绑成功");
-          await this.loadWaterBindData();
-          await this.fetchWaterMeters();
+          this.$message.success(this.$t('tenantDevicesPage.msgUnbindOk'))
+          await this.loadWaterBindData()
+          await this.fetchWaterMeters()
         } else {
-          this.$message.error(response.msg || "解绑失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgUnbindFail'))
         }
       } catch (error) {
-        if (error !== "cancel") {
-          console.error("解绑水表失败:", error);
-          this.$message.error("解绑水表失败");
+        if (error !== 'cancel') {
+          console.error('解绑水表失败:', error)
+          this.$message.error(this.$t('tenantDevicesPage.msgUnbindWaterFail'))
         }
       } finally {
-        this.$set(water, "unbinding", false);
+        this.$set(water, 'unbinding', false)
       }
     },
 
     // 加载水表公摊组绑定数据
-    async loadWaterShareBindData() {
-      this.drawerLoading = true;
-      this.waterShareAreaInput = {};
+    async loadWaterShareBindData () {
+      this.drawerLoading = true
+      this.waterShareAreaInput = {}
       try {
         const params = {
           managerId: this.managerId,
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantWaterShareBindEdit(params);
+        const response = await getTenantWaterShareBindEdit(params)
         if (response.code === 200) {
-          this.selectedWaterShares = response.data.shareSelectedList || [];
-          this.selectableWaterShares = response.data.shareSelectableList || [];
+          this.selectedWaterShares = response.data.shareSelectedList || []
+          this.selectableWaterShares = response.data.shareSelectableList || []
 
           this.selectableWaterShares.forEach((share) => {
-            this.$set(this.waterShareAreaInput, share.id, null);
-          });
+            this.$set(this.waterShareAreaInput, share.id, null)
+          })
         }
       } catch (error) {
-        console.error("获取水表公摊组绑定数据失败:", error);
-        this.$message.error("获取水表公摊组绑定数据失败");
+        console.error('获取水表公摊组绑定数据失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchWaterShareBindFail'))
       } finally {
-        this.drawerLoading = false;
+        this.drawerLoading = false
       }
     },
 
     // 绑定水表公摊组
-    async handleWaterShareBind(share) {
-      const area = this.waterShareAreaInput[share.id];
+    async handleWaterShareBind (share) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
+      const area = this.waterShareAreaInput[share.id]
       if (!area || area <= 0) {
-        this.$message.warning("请输入有效的公摊面积");
-        return;
+        this.$message.warning(this.$t('tenantDevicesPage.msgInvalidShareArea'))
+        return
       }
 
       try {
-        this.$set(share, "binding", true);
+        this.$set(share, 'binding', true)
 
         const params = {
           tenantId: this.tenantId,
           managerId: this.managerId,
-          type: "bind",
+          type: 'bind',
           area: area,
-          shareId: share.id,
-        };
+          shareId: share.id
+        }
 
-        const response = await bindWaterShareTenant(params);
+        const response = await bindWaterShareTenant(params)
         if (response.code === 200) {
-          this.$message.success("绑定成功");
-          await this.loadWaterShareBindData();
-          await this.fetchWaterGroups();
+          this.$message.success(this.$t('tenantDevicesPage.msgBindOk'))
+          await this.loadWaterShareBindData()
+          await this.fetchWaterGroups()
         } else {
-          this.$message.error(response.msg || "绑定失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgBindFail'))
         }
       } catch (error) {
-        console.error("绑定水表公摊组失败:", error);
-        this.$message.error("绑定水表公摊组失败");
+        console.error('绑定水表公摊组失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgBindWaterShareFail'))
       } finally {
-        this.$set(share, "binding", false);
+        this.$set(share, 'binding', false)
       }
     },
 
     // 解绑水表公摊组
-    async handleWaterShareUnbind(share) {
+    async handleWaterShareUnbind (share) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        await this.$confirm(`确定要解绑水表公摊组 ${share.name} 吗？`, "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
+        await this.$confirm(this.$t('tenantDevicesPage.confirmUnbindWaterShare', { name: this.$displayBizHybrid(share.name) }), this.$t('tenantDevicesPage.titleTip'), {
+          confirmButtonText: this.$t('tenantDevicesPage.btnOk'),
+          cancelButtonText: this.$t('tenantDevicesPage.btnCancelPlain'),
+          type: 'warning'
+        })
 
-        this.$set(share, "unbinding", true);
+        this.$set(share, 'unbinding', true)
 
         const params = {
           tenantId: this.tenantId,
           managerId: this.managerId,
-          type: "unbind",
+          type: 'unbind',
           area: share.area,
-          shareId: share.id,
-        };
+          shareId: share.id
+        }
 
-        const response = await bindWaterShareTenant(params);
+        const response = await bindWaterShareTenant(params)
         if (response.code === 200) {
-          this.$message.success("解绑成功");
-          await this.loadWaterShareBindData();
-          await this.fetchWaterGroups();
+          this.$message.success(this.$t('tenantDevicesPage.msgUnbindOk'))
+          await this.loadWaterShareBindData()
+          await this.fetchWaterGroups()
         } else {
-          this.$message.error(response.msg || "解绑失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgUnbindFail'))
         }
       } catch (error) {
-        if (error !== "cancel") {
-          console.error("解绑水表公摊组失败:", error);
-          this.$message.error("解绑水表公摊组失败");
+        if (error !== 'cancel') {
+          console.error('解绑水表公摊组失败:', error)
+          this.$message.error(this.$t('tenantDevicesPage.msgUnbindWaterShareFail'))
         }
       } finally {
-        this.$set(share, "unbinding", false);
+        this.$set(share, 'unbinding', false)
       }
     },
 
     // 加载空调绑定数据
-    async loadAirBindData() {
-      this.drawerLoading = true;
+    async loadAirBindData () {
+      this.drawerLoading = true
       try {
         const params = {
           managerId: this.managerId,
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantAirBindEdit(params);
+        const response = await getTenantAirBindEdit(params)
         if (response.code === 200) {
-          this.selectedAirs = response.data.airSelectedList || [];
-          this.selectableAirs = response.data.airSelectableList || [];
+          this.selectedAirs = response.data.airSelectedList || []
+          this.selectableAirs = response.data.airSelectableList || []
         }
       } catch (error) {
-        console.error("获取空调绑定数据失败:", error);
-        this.$message.error("获取空调绑定数据失败");
+        console.error('获取空调绑定数据失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchAirBindFail'))
       } finally {
-        this.drawerLoading = false;
+        this.drawerLoading = false
       }
     },
 
     // 绑定空调
-    async handleAirBind(air) {
+    async handleAirBind (air) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        this.$set(air, "binding", true);
+        this.$set(air, 'binding', true)
 
         const params = {
           airId: air.id,
           tenantId: this.tenantId,
-          type: "bind",
-        };
+          type: 'bind'
+        }
 
-        const response = await bindTenantAir(params);
+        const response = await bindTenantAir(params)
         if (response.code === 200) {
-          this.$message.success("绑定成功");
-          await this.loadAirBindData();
-          await this.fetchAirConditioners();
+          this.$message.success(this.$t('tenantDevicesPage.msgBindOk'))
+          await this.loadAirBindData()
+          await this.fetchAirConditioners()
         } else {
-          this.$message.error(response.msg || "绑定失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgBindFail'))
         }
       } catch (error) {
-        console.error("绑定空调失败:", error);
-        this.$message.error("绑定空调失败");
+        console.error('绑定空调失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgBindAirFail'))
       } finally {
-        this.$set(air, "binding", false);
+        this.$set(air, 'binding', false)
       }
     },
 
     // 解绑空调
-    async handleAirUnbind(air) {
+    async handleAirUnbind (air) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        await this.$confirm(`确定要解绑空调 ${air.name} 吗？`, "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
+        await this.$confirm(this.$t('tenantDevicesPage.confirmUnbindAir', { name: this.$displayBizHybrid(air.name) }), this.$t('tenantDevicesPage.titleTip'), {
+          confirmButtonText: this.$t('tenantDevicesPage.btnOk'),
+          cancelButtonText: this.$t('tenantDevicesPage.btnCancelPlain'),
+          type: 'warning'
+        })
 
-        this.$set(air, "unbinding", true);
+        this.$set(air, 'unbinding', true)
 
         const params = {
           airId: air.id,
           tenantId: this.tenantId,
-          type: "unbind",
-        };
+          type: 'unbind'
+        }
 
-        const response = await bindTenantAir(params);
+        const response = await bindTenantAir(params)
         if (response.code === 200) {
-          this.$message.success("解绑成功");
-          await this.loadAirBindData();
-          await this.fetchAirConditioners();
+          this.$message.success(this.$t('tenantDevicesPage.msgUnbindOk'))
+          await this.loadAirBindData()
+          await this.fetchAirConditioners()
         } else {
-          this.$message.error(response.msg || "解绑失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgUnbindFail'))
         }
       } catch (error) {
-        if (error !== "cancel") {
-          console.error("解绑空调失败:", error);
-          this.$message.error("解绑空调失败");
+        if (error !== 'cancel') {
+          console.error('解绑空调失败:', error)
+          this.$message.error(this.$t('tenantDevicesPage.msgUnbindAirFail'))
         }
       } finally {
-        this.$set(air, "unbinding", false);
+        this.$set(air, 'unbinding', false)
       }
     },
 
     // 加载空调公摊组绑定数据
-    async loadAirShareBindData() {
-      this.drawerLoading = true;
-      this.airShareAreaInput = {};
+    async loadAirShareBindData () {
+      this.drawerLoading = true
+      this.airShareAreaInput = {}
       try {
         const params = {
           managerId: this.managerId,
-          tenantId: this.tenantId,
-        };
+          tenantId: this.tenantId
+        }
 
-        const response = await getTenantAirShareBindEdit(params);
+        const response = await getTenantAirShareBindEdit(params)
         if (response.code === 200) {
-          this.selectedAirShares = response.data.shareSelectedList || [];
-          this.selectableAirShares = response.data.shareSelectableList || [];
+          this.selectedAirShares = response.data.shareSelectedList || []
+          this.selectableAirShares = response.data.shareSelectableList || []
 
           this.selectableAirShares.forEach((share) => {
             // 用能分摊不需要输入面积，默认设置为0
-            this.$set(this.airShareAreaInput, share.id, share.shareType === 'ENERGY' ? 0 : null);
-          });
+            this.$set(this.airShareAreaInput, share.id, share.shareType === 'ENERGY' ? 0 : null)
+          })
         }
       } catch (error) {
-        console.error("获取空调公摊组绑定数据失败:", error);
-        this.$message.error("获取空调公摊组绑定数据失败");
+        console.error('获取空调公摊组绑定数据失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgFetchAirShareBindFail'))
       } finally {
-        this.drawerLoading = false;
+        this.drawerLoading = false
       }
     },
 
     // 绑定空调公摊组
-    async handleAirShareBind(share) {
+    async handleAirShareBind (share) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       // 用能分摊不需要面积，面积分摊需要面积
-      let area = 0;
+      let area = 0
       if (share.shareType === 'ENERGY') {
-        area = 0; // 用能分摊面积设为0
+        area = 0 // 用能分摊面积设为0
       } else {
-        area = this.airShareAreaInput[share.id];
+        area = this.airShareAreaInput[share.id]
         if (!area || area <= 0) {
-          this.$message.warning("请输入有效的公摊面积");
-          return;
+          this.$message.warning(this.$t('tenantDevicesPage.msgInvalidShareArea'))
+          return
         }
       }
 
       try {
-        this.$set(share, "binding", true);
+        this.$set(share, 'binding', true)
 
         const params = {
           tenantId: this.tenantId,
           managerId: this.managerId,
-          type: "bind",
+          type: 'bind',
           area: area,
           shareType: share.shareType,
-          shareId: share.id,
-        };
+          shareId: share.id
+        }
 
-        const response = await bindAirShareTenant(params);
+        const response = await bindAirShareTenant(params)
         if (response.code === 200) {
-          this.$message.success("绑定成功");
-          await this.loadAirShareBindData();
-          await this.fetchAirShareGroups();
+          this.$message.success(this.$t('tenantDevicesPage.msgBindOk'))
+          await this.loadAirShareBindData()
+          await this.fetchAirShareGroups()
         } else {
-          this.$message.error(response.msg || "绑定失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgBindFail'))
         }
       } catch (error) {
-        console.error("绑定空调公摊组失败:", error);
-        this.$message.error("绑定空调公摊组失败");
+        console.error('绑定空调公摊组失败:', error)
+        this.$apiError.notify(error, this.$t('tenantDevicesPage.msgBindAirShareFail'))
       } finally {
-        this.$set(share, "binding", false);
+        this.$set(share, 'binding', false)
       }
     },
 
     // 解绑空调公摊组
-    async handleAirShareUnbind(share) {
+    async handleAirShareUnbind (share) {
+      if (!this.canBind) {
+        this.$message.warning(this.$t('tenantDevicesPage.msgNoBindPerm'))
+        return
+      }
       try {
-        await this.$confirm(`确定要解绑空调公摊组 ${share.name} 吗？`, "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
+        await this.$confirm(this.$t('tenantDevicesPage.confirmUnbindAirShare', { name: this.$displayBizHybrid(share.name) }), this.$t('tenantDevicesPage.titleTip'), {
+          confirmButtonText: this.$t('tenantDevicesPage.btnOk'),
+          cancelButtonText: this.$t('tenantDevicesPage.btnCancelPlain'),
+          type: 'warning'
+        })
 
-        this.$set(share, "unbinding", true);
+        this.$set(share, 'unbinding', true)
 
         const params = {
           tenantId: this.tenantId,
           managerId: this.managerId,
-          type: "unbind",
+          type: 'unbind',
           area: share.area || 0,
           shareType: share.shareType,
-          shareId: share.id,
-        };
+          shareId: share.id
+        }
 
-        const response = await bindAirShareTenant(params);
+        const response = await bindAirShareTenant(params)
         if (response.code === 200) {
-          this.$message.success("解绑成功");
-          await this.loadAirShareBindData();
-          await this.fetchAirShareGroups();
+          this.$message.success(this.$t('tenantDevicesPage.msgUnbindOk'))
+          await this.loadAirShareBindData()
+          await this.fetchAirShareGroups()
         } else {
-          this.$message.error(response.msg || "解绑失败");
+          this.$message.error(response.msg || this.$t('tenantDevicesPage.msgUnbindFail'))
         }
       } catch (error) {
-        if (error !== "cancel") {
-          console.error("解绑空调公摊组失败:", error);
-          this.$message.error("解绑空调公摊组失败");
+        if (error !== 'cancel') {
+          console.error('解绑空调公摊组失败:', error)
+          this.$message.error(this.$t('tenantDevicesPage.msgUnbindAirShareFail'))
         }
       } finally {
-        this.$set(share, "unbinding", false);
+        this.$set(share, 'unbinding', false)
       }
     },
 
     // 抽屉关闭 - 清空所有绑定数据
-    handleDrawerClose() {
-      this.bindDrawerVisible = false;
-      this.currentDeviceType = "";
+    handleDrawerClose () {
+      this.bindDrawerVisible = false
+      this.currentDeviceType = ''
 
       // 清空电表相关数据
-      this.selectedMeters = [];
-      this.selectableMeters = [];
-      this.selectedShares = [];
-      this.selectableShares = [];
-      this.shareAreaInput = {};
+      this.selectedMeters = []
+      this.selectableMeters = []
+      this.selectedShares = []
+      this.selectableShares = []
+      this.shareAreaInput = {}
 
       // 清空水表相关数据
-      this.selectedWaters = [];
-      this.selectableWaters = [];
-      this.waterSettleRates = {};
-      this.selectedWaterShares = [];
-      this.selectableWaterShares = [];
-      this.waterShareAreaInput = {};
+      this.selectedWaters = []
+      this.selectableWaters = []
+      this.waterSettleRates = {}
+      this.selectedWaterShares = []
+      this.selectableWaterShares = []
+      this.waterShareAreaInput = {}
 
       // 清空空调相关数据
-      this.selectedAirs = [];
-      this.selectableAirs = [];
-      this.selectedAirShares = [];
-      this.selectableAirShares = [];
-      this.airShareAreaInput = {};
+      this.selectedAirs = []
+      this.selectableAirs = []
+      this.selectedAirShares = []
+      this.selectableAirShares = []
+      this.airShareAreaInput = {}
 
       // 清空搜索关键词
-      this.meterSearchQuery = "";
-      this.shareSearchQuery = "";
-      this.waterSearchQuery = "";
-      this.waterShareSearchQuery = "";
-      this.airSearchQuery = "";
-      this.airShareSearchQuery = "";
+      this.meterSearchQuery = ''
+      this.shareSearchQuery = ''
+      this.waterSearchQuery = ''
+      this.waterShareSearchQuery = ''
+      this.airSearchQuery = ''
+      this.airShareSearchQuery = ''
     },
 
     // ==================== 工具方法 ====================
 
     // 格式化余额
-    formatBalance(balance) {
-      if (balance === null || balance === undefined) return "0.00";
-      return Number(balance).toFixed(2);
+    formatBalance (balance) {
+      if (balance === null || balance === undefined) return '0.00'
+      return Number(balance).toFixed(2)
     },
 
     // 格式化日期
-    formatDate(date) {
-      if (!date) return "--";
-      const d = new Date(date);
-      if (isNaN(d.getTime())) return "--";
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(
+    formatDate (date) {
+      if (!date) return '--'
+      const d = new Date(date)
+      if (isNaN(d.getTime())) return '--'
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(
         2,
-        "0"
-      )} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    },
-  },
-};
+        '0'
+      )} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    }
+  }
+}
 </script>
 <style lang="scss" scoped>
 // ==================== 变量定义 ====================
@@ -2343,6 +2606,10 @@ $bg-color: #f5f7fa;
   height: 100%;
   display: flex;
   flex-direction: column;
+
+  ::v-deep .sms-code-btn.el-button--primary {
+    color: #ffffff !important;
+  }
 
   // 设备类型卡片容器
   .device-type-cards-wrapper {
@@ -2573,7 +2840,7 @@ $bg-color: #f5f7fa;
               color: $primary-color;
 
               &::after {
-                content: "点击复制";
+                content: attr(data-copy-hint);
                 position: absolute;
                 left: 50%;
                 bottom: 100%;
@@ -3244,5 +3511,14 @@ $bg-color: #f5f7fa;
       }
     }
   }
+}
+</style>
+
+<style lang="scss">
+.sms-code-btn.el-button--primary,
+.sms-code-btn.el-button--primary span,
+.sms-code-btn.el-button.is-disabled,
+.sms-code-btn.el-button.is-disabled span {
+  color: #ffffff !important;
 }
 </style>

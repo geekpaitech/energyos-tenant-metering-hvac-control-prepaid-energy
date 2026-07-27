@@ -13,7 +13,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 饼图区域 -->
       <div class="pie-section">
         <el-button type="text" class="sankey-btn" @click="goToSankey">
@@ -34,7 +34,7 @@
         <h3 class="section-title">用电列表明细</h3>
         <el-button type="primary" size="small" icon="el-icon-download" @click="handleExport">导出</el-button>
       </div>
-      
+
       <el-table v-if="tableData.length" :data="tableData" border stripe style="width: 100%">
         <el-table-column prop="occurDate" label="日期" min-width="120" />
         <el-table-column prop="useElec" label="总电量(度)" min-width="100">
@@ -53,7 +53,7 @@
           <template #default="{ row }">{{ formatNumber(row.useElecValley) }}</template>
         </el-table-column>
       </el-table>
-      
+
       <el-empty v-else description="暂无数据" />
     </div>
   </div>
@@ -74,14 +74,14 @@ const PIE_COLORS = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba
 
 export default {
   name: 'TopStatistic',
-  
+
   props: {
     timeRange: { type: Array, default: () => [] },
     checkedNode: { type: Object, default: () => ({}) },
     trigger: { type: Number, default: 0 }
   },
-  
-  data() {
+
+  data () {
     return {
       loading: false,
       statisticData: {},
@@ -89,46 +89,46 @@ export default {
       pieChartInstance: null,
       barChartInstance: null,
       statCards: [
-        { 
-          label: '总表用能（度）', 
-          value: 0, 
+        {
+          label: '总表用能（度）',
+          value: 0,
           imgSrc: require('@/assets/images/szwyIcon1.jpg')
         },
-        { 
-          label: '子表总用能（度）', 
-          value: 0, 
+        {
+          label: '子表总用能（度）',
+          value: 0,
           imgSrc: require('@/assets/images/szwyIcon2.jpg')
         },
-        { 
-          label: '损耗率（%）', 
-          value: 0, 
+        {
+          label: '损耗率（%）',
+          value: 0,
           imgSrc: require('@/assets/images/szwyIcon3.png')
         }
       ]
     }
   },
-  
+
   watch: {
     trigger: {
-      handler(val) {
+      handler (val) {
         if (val > 0) this.fetchData()
       },
       immediate: true
     }
   },
-  
-  mounted() {
+
+  mounted () {
     this.initCharts()
     window.addEventListener('resize', this.handleResize)
   },
-  
-  beforeDestroy() {
+
+  beforeDestroy () {
     window.removeEventListener('resize', this.handleResize)
     this.disposeCharts()
   },
-  
+
   methods: {
-    disposeCharts() {
+    disposeCharts () {
       if (this.pieChartInstance) {
         this.pieChartInstance.dispose()
         this.pieChartInstance = null
@@ -138,49 +138,49 @@ export default {
         this.barChartInstance = null
       }
     },
-    
-    initCharts() {
+
+    initCharts () {
       this.$nextTick(() => {
         this.initPieChart()
         this.initBarChart()
       })
     },
-    
-    initPieChart() {
+
+    initPieChart () {
       this.$nextTick(() => {
         const el = this.$refs.pieChart
         if (!el) return
-        
+
         // 先销毁旧实例
         if (this.pieChartInstance) {
           this.pieChartInstance.dispose()
           this.pieChartInstance = null
         }
-        
+
         this.pieChartInstance = this.$echarts.init(el)
       })
     },
-    
-    initBarChart() {
+
+    initBarChart () {
       this.$nextTick(() => {
         const el = this.$refs.barChart
         if (!el) return
-        
+
         if (this.barChartInstance) {
           this.barChartInstance.dispose()
           this.barChartInstance = null
         }
-        
+
         this.barChartInstance = this.$echarts.init(el)
       })
     },
-    
-    async fetchData() {
+
+    async fetchData () {
       if (!this.timeRange || !this.timeRange[0]) {
         this.$message.warning('请选择查询时间范围')
         return
       }
-      
+
       this.loading = true
       try {
         const params = {
@@ -189,7 +189,7 @@ export default {
           serial: this.checkedNode.subType ? this.checkedNode.serial : '',
           type: this.checkedNode.subType ? 'meter' : 'sub'
         }
-        
+
         const { data } = await statisticUse(this.checkedNode, params)
         this.statisticData = data || {}
         this.processData()
@@ -200,13 +200,13 @@ export default {
         this.loading = false
       }
     },
-    
-    processData() {
+
+    processData () {
       this.statCards[0].value = this.statisticData.mainUse || 0
       this.statCards[1].value = this.statisticData.subUse || 0
       this.statCards[2].value = this.statisticData.lossRate || 0
       this.tableData = this.statisticData.subUseList || []
-      
+
       this.$nextTick(() => {
         // 非电表节点才更新饼图
         if (!this.checkedNode.subType) {
@@ -221,7 +221,7 @@ export default {
             this.updatePieChart()
           }
         }
-        
+
         // 更新柱状图
         if (!this.barChartInstance) {
           this.initBarChart()
@@ -234,28 +234,28 @@ export default {
         }
       })
     },
-    
-    updatePieChart() {
+
+    updatePieChart () {
       if (!this.pieChartInstance) return
-      
+
       const pieData = this.statisticData.subUseRateList || []
-      
+
       // 清除旧配置
       this.pieChartInstance.clear()
-      
+
       if (!pieData.length) {
         this.pieChartInstance.setOption({
           title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } }
         })
         return
       }
-      
+
       const seriesData = pieData.map((item, idx) => ({
         name: item.subName || '未命名',
         value: item.subUse || 0,
         itemStyle: { color: PIE_COLORS[idx % PIE_COLORS.length] }
       }))
-      
+
       const option = {
         tooltip: {
           trigger: 'item',
@@ -295,15 +295,15 @@ export default {
           data: seriesData
         }]
       }
-      
+
       this.pieChartInstance.setOption(option)
     },
-    
-    updateBarChart() {
+
+    updateBarChart () {
       if (!this.barChartInstance) return
-      
+
       const barData = this.statisticData.subUseList || []
-      
+
       if (!barData.length) {
         this.barChartInstance.clear()
         this.barChartInstance.setOption({
@@ -311,9 +311,9 @@ export default {
         })
         return
       }
-      
+
       const xAxisData = barData.map(item => item.occurDate)
-      
+
       const option = {
         tooltip: {
           trigger: 'axis',
@@ -351,26 +351,26 @@ export default {
           { name: '谷电量', type: 'line', smooth: true, showSymbol: false, itemStyle: { color: COLORS.red }, data: barData.map(i => i.useElecValley) }
         ]
       }
-      
+
       this.barChartInstance.setOption(option, true)
     },
-    
-    handleResize() {
+
+    handleResize () {
       this.pieChartInstance?.resize()
       this.barChartInstance?.resize()
     },
-    
-    formatNumber(num) {
+
+    formatNumber (num) {
       if (num === null || num === undefined) return '-'
       return Number(num).toFixed(2)
     },
-    
-    handleExport() {
+
+    handleExport () {
       if (!this.tableData.length) {
         this.$message.warning('暂无数据可导出')
         return
       }
-      
+
       const headers = ['日期', '总电量(度)', '尖电量(度)', '峰电量(度)', '平电量(度)', '谷电量(度)']
       const rows = this.tableData.map(row => [row.occurDate, row.useElec, row.useElecPeak, row.useElecTop, row.useElecFlat, row.useElecValley])
       const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
@@ -381,8 +381,8 @@ export default {
       link.click()
       this.$message.success('导出成功')
     },
-    
-    goToSankey() {
+
+    goToSankey () {
       this.$router.push('/energy/electricity-sankey')
     }
   }
@@ -407,13 +407,13 @@ export default {
   gap: 40px;
   flex: 1;
   min-width: 0;
-  
+
   .stat-card {
     display: flex;
     align-items: center;
     gap: 16px;
     flex-shrink: 0;
-    
+
     .stat-icon {
       width: 48px;
       height: 48px;
@@ -421,14 +421,14 @@ export default {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      
+
       .icon-img {
         width: 48px;
         height: 48px;
         object-fit: contain;
       }
     }
-    
+
     .stat-info {
       .stat-label { font-size: 13px; color: #666; margin-bottom: 8px; white-space: nowrap; }
       .stat-value { font-size: 24px; font-weight: 600; color: #1c1c1c; }
@@ -440,7 +440,7 @@ export default {
   position: relative;
   width: 350px;
   flex-shrink: 0;
-  
+
   .sankey-btn {
     position: absolute;
     right: 0;
@@ -448,7 +448,7 @@ export default {
     z-index: 10;
     font-size: 12px;
   }
-  
+
   .pie-chart {
     width: 350px;
     height: 180px;
@@ -460,7 +460,7 @@ export default {
   padding: 16px;
   border: 1px solid #f0f0f0;
   border-radius: 4px;
-  
+
   .bar-chart { width: 100%; height: 320px; }
 }
 

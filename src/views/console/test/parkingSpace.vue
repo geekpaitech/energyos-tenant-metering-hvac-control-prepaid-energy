@@ -1,5 +1,12 @@
 <template>
-  <div ref="carContainer" class="car-wrapper"></div>
+  <div class="parking-space-page">
+    <div v-if="!enableParkingSpace" class="empty-page">
+      <i class="el-icon-data-analysis empty-icon"></i>
+      <div class="empty-title">暂无数据</div>
+      <div class="empty-desc">车位可视化数据暂未接入</div>
+    </div>
+    <div v-else ref="carContainer" class="car-wrapper"></div>
+  </div>
 </template>
 
 <script>
@@ -8,49 +15,65 @@ export default {
   data () {
     return {
       SOURCE: require('@/assets/images/floors/A8.svg'),
+      enableParkingSpace: false,
       konvaStage: null,
       layer: null,
       svgLayer: null,
       tooltipLayer: null,
       tooltip: null,
+      svgGroup: null,
+      bgImage: null,
       svgWidth: 1191,
       svgHeight: 1684,
       svgScale: 1,
       parkingSlots: [
-        // {
-        //   id: 'A01',
-        //   x: 50,
-        //   y: 100,
-        //   status: 'available', // available/occupied/reserved
-        //   type: 'compact'
-        // }
-        // 更多车位数据...
       ]
     }
   },
-  computed: {
-    // svgScale () {
-    //   const containerWidth = this.$refs.svgEnergyContainer?.offsetWidth || this.svgWidth
-    //   return containerWidth / this.svgWidth // 基于SVG原始宽度1149计算
-    // }
-  },
   mounted () {
-    this.initKonva()
+    if (this.enableParkingSpace) {
+      this.initKonva()
+    }
   },
   beforeDestroy () {
-    window.removeEventListener('resize', this.applyScale)
+    if (this.enableParkingSpace) {
+      window.removeEventListener('resize', this.applyScale)
+    }
     if (this.konvaStage) {
       this.konvaStage.destroy()
     }
   },
   methods: {
+    applyScale () {
+      if (!this.konvaStage || !this.$refs.carContainer || !this.svgWidth || !this.svgHeight) return
+
+      const container = this.$refs.carContainer
+      const containerWidth = container.offsetWidth
+      const containerHeight = container.offsetHeight
+
+      if (!containerWidth || !containerHeight) return
+
+      const nextScale = Math.min(containerWidth / this.svgWidth, containerHeight / this.svgHeight)
+      this.svgScale = nextScale
+
+      this.konvaStage.size({ width: containerWidth, height: containerHeight })
+
+      if (this.bgImage) {
+        this.bgImage.width(this.svgWidth * nextScale)
+        this.bgImage.height(this.svgHeight * nextScale)
+      }
+
+      if (this.svgGroup) {
+        this.svgGroup.scale({ x: nextScale, y: nextScale })
+      }
+
+      this.konvaStage.batchDraw()
+    },
     async initKonva () {
-      // 销毁旧实例
       if (this.konvaStage) {
         this.konvaStage.destroy()
         window.removeEventListener('resize', this.applyScale)
       }
-      // 获取容器实际尺寸
       const container = this.$refs.carContainer
       const containerWidth = container.offsetWidth
       const containerHeight = container.offsetHeight
@@ -58,18 +81,16 @@ export default {
         container: container,
         width: containerWidth,
         height: containerHeight
-        // draggable: true
       })
       this.layer = new Konva.Layer()
       this.konvaStage.add(this.layer)
 
       await this.loadKonvaSvg()
       await this.setSVG()
-      // this.initDeviceGroups() // 初始化设备分组
       this.addTooltip()
       this.$nextTick(() => {
         window.addEventListener('resize', this.applyScale)
-        // this.applyScale()
+        this.applyScale()
       })
       this.konvaStage.batchDraw()
     },
@@ -81,7 +102,6 @@ export default {
           })
         })
 
-        // 获取原始SVG尺寸
         const naturalSize = {
           w: konvaImage.image().naturalWidth,
           h: konvaImage.image().naturalHeight
@@ -90,17 +110,16 @@ export default {
         this.svgHeight = naturalSize.h
         const scale = this.svgScale
 
-        // 应用缩放并定位
         konvaImage
           .width(naturalSize.w * scale)
           .height(naturalSize.h * scale)
           .position({ x: 0, y: 0 })
           .draggable(false)
 
+        this.bgImage = konvaImage
         this.layer.add(konvaImage)
         this.layer.batchDraw()
 
-        // 触发尺寸更新
         this.$nextTick(() => {
           window.dispatchEvent(new Event('resize'))
         })
@@ -111,25 +130,25 @@ export default {
     },
     async setSVG () {
       try {
-      // 加载SVG文件内容
         const response = await fetch(this.SOURCE.default)
         const svgText = await response.text()
 
-        // 创建SVG DOM解析器
         const parser = new DOMParser()
         const svgDoc = parser.parseFromString(svgText, 'image/svg+xml')
 
-        // 创建Konva组并设置初始缩放
-        this.svgLayer = new Konva.Layer()
+        if (!this.svgLayer) {
+          this.svgLayer = new Konva.Layer()
+          this.konvaStage.add(this.svgLayer)
+        }
+
         const svgGroup = new Konva.Group({
           scaleX: this.svgScale,
           scaleY: this.svgScale
         })
+        this.svgGroup = svgGroup
 
-        // 解析路径元素
         const pathDoc = svgDoc
 
-        // 解析矩形元素
         pathDoc.querySelectorAll('rect').forEach(rect => {
           svgGroup.add(new Konva.Rect({
             id: rect.id,
@@ -138,13 +157,11 @@ export default {
             width: parseFloat(rect.getAttribute('width')),
             height: parseFloat(rect.getAttribute('height')),
             fill: rect.getAttribute('fill')
-            // stroke: '#C1DD6E',
-            // strokeWidth: 0.48
           }))
         })
 
         pathDoc.querySelectorAll('path').forEach(path => {
-          var svgPath = new Konva.Path({
+          const svgPath = new Konva.Path({
             id: path.id,
             data: path.getAttribute('d'),
             fill: path.getAttribute('fill'),
@@ -153,47 +170,33 @@ export default {
             lineJoin: path.getAttribute('stroke-linejoin'),
             lineCap: path.getAttribute('stroke-linecap'),
             miterLimit: path.getAttribute('stroke-miterlimit'),
-            listening: true, // 启用事件监听
-            hitStrokeWidth: 10, // 扩大点击区域
-            name: 'svgPath' // 添加可识别名称
-            // opacity: 0.6, // 透明度(0-1)
-            // shadowColor: 'this.getTemperatureColor(tempData.temperature)', // 阴影颜色
-            // shadowBlur: 10,
-
+            listening: true,
+            hitStrokeWidth: 10,
+            name: 'svgPath'
           })
           svgGroup.add(svgPath)
         })
         svgGroup.on('mousemove', (e) => {
-          const id = e.target.attrs.id
-          // const temp = this.svgLayer.findOne('#' + id)
+          const id = e.target && e.target.attrs ? e.target.attrs.id : ''
+          const fillColor = e.target && e.target.attrs ? e.target.attrs.fill : ''
+          if (!fillColor || !this.tooltip || !this.tooltipLayer) return
 
-          var shape = e.target
-          const fillColor = e.target.attrs.fill
-          if (shape && fillColor) {
-            console.log(id, e.target.attrs.fill, 'click===')
-            const pos = e.target.getStage().getPointerPosition()
-            // 转换为原始SVG坐标系
-            const rawX = pos.x / this.svgScale
-            const rawY = pos.y / this.svgScale
-            // var mousePos = e.target.getStage().getPointerPosition()
-            // var x = mousePos.x
-            // var y = mousePos.y - 5
-            this.updateTooltip(rawX, rawY, fillColor, id)
-            this.tooltipLayer.batchDraw()
-          }
+          const pos = e.target.getStage().getPointerPosition()
+          if (!pos) return
+
+          const rawX = pos.x / this.svgScale
+          const rawY = pos.y / this.svgScale
+
+          this.updateTooltip(rawX, rawY, fillColor, id)
+          this.tooltipLayer.batchDraw()
         })
-        svgGroup.on('mouseout', (e) => {
+        svgGroup.on('mouseout', () => {
           this.tooltip.hide()
           this.tooltipLayer.draw()
         })
-
-        // 将组添加到图层
         this.svgLayer.destroyChildren()
         this.svgLayer.add(svgGroup)
-        this.konvaStage.add(this.svgLayer)
         this.konvaStage.batchDraw()
-
-        // 触发尺寸更新
         this.$nextTick(() => {
           window.dispatchEvent(new Event('resize'))
         })
@@ -206,23 +209,17 @@ export default {
       let text = ''
       if (fillColor === '#89BC6F') {
         text = '可用车位'
-      } else if (fillColor === '#89BC6F') {
-        text = '不可用车位'
-      } else if (fillColor === '#2D2D2D' || fillColor === '#89BC6F') {
+      } else if (fillColor === '#2D2D2D') {
         text = '充电桩车位'
-      } else if (fillColor === '#808080' || fillColor === '#89BC6F') {
+      } else if (fillColor === '#808080') {
         text = '残障车位'
-      } else if (fillColor === '#F0A49E' || fillColor === '#89BC6F') {
+      } else if (fillColor === '#F0A49E') {
         text = '不可用车位'
       }
-      // hello world\n丙类厂房
       if (text) {
-        text = id + '\n' + text
+        text = (id ? (id + '\n') : '') + text
         this.tooltip.getText().text(text)
-        this.tooltip.position({
-          x: x,
-          y: y
-        })
+        this.tooltip.position({ x, y })
         this.tooltip.show()
       }
     },
@@ -267,8 +264,39 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+.parking-space-page {
+  width: 100%;
+  height: 100%;
+}
+
 .car-wrapper {
   width: 100%;
   height: 100vh;
+}
+
+.empty-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: #c0c4cc;
+  margin-bottom: 12px;
+}
+
+.empty-title {
+  font-size: 16px;
+  color: #303133;
+  margin-bottom: 6px;
+}
+
+.empty-desc {
+  font-size: 13px;
+  color: #909399;
 }
 </style>
