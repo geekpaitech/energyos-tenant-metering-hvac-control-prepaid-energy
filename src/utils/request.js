@@ -8,9 +8,9 @@ import Cookies from 'js-cookie'
 
 import { createApiError, getApiErrorMessage, notifyApiError } from '@/utils/apiError'
 
-// 后端 API 根地址（切换正式改为 https://iot.geekpartytech.com，并同步 vue.config.js proxy）
+// 后端 API 根地址（开源版本请替换为实际部署地址，并同步 vue.config.js proxy）
 
-export const API_BACKEND_ROOT = 'https://iot-test.geekpartytech.com'
+export const API_BACKEND_ROOT = ''
 
 // 创建axios实例
 

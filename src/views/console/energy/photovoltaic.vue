@@ -382,10 +382,10 @@ import {
 } from '@/api/ems'
 
 /** EMS 区域 ID（南都广场） */
-const EMS_AREA_ID = '2062004309533409281'
+const EMS_AREA_ID = ''
 
 /** 电站信息固定封面（OSS 上传，不使用接口 picUrl） */
-const STATION_IMAGE_URL = 'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/nandu.png'
+const STATION_IMAGE_URL = 'https://oss.example.com/web-file/station.png'
 
 const POLL_INTERVAL = 120000 // 120s，避免锦浪 API 429 限流
 const EMS_RECENT_WINDOW_MS = 60 * 60 * 1000

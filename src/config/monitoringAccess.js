@@ -4,7 +4,7 @@
 
 export const MONITORING_ACCESS_CONFIG = {
   enabled: true,
-  managerIdWhitelist: ['1000165', '1000107', '1000178']
+  managerIdWhitelist: []
 }
 
 export function canAccessMonitoringMenus (managerId) {

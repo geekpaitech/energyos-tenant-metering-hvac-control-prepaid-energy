@@ -227,7 +227,7 @@
 
           <div class="openapi-container">
             <a
-              href="https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/glfcz.pdf"
+              href="https://oss.example.com/web-file/guide.pdf"
               target="_blank"
               rel="noopener noreferrer"
               class="openapi-link"

@@ -802,7 +802,7 @@ export default {
           accessKeyId: data.accessKeyId,
           accessKeySecret: data.accessKeySecret,
           stsToken: data.securityToken,
-          bucket: 'wu-cloud',
+          bucket: '',
           secure: true
         })
 

@@ -117,7 +117,7 @@ export default {
 
       this.qrcodeGenerated = false
 
-      this.qrcodeValue = `https://geekpartytech.com/wx/ebc/?tenantId=${this.tenantData.id}`
+      this.qrcodeValue = `https://example.com/wx/ebc/?tenantId=${this.tenantData.id}`
 
       this.$nextTick(() => {
         try {

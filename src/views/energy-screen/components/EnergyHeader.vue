@@ -28,7 +28,7 @@
 import EnergyIcon from './EnergyIcon.vue'
 import ManagerSwitcher from './ManagerSwitcher.vue'
 
-const HEADER_FRAME_URL = 'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/header-frame.png'
+const HEADER_FRAME_URL = 'https://oss.example.com/web-file/header-frame.png'
 
 export default {
   name: 'EnergyHeader',

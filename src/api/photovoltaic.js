@@ -14,7 +14,7 @@
 
 // ------------------------------------------------------------------
 // 1. 本地联调（Node 中转，默认端口 3000）
-export const PHOTOVOLTAIC_SERVICE_URL = 'https://grid.geekpartytech.com'
+export const PHOTOVOLTAIC_SERVICE_URL = 'https://pv-proxy.example.com'
 // 2. 上线部署（改为实际域名）
 // export const PHOTOVOLTAIC_SERVICE_URL = 'https://pv-proxy.example.com'
 // ------------------------------------------------------------------
@@ -108,29 +108,29 @@ export function fetchStationYearRuntime (year, params = {}, signal) {
   })
 }
 
-/** 电站快照 mock（2026-06-26 南都广场 stationDetail 样例） */
+/** 电站快照 mock（样例数据，开源版本已脱敏） */
 export const MOCK_STATION_DETAIL = {
-  id: '1299184320439459357',
-  dataTimestamp: '1782448968898',
-  mobile: '18013676716',
-  fullHour: 3.62,
-  monthCarbonDioxide: 7.54,
-  installerId: '1300319277300466199',
-  installer: '苏州旭晖能源科技有限公司',
+  id: '',
+  dataTimestamp: '',
+  mobile: '',
+  fullHour: 0,
+  monthCarbonDioxide: 0,
+  installerId: '',
+  installer: '',
   installerMobile: '',
   installerEmail: '',
-  stationName: '南都广场',
-  sno: '666B0B',
+  stationName: '示例电站',
+  sno: '',
   country: '1',
   countryStr: '中国',
-  region: '848',
+  region: '',
   regionStr: '江苏省',
-  city: '853',
+  city: '',
   cityStr: '苏州市',
-  county: '7626',
-  countyStr: '吴中区',
-  addr: '城南街道南都广场',
-  gdAreaCode: 320506,
+  county: '',
+  countyStr: '',
+  addr: '',
+  gdAreaCode: 0,
   state: 1,
   dip: 30.000,
   azimuth: 0.000,
@@ -161,8 +161,8 @@ export const MOCK_STATION_DETAIL = {
   epmType: 0,
   gridSwitch: 0,
   gridSwitch1: 0,
-  longitude: '120.63795419783563',
-  latitude: '31.231813659889166',
+  longitude: '120.000000',
+  latitude: '31.000000',
   shareProcess: 1,
   dcInputType: 15,
   stationTypeNew: 0,
@@ -307,7 +307,7 @@ export const MOCK_STATION_DETAIL = {
   homeLoadTodayEnergyStr: 'MWh',
   homeLoadMonthEnergy: 2.496,
   homeLoadYearEnergy: 2.496,
-  picUrl: 'https://ginlong-product.oss-cn-shanghai.aliyuncs.com/picDefault/STATION_default_industry.png?Expires=1782473363&OSSAccessKeyId=LTAI5t8kj43aCsSuhSKiKd8P&Signature=90X%2BNdFxzlWaszoeCHzgduVyS7E%3D',
+  picUrl: 'https://oss.example.com/picDefault/STATION_default_industry.png',
   weather: '日出:04:56 日落:19:06 19 - 29 苏州市 阴',
   sr: '04:56',
   ss: '19:06',
@@ -349,7 +349,7 @@ export const MOCK_STATION_DETAIL = {
       type: 0,
       source: 0,
       sellBuy: 0,
-      refId: '1299184320439459357',
+      refId: '',
       price: 0.7000
     },
     {
@@ -357,7 +357,7 @@ export const MOCK_STATION_DETAIL = {
       type: 0,
       source: 0,
       sellBuy: 1,
-      refId: '1299184320439459357'
+      refId: ''
     }
   ],
   generatorPower: 0,

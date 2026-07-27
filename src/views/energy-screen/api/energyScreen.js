@@ -4,8 +4,8 @@ import { mapStationToEnergyFlow, resolveInverterOnlineStatus } from '@/utils/ene
 
 const CONTENT_BASE = '/api/ebc-content'
 const SETTLE_BASE = '/api/ebc-settle/capitalManage'
-const PHOTOVOLTAIC_SERVICE_URL = 'https://grid.geekpartytech.com'
-const NANDU_MANAGER_ID = '1000107'
+const PHOTOVOLTAIC_SERVICE_URL = 'https://pv-proxy.example.com'
+const NANDU_MANAGER_ID = ''
 
 const ENERGY_SCREEN_HEADERS = {
   userDeviceType: 'PC',

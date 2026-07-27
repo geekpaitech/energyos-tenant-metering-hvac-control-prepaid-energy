@@ -1211,7 +1211,7 @@ export default {
           tempDiv.style.left = '-9999px'
           document.body.appendChild(tempDiv)
 
-          const qrcodeValue = `https://geekpartytech.com/wx/ebc/?tenantId=${tenant.id}`
+          const qrcodeValue = `https://example.com/wx/ebc/?tenantId=${tenant.id}`
           // qrcodejs2 通过构造函数副作用挂载 canvas
           // eslint-disable-next-line no-new
           new QRCode(tempDiv, {

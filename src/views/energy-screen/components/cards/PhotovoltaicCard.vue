@@ -17,8 +17,8 @@
       <img
         v-if="data.available"
         class="solar-preview"
-        src="https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/nandu.png"
-        alt="南都广场光伏电站"
+        src="https://oss.example.com/web-file/station.png"
+        alt="光伏电站"
       >
       <div v-else class="solar-preview solar-preview--empty" aria-label="暂无光伏电站图片">
         <energy-icon name="solar" />

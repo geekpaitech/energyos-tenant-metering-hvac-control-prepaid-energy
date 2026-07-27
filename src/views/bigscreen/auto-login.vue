@@ -30,10 +30,10 @@ import store from '@/store'
 import { getAvailablePlatforms, getDefaultPlatform } from '@/utils/routeConfig'
 import GroupPropertyScreen from '@/views/group-screen/index.vue'
 
-// 大屏默认登录凭证
+// 大屏默认登录凭证（开源版本请替换为实际凭据或通过环境变量注入）
 const SCREEN_CREDENTIALS = {
-  phone: '15100001111',
-  password: 'jk12345678'
+  phone: '',
+  password: ''
 }
 
 export default {

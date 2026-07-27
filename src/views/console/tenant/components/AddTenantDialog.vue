@@ -264,7 +264,7 @@ export default {
           overdraw: ''
         }
       },
-      defaultLogo: 'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/wu-logo.png'
+      defaultLogo: 'https://oss.example.com/web-file/logo.png'
     }
   },
   computed: {

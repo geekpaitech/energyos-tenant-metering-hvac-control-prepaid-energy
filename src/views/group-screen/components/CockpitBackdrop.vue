@@ -20,7 +20,7 @@ export default {
   computed: {
     bgImageStyle () {
       return {
-        backgroundImage: 'url(https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/cock.png)'
+        backgroundImage: 'url(https://oss.example.com/web-file/backdrop.png)'
       }
     }
   }

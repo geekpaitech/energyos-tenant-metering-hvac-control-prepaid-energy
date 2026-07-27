@@ -6,7 +6,7 @@
 // export const AI_SERVICE_URL = 'http://localhost:8000'
 
 // 2. 线上生产环境 (Production)
-export const AI_SERVICE_URL = 'https://ai.geekpartytech.com'
+// export const AI_SERVICE_URL = 'https://ai.example.com'
 // ------------------------------------------------------------------
 
 /**

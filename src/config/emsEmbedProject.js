@@ -1,9 +1,6 @@
-/** EMS iframe 嵌入页：管理方 ID → EMS projectId（监测四页 / 电力分析同源页） */
+/** EMS iframe 嵌入页：管理方 ID → EMS projectId（开源版本请替换为实际配置） */
 export const EMS_MANAGER_PROJECT_MAP = {
-  /** 南都广场 */
-  1000107: '2067137215477219330',
-  /** 经开-机器人产业园 */
-  1000178: '2069308829132771329'
+  // 示例：'your-manager-id': 'your-project-id'
 }
 
 export function getEmsProjectIdByManagerId (managerId) {

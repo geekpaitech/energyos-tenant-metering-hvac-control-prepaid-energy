@@ -3,7 +3,7 @@ import { getFloorProfile } from './floors'
 
 /** 项目级默认参数 */
 export const REGION_DEFAULTS = {
-  projectId: '1473942731014184961',
+  projectId: '',
   subsystemId: 4,
   deviceType: 6
 }

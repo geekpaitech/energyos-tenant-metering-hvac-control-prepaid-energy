@@ -3,7 +3,7 @@
 
 export const SMART_DEVICE_ACCESS_CONFIG = {
   enabled: true,
-  managerIdWhitelist: ['1000165', '1000107']
+  managerIdWhitelist: []
 }
 
 export function canAccessSmartDeviceMenus (managerId) {
