@@ -45,7 +45,6 @@ export default {
       default: ''
     }
   },
-  },
   data () {
     return {
       fileList: [],

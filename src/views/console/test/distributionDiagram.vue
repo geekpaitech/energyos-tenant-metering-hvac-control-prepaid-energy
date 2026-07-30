@@ -246,7 +246,7 @@ export default {
       const name =
         (this.currentManager && (this.currentManager.managerName || this.currentManager.name)) ||
         ''
-      return String(name).includes('数字物宇')
+      return String(name).includes('智能视觉')
     }
     // svgScale () {
     //   const containerWidth = this.$refs.svgEnergyContainer?.offsetWidth || this.svgWidth

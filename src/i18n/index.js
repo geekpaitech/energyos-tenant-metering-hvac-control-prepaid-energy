@@ -174,7 +174,7 @@ export function translateRouteTitle (text) {
 
 /** 与 permission 里原 document.title 规则一致（中文保留原空格习惯） */
 export function getDocumentTitle (metaTitle) {
-  const suffixZh = '数字物宇-物联中台'
+  const suffixZh = '智能视觉-物联中台'
   const suffixEn = 'Digital Wuyu IoT'
   if (!metaTitle) {
     return i18n.locale === 'zh-CN' ? ` ${suffixZh}` : suffixEn
