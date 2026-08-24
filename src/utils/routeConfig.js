@@ -327,7 +327,7 @@ export const consoleRoutes = [
           menuNo: '63011',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['智能视觉']
+            names: ['数字物宇']
           }
         }
       },
@@ -342,7 +342,7 @@ export const consoleRoutes = [
           menuNo: '63012',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['智能视觉']
+            names: ['数字物宇']
           }
         }
       },
@@ -357,11 +357,11 @@ export const consoleRoutes = [
           menuNo: '63013',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['智能视觉']
+            names: ['数字物宇']
           }
         }
       },
-      // 给排水（iframe 嵌入 fmcs 子系统，仅智能视觉）
+      // 给排水（iframe 嵌入 fmcs 子系统，仅数字物宇）
       {
         path: '/project/waterSupplyAndDrainageSubsystem',
         name: 'ProjectWaterSupplyDrainageSubsystem',
@@ -372,11 +372,11 @@ export const consoleRoutes = [
           menuNo: '63015',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['智能视觉']
+            names: ['数字物宇']
           }
         }
       },
-      // 历史数据（iframe 嵌入 fmcs 子系统，仅智能视觉）
+      // 历史数据（iframe 嵌入 fmcs 子系统，仅数字物宇）
       {
         path: '/device/historicalData',
         name: 'DeviceHistoricalData',
@@ -387,11 +387,11 @@ export const consoleRoutes = [
           menuNo: '63016',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['智能视觉']
+            names: ['数字物宇']
           }
         }
       },
-      // 面积切分（iframe 嵌入 fmcs 子系统，仅智能视觉）
+      // 面积切分（iframe 嵌入 fmcs 子系统，仅数字物宇）
       {
         path: '/desk/areaData',
         name: 'DeskAreaData',
@@ -402,7 +402,7 @@ export const consoleRoutes = [
           menuNo: '63017',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['智能视觉']
+            names: ['数字物宇']
           }
         }
       }
@@ -506,7 +506,7 @@ export const consoleRoutes = [
           title: '配电图',
           icon: 'icon-daikaipiao',
           menuNo: '60002',
-          managerVisibility: { names: ['智能视觉'] }
+          managerVisibility: { names: ['数字物宇'] }
         }
       },
       {
@@ -1156,7 +1156,7 @@ export const consoleRoutes = [
     name: 'ApiDocs',
     component: () => import('@/views/ApiDocs.vue'),
     meta: {
-      title: '智能视觉-物联中台API文档',
+      title: '数字物宇-物联中台API文档',
       hidden: true
     }
   }

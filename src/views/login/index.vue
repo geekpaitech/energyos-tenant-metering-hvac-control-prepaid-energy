@@ -12,7 +12,7 @@
         <img class="left-hero__logo" src="@/assets/images/wyy-logo.png" alt="极派科技Logo" />
         <div class="left-hero__brand">极派科技</div>
       </div>
-      <div class="left-hero__title">智能视觉·物联中台</div>
+      <div class="left-hero__title">数字物宇·物联中台</div>
       <div class="left-hero__slogan">让管理更简单 · 让能耗更透明</div>
     </div>
 
@@ -23,7 +23,7 @@
           <div class="brand-mini">
             <img class="brand-mini__logo" src="@/assets/images/wyy-logo.png" alt="极派科技Logo" />
             <div class="brand-mini__text">
-              <div class="brand-mini__name">智能视觉·物联中台</div>
+              <div class="brand-mini__name">数字物宇·物联中台</div>
               <div class="brand-mini__en">Digital IoT Platform</div>
             </div>
           </div>

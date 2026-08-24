@@ -33,7 +33,7 @@ export const ZH_EN_MAP = {
   手动充值: 'Manual Recharge',
   手动账单: 'Manual Bills',
   抄表记录: 'Meter Reading Records',
-  '智能视觉-物联中台API文档': 'API Documentation',
+  '数字物宇-物联中台API文档': 'API Documentation',
   智能对话: 'Smart Dialogue',
   服务费方案: 'Service Fee Plans',
   权限: 'Permissions',

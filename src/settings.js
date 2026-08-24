@@ -1,5 +1,5 @@
 module.exports = {
-  title: ' 智能视觉-物联中台',
+  title: ' 数字物宇-物联中台',
 
   /**
    * @type {boolean} true | false
