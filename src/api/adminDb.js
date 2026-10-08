@@ -243,6 +243,6 @@ export function settleToolsCalSettleMeterRepair (data) {
 export function settleToolsUpdateSettleMeterRepair (data) {
   return post('/api/ebc-settle/settleTools/updateSettleMeterRepair', data)
 }
-export function settleToolsDoSettleManagerRepair (data) {
-  return post('/api/ebc-settle/settleTools/doSettleManagerRepair', data)
+export function settleToolsDoSettleManagerRepair (params) {
+  return postParams('/api/ebc-settle/settleTools/doSettleManagerRepair', params)
 }

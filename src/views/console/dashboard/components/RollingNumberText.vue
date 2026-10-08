@@ -17,6 +17,8 @@
 
 <script>
 const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+const SKELETON_TEXT = '--'
+const STRIP_SIZE = DIGITS.length * 2 // 两圈 = 20
 
 export default {
   name: 'RollingNumberText',
@@ -58,8 +60,20 @@ export default {
     isDigit (c) {
       return c >= '0' && c <= '9'
     },
+    /** 骨架值（"--"/空/null）出现时，强制清空积累的滚动位置 */
+    isSkeleton (text) {
+      return text == null || text === '' || text === SKELETON_TEXT
+    },
     applyNextText (nextRaw) {
       const next = (nextRaw == null ? '' : String(nextRaw))
+
+      // 骨架切换：彻底重置，防止跨期累积
+      if (this.isSkeleton(next)) {
+        this.prevText = next
+        this.positions = []
+        return
+      }
+
       const prev = (this.prevText == null ? '' : String(this.prevText))
       const len = Math.max(next.length, prev.length)
       const padLeft = (s) => String(s).padStart(len, ' ')
@@ -78,24 +92,31 @@ export default {
       nextChars.forEach((c, i) => {
         if (!this.isDigit(c)) return
         const target = Number(c)
-        const currentPos = Number(this.positions[i] || 0)
-        const currentDigit = ((currentPos % 10) + 10) % 10
+
+        // 先将累积位置回绕到 [0,9] 第一圈，防止无限滚动超出 digit-strip
+        const rawPos = Number(this.positions[i] || 0)
+        const currentPos = ((rawPos % 10) + 10) % 10
+        const currentDigit = currentPos
 
         if (currentDigit === target) {
-          // 数字没变，不动
+          // 数字没变：更新存储位置避免后续累积
+          this.$set(this.positions, i, currentPos)
           return
         }
 
         // 统一“向下滚动”到目标位（0..9 的正向步进）
         const step = (target - currentDigit + 10) % 10
         const nextPos = currentPos + (step === 0 ? 10 : step)
+        // nextPos 始终在 [0, 19] 范围内（两圈 strip）
         this.$set(this.positions, i, nextPos)
       })
 
       this.prevText = next
     },
     digitStyle (i) {
-      const pos = Number(this.positions[i] || 0)
+      const rawPos = Number(this.positions[i] || 0)
+      // 双重保险：即使 positions 被意外写坏也钳位在可视范围内
+      const pos = Math.max(0, Math.min(rawPos, STRIP_SIZE - 1))
       const y = -pos * 1.15 // 1.15em line-height
       return {
         transform: `translateY(${y}em)`,

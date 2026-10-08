@@ -178,7 +178,7 @@ import {
 } from '@/api/adminapi'
 import { isPermissionTestEnv } from '@/utils/request'
 
-const PERMISSION_FORMAL_URL = 'https://iot.example.com/'
+import { PERMISSION_FORMAL_URL } from '@/config/services'
 
 export default {
   name: 'AdminPermissionRole',

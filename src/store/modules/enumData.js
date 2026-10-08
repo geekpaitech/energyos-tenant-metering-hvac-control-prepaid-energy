@@ -75,6 +75,12 @@ const state = {
     { label: '周五', value: '5' },
     { label: '周六', value: '6' },
     { label: '周日', value: '7' }
+  ],
+
+  // 电表费控类型（付费模式）
+  MeterPayType: [
+    { value: 0, label: '预付费（欠费跳闸）' },
+    { value: 1, label: '强控（欠费不跳闸）' }
   ]
 }
 

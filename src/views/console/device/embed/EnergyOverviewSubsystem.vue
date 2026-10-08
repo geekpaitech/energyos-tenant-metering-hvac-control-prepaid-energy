@@ -37,9 +37,10 @@
 
 <script>
 import axios from 'axios'
+import { EMS_ORIGIN, EMS_API_ROOT } from '@/config/services'
 
-const LOGIN_URL = 'https://cp-ems.szcloudpulse.com:86/prod-api/mockLogin'
-const OVERVIEW_URL = 'https://cp-ems.szcloudpulse.com:86/energy-analysis/energy-overview'
+const LOGIN_URL = `${EMS_API_ROOT}/mockLogin`
+const OVERVIEW_URL = `${EMS_ORIGIN}/energy-analysis/energy-overview`
 const LOGIN_PAYLOAD = {
   username: 'jipai',
   password: '123456'

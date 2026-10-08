@@ -40,6 +40,9 @@
           <header class="sec-head">
             <i class="sec-head__bar" aria-hidden="true" />
             <span class="sec-head__title">月度综合评分排名</span>
+            <button type="button" class="sec-head__link" @click="openMonthlyScoreDetail">
+              查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+            </button>
           </header>
           <monthly-rank-table
             ref="rankTable"
@@ -51,11 +54,23 @@
         <section class="sec sec--rect">
           <header class="sec-head">
             <i class="sec-head__bar" aria-hidden="true" />
-            <span class="sec-head__title">整改跟踪</span>
+            <span class="sec-head__title">安全/品质/专项整改跟踪</span>
+            <button type="button" class="sec-head__link" @click="openRectificationDetail({ type: 'pending' })">
+              查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+            </button>
           </header>
           <div class="rect-flow" :class="{ 'rect-flow--all-zero': rectAllZero }">
             <template v-for="(s, i) in rectificationTracking">
-              <div :key="s.type" class="rect-flow__node">
+              <div
+                :key="s.type"
+                class="rect-flow__node"
+                :class="{ 'rect-flow__node--clickable': ['pending', 'total', 'done'].includes(s.type) }"
+                role="button"
+                tabindex="0"
+                @click="openRectificationDetail(s)"
+                @keydown.enter="openRectificationDetail(s)"
+                @keydown.space.prevent="openRectificationDetail(s)"
+              >
                 <span
                   class="rect-flow__circle"
                   :class="['t-' + s.type, { 'has-val': Number(s.count) > 0 }]"
@@ -66,6 +81,7 @@
                 v-if="i < rectificationTracking.length - 1"
                 :key="'lk-' + s.type"
                 class="rect-flow__link"
+                :class="{ 'rect-flow__link--source-split': s.type === 'done' }"
                 aria-hidden="true"
               />
             </template>
@@ -80,13 +96,16 @@
 import PanelBox from '../PanelBox.vue'
 import MonthlyRankTable from '../MonthlyRankTable.vue'
 import {
-  getMaintenanceManagement,
-  getProjectScoreRankings
-} from '@/api/groupScreen'
-import { buildPropertyScreenDto } from '../../utils/screenQuery'
+  queryMaintenanceSummary,
+  queryMonthlyScoreRankings
+} from '@/api/groupPropertyMingYuan'
+import { buildMingYuanQuery } from '../../utils/mingYuanQuery'
 import { buildBenchmarkRows } from '../../utils/screenBenchmark'
 import { mapProjectScoreRankings } from '../../utils/monthlyScore'
 import { mapRectificationTracking } from '../../utils/workOrderManagement'
+
+/** 月度综合评分排名明细：跳回明源 BI 可视化（地址由明源提供，固定写死） */
+const MINGYUAN_MONTHLY_SCORE_DETAIL_URL = 'https://yewu.wzjkzg.com/dp/bi-visual/app_preview/pc_portal/3a1070a3-daa7-d052-299e-1260c76c9f3c/3a22d7bc-eb3b-ce17-993c-7b9387d221ea?source_from=mip&source_func=3a22d7bc-eb3b-ce17-993c-7b9387d221ea&code=wzjkzg'
 
 export default {
   name: 'RightColumn',
@@ -95,6 +114,8 @@ export default {
     activeScope: { type: String, default: '全部' },
     activeTime: { type: String, default: '本月' },
     energyManagement: { type: Object, default: null },
+    deviceManagement: { type: Object, default: null },
+    collectionManagement: { type: Object, default: null },
     parkingManagement: { type: Object, default: null },
     workOrderManagement: { type: Object, default: null }
   },
@@ -114,11 +135,13 @@ export default {
     benchmarkRows () {
       return buildBenchmarkRows({
         energy: this.energyManagement,
+        device: this.deviceManagement,
+        collection: this.collectionManagement,
         parking: this.parkingManagement,
         maintenance: this.maintenanceData
       })
     },
-    /** 整改四项全为 0 时，流转管道整体弱化 */
+    /** 整改三项全为 0 时，流转管道整体弱化 */
     rectAllZero () {
       const list = this.rectificationTracking
       if (!list.length) return false
@@ -143,26 +166,22 @@ export default {
     async fetchBenchmarkSources () {
       const requestId = ++this.benchmarkRequestId
       const scope = this.activeScope
-      const periodDto = buildPropertyScreenDto({ scope, period: this.activeTime })
+      const periodDto = buildMingYuanQuery({ scope, period: this.activeTime })
 
       await this.fetchMaintenanceForBenchmark(periodDto, requestId)
     },
     async fetchMaintenanceForBenchmark (periodDto, requestId) {
       try {
-        const res = await getMaintenanceManagement(periodDto)
+        const data = await queryMaintenanceSummary(periodDto)
         if (requestId !== this.benchmarkRequestId) return
-        if (res && res.code === 200 && res.data) {
-          this.maintenanceData = {
-            completionRate: res.data.completionRate,
-            plannedTasks: res.data.plannedTasks,
-            completedTasks: res.data.completedTasks
-          }
-        } else {
-          this.maintenanceData = null
+        this.maintenanceData = {
+          completionRate: data.rate,
+          plannedTasks: data.total,
+          completedTasks: data.completed
         }
       } catch (e) {
         if (requestId !== this.benchmarkRequestId) return
-        console.error('[group-screen] getMaintenanceManagement failed', e)
+        console.error('[group-screen] queryMaintenanceSummary failed', e)
         this.maintenanceData = null
       }
     },
@@ -170,17 +189,13 @@ export default {
       const requestId = ++this.rankRequestId
       this.rankLoading = true
       try {
-        /* 月度综合评分排名：固定按本月查询，不受顶栏时间筛选切换影响 */
-        const res = await getProjectScoreRankings(buildPropertyScreenDto({ scope: this.activeScope, period: '本月' }))
+        // 月度综合评分排名本身就是月度口径：时间固定「本月」，业态仍跟随顶栏切换
+        const rows = await queryMonthlyScoreRankings(buildMingYuanQuery({ scope: this.activeScope, period: '本月' }))
         if (requestId !== this.rankRequestId) return
-        if (res && res.code === 200 && Array.isArray(res.data)) {
-          this.monthlyRankingList = mapProjectScoreRankings(res.data)
-        } else {
-          this.monthlyRankingList = mapProjectScoreRankings([])
-        }
+        this.monthlyRankingList = mapProjectScoreRankings(rows)
       } catch (e) {
         if (requestId !== this.rankRequestId) return
-        console.error('[group-screen] getProjectScoreRankings failed', e)
+        console.error('[group-screen] queryMonthlyScoreRankings failed', e)
         this.monthlyRankingList = mapProjectScoreRankings([])
       } finally {
         if (requestId === this.rankRequestId) this.rankLoading = false
@@ -199,6 +214,19 @@ export default {
     gapValueText (r) {
       if (r.gap == null) return '--'
       return Math.abs(r.gap).toFixed(1)
+    },
+    openRectificationDetail (item) {
+      if (!item) return
+      if (['pending', 'total', 'done'].includes(item.type)) this.$emit('open-property-detail', 'rectification')
+      if (item.type === 'overdue') this.$emit('open-property-detail', 'hazard')
+    },
+    openMonthlyScoreDetail () {
+      const win = window.open(MINGYUAN_MONTHLY_SCORE_DETAIL_URL, 'group-monthly-score-detail')
+      if (win) {
+        win.focus()
+      } else if (this.$message) {
+        this.$message.warning('浏览器已拦截跳转窗口，请允许弹出窗口后重试')
+      }
     },
     resizeCharts () {
       this.$nextTick(() => {
@@ -314,6 +342,27 @@ export default {
     color: rgba(168, 192, 220, 0.5);
     white-space: nowrap;
   }
+
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: rgba(145, 207, 242, 0.9);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: #e8f7ff;
+      outline: none;
+    }
+  }
+
 }
 
 /* ── KPI 达标对标：5 条平铺，淡底面板成一整体 ── */
@@ -481,6 +530,18 @@ export default {
   min-width: 0;
 }
 
+.rect-flow__node--clickable {
+  cursor: pointer;
+
+  &:hover .rect-flow__circle,
+  &:focus-visible .rect-flow__circle {
+    border-color: rgba(212, 158, 106, 0.9);
+    background: rgba(212, 158, 106, 0.1);
+  }
+
+  &:focus-visible { outline: none; }
+}
+
 .rect-flow__circle {
   width: 38px;
   height: 38px;
@@ -504,7 +565,7 @@ export default {
     box-shadow: 0 0 10px rgba(98, 168, 208, 0.28);
   }
 
-  &.has-val.t-progress {
+  &.has-val.t-total {
     border-color: rgba(212, 158, 106, 0.75);
     color: #d49e6a;
     box-shadow: 0 0 10px rgba(212, 158, 106, 0.28);
@@ -535,5 +596,15 @@ export default {
   height: 1px;
   margin-top: 19px;
   background: linear-gradient(90deg, rgba(98, 168, 208, 0.32), rgba(98, 168, 208, 0.14));
+
+  &--source-split {
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(168, 192, 220, 0.34),
+      rgba(168, 192, 220, 0.34) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+  }
 }
 </style>

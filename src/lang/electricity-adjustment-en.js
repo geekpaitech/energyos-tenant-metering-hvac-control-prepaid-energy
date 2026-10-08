@@ -47,6 +47,20 @@ export default {
     msgRetryError: 'Retry request failed',
     msgNoExport: 'Nothing to export',
     exportFileName: 'price-adjustments.xlsx',
-    msgExportDev: 'Export is not available yet.'
+    msgExportDev: 'Export is not available yet.',
+    // Export (current page / selected / all) unified copy
+    exportCurrentPage: 'Export current page',
+    exportSelected: 'Export selected',
+    exportAll: 'Export all',
+    msgNoDataExport: 'Nothing to export',
+    warnNoSelectedExport: 'Please select rows to export first',
+    msgExportOk: 'Exported {count} row(s)',
+    msgExportOkSelected: 'Exported {count} row(s)',
+    msgExportFail: 'Export failed',
+    successExported: 'Exported {count} row(s)',
+    successExportedLimit: '{total} matched, up to {count} per export, first {count} exported',
+    exporting: 'Exporting all data...',
+    exportSheetName: 'Price Adjustments',
+    filePrefix: 'PriceAdjustments'
   }
 }

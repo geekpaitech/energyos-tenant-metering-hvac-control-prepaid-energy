@@ -306,6 +306,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import { FMCS_ROOT } from '@/config/services'
 
 export default {
   name: 'SmartLightingSystem',
@@ -640,7 +641,7 @@ export default {
         this.$message.warning('Missing token or project ID')
         return
       }
-      const url = `https://jp.brcon.com.cn/project/airConditioningSubsystem?token=${this.token}&projectId=${this.currentManagerId}`
+      const url = `${FMCS_ROOT}/project/airConditioningSubsystem?token=${this.token}&projectId=${this.currentManagerId}`
       window.open(url, '_blank')
       // console.log(url)
     },

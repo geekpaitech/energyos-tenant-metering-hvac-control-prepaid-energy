@@ -42,7 +42,16 @@
             <div class="search-actions">
               <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('manualRechargePage.btnSearch') }}</el-button>
               <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('manualRechargePage.btnReset') }}</el-button>
-              <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('manualRechargePage.btnExport') }}</el-button>
+              <el-dropdown trigger="hover" @command="handleExportCommand">
+                <el-button type="success" size="small" icon="el-icon-download">
+                  {{ $t('manualRechargePage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+                </el-button>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="currentPage">{{ $t('manualRechargePage.exportCurrentPage') }}</el-dropdown-item>
+                  <el-dropdown-item command="selected">{{ $t('manualRechargePage.exportSelected') }}</el-dropdown-item>
+                  <el-dropdown-item command="all">{{ $t('manualRechargePage.exportAll') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
             </div>
           </div>
         </el-form>
@@ -69,6 +78,8 @@
             v-loading="loading"
             border
             :data="tableData"
+            @selection-change="handleSelectionChange"
+            row-key="rid"
             stripe
             style="width: 100%"
             class="custom-table light-border-table"
@@ -78,6 +89,7 @@
               fontWeight: '600',
             }"
           >
+            <el-table-column type="selection" width="55" align="center" reserve-selection />
             <el-table-column prop="rid" :label="$t('manualRechargePage.colRid')" width="200" align="center" show-overflow-tooltip />
             <el-table-column prop="occurTime" :label="$t('manualRechargePage.colOccurTime')" width="168" align="center" />
             <el-table-column :label="$t('manualRechargePage.colTenantName')" min-width="200" show-overflow-tooltip>
@@ -138,6 +150,8 @@ import { capitalManagePageTenantRecord, getSimpleTenantList } from '@/api/public
 import { mapGetters } from 'vuex'
 import * as XLSX from 'xlsx'
 
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'ManualRecharge',
   data () {
@@ -150,6 +164,8 @@ export default {
       tenantList: [],
       tableData: [],
       loading: false,
+      selectedData: [],
+      exportAllLoading: false,
       pageData: {
         current: 1,
         size: 15,
@@ -413,41 +429,104 @@ export default {
       this.handleSearch()
     },
 
-    handleExport () {
+    buildXlsx (exportData, isSelected, total) {
+      const headers = [
+        this.$t('manualRechargePage.colRid'),
+        this.$t('manualRechargePage.colOccurTime'),
+        this.$t('manualRechargePage.colTenantName'),
+        this.$t('manualRechargePage.colRechargeAccount'),
+        this.$t('manualRechargePage.colAmount'),
+        this.$t('manualRechargePage.colRemark'),
+        this.$t('manualRechargePage.colOperator')
+      ]
+      const rows = exportData.map((row) => [
+        row.rid || '',
+        row.occurTime || '',
+        this.$displayBizHybrid(row.tenantName) || '',
+        this.formatRechargeAccount(row),
+        row.amount != null ? Number(row.amount).toFixed(2) : '',
+        row.comment || '',
+        row.userName || ''
+      ])
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+      const headerRange = XLSX.utils.decode_range(ws['!ref'])
+      for (let c = headerRange.s.c; c <= headerRange.e.c; c++) {
+        const cell = XLSX.utils.encode_cell({ r: 0, c })
+        if (ws[cell]) {
+          ws[cell].s = { font: { bold: true, color: { rgb: '303133' } }, fill: { fgColor: { rgb: 'F5F7FA' } }, alignment: { horizontal: 'center', vertical: 'center' } }
+        }
+      }
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('manualRechargePage.exportSheetName'))
+      const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
+      XLSX.writeFile(wb, `${this.$t('manualRechargePage.filePrefix')}_${timeStr}.xlsx`)
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) successMsg = this.$t('manualRechargePage.msgExportOkSelected', { count: exportCount })
+      else if (total != null && total > exportCount) successMsg = this.$t('manualRechargePage.successExportedLimit', { count: exportCount, total })
+      else if (total != null) successMsg = this.$t('manualRechargePage.successExported', { count: exportCount })
+      else successMsg = this.$t('manualRechargePage.msgExportOk', { count: exportCount })
+      this.$message.success(successMsg)
+    },
+    exportCurrentPage () {
       if (!this.canView) return
       if (!this.tableData.length) {
         this.$message.warning(this.$t('manualRechargePage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
+    exportSelected () {
+      if (!this.canView) return
+      if (!this.selectedData.length) {
+        this.$message.warning(this.$t('manualRechargePage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+    async exportAll () {
+      if (!this.canView) return
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('manualRechargePage.exporting') })
       try {
-        const headers = [
-          this.$t('manualRechargePage.colRid'),
-          this.$t('manualRechargePage.colOccurTime'),
-          this.$t('manualRechargePage.colTenantName'),
-          this.$t('manualRechargePage.colRechargeAccount'),
-          this.$t('manualRechargePage.colAmount'),
-          this.$t('manualRechargePage.colRemark'),
-          this.$t('manualRechargePage.colOperator')
-        ]
-        const rows = this.tableData.map((row) => [
-          row.rid || '',
-          row.occurTime || '',
-          this.$displayBizHybrid(row.tenantName) || '',
-          this.formatRechargeAccount(row),
-          row.amount != null ? Number(row.amount).toFixed(2) : '',
-          row.comment || '',
-          row.userName || ''
-        ])
-        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('manualRechargePage.exportSheetName'))
-        const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
-        XLSX.writeFile(wb, `${this.$t('manualRechargePage.filePrefix')}_${timeStr}.xlsx`)
-        this.$message.success(this.$t('manualRechargePage.msgExportOk', { count: this.tableData.length }))
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('manualRechargePage.msgNoDataExport'))
+          return
+        }
+        this.buildXlsx(rows, false, total)
       } catch (e) {
         console.error(e)
         this.$apiError.notify(e, this.$t('manualRechargePage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
       }
+    },
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+    handleSelectionChange (selection) {
+      this.selectedData = selection
+    },
+    async fetchAllForExport () {
+      const tenantId = this.normalizeSelect(this.queryData.tenantId)
+      const params = {
+        managerId: this.currentManagerId,
+        tenantId: tenantId === undefined ? null : tenantId,
+        startDate: this.queryData.timeRange && this.queryData.timeRange[0] ? `${this.queryData.timeRange[0]} 00:00:00` : '',
+        endDate: this.queryData.timeRange && this.queryData.timeRange[1] ? `${this.queryData.timeRange[1]} 23:59:59` : '',
+        channels: ['PRIVATE_TO_PRIVATE'],
+        page: { current: 1, size: EXPORT_ALL_LIMIT, orders: [{ asc: false, column: 'occurTime' }] }
+      }
+      const response = await capitalManagePageTenantRecord(params)
+      if (response.code !== 200 || !response.data) {
+        throw new Error(response.msg || this.$t('manualRechargePage.msgFetchFail'))
+      }
+      return { rows: response.data.dataList || [], total: response.data.total || 0 }
     },
 
     handleSizeChange (val) {

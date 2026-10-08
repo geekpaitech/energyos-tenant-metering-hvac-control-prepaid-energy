@@ -12,6 +12,7 @@
       </div>
       <div class="header-right">
         <div class="period-switch" @click.stop>
+          <button :class="{ active: datePeriod === 'yesterday' }" @click="setPeriod('yesterday')">{{ $t('dashboard.trend.yesterdayTab') }}</button>
           <button :class="{ active: datePeriod === 'day' }" @click="setPeriod('day')">{{ $t('dashboard.trend.last7dTab') }}</button>
           <button :class="{ active: datePeriod === 'month' }" @click="setPeriod('month')">{{ $t('dashboard.trend.lastHalfYearTab') }}</button>
         </div>
@@ -112,7 +113,7 @@
             </div>
           </div>
 
-          <div class="fee-card tenant-split-card" style="cursor: pointer;" @click="handleGoToEnergyReport">
+          <div class="fee-card tenant-split-card">
             <div class="fee-title">{{ $t('dashboard.trend.tenantSplit') }}</div>
             <div class="fee-body">
               <div class="fee-donut">
@@ -120,12 +121,12 @@
                 <div v-show="!hasTenantSplitData" class="fee-empty">{{ $t('dashboard.trend.noData') }}</div>
               </div>
               <div v-if="hasTenantSplitData" class="tenant-legend">
-                <div class="tenant-legend-item">
+                <div class="tenant-legend-item" style="cursor: pointer;" @click.stop="handleGoToEnergyReport(0)">
                   <span class="dot tenant-dot"></span>
                   <span class="tl-name">{{ $t('dashboard.trend.tenantEnergy') }}</span>
                   <span class="tl-val">{{ tenantKwhText }}</span>
                 </div>
-                <div class="tenant-legend-item">
+                <div class="tenant-legend-item" style="cursor: pointer;" @click.stop="handleGoToEnergyReport(1)">
                   <span class="dot public-dot"></span>
                   <span class="tl-name">{{ $t('dashboard.trend.publicEnergy') }}</span>
                   <span class="tl-val">{{ publicKwhText }}</span>
@@ -151,11 +152,21 @@
 import * as echarts from 'echarts'
 import moment from 'moment'
 import { mapGetters } from 'vuex'
-import { getElecStatistics, getElecWaterOverview, getTenantFeeComposition, isDemoManager, queryCwTenantTodayUse, getDashboardEnergyManagement } from '@/api/newDashboard'
+import { getElecStatisticsNew, getElecWaterOverview, getTenantFeeComposition, isDemoManager, queryCwTenantTodayUse, queryTenantPublicEnergy } from '@/api/newDashboard'
 
 /** Number(null)===0，用 isFinite(Number(null)) 会误判「存在今日虚拟」；须先判空 */
 function hasValidVirtualElec (usage, fee) {
   return usage != null && fee != null && Number.isFinite(Number(usage)) && Number.isFinite(Number(fee))
+}
+
+const PERIOD_STORAGE_KEY = 'energyDashboard.trendPeriod'
+
+function getInitialPeriod () {
+  try {
+    const saved = window.localStorage.getItem(PERIOD_STORAGE_KEY)
+    if (saved === 'yesterday' || saved === 'day' || saved === 'month') return saved
+  } catch (e) { /* ignore */ }
+  return 'day'
 }
 
 /** 从环比文案解析小数环比（如 "+132%"→1.32，"-32%"→-0.32），失败返回 NaN */
@@ -200,7 +211,7 @@ export default {
         _virtualElecUsage: null,
         _virtualElecFee: null
       },
-      datePeriod: 'day',
+      datePeriod: getInitialPeriod(),
       /** 用电/水顶部概览（接口 ElecWaterOverviewDto） */
       elecWaterOverview: null
     }
@@ -296,9 +307,11 @@ export default {
       return 'muted'
     },
     trendTitleSub () {
+      if (this.datePeriod === 'yesterday') return this.$t('dashboard.trend.subtitleYesterday')
       return this.datePeriod === 'day' ? this.$t('dashboard.trend.subtitleDay') : this.$t('dashboard.trend.subtitleMonth')
     },
     periodShortLabel () {
+      if (this.datePeriod === 'yesterday') return this.$t('dashboard.trend.yesterday')
       return this.datePeriod === 'day' ? this.$t('dashboard.trend.last7d') : this.$t('dashboard.trend.lastHalfYear')
     },
     elecStatLabel () {
@@ -463,9 +476,15 @@ export default {
   },
   methods: {
     reportJumpQuery () {
-      // 与报表页约定一致：区间 [今日-7天, 今日]（动态）
+      // 随 tab 动态：昨日=昨天，本月=月初~今天，本年=年初~今天
+      if (this.datePeriod === 'yesterday') {
+        const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD')
+        return { startDate: yesterday, endDate: yesterday }
+      }
       const end = moment().format('YYYY-MM-DD')
-      const start = moment().subtract(7, 'days').format('YYYY-MM-DD')
+      const start = this.datePeriod === 'day'
+        ? moment().startOf('month').format('YYYY-MM-DD')
+        : moment().startOf('year').format('YYYY-MM-DD')
       return { startDate: start, endDate: end }
     },
     handleGoToElecReport () {
@@ -481,10 +500,16 @@ export default {
       })
     },
     handleGoToTenantBill () {
-      this.$router.push('/metering/bill/energy-bill-tenant')
+      this.$router.push({
+        path: '/metering/bill/consumption-bill',
+        query: this.reportJumpQuery()
+      })
     },
-    handleGoToEnergyReport () {
-      this.$router.push('/energy/electricity-report')
+    handleGoToEnergyReport (tenantType = 0) {
+      this.$router.push({
+        path: '/energy/electricity-report',
+        query: { ...this.reportJumpQuery(), tenantType: String(tenantType) }
+      })
     },
     disposeCharts () {
       if (this.chart) {
@@ -516,7 +541,28 @@ export default {
       // 与 TopOverviewRow 第一个模块“租户今日用电”保持一致的虚拟数据字段
       const todayUseElec = 6452.76
       const todayUseAmount = 34200.82
-      if (this.datePeriod === 'day') {
+      if (this.datePeriod === 'yesterday') {
+        const d = addDays(-1)
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return {
+          labels: [`${m}/${day}`],
+          elecUsage: [186],
+          waterUsage: [94],
+          elecIncome: [590],
+          airIncome: [246],
+          waterIncome: [122],
+          airUsage: [112],
+          meterUsage: [74],
+          _elecCurrTotal: 186,
+          _elecPrevTotal: 205,
+          _waterCurrTotal: 94,
+          _waterPrevTotal: 88,
+          _virtualElecIndex: null,
+          _virtualElecUsage: null,
+          _virtualElecFee: null
+        }
+      } else if (this.datePeriod === 'day') {
         const labels = Array.from({ length: 7 }).map((_, i) => {
           const d = addDays(-(6 - i))
           const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -580,8 +626,22 @@ export default {
       }
     },
 
+    restorePeriod () {
+      try {
+        const saved = window.localStorage.getItem(PERIOD_STORAGE_KEY)
+        if (saved === 'yesterday' || saved === 'day' || saved === 'month') {
+          this.datePeriod = saved
+        }
+      } catch (e) { /* ignore */ }
+    },
+    persistPeriod (p) {
+      try {
+        window.localStorage.setItem(PERIOD_STORAGE_KEY, p)
+      } catch (e) { /* ignore */ }
+    },
     async setPeriod (p) {
       if (this.datePeriod === p) return
+      this.persistPeriod(p)
       this.feeChartVisible = false
       this.tenantChartVisible = false
       this.datePeriod = p
@@ -950,14 +1010,16 @@ export default {
           return
         }
 
-        const type = this.datePeriod === 'day' ? 2 : 3
-        const overviewType = this.datePeriod === 'day' ? 1 : 2
-        const limit = this.datePeriod === 'day' ? 7 : 6
+        const typeMap = { yesterday: 1, day: 2, month: 3 }
+        const overviewTypeMap = { yesterday: 3, day: 1, month: 2 }
+        const type = typeMap[this.datePeriod]
+        const overviewType = overviewTypeMap[this.datePeriod]
 
         const isDayPeriod = this.datePeriod === 'day'
+        const isYesterday = this.datePeriod === 'yesterday'
         const [e, w, todayRes, ovRes] = await Promise.all([
-          getElecStatistics({ type, useType: 1, managerId: this.currentManagerId }).catch(() => ({})),
-          getElecStatistics({ type, useType: 2, managerId: this.currentManagerId }).catch(() => ({})),
+          getElecStatisticsNew({ type, useType: 1, managerId: this.currentManagerId }).catch(() => ({})),
+          getElecStatisticsNew({ type, useType: 2, managerId: this.currentManagerId }).catch(() => ({})),
           isDayPeriod ? queryCwTenantTodayUse({ managerId: this.currentManagerId }).catch(() => null) : Promise.resolve(null),
           getElecWaterOverview({ managerId: this.currentManagerId, type: overviewType }).catch(() => null)
         ])
@@ -968,10 +1030,41 @@ export default {
         const elec = e && e.code === 200 ? sort(e.data) : []
         const water = w && w.code === 200 ? sort(w.data) : []
 
-        const sliceElec = elec.slice(-limit)
-        const sliceWater = water.slice(-limit)
-        const prevElec = elec.slice(-(limit * 2), -limit)
-        const prevWater = water.slice(-(limit * 2), -limit)
+        // 动态过滤：昨日=仅昨日，本月=当月1号~昨天，本年=当年1月~当前月
+        let sliceElec, sliceWater
+        if (isYesterday) {
+          const yesterday = moment().subtract(1, 'day')
+          sliceElec = elec.filter(d => moment(d.date).isSame(yesterday, 'day'))
+          sliceWater = water.filter(d => moment(d.date).isSame(yesterday, 'day'))
+        } else if (isDayPeriod) {
+          const monthStart = moment().startOf('month')
+          const yesterday = moment().subtract(1, 'day')
+          sliceElec = elec.filter(d => {
+            const m = moment(d.date); return m.isSameOrAfter(monthStart, 'day') && m.isSameOrBefore(yesterday, 'day')
+          })
+          sliceWater = water.filter(d => {
+            const m = moment(d.date); return m.isSameOrAfter(monthStart, 'day') && m.isSameOrBefore(yesterday, 'day')
+          })
+        } else {
+          const yearStart = moment().startOf('year')
+          const currentMonth = moment().startOf('month')
+          sliceElec = elec.filter(d => {
+            const m = moment(d.date); return m.isSameOrAfter(yearStart, 'month') && m.isSameOrBefore(currentMonth, 'month')
+          })
+          sliceWater = water.filter(d => {
+            const m = moment(d.date); return m.isSameOrAfter(yearStart, 'month') && m.isSameOrBefore(currentMonth, 'month')
+          })
+        }
+        const prevElec = isYesterday
+          ? elec.filter(d => { const m = moment(d.date); return m.isSame(moment().subtract(2, 'day'), 'day') })
+          : isDayPeriod
+            ? elec.filter(d => { const m = moment(d.date); return m.isSame(moment().subtract(1, 'month'), 'month') })
+            : elec.filter(d => { const m = moment(d.date); return m.isSame(moment().subtract(1, 'year'), 'year') })
+        const prevWater = isYesterday
+          ? water.filter(d => { const m = moment(d.date); return m.isSame(moment().subtract(2, 'day'), 'day') })
+          : isDayPeriod
+            ? water.filter(d => { const m = moment(d.date); return m.isSame(moment().subtract(1, 'month'), 'month') })
+            : water.filter(d => { const m = moment(d.date); return m.isSame(moment().subtract(1, 'year'), 'year') })
         const base = sliceElec.length >= sliceWater.length ? sliceElec : sliceWater
         const baseLen = base.length
 
@@ -1179,14 +1272,24 @@ export default {
         return
       }
 
-      const end = moment().subtract(1, 'day')
+      const yesterday = moment().subtract(1, 'day')
       let beginTime
-      if (this.datePeriod === 'day') {
-        beginTime = end.clone().subtract(6, 'days').format('YYYY-MM-DD')
+      let endTime
+      if (this.datePeriod === 'yesterday') {
+        // 昨日：仅查询昨天一天
+        beginTime = yesterday.format('YYYY-MM-DD')
+        endTime = beginTime
+      } else if (this.datePeriod === 'day') {
+        // 本月：月初 ~ 昨天；每月 1 日没有本月“昨天”，退化为当天，避免日期倒置
+        const monthStart = moment().startOf('month')
+        beginTime = monthStart.format('YYYY-MM-DD')
+        endTime = (yesterday.isBefore(monthStart, 'day') ? monthStart : yesterday).format('YYYY-MM-DD')
       } else {
-        beginTime = end.clone().subtract(5, 'months').startOf('month').format('YYYY-MM-DD')
+        // 本年：年初 ~ 昨天；每年 1 月 1 日同样退化为当天
+        const yearStart = moment().startOf('year')
+        beginTime = yearStart.format('YYYY-MM-DD')
+        endTime = (yesterday.isBefore(yearStart, 'day') ? yearStart : yesterday).format('YYYY-MM-DD')
       }
-      const endTime = end.format('YYYY-MM-DD')
 
       const res = await getTenantFeeComposition({ managerId: this.currentManagerId, beginTime, endTime }).catch(() => null)
       this.feeDto = (res && res.code === 200) ? (res.data || null) : null
@@ -1210,6 +1313,16 @@ export default {
       }
       this.ensureTenantChartTries = 0
       this.tenantSplitChart = echarts.init(el)
+      // 环形图点击事件：根据点击扇区区分租户(0)/公区(1)
+      this.tenantSplitChart.on('click', (params) => {
+        const name = params.data && params.data.name
+        const tk = (k) => this.$t('dashboard.trend.' + k)
+        if (name === tk('tenantEnergy')) {
+          this.handleGoToEnergyReport(0)
+        } else if (name === tk('publicEnergy')) {
+          this.handleGoToEnergyReport(1)
+        }
+      })
     },
 
     buildTenantSplitOptionLight (share) {
@@ -1433,17 +1546,12 @@ export default {
         return
       }
 
-      const end = moment().subtract(1, 'day')
-      let beginTime
-      if (this.datePeriod === 'day') {
-        beginTime = end.clone().subtract(6, 'days').format('YYYY-MM-DD')
-      } else {
-        beginTime = end.clone().subtract(5, 'months').startOf('month').format('YYYY-MM-DD')
-      }
-      const endTime = end.format('YYYY-MM-DD')
+      // timeRange: 1-本月，2-本年，3-昨日
+      const timeRangeMap = { yesterday: 3, day: 1, month: 2 }
+      const timeRange = timeRangeMap[this.datePeriod]
       try {
-        const res = await getDashboardEnergyManagement({ managerId: this.currentManagerId, startTime: beginTime + ' 00:00:00', endTime: endTime + ' 23:59:59' }).catch(() => null)
-        this.tenantEnergyData = (res && res.code === 200) ? (res.data || null) : null
+        const res = await queryTenantPublicEnergy({ managerId: this.currentManagerId, timeRange }).catch(() => null)
+        this.tenantEnergyData = (res && res.code === 200) ? { shareEnergy: res.data } : null
         await this.$nextTick()
         this.renderTenantChart()
       } catch (e) {
@@ -1460,7 +1568,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&display=swap');
+@import '~@/assets/fonts/oxanium/oxanium.css';
 
 .trend-chart {
   height: 100%;

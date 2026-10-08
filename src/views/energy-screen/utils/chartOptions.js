@@ -40,7 +40,7 @@ function comma (value, digits = 2) {
   })
 }
 
-export function createTrendOption (data) {
+export function createTrendOption (data, period = 'day') {
   const type = chartTypeTokens()
   const scale = values => {
     const chartValues = (values || [])
@@ -65,7 +65,16 @@ export function createTrendOption (data) {
         .join('<br/>')
     }
   }
-  return {
+
+  // 动态柱宽：月数据多时收窄
+  const dataCount = Math.max((data.usage || []).length, 1)
+  let barWidth = 22
+  if (period === 'month') barWidth = Math.max(8, Math.min(14, Math.floor(360 / dataCount)))
+  else if (period === 'year') barWidth = Math.max(12, Math.min(22, Math.floor(300 / dataCount)))
+
+  const isScrollable = period === 'month' && dataCount > 10
+
+  const option = {
     animationDuration: 900,
     color: ['#0e83ff', '#1ed8c3'],
     tooltip,
@@ -78,13 +87,13 @@ export function createTrendOption (data) {
       textStyle: { color: TEXT, fontSize: type.legend },
       data: ['用电量（度）', '用电费用（元）']
     },
-    grid: { left: 40, right: 26, top: 34, bottom: 28 },
+    grid: { left: 40, right: 26, top: 34, bottom: isScrollable ? 42 : 28 },
     xAxis: {
       type: 'category',
       data: data.dates,
       axisLine: { lineStyle: { color: 'rgba(69,131,190,.42)' } },
       axisTick: { show: false },
-      axisLabel: { color: MUTED, fontSize: type.axis }
+      axisLabel: { color: MUTED, fontSize: type.axis, rotate: dataCount > 15 ? 30 : 0 }
     },
     yAxis: [
       {
@@ -112,7 +121,7 @@ export function createTrendOption (data) {
       {
         name: '用电量（度）',
         type: 'bar',
-        barWidth: 22,
+        barWidth,
         data: data.usage,
         itemStyle: {
           borderRadius: [4, 4, 0, 0],
@@ -145,6 +154,28 @@ export function createTrendOption (data) {
       }
     ]
   }
+
+  // 月视图 超过 10 条数据：启用底部滑块 + 鼠标拖拽
+  if (isScrollable) {
+    const endPercent = Math.min(100, Math.round((10 / dataCount) * 100))
+    option.dataZoom = [
+      {
+        type: 'slider',
+        bottom: 6,
+        height: 16,
+        start: 100 - endPercent,
+        end: 100,
+        borderColor: 'rgba(69,131,190,.35)',
+        backgroundColor: 'rgba(6,26,52,.55)',
+        fillerColor: 'rgba(20,120,220,.28)',
+        handleStyle: { color: '#1682e2', borderColor: '#0c5ea3' },
+        textStyle: { color: '#83a6c8', fontSize: 10 }
+      },
+      { type: 'inside' }
+    ]
+  }
+
+  return option
 }
 
 export function createStructureOption (data) {

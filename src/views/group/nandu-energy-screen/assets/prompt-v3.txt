@@ -1,0 +1,13 @@
+Use case: precise-object-edit.
+Asset type: final high-resolution production energy-dashboard background.
+Input image 1 is the entire scene to enhance; input image 2 is a diagnostic crop showing the currently blurry physical rooftop sign, not a composition target.
+
+OUTPUT RESOLUTION REQUIREMENT: render the final complete scene natively at 3840 x 2160 pixels, or at least 2560 x 1440 if 4K is unavailable. Request true freshly rendered high-resolution facade, photovoltaic-cell and text detail, NOT just interpolation or an upscaled copy of the source. Return the entire 16:9 scene, not a close-up.
+
+Make one conservative clarity-focused revision:
+- Restore crisp architecturally plausible vertical window mullions, rooftop solar cell grids, podium facade edges and clear surface detail on the MAIN NANDU BUILDING. Do not sharpen noise or add crunchy white halos.
+- Improve the actual vertical rooftop facade sign. Widen only its signboard approximately 15%, retaining its existing perspective-aligned position and restrained architectural scale. Exactly FOUR upright regular printed Chinese characters in a vertical column, from top to bottom: 南, 都, 广, 场. Use accurately drawn bold clean sans-serif Chinese typography, evenly spaced; ensure each stroke is distinct. White letters on a deep blue physical signboard, modest controlled illumination. Strong local contrast, NO bright blurred glow, no overexposed merged strokes, no script/handwriting, no substitute glyphs.
+- Keep lighting and scale restrained; the sign must remain a physical part of the building rather than a floating label.
+
+ABSOLUTE INVARIANTS: Preserve image 1's full camera framing, aspect, composition, tower/podium dimensions and location, tower roof around y22%, base around y56%, podium front around y74%. Preserve the successful large photovoltaic arrays on BOTH left and right podium wings, unobstructed central atrium and glass skylight, green maintenance paths, river to right, surrounding night city, dark navy palette and warm lit windows. No moving, enlarging or redesigning the tower, no changing crop or perspective, no rebuilding roofs, no reinterpreting the neighborhood. Keep cinematic navy nighttime exposure.
+NO dashboard UI, icons, overlays, callouts, chart, decorative frame, watermark, or other readable text. Deliver one complete clean high-resolution scene only.

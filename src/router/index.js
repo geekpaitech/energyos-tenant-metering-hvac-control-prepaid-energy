@@ -72,6 +72,16 @@ export const constantRoutes = [
     }
   },
   {
+    path: '/bigscreen/energy-screen',
+    name: 'BigscreenEnergyScreen',
+    component: () => import('@/views/bigscreen/auto-login-energy'),
+    hidden: true,
+    meta: {
+      title: '综合能源管理大屏',
+      noCache: true
+    }
+  },
+  {
     path: '/group/property-screen',
     name: 'GroupPropertyScreen',
     component: () => import('@/views/group-screen/index'),
@@ -90,6 +100,24 @@ export const constantRoutes = [
       title: '综合能源管理大屏',
       noCache: true
     }
+  },
+  {
+    path: '/group/nandu-energy-screen',
+    name: 'NanduEnergyScreen',
+    component: () => import('@/views/group/nandu-energy-screen/index'),
+    hidden: true,
+    meta: {
+      title: '南都广场智慧能源管理大屏',
+      noCache: true,
+      noTagsView: true
+    }
+  },
+  {
+    path: '/group/energy-map-screen',
+    name: 'GroupEnergyMapScreen',
+    component: () => import('@/views/group/energy-map-screen/index'),
+    hidden: true,
+    meta: { title: '集团资产运营监控中心', noCache: true, noTagsView: true }
   },
   {
     path: '/metering/tenant/detail/:id',

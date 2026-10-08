@@ -61,25 +61,32 @@
       </div>
 
       <div class="filter-actions">
-        <button
-          class="export-btn"
-          @click="handleExport"
-          :disabled="exportLoading || tableData.length === 0"
-        >
-          <svg
-            v-if="!exportLoading"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+        <el-dropdown trigger="hover" @command="handleExportCommand">
+          <button
+            class="export-btn"
+            type="button"
+            :disabled="exportLoading || tableData.length === 0"
           >
-            <path
-              d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
-            />
-          </svg>
-          <span v-if="exportLoading">{{ $t('chargingReport.exportLoading') }}</span>
-          <span v-else>{{ $t('chargingReport.exportReport') }}</span>
-        </button>
+            <svg
+              v-if="!exportLoading"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+              />
+            </svg>
+            <span v-if="exportLoading">{{ $t('chargingReport.exportLoading') }}</span>
+            <span v-else>{{ $t('chargingReport.exportReport') }}</span>
+            <i class="el-icon-arrow-down" />
+          </button>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item command="currentPage">{{ $t('chargingReport.exportCurrentPage') }}</el-dropdown-item>
+            <el-dropdown-item command="all">{{ $t('chargingReport.exportAll') }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
       </div>
     </div>
 
@@ -309,6 +316,9 @@ import { listAirUse } from '@/api/airReport'
 import { getSimpleTenantList } from '@/api/useReport'
 import moment from 'moment'
 import * as XLSX from 'xlsx'
+
+// 导出全部的单次上限（与后端分页参数对应）
+const EXPORT_ALL_LIMIT = 2000
 
 export default {
   name: 'AirReport',
@@ -611,6 +621,25 @@ export default {
       this.fetchData()
     },
 
+    buildQueryParams (size, current) {
+      const params = {
+        managerId: this.currentManagerId,
+        beginTime: this.queryParams.dateRange[0],
+        endTime: this.queryParams.dateRange[1],
+        page: {
+          current,
+          size
+        }
+      }
+      if (this.queryParams.tenantId) {
+        params.tenantId = this.queryParams.tenantId
+      }
+      if (this.queryParams.airId) {
+        params.airId = this.queryParams.airId
+      }
+      return params
+    },
+
     async fetchData () {
       if (
         !this.queryParams.dateRange ||
@@ -621,23 +650,7 @@ export default {
 
       this.loading = true
       try {
-        const params = {
-          managerId: this.currentManagerId,
-          beginTime: this.queryParams.dateRange[0],
-          endTime: this.queryParams.dateRange[1],
-          page: {
-            current: this.pageData.current,
-            size: this.pageData.size
-          }
-        }
-
-        if (this.queryParams.tenantId) {
-          params.tenantId = this.queryParams.tenantId
-        }
-
-        if (this.queryParams.airId) {
-          params.airId = this.queryParams.airId
-        }
+        const params = this.buildQueryParams(this.pageData.size, this.pageData.current)
 
         const { data } = await listAirUse(params)
 
@@ -658,12 +671,8 @@ export default {
     },
 
     // 处理表格数据
-    processTableData (dataList) {
-      // 生成日期列
-      this.generateDateColumns()
-
-      // 处理表格数据
-      this.tableData = dataList.map((item) => {
+    buildTableRows (dataList) {
+      return dataList.map((item) => {
         // 创建日期数据映射
         const dateDataMap = {}
         if (item.settleAirDateDtoList && item.settleAirDateDtoList.length > 0) {
@@ -694,6 +703,14 @@ export default {
           dateDataMap
         }
       })
+    },
+
+    processTableData (dataList) {
+      // 生成日期列
+      this.generateDateColumns()
+
+      // 处理表格数据
+      this.tableData = this.buildTableRows(dataList)
 
       this.calculateSpanData()
     },
@@ -822,28 +839,90 @@ export default {
     },
 
     // ==================== 导出功能 ====================
-    handleExport () {
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'all') this.exportAll()
+    },
+
+    exportCurrentPage () {
+      if (this.exportLoading) return
       if (!this.tableData || this.tableData.length === 0) {
         this.$message.warning(this.$t('chargingReport.msgExportEmpty'))
         return
       }
 
       this.exportLoading = true
-
-      setTimeout(() => {
-        try {
-          this.exportAirReport()
-          this.$message.success(this.$t('chargingReport.msgExportOk'))
-        } catch (error) {
-          console.error('导出失败:', error)
-          this.$message.error(`${this.$t('chargingReport.msgExportFail')}: ${error.message || this.$t('chargingReport.msgExportRetry')}`)
-        } finally {
-          this.exportLoading = false
-        }
-      }, 100)
+      try {
+        this.exportAirReport(this.tableData)
+        this.$message.success(this.$t('chargingReport.msgExportOk'))
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$message.error(`${this.$t('chargingReport.msgExportFail')}: ${error.message || this.$t('chargingReport.msgExportRetry')}`)
+      } finally {
+        this.exportLoading = false
+      }
     },
 
-    exportAirReport () {
+    async exportAll () {
+      if (this.exportLoading) return
+      if (
+        !this.queryParams.dateRange ||
+        this.queryParams.dateRange.length !== 2
+      ) {
+        this.$message.warning(this.$t('chargingReport.msgExportEmpty'))
+        return
+      }
+
+      this.exportLoading = true
+      const loading = this.$loading({
+        lock: true,
+        text: this.$t('chargingReport.exportLoading'),
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
+      try {
+        // 与查询保持一致的分页方式：循环拉取，每次请求都携带租户/空调筛选，
+        // 避免单次超大 size 触发后端分页上限导致筛选条件丢失。
+        const pageSize = Math.min(500, EXPORT_ALL_LIMIT)
+        const allList = []
+        let total = 0
+        let current = 1
+        while (allList.length < EXPORT_ALL_LIMIT) {
+          const params = this.buildQueryParams(pageSize, current)
+          const { data } = await listAirUse(params)
+          const list = data && data.dataList ? data.dataList : []
+          if (current === 1) total = data && data.total ? data.total : 0
+          if (list.length === 0) break
+          allList.push(...list)
+          if (list.length < pageSize) break
+          current += 1
+        }
+
+        const rawList = allList.slice(0, EXPORT_ALL_LIMIT)
+        if (rawList.length === 0) {
+          this.$message.warning(this.$t('chargingReport.msgExportEmpty'))
+          return
+        }
+
+        this.generateDateColumns()
+        const rows = this.buildTableRows(rawList)
+        this.exportAirReport(rows)
+
+        if (total > EXPORT_ALL_LIMIT) {
+          this.$message.success(this.$t('chargingReport.msgExportLimit', { total, count: rows.length }))
+        } else {
+          this.$message.success(this.$t('chargingReport.msgExportOk'))
+        }
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$message.error(`${this.$t('chargingReport.msgExportFail')}: ${error.message || this.$t('chargingReport.msgExportRetry')}`)
+      } finally {
+        loading.close()
+        this.exportLoading = false
+      }
+    },
+
+    exportAirReport (rows = this.tableData) {
       const t = (k) => this.$t(`chargingReport.${k}`)
       const sys = this.nanduSysElecEnabled
       const summarySpan = sys ? 4 : 3
@@ -906,7 +985,7 @@ export default {
         })
       ]
 
-      const dataRows = this.tableData.map((row) => {
+      const dataRows = rows.map((row) => {
         const baseData = [
           this.$displayBizHybrid(row.gateWay || '', 200),
           row.serial,

@@ -82,10 +82,12 @@ const mutations = {
 const actions = {
   // 用户登录
   login ({ commit }, userInfo) {
-    const { username, password } = userInfo
+    const { username, password, silent, timeout } = userInfo
     const loginData = {
       username: username.trim(),
-      password: password
+      password: password,
+      silent,
+      timeout
     }
 
     return new Promise((resolve, reject) => {
@@ -129,16 +131,18 @@ const actions = {
   },
 
   // 获取用户信息
-  getUserInfo ({ commit, state }) {
+  getUserInfo ({ commit, state }, options = {}) {
     return new Promise((resolve, reject) => {
+      const force = !!options.force
       // 首次加载时可能出现cookie已有token但vuex状态尚未同步的情况
-      const currentToken = state.token || getToken()
+      // Cookie 跨标签页共享，优先读取可同步另一大屏刚写入的新 token
+      const currentToken = getToken() || state.token
       if (currentToken && currentToken !== state.token) {
         commit('SET_TOKEN', currentToken)
       }
 
       // 如果用户信息已经加载，直接返回
-      if (state.userInfoLoaded && state.role) {
+      if (!force && state.userInfoLoaded && state.role) {
         resolve({ role: state.role, name: state.name, phone: state.phone })
         return
       }
@@ -148,7 +152,7 @@ const actions = {
         return
       }
 
-      getUserInfo(currentToken)
+      getUserInfo(currentToken, options)
         .then((response) => {
           const { data } = response
           if (!data) {
@@ -217,10 +221,7 @@ const actions = {
 
   // 删除token
   resetToken ({ commit, dispatch }) {
-    return new Promise(async (resolve) => {
-      await performLogoutCleanup(commit, dispatch)
-      resolve()
-    })
+    return performLogoutCleanup(commit, dispatch)
   }
 }
 

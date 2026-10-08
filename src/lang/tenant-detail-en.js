@@ -9,6 +9,7 @@ export default {
     detailDeduction: 'Credit / deduction',
     watermarkNoAccount: 'Not opened',
     labelPublicArea: 'Leased area:',
+    labelPostPayComment: 'Postpaid remark:',
     labelElectricAlarm1: 'Electricity alert threshold 1:',
     labelElectricAlarm2: 'Electricity alert threshold 2:',
     labelElectricOverdraw: 'Electricity overdraft:',

@@ -54,6 +54,7 @@
               <el-option :label="$t('energyBillPage.tenantType0')" :value="0" />
               <el-option :label="$t('energyBillPage.tenantType1')" :value="1" />
               <el-option :label="$t('energyBillPage.tenantType2')" :value="2" />
+              <el-option :label="$t('energyBillPage.tenantType3')" :value="3" />
             </el-select>
           </div>
           <div class="field-item">
@@ -81,7 +82,16 @@
             </span>
             <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('energyBillPage.btnSearch') }}</el-button>
             <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('energyBillPage.btnReset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('energyBillPage.btnExport') }}</el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button type="success" size="small" icon="el-icon-download">
+                {{ $t('energyBillPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('energyBillPage.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('energyBillPage.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('energyBillPage.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </div>
         </div>
 
@@ -104,6 +114,19 @@
               <el-option :label="$t('energyBillPage.settleWay10')" value="10" />
             </el-select>
           </div>
+          <div class="field-item advanced-pay-type">
+            <el-select
+              v-model="queryData.payType"
+              :placeholder="$t('energyBillPage.phPayType')"
+              clearable
+              size="small"
+              style="width: 100%"
+              @change="handleSearch"
+            >
+              <el-option :label="$t('energyBillPage.optPayPrepaid')" :value="0" />
+              <el-option :label="$t('energyBillPage.optPayPostpaid')" :value="1" />
+            </el-select>
+          </div>
           <div class="search-actions search-actions-phantom">
             <span class="toggle-advanced">
               {{ showAdvanced ? $t('energyBillPage.btnCollapse') : $t('energyBillPage.btnExpand') }}
@@ -111,7 +134,7 @@
             </span>
             <el-button type="primary" size="small" icon="el-icon-search">{{ $t('energyBillPage.btnSearch') }}</el-button>
             <el-button size="small" icon="el-icon-refresh">{{ $t('energyBillPage.btnReset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download">{{ $t('energyBillPage.btnExport') }}</el-button>
+            <el-button type="success" size="small" icon="el-icon-download">{{ $t('energyBillPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" /></el-button>
           </div>
         </div>
       </el-form>
@@ -237,6 +260,7 @@
           v-loading="loading"
           border
           :data="tableData"
+          row-key="rid"
           :max-height="tableMaxHeight"
           stripe
           style="width: 100%"
@@ -248,7 +272,7 @@
             fontWeight: '600',
           }"
         >
-          <el-table-column type="selection" width="55" align="center" />
+          <el-table-column type="selection" width="55" align="center" :reserve-selection="true" />
 
           <el-table-column
             v-for="col in displayColumns"
@@ -278,6 +302,12 @@
                   <i class="el-icon-user"></i>
                   {{ $displayBizHybrid(scope.row.tenantName || '') || '-' }}
                 </el-link>
+              </template>
+
+              <template v-else-if="col.key === 'payType'">
+                <el-tag :type="getPayTypeTagType(scope.row.payType)" size="small" effect="plain">
+                  {{ getPayTypeLabel(scope.row.payType) }}
+                </el-tag>
               </template>
 
               <template v-else-if="col.key === 'billType'">
@@ -375,6 +405,9 @@ import { tenantPageTenant } from '@/api/tenant'
 import * as XLSX from 'xlsx'
 import BillDetailDrawer from './components/BillDetailDrawer.vue'
 
+// 导出全部单次硬上限（与电表页标准一致）
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'TenantEnergyBillPage',
   components: {
@@ -404,6 +437,11 @@ export default {
           width: '200',
           checked: true,
           disabled: true
+        },
+        {
+          key: 'payType',
+          width: '100',
+          checked: true
         },
         {
           key: 'billType',
@@ -453,6 +491,7 @@ export default {
         tenantId: '',
         tenantType: 0,
         useType: null,
+        payType: null,
         payStatus: '',
         withdrawStatus: '',
         settleWay: null,
@@ -481,6 +520,8 @@ export default {
       },
       // 选中的数据
       selectedData: [],
+      // 导出全部防重
+      exportAllLoading: false,
       // 详情抽屉
       detailDrawer: {
         show: false,
@@ -586,6 +627,7 @@ export default {
         occurDate: 'colOccurDate',
         createTime: 'colCreateTime',
         tenantInfo: 'colTenantInfo',
+        payType: 'colPayType',
         billType: 'colBillType',
         settleWay: 'colSettleWay',
         balance: 'colBalance',
@@ -652,7 +694,8 @@ export default {
       handler (newVal) {
         if (newVal) {
           this.queryData.managerId = newVal
-          this.setDefaultTimeRange()
+          // 看板跳转带入日期区间，优先使用路由参数；否则用默认区间
+          this.initTimeRange()
           this.fetchTableData()
           this.getStatisticsData()
           this.getTenantList()
@@ -680,10 +723,19 @@ export default {
     } else if (!this.queryData.managerId) {
       this.queryData.managerId = this.currentManagerId || ''
     }
-
-    this.setDefaultTimeRange()
   },
   methods: {
+    // 初始化时间区间：优先读取路由参数（看板跳转），否则用默认上月~今天
+    initTimeRange () {
+      const routeStart = this.$route.query.startDate
+      const routeEnd = this.$route.query.endDate
+      const dateRe = /^\d{4}-\d{2}-\d{2}$/
+      if (routeStart && routeEnd && dateRe.test(routeStart) && dateRe.test(routeEnd) && !isNaN(Date.parse(routeStart)) && !isNaN(Date.parse(routeEnd))) {
+        this.queryData.timeRange = [routeStart, routeEnd]
+      } else {
+        this.setDefaultTimeRange()
+      }
+    },
     normalizeSelect (v) {
       if (v === null || v === undefined) return ''
       return v
@@ -701,6 +753,7 @@ export default {
         tenantId: this.explicitBillTenantId || undefined,
         tenantIdList: this.billQueryTenantIdList,
         tenantType: this.queryData.tenantType,
+        payType: this.queryData.payType,
         payStatus: this.queryData.payStatus,
         withdrawStatus: this.queryData.withdrawStatus,
         settleWay: settleWayParam,
@@ -722,7 +775,7 @@ export default {
         return 'right'
       }
       // 标签类字段居中
-      if (['billType', 'settleWay', 'payStatus', 'status'].includes(key)) {
+      if (['billType', 'settleWay', 'payStatus', 'status', 'payType'].includes(key)) {
         return 'center'
       }
       // 其他字段左对齐
@@ -778,37 +831,26 @@ export default {
       }
     },
 
-    /** 导出未勾选时：按当前筛选条件分页拉全量，避免只导出当前页 tableData */
+    /** 导出全部：按当前筛选条件拉取，硬上限 2000 条（与电表页标准一致） */
     async fetchAllBillRowsForExport () {
-      const chunk = 500
-      let current = 1
-      const rows = []
-      let total = null
-      while (true) {
-        const params = this.buildPageTenantDailyBillParams({
-          size: chunk,
-          current,
-          searchCount: current === 1,
-          orders: [
-            { asc: false, column: 'occurDate' },
-            { asc: false, column: 'rid' }
-          ]
-        })
-        const response = await settlePageTenantDailyBill(params)
-        if (response.code !== 200) {
-          this.$message.error(response.msg || this.$t('energyBillPage.msgExportListFail'))
-          return []
-        }
-        const list = response.data.dataList || []
-        if (total === null) {
-          total = Number(response.data.total) || 0
-        }
-        rows.push(...list)
-        if (rows.length >= total || list.length < chunk) break
-        current += 1
-        if (current > 500) break
+      const params = this.buildPageTenantDailyBillParams({
+        size: EXPORT_ALL_LIMIT,
+        current: 1,
+        searchCount: true,
+        orders: [
+          { asc: false, column: 'occurDate' },
+          { asc: false, column: 'rid' }
+        ]
+      })
+      const response = await settlePageTenantDailyBill(params)
+      if (response.code !== 200) {
+        this.$message.error(response.msg || this.$t('energyBillPage.msgExportListFail'))
+        return { rows: [], total: 0 }
       }
-      return rows
+      return {
+        rows: response.data.dataList || [],
+        total: Number(response.data.total) || 0
+      }
     },
 
     // 获取账单列表数据
@@ -915,6 +957,7 @@ export default {
         tenantId: '',
         tenantType: 0,
         useType: null,
+        payType: null,
         payStatus: '',
         withdrawStatus: '',
         settleWay: null,
@@ -968,36 +1011,64 @@ export default {
       })
     },
 
-    async handleExport () {
-      const isSelectedExport = this.selectedData.length > 0
-      if (!isSelectedExport && this.pageData.total === 0) {
+    handleExportCommand (command) {
+      if (command === 'currentPage') {
+        this.exportCurrentPage()
+      } else if (command === 'selected') {
+        this.exportSelected()
+      } else if (command === 'all') {
+        this.exportAll()
+      }
+    },
+
+    // 导出本页：导出当前已加载页数据（纯前端，无接口）
+    exportCurrentPage () {
+      if (this.tableData.length === 0) {
         this.$message.warning(this.$t('energyBillPage.msgNoDataExport'))
         return
       }
+      this.runExportBuild(this.tableData, false)
+    },
 
-      let exportData = []
-      if (isSelectedExport) {
-        exportData = [...this.selectedData]
-      } else {
-        const loading = this.$loading({
-          lock: true,
-          text: this.$t('energyBillPage.exportLoading')
-        })
-        try {
-          exportData = await this.fetchAllBillRowsForExport()
-        } catch (e) {
-          console.error('导出拉取数据失败:', e)
-          this.$apiError.notify(e, this.$t('energyBillPage.msgExportListFail'))
-          return
-        } finally {
-          loading.close()
-        }
-        if (!exportData.length) {
+    // 导出选中：导出已勾选行（纯前端，无接口）
+    exportSelected () {
+      if (this.selectedData.length === 0) {
+        this.$message.warning(this.$t('energyBillPage.warnNoSelectedExport'))
+        return
+      }
+      this.runExportBuild(this.selectedData, true)
+    },
+
+    // 导出全部：按当前查询条件重新拉取全量数据（以查询条件为准）
+    async exportAll () {
+      if (this.exportAllLoading) return
+      if (this.pageData.total === 0) {
+        this.$message.warning(this.$t('energyBillPage.msgNoDataExport'))
+        return
+      }
+      this.exportAllLoading = true
+      const loading = this.$loading({
+        lock: true,
+        text: this.$t('energyBillPage.exportLoading')
+      })
+      try {
+        const { rows, total } = await this.fetchAllBillRowsForExport()
+        if (!rows.length) {
           this.$message.warning(this.$t('energyBillPage.msgNoRowsExport'))
           return
         }
+        this.runExportBuild(rows, false, total)
+      } catch (error) {
+        console.error('导出拉取数据失败:', error)
+        this.$apiError.notify(error, this.$t('energyBillPage.msgExportListFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
       }
+    },
 
+    // XLSX 生成（导出本页 / 导出选中 / 导出全部 共用）
+    runExportBuild (exportData, isSelected, total) {
       try {
         const headers = this.displayColumns.map((col) => col.label)
         const data = exportData.map((row) => {
@@ -1009,6 +1080,8 @@ export default {
                 return this.$displayBizHybrid(row.tenantName || '', 200)
               case 'billType':
                 return this.getBillTypeLabel(row.useType)
+              case 'payType':
+                return this.getPayTypeLabel(value)
               case 'settleWay':
                 return this.getSettleWayLabel(value)
               case 'balance':
@@ -1083,11 +1156,18 @@ export default {
         window.URL.revokeObjectURL(url)
 
         const exportCount = exportData.length
-        this.$message.success(
-          isSelectedExport
-            ? this.$t('energyBillPage.msgExportOkSelected', { count: exportCount })
-            : this.$t('energyBillPage.msgExportOk', { count: exportCount })
-        )
+        let successMsg
+        if (isSelected) {
+          successMsg = this.$t('energyBillPage.msgExportOkSelected', { count: exportCount })
+        } else if (total != null && total > exportCount) {
+          // 命中数超过 2000 上限：只导出前 2000 条并提示（与电表页一致）
+          successMsg = this.$t('energyBillPage.successExportedLimit', { count: exportCount, total })
+        } else if (total != null) {
+          successMsg = this.$t('energyBillPage.successExported', { count: exportCount })
+        } else {
+          successMsg = this.$t('energyBillPage.msgExportOk', { count: exportCount })
+        }
+        this.$message.success(successMsg)
       } catch (error) {
         console.error('导出失败:', error)
         this.$apiError.notify(error, this.$t('energyBillPage.msgExportFail'))
@@ -1152,6 +1232,20 @@ export default {
         0: 'primary', // 水费
         2: 'success', // 电费
         7: 'warning' // 服务费
+      }
+      return typeMap[String(type)] || 'info'
+    },
+
+    getPayTypeLabel (type) {
+      const map = { 0: 'optPayPrepaid', 1: 'optPayPostpaid' }
+      const key = map[type] || map[String(type)]
+      return key ? this.$t(`energyBillPage.${key}`) : '-'
+    },
+
+    getPayTypeTagType (type) {
+      const typeMap = {
+        0: 'success',
+        1: 'warning'
       }
       return typeMap[String(type)] || 'info'
     },
@@ -1295,6 +1389,10 @@ export default {
 
   .search-advanced-grid .advanced-field {
     grid-column: 1;
+  }
+
+  .search-advanced-grid .advanced-pay-type {
+    grid-column: 2;
   }
 
   .search-advanced-grid > .search-actions-phantom {

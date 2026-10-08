@@ -5,7 +5,7 @@
  */
 
 /** @type {string[]} */
-export const NANDU_PLAZA_SYS_ELEC_MANAGER_IDS = []
+export const NANDU_PLAZA_SYS_ELEC_MANAGER_IDS = ['1000107']
 
 /**
  * 同步获取需展示系统电量扩展字段的管理方 ID 列表（预留改为异步/接口时使用）。

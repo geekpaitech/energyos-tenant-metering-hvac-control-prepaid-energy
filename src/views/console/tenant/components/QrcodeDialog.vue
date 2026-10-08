@@ -62,6 +62,7 @@
 
 <script>
 import QRCode from 'qrcodejs2'
+import { TENANT_PORTAL_URL } from '@/config/services'
 
 export default {
   name: 'QrcodeDialog',
@@ -117,7 +118,7 @@ export default {
 
       this.qrcodeGenerated = false
 
-      this.qrcodeValue = `https://example.com/wx/ebc/?tenantId=${this.tenantData.id}`
+      this.qrcodeValue = `${TENANT_PORTAL_URL}?tenantId=${this.tenantData.id}`
 
       this.$nextTick(() => {
         try {

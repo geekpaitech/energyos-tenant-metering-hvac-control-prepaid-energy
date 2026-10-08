@@ -22,7 +22,25 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item :label="$t('tenantDialogs.add.labelName')" prop="name">
+              <el-select
+                v-if="mysoftEnabled"
+                v-model="form.name"
+                filterable
+                allow-create
+                clearable
+                :loading="renterLoading"
+                :placeholder="$t('tenantDialogs.add.phSelectName')"
+                class="mysoft-field"
+              >
+                <el-option
+                  v-for="item in renterOptions"
+                  :key="item.renterId || item.renterName"
+                  :label="renterOptionLabel(item)"
+                  :value="item.renterName"
+                />
+              </el-select>
               <el-input
+                v-else
                 v-model="form.name"
                 :placeholder="$t('tenantDialogs.add.phName')"
                 maxlength="50"
@@ -40,14 +58,70 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="16" style="margin-top: 8px;">
+        <el-row v-if="mysoftEnabled" :gutter="16" style="margin-top: 8px;">
           <el-col :span="12">
+            <el-form-item :label="$t('tenantDialogs.add.labelResources')" prop="selectedResourceGUIDs">
+              <el-select
+                v-model="selectedResourceGUIDs"
+                multiple
+                filterable
+                collapse-tags
+                :loading="resourceLoading"
+                :placeholder="$t('tenantDialogs.add.phResources')"
+                class="mysoft-field resource-select"
+              >
+                <el-option
+                  v-for="item in resourceOptions"
+                  :key="item.resourceGUID"
+                  :label="resourceOptionLabel(item)"
+                  :value="item.resourceGUID"
+                  :disabled="isResourceBound(item)"
+                >
+                  <span
+                    class="resource-option-label"
+                    :title="resourceOptionTitle(item)"
+                  >{{ resourceOptionLabel(item) }}</span>
+                  <span v-if="isResourceBound(item)" class="resource-bound-tag">
+                    {{ $t('tenantDialogs.add.resourceBound') }}
+                  </span>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16" style="margin-top: 8px;">
+          <el-col :span="24">
             <el-form-item :label="$t('tenantDialogs.add.labelTenantType')" prop="tenantType" required>
               <el-radio-group v-model="form.tenantType" size="small">
                 <el-radio :label="0">{{ $t('tenantDialogs.add.tenantType0') }}</el-radio>
                 <el-radio :label="1">{{ $t('tenantDialogs.add.tenantType1') }}</el-radio>
                 <el-radio :label="2">{{ $t('tenantDialogs.add.tenantType2') }}</el-radio>
+                <el-radio :label="3">{{ $t('tenantDialogs.add.tenantType3') }}</el-radio>
               </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="24">
+            <el-form-item :label="$t('tenantDialogs.add.labelPayType')" prop="payType">
+              <el-radio-group v-model="form.payType" size="small">
+                <el-radio :label="0">{{ $t('tenantDialogs.add.payTypePrepaid') }}</el-radio>
+                <el-radio :label="1">{{ $t('tenantDialogs.add.payTypePostpaid') }}</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row v-if="form.payType === 1" :gutter="16">
+          <el-col :span="24">
+            <el-form-item :label="$t('tenantDialogs.add.labelPostPayComment')" prop="postPayComment">
+              <el-input
+                v-model="form.postPayComment"
+                type="textarea"
+                :rows="3"
+                maxlength="200"
+                show-word-limit
+                :placeholder="$t('tenantDialogs.add.phPostPayComment')"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -216,7 +290,12 @@
 </template>
 
 <script>
-import { tenantAdd, tenantUpdate } from '@/api/tenant'
+import {
+  tenantAdd,
+  tenantUpdate,
+  mingYuanRenterPage,
+  mingYuanResourcePage
+} from '@/api/tenant'
 
 export default {
   name: 'AddTenantDialog',
@@ -236,11 +315,20 @@ export default {
     managerId: {
       type: [String, Number],
       default: ''
+    },
+    mysoftEnabled: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
       submitting: false,
+      renterLoading: false,
+      resourceLoading: false,
+      renterOptions: [],
+      resourceOptions: [],
+      selectedResourceGUIDs: [],
       form: {
         id: '',
         name: '',
@@ -248,7 +336,10 @@ export default {
         phoneList: [''],
         logoUrl: '',
         managerId: '',
+        resourceList: [],
         tenantType: 0, // 租户类型：0-租户，1-公区，2-其他（默认租户）
+        payType: 0, // 付费模式：0-预付费，1-后付费（默认预付费）
+        postPayComment: '', // 后付费备注（仅后付费时填写）
         meterStatus: 1, // 电费开关：0-关闭，1-开启（默认开启）
         waterStatus: 0, // 水费开关：0-关闭，1-开启（默认关闭）
         // 电费账户对象
@@ -264,7 +355,7 @@ export default {
           overdraw: ''
         }
       },
-      defaultLogo: 'https://oss.example.com/web-file/logo.png'
+      defaultLogo: 'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/wu-logo.png'
     }
   },
   computed: {
@@ -277,16 +368,26 @@ export default {
       return this.$i18n.locale === 'en' ? '128px' : '100px'
     },
     rules () {
+      const nameTrigger = this.mysoftEnabled ? 'change' : 'blur'
+      const nameRules = [
+        {
+          required: true,
+          message: this.$t('tenantDialogs.add.ruleNameRequired'),
+          trigger: nameTrigger
+        },
+        { max: 50, message: this.$t('tenantDialogs.add.ruleNameMax'), trigger: nameTrigger }
+      ]
+
       return {
-        name: [
-          { required: true, message: this.$t('tenantDialogs.add.ruleNameRequired'), trigger: 'blur' },
-          { max: 50, message: this.$t('tenantDialogs.add.ruleNameMax'), trigger: 'blur' }
-        ],
+        name: nameRules,
         publicArea: [
           { required: true, message: this.$t('tenantDialogs.add.ruleAreaRequired'), trigger: 'blur' }
         ],
         tenantType: [
           { required: true, message: this.$t('tenantDialogs.add.ruleTenantTypeRequired'), trigger: 'change' }
+        ],
+        postPayComment: [
+          { validator: this.validatePostPayComment, trigger: 'blur' }
         ]
       }
     },
@@ -309,6 +410,9 @@ export default {
     visible (val) {
       if (val) {
         this.initForm()
+        if (this.mysoftEnabled) {
+          this.loadMysoftOptions()
+        }
       }
     }
   },
@@ -326,9 +430,21 @@ export default {
       }
     },
 
+    // 后付费备注校验（仅后付费时必填）
+    validatePostPayComment (rule, value, callback) {
+      if (this.form.payType === 1 && !String(value || '').trim()) {
+        callback(new Error(this.$t('tenantDialogs.add.rulePostPayCommentRequired')))
+      } else {
+        callback()
+      }
+    },
+
     // 初始化表单
     initForm () {
       if (this.tenantData && this.tenantData.id) {
+        const resourceList = Array.isArray(this.tenantData.resourceList)
+          ? this.tenantData.resourceList.map(item => ({ ...item }))
+          : []
         // 编辑模式
         this.form = {
           ...this.tenantData,
@@ -336,6 +452,7 @@ export default {
             ? this.tenantData.phoneList
             : [''],
           managerId: this.managerId,
+          resourceList,
           meterStatus: this.tenantData.meterStatus !== undefined
             ? this.tenantData.meterStatus
             : 1,
@@ -345,6 +462,10 @@ export default {
           tenantType: this.tenantData.tenantType !== undefined
             ? this.tenantData.tenantType
             : 0,
+          payType: this.tenantData.payType !== undefined
+            ? this.tenantData.payType
+            : 0,
+          postPayComment: this.tenantData.postPayComment || '',
           // 电费账户
           meterAccount: {
             alarmBalance1: this.tenantData.meterAccountDto?.alarmBalance1 || '',
@@ -367,7 +488,10 @@ export default {
           phoneList: [''],
           logoUrl: '',
           managerId: this.managerId,
+          resourceList: [],
           tenantType: 0, // 默认租户
+          payType: 0, // 默认预付费
+          postPayComment: '',
           meterStatus: 1, // 默认开启电费
           waterStatus: 0, // 默认关闭水费
           meterAccount: {
@@ -383,8 +507,138 @@ export default {
         }
       }
 
+      this.selectedResourceGUIDs = this.form.resourceList
+        .map(item => item && item.resourceGUID)
+        .filter(Boolean)
+
       this.$nextTick(() => {
         this.$refs.tenantForm && this.$refs.tenantForm.clearValidate()
+      })
+    },
+
+    async loadMysoftOptions () {
+      await Promise.all([
+        this.fetchRenterOptions(),
+        this.fetchResourceOptions()
+      ])
+    },
+
+    async fetchRenterOptions () {
+      this.renterLoading = true
+      try {
+        const response = await mingYuanRenterPage({
+          managerId: this.managerId,
+          pageIndex: 0,
+          pageSize: 2000
+        })
+        if (response.code === 200) {
+          const items = response.data && Array.isArray(response.data.items)
+            ? response.data.items
+            : []
+          this.renterOptions = [...items]
+          if (
+            this.form.name &&
+            !this.renterOptions.some(item => item.renterName === this.form.name)
+          ) {
+            this.renterOptions.unshift({
+              renterId: `existing-${this.form.name}`,
+              renterName: this.form.name
+            })
+          }
+        }
+      } catch (error) {
+        console.error('获取明源客户列表失败:', error)
+        this.$message.error(this.$t('tenantDialogs.add.msgRenterLoadFail'))
+      } finally {
+        this.renterLoading = false
+      }
+    },
+
+    async fetchResourceOptions () {
+      this.resourceLoading = true
+      try {
+        const data = {
+          keyword: '',
+          managerId: this.managerId,
+          pageIndex: 0,
+          pageSize: 2000
+        }
+        if (this.isEdit) {
+          data.tenantId = this.form.id
+        }
+        const response = await mingYuanResourcePage(data)
+        if (response.code === 200) {
+          const items = response.data && Array.isArray(response.data.items)
+            ? response.data.items
+            : []
+          const optionMap = new Map(items.map(item => [item.resourceGUID, { ...item }]))
+          this.form.resourceList.forEach(item => {
+            if (item && item.resourceGUID) {
+              optionMap.set(item.resourceGUID, {
+                ...item,
+                ...optionMap.get(item.resourceGUID),
+                isBound: 0
+              })
+            }
+          })
+          this.resourceOptions = Array.from(optionMap.values())
+        }
+      } catch (error) {
+        console.error('获取明源资源列表失败:', error)
+        this.$message.error(this.$t('tenantDialogs.add.msgResourceLoadFail'))
+      } finally {
+        this.resourceLoading = false
+      }
+    },
+
+    renterOptionLabel (item) {
+      return item.renterName || '-'
+    },
+
+    resourceOptionLabel (item) {
+      return item.resourceName || item.resourceNo || item.resourceFullName || item.resourceGUID
+    },
+
+    resourceOptionTitle (item) {
+      if (!this.isResourceBound(item)) return this.resourceOptionLabel(item)
+      return this.$t('tenantDialogs.add.resourceBoundBy', {
+        name: item.boundTenantName || '-'
+      })
+    },
+
+    isResourceBound (item) {
+      return Number(item && item.isBound) === 1
+    },
+
+    buildResourceList () {
+      const existingMap = new Map(
+        this.form.resourceList
+          .filter(item => item && item.resourceGUID)
+          .map(item => [item.resourceGUID, item])
+      )
+      const optionMap = new Map(
+        this.resourceOptions
+          .filter(item => item && item.resourceGUID)
+          .map(item => [item.resourceGUID, item])
+      )
+
+      return this.selectedResourceGUIDs.map(resourceGUID => {
+        const existing = existingMap.get(resourceGUID) || {}
+        const resource = optionMap.get(resourceGUID) || {}
+        const dto = {
+          buildingName: resource.buildingName || existing.buildingName || '',
+          floorName: resource.floorName || existing.floorName || '',
+          managerId: this.managerId,
+          resourceGUID,
+          resourceName: resource.resourceName || existing.resourceName || resource.resourceFullName || ''
+        }
+        if (this.isEdit) {
+          dto.tenantId = this.form.id
+        }
+        if (existing.id !== undefined && existing.id !== null) {
+          dto.id = existing.id
+        }
+        return dto
       })
     },
 
@@ -407,7 +661,10 @@ export default {
         phoneList: [''],
         logoUrl: '',
         managerId: '',
+        resourceList: [],
         tenantType: 0,
+        payType: 0,
+        postPayComment: '',
         meterStatus: 1,
         waterStatus: 0,
         meterAccount: {
@@ -421,6 +678,9 @@ export default {
           overdraw: ''
         }
       }
+      this.renterOptions = []
+      this.resourceOptions = []
+      this.selectedResourceGUIDs = []
     },
 
     // 提交表单
@@ -485,10 +745,16 @@ export default {
               logoUrl: this.form.logoUrl,
               managerId: this.managerId,
               tenantType: this.form.tenantType, // 租户类型
+              payType: this.form.payType, // 付费模式
+              postPayComment: this.form.payType === 1 ? this.form.postPayComment : '', // 后付费备注（仅后付费时传）
               meterStatus: this.form.meterStatus, // 电费开关在外层
               waterStatus: this.form.waterStatus, // 水费开关在外层
               meterAccountDto: meterAccountDto,
               waterAccountDto: waterAccountDto
+            }
+
+            if (this.mysoftEnabled) {
+              params.resourceList = this.buildResourceList()
             }
 
             // 编辑模式需要传 id
@@ -557,6 +823,52 @@ export default {
       margin-bottom: 0;
     }
   }
+}
+
+.mysoft-field {
+  width: 100%;
+}
+
+.resource-select {
+  ::v-deep .el-select__tags {
+    display: flex;
+    flex-wrap: nowrap;
+    max-width: calc(100% - 34px) !important;
+    overflow: hidden;
+  }
+
+  ::v-deep .el-tag:first-child {
+    display: inline-flex;
+    min-width: 0;
+    max-width: calc(100% - 48px);
+    align-items: center;
+  }
+
+  ::v-deep .el-select__tags-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  ::v-deep .el-tag__close {
+    flex-shrink: 0;
+  }
+}
+
+.resource-option-label {
+  display: inline-block;
+  max-width: calc(100% - 70px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.resource-bound-tag {
+  float: right;
+  color: #c0c4cc;
+  font-size: 12px;
 }
 
 // 收费设置盒子

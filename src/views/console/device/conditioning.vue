@@ -76,10 +76,35 @@
                     </el-option>
                   </el-select>
                 </div>
+                <!-- TODO: “空调开启状态”筛选暂时隐藏；需要恢复时解除本段注释即可
+                <div class="field-item">
+                  <el-select
+                    v-model="queryData.powerStatus"
+                    :placeholder="$t('deviceConditioning.phPowerStatus')"
+                    clearable
+                    size="small"
+                    style="width: 100%"
+                    @change="handleSearch"
+                  >
+                    <el-option :label="$t('deviceConditioning.all')" value="__ALL__" />
+                    <el-option :label="$t('deviceConditioning.enumPowerOn')" :value="1" />
+                    <el-option :label="$t('deviceConditioning.enumPowerOff')" :value="0" />
+                  </el-select>
+                </div>
+                -->
                 <div class="search-actions">
                   <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('deviceConditioning.btnSearch') }}</el-button>
                   <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('deviceConditioning.btnReset') }}</el-button>
-                  <el-button type="success" size="small" icon="el-icon-download" @click="handleIndoorExport">{{ $t('deviceConditioning.btnExport') }}</el-button>
+                  <el-dropdown trigger="hover" @command="handleExportCommand">
+                    <el-button type="success" size="small" icon="el-icon-download">
+                      {{ $t('deviceConditioning.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+                    </el-button>
+                    <el-dropdown-menu slot="dropdown">
+                      <el-dropdown-item command="currentPage">{{ $t('deviceConditioning.exportCurrentPage') }}</el-dropdown-item>
+                      <el-dropdown-item command="selected">{{ $t('deviceConditioning.exportSelected') }}</el-dropdown-item>
+                      <el-dropdown-item command="all">{{ $t('deviceConditioning.exportAll') }}</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </el-dropdown>
                 </div>
               </div>
             </el-form>
@@ -301,9 +326,9 @@
                     </div>
                   </template> -->
 
-                  <!-- 上线时间 -->
-                  <template v-else-if="col.key === 'createTime'">
-                    <span>{{ scope.row.createTime || '-' }}</span>
+                  <!-- 空调最新上报时间 -->
+                  <template v-else-if="col.key === 'lastOfflineTime'">
+                    <span>{{ scope.row.lastOfflineTime || '-' }}</span>
                   </template>
 
                   <!-- 默认显示 -->
@@ -874,7 +899,7 @@
         <div class="device-serial">设备序列号：{{ lockDialog.row.indoorUnitId }}</div>
       </div>
       <div v-else-if="lockDialog.isBatch" class="lock-device-info">
-        批量锁定{{ selectedData.length }}台设备
+        批量锁定<span class="highlight-count">{{ selectedData.length }}</span>台设备
       </div>
 
       <el-form ref="lockForm" :model="lockForm" label-width="120px" class="lock-form">
@@ -934,9 +959,9 @@
             <!-- 设备编号 -->
             <div class="timing-device-number">
               <span class="number-text">
-                {{ timingDialog.isBatch ? `批量${selectedData.length}台` : (timingDialog.isEdit ?
-                  `${timingDevices.length}台` :
-                  (timingDialog.row ? timingDialog.row.name : '')) }}
+                <template v-if="timingDialog.isBatch">批量<span class="highlight-count">{{ selectedData.length }}</span>台</template>
+                <template v-else-if="timingDialog.isEdit"><span class="highlight-count">{{ timingDevices.length }}</span>台</template>
+                <template v-else>{{ timingDialog.row ? timingDialog.row.name : '' }}</template>
               </span>
             </div>
 
@@ -1394,6 +1419,9 @@ import { mapGetters, mapState } from 'vuex'
 import moment from 'moment'
 import * as XLSX from 'xlsx'
 
+// 导出全部的单次上限（与后端分页参数对应）
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'AirConditionManagement',
   components: {
@@ -1419,6 +1447,7 @@ export default {
       outdoorTableData: [],
       outdoorLoading: false,
       exportLoading: false,
+      exportAllLoading: false,
       outdoorSystemList: [],
 
       // 视图模式 (默认卡片视图)
@@ -1452,6 +1481,7 @@ export default {
         tenantId: null,
         name: this.$route.query.deviceName || '',
         state: null,
+        powerStatus: null,
         managerId: '',
         bindType: '',
         gatewayId: '',
@@ -1672,7 +1702,7 @@ export default {
         { label: t('colTemp'), checked: true, key: 'targetTemperature', width: '140', isTag: true },
         { label: t('colFanSpeed'), checked: true, key: 'fanSpeedLabel', width: '140', isTag: true },
         { label: t('colFault'), checked: true, key: 'faultStatus', width: '100', isTag: true },
-        { label: t('colCreateTime'), key: 'createTime', checked: true, width: '160' }
+        { label: t('colLastReportTime'), key: 'lastOfflineTime', checked: true, width: '180' }
       ]
     },
     editFormRules () {
@@ -2322,6 +2352,29 @@ export default {
       }, 2000)
     },
 
+    buildQueryParams (size, current) {
+      const normalizeSelect = (v) => {
+        if (v === null || v === undefined) return ''
+        if (v === '__ALL__') return ''
+        return v
+      }
+      const params = {
+        bindId: normalizeSelect(this.queryData.tenantId),
+        bindType: normalizeSelect(this.queryData.bindType),
+        name: (this.queryData.name || '').trim(),
+        state: normalizeSelect(this.queryData.state),
+        managerId: this.queryData.managerId,
+        gatewayId: normalizeSelect(this.queryData.gatewayId),
+        page: {
+          current,
+          size
+        }
+      }
+      const powerStatus = normalizeSelect(this.queryData.powerStatus)
+      if (powerStatus !== '') params.powerStatus = powerStatus
+      return params
+    },
+
     // 获取空调列表数据
     async fetchTableData (isRefresh = false) {
       if (!isRefresh) {
@@ -2329,27 +2382,7 @@ export default {
       }
 
       try {
-        const normalizeSelect = (v) => {
-          if (v === null || v === undefined) return ''
-          if (v === '__ALL__') return ''
-          return v
-        }
-        const query = {
-          bindId: normalizeSelect(this.queryData.tenantId),
-          bindType: normalizeSelect(this.queryData.bindType),
-          name: (this.queryData.name || '').trim(),
-          state: normalizeSelect(this.queryData.state),
-          managerId: this.queryData.managerId,
-          gatewayId: normalizeSelect(this.queryData.gatewayId),
-          page: {
-            current: this.queryData.current,
-            size: this.queryData.pageSize,
-            orders: [{
-              asc: false,
-              column: 'createTime'
-            }]
-          }
-        }
+        const query = this.buildQueryParams(this.queryData.pageSize, this.queryData.current)
 
         const response = await airInfoPageAir(query)
 
@@ -2541,8 +2574,9 @@ export default {
 
     // ========== 查询和筛选 ==========
 
-    // 查询（保留当前分页，重置见 handleReset）
+    // 查询（筛选条件变化时重置到第1页）
     handleSearch () {
+      this.queryData.current = 1
       this.fetchTableData()
     },
 
@@ -2553,6 +2587,7 @@ export default {
         tenantId: null,
         name: '',
         state: null,
+        powerStatus: null,
         managerId: this.currentManagerId || '',
         bindType: '',
         gatewayId: '',
@@ -2563,48 +2598,110 @@ export default {
       this.handleSearch()
     },
 
-    handleIndoorExport () {
-      if (this.tableData.length === 0) {
-        this.$message.warning('暂无数据可导出')
-        return
+    formatExportCell (row, key) {
+      if (key === 'faultStatus') {
+        if (row.faultCode === 'LOST') return this.$t('deviceConditioning.faultOffline')
+        return row.faultCode || this.$t('deviceConditioning.faultNormal')
       }
+      if (key === 'targetTemperature') {
+        if (row.targetTemperature === null || row.targetTemperature === undefined || row.targetTemperature === '') return ''
+        return row.targetTemperature + '℃'
+      }
+      if (key === 'name') {
+        if (this.$i18n.locale === 'zh-CN') return row.name || ''
+        return this.$displayDynamicName(row.name, 200)
+      }
+      const val = row[key]
+      if (val === null || val === undefined) return ''
+      return typeof val === 'object' ? (val.label || '') : String(val)
+    },
+
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+
+    /** 生成并触发 xlsx 下载（入参为已 formatAirData 处理后的行） */
+    buildXlsx (rows) {
+      const headers = this.displayColumns.map((col) => col.label)
+      const keys = this.displayColumns.map((col) => col.key)
+      const data = rows.map((row) => keys.map((key) => this.formatExportCell(row, key)))
+      const wsData = [headers, ...data]
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+      ws['!cols'] = headers.map((h) => ({ wch: Math.max(h.length * 2, 15) }))
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('deviceConditioning.exportSheetName'))
+      const now = new Date()
+      const timeStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + String(now.getSeconds()).padStart(2, '0')
+      const fileName = `${this.$t('deviceConditioning.exportFilePrefix')}_${timeStr}.xlsx`
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    },
+
+    exportCurrentPage () {
+      if (this.tableData.length === 0) { this.$message.warning(this.$t('deviceConditioning.warnNoExportData')); return }
       try {
-        const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-        const headers = this.displayColumns.map((col) => col.label)
-        const keys = this.displayColumns.map((col) => col.key)
-        const data = exportData.map((row) => {
-          return keys.map((key) => {
-            if (key === 'faultStatus') {
-              return row.faultCode === 'LOST' ? '离线' : (row.faultCode || '正常')
-            }
-            const val = row[key]
-            if (val === null || val === undefined) return ''
-            return typeof val === 'object' ? (val.label || '') : String(val)
-          })
-        })
-        const wsData = [headers, ...data]
-        const ws = XLSX.utils.aoa_to_sheet(wsData)
-        ws['!cols'] = headers.map((h) => ({ wch: Math.max(h.length * 2, 15) }))
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, '空调内机')
-        const now = new Date()
-        const timeStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + String(now.getSeconds()).padStart(2, '0')
-        const fileName = `空调内机_${timeStr}.xlsx`
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-        this.$message.success(`成功导出${exportData.length}条数据`)
+        this.buildXlsx(this.tableData)
+        this.$message.success(this.$t('deviceConditioning.successExported', { count: this.tableData.length }))
       } catch (error) {
         console.error('导出失败:', error)
-        this.$message.error('导出失败')
+        this.$apiError.notify(error, this.$t('deviceConditioning.errExport'))
+      }
+    },
+
+    exportSelected () {
+      if (this.selectedData.length === 0) { this.$message.warning(this.$t('deviceConditioning.warnNoSelectedExport')); return }
+      try {
+        this.buildXlsx(this.selectedData)
+        this.$message.success(this.$t('deviceConditioning.successExported', { count: this.selectedData.length }))
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$apiError.notify(error, this.$t('deviceConditioning.errExport'))
+      }
+    },
+
+    async exportAll () {
+      if (!this.queryData.managerId || this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({
+        lock: true,
+        text: this.$t('deviceConditioning.exporting'),
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
+      try {
+        const params = this.buildQueryParams(EXPORT_ALL_LIMIT, 1)
+        const response = await airInfoPageAir(params)
+        if (response.code === 200 && response.data) {
+          const rawList = response.data.dataList || []
+          const total = response.data.total || 0
+          if (rawList.length === 0) { this.$message.warning(this.$t('deviceConditioning.warnNoExportData')); return }
+          const rows = rawList.map((item) => this.formatAirData(item))
+          this.buildXlsx(rows)
+          if (total > EXPORT_ALL_LIMIT) {
+            this.$message.success(this.$t('deviceConditioning.successExportedLimit', { count: rows.length, total }))
+          } else {
+            this.$message.success(this.$t('deviceConditioning.successExported', { count: rows.length }))
+          }
+        } else {
+          this.$message.error(response.msg || this.$t('deviceConditioning.errExport'))
+        }
+      } catch (error) {
+        console.error('导出全部失败:', error)
+        this.$apiError.notify(error, this.$t('deviceConditioning.errExport'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
       }
     },
 
@@ -4151,8 +4248,6 @@ export default {
     gap: 8px;
     flex-shrink: 0;
     white-space: nowrap;
-    grid-column: 4 / 6;
-    justify-self: start;
     line-height: 1;
 
     ::v-deep .el-button + .el-button {
@@ -5057,6 +5152,12 @@ $text-placeholder: #c0c4cc;
   }
 }
 
+// ==================== 高亮数字样式 ====================
+.highlight-count {
+  color: #f5222d;
+  font-weight: 700;
+}
+
 // ==================== 设备数量样式 ====================
 .device-count {
   color: $primary-color;
@@ -5902,8 +6003,8 @@ $text-placeholder: #c0c4cc;
       color: #606266;
 
       .count {
-        color: #1677ff;
-        font-weight: 600;
+        color: #f5222d;
+        font-weight: 700;
       }
     }
   }
@@ -5921,8 +6022,8 @@ $text-placeholder: #c0c4cc;
       color: $text-secondary;
 
       .count {
-        color: $primary-color;
-        font-weight: 600;
+        color: #f5222d;
+        font-weight: 700;
         font-size: 16px;
         margin: 0 4px;
       }

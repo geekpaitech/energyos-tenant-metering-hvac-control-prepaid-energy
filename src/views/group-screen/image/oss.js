@@ -1,5 +1,5 @@
-/** 集团驾驶舱静态资源（OSS） */
-export const OSS_BASE = 'https://oss.example.com/web-file'
+/** 集团驾驶舱静态资源（wu-cloud OSS） */
+export const OSS_BASE = 'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file'
 
 export const groupScreenOss = {
   /** 面板 / 顶栏装饰 */
@@ -19,13 +19,7 @@ export const groupScreenOss = {
   mj: `${OSS_BASE}/mj.png`,
   gd: `${OSS_BASE}/gd.png`,
   dp: `${OSS_BASE}/dp.png`,
-  sj: `${OSS_BASE}/sj.png`,
-  /** 视频 AI 风控 — 摄像头画面轮播（开源版本请替换为实际资源） */
-  cameraCarousel: [
-    'https://oss.example.com/camera-alarm/demo/sample1.jpg',
-    'https://oss.example.com/camera-alarm/demo/sample2.jpg',
-    'https://oss.example.com/camera-alarm/demo/sample3.jpg'
-  ]
+  sj: `${OSS_BASE}/sj.png`
 }
 
 export default groupScreenOss

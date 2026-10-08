@@ -54,15 +54,28 @@
           </div>
           <div class="field-item">
             <el-select
-              v-model="queryData.switchStatus"
-              :placeholder="$t('deviceElectricity.switchStatusPlaceholder')"
+              v-model="queryData.offlineType"
+              :placeholder="$t('deviceElectricity.onlineStatusPlaceholder')"
               clearable
               size="small"
               style="width: 100%"
               @change="handleSearch"
             >
-              <el-option :label="$t('deviceElectricity.switchOff')" value="0" />
-              <el-option :label="$t('deviceElectricity.switchOn')" value="1" />
+              <el-option :label="$t('deviceElectricity.offlineTypeOnline')" value="0">
+                <span class="option-with-dot">
+                  <span class="status-dot online" />{{ $t('deviceElectricity.offlineTypeOnline') }}
+                </span>
+              </el-option>
+              <el-option :label="$t('deviceElectricity.offlineTypeAbnormal')" value="1">
+                <span class="option-with-dot">
+                  <span class="status-dot offline-abnormal" />{{ $t('deviceElectricity.offlineTypeAbnormal') }}
+                </span>
+              </el-option>
+              <el-option :label="$t('deviceElectricity.offlineTypeNormal')" value="2">
+                <span class="option-with-dot">
+                  <span class="status-dot offline" />{{ $t('deviceElectricity.offlineTypeNormal') }}
+                </span>
+              </el-option>
             </el-select>
           </div>
 
@@ -77,31 +90,32 @@
             </span>
             <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('deviceElectricity.search') }}</el-button>
             <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('deviceElectricity.reset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('deviceElectricity.export') }}</el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button type="success" size="small" icon="el-icon-download">
+                {{ $t('deviceElectricity.export') }}<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('deviceElectricity.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('deviceElectricity.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('deviceElectricity.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </div>
         </div>
 
         <!-- 高级筛选第二行 -->
         <div v-if="showAdvanced && hasAdvancedFields" class="search-advanced-grid">
-          <div class="field-item advanced-online">
+          <div class="field-item advanced-switch">
             <el-select
-              v-model="queryData.onlineStatus"
-              :placeholder="$t('deviceElectricity.onlineStatusPlaceholder')"
+              v-model="queryData.switchStatus"
+              :placeholder="$t('deviceElectricity.switchStatusPlaceholder')"
               clearable
               size="small"
               style="width: 100%"
               @change="handleSearch"
             >
-              <el-option :label="$t('deviceElectricity.online')" value="1">
-                <span class="option-with-dot">
-                  <span class="status-dot online" />{{ $t('deviceElectricity.online') }}
-                </span>
-              </el-option>
-              <el-option :label="$t('deviceElectricity.offline')" value="0">
-                <span class="option-with-dot">
-                  <span class="status-dot offline" />{{ $t('deviceElectricity.offline') }}
-                </span>
-              </el-option>
+              <el-option :label="$t('deviceElectricity.switchOff')" value="0" />
+              <el-option :label="$t('deviceElectricity.switchOn')" value="1" />
             </el-select>
           </div>
 
@@ -113,7 +127,7 @@
             </span>
             <el-button type="primary" size="small" icon="el-icon-search">{{ $t('deviceElectricity.search') }}</el-button>
             <el-button size="small" icon="el-icon-refresh">{{ $t('deviceElectricity.reset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download">{{ $t('deviceElectricity.export') }}</el-button>
+            <el-button type="success" size="small" icon="el-icon-download">{{ $t('deviceElectricity.export') }}<i class="el-icon-arrow-down el-icon--right" /></el-button>
           </div>
         </div>
       </el-form>
@@ -155,11 +169,21 @@
 
       <!-- 列表视图 -->
       <div v-if="viewMode === 'list'" class="list-view">
-        <!-- 批量选中提示 -->
-        <div v-if="selectedData.length > 0" class="table-toolbar">
-          <span class="selection-info">
-            {{ $t('deviceElectricity.selectedCount', { count: selectedData.length }) }}
+        <!-- 批量操作工具栏 -->
+        <div class="table-toolbar">
+          <span v-if="selectedCount > 0" class="selection-info">
+            {{ $t('deviceElectricity.selectedCount', { count: selectedCount }) }}
           </span>
+          <el-button
+            v-if="canEdit"
+            type="warning"
+            size="small"
+            icon="el-icon-s-operation"
+            style="margin-left: auto"
+            @click="openBatchOfflineTypeDialog"
+          >
+            {{ $t('deviceElectricity.batchSetOfflineType') }}
+          </el-button>
         </div>
 
         <el-table
@@ -167,17 +191,19 @@
           border
           :data="tableData"
           :max-height="tableMaxHeight"
+          row-key="id"
           stripe
           style="width: 100%"
           class="custom-table light-border-table"
-          @selection-change="handleSelectionChange"
+          @select="handleSelect"
+          @select-all="handleSelectAll"
           :header-cell-style="{
             background: '#f5f7fa',
             color: '#606266',
             fontWeight: '600',
           }"
         >
-          <el-table-column type="selection" width="55" align="center" />
+          <el-table-column type="selection" width="55" align="center" :reserve-selection="true" />
 
           <el-table-column
             v-for="col in displayColumns"
@@ -280,10 +306,26 @@
 
               <!-- 在线状态 -->
               <template v-else-if="col.key === 'onlineStatusStatus'">
-                <div class="status-wrapper">
-                  <span :class="['status-dot', scope.row.onlineStatus == 1 ? 'online' : 'offline']" />
-                  <span>{{ scope.row.onlineStatus == 1 ? $t('deviceElectricity.online') : $t('deviceElectricity.offline') }}</span>
+                <el-tooltip
+                  v-if="scope.row.onlineStatus != 1"
+                  :content="offlineTypeTip(scope.row)"
+                  placement="top"
+                  effect="dark"
+                >
+                  <div class="status-wrapper">
+                    <span :class="['status-dot', Number(scope.row.offlineType) === 1 ? 'offline-abnormal' : 'offline']" />
+                    <span>{{ scope.row.onlineStatus == 1 ? $t('deviceElectricity.online') : $t('deviceElectricity.offline') }}</span>
+                  </div>
+                </el-tooltip>
+                <div v-else class="status-wrapper">
+                  <span class="status-dot online" />
+                  <span>{{ $t('deviceElectricity.online') }}</span>
                 </div>
+              </template>
+
+              <!-- 备注 -->
+              <template v-else-if="col.key === 'offlineComment'">
+                {{ scope.row.offlineComment || '--' }}
               </template>
 
               <!-- 默认 -->
@@ -370,6 +412,9 @@
                       <el-tag v-else-if="row.bindType == 2" type="warning" size="mini" effect="plain">{{ $t('deviceElectricity.bindTagPublic') }}</el-tag>
                       <el-tag v-else-if="row.bindType == 3" type="info" size="mini" effect="plain">{{ $t('deviceElectricity.bindTagFormula') }}</el-tag>
                       <el-tag v-else-if="row.bindType == 4" type="info" size="mini" effect="plain">{{ $t('deviceElectricity.bindTagAc') }}</el-tag>
+                      <el-tag v-if="row.logicPayType != null && row.logicPayType !== ''" :type="row.logicPayType == 0 ? 'success' : 'danger'" size="mini" effect="plain">
+                        {{ row.logicPayTypeLabel }}
+                      </el-tag>
                     </div>
                     <div class="device-card-body">
                       <div class="kv">
@@ -594,6 +639,45 @@
       </span>
     </el-dialog>
 
+    <!-- 批量设置离线类型弹窗 -->
+    <el-dialog
+      :title="$t('deviceElectricity.batchOfflineTypeDialogTitle')"
+      :visible.sync="batchOfflineTypeDialog.visible"
+      width="420px"
+      :close-on-click-modal="false"
+      class="custom-dialog"
+      @close="closeBatchOfflineTypeDialog"
+    >
+      <p style="margin: 0 0 16px; font-size: 14px; color: #606266;">
+        {{ $t('deviceElectricity.batchOfflineTypeSelectedTip', { count: selectedCount }) }}
+      </p>
+      <el-form label-width="80px">
+        <el-form-item :label="$t('deviceElectricity.batchOfflineTypeLabel')">
+          <el-select
+            v-model="batchOfflineTypeDialog.offlineType"
+            :placeholder="$t('deviceElectricity.batchOfflineTypeLabel')"
+            style="width: 100%"
+          >
+            <el-option :label="$t('deviceElectricity.offlineTypeNormal')" :value="2" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('deviceElectricity.batchOfflineTypeComment')">
+          <el-input
+            v-model="batchOfflineTypeDialog.offlineComment"
+            type="textarea"
+            :rows="3"
+            maxlength="200"
+            show-word-limit
+            :placeholder="$t('deviceElectricity.phOfflineComment')"
+          />
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button :disabled="batchSubmitting" @click="batchOfflineTypeDialog.visible = false">{{ $t('deviceElectricity.btnCancel') }}</el-button>
+        <el-button type="primary" :loading="batchSubmitting" @click="confirmBatchOfflineType">{{ $t('deviceElectricity.btnConfirm') }}</el-button>
+      </span>
+    </el-dialog>
+
     <meter-detail-drawer
       :visible.sync="detailDrawer.visible"
       :meter-id="detailDrawer.meterId"
@@ -608,7 +692,8 @@ import {
   meterAddMeter,
   meterUpdateMeterBase,
   tenantDoMeterSwitchOffOn,
-  meterUpdateLogicPayType
+  meterUpdateLogicPayType,
+  meterBatchUpdateOfflineType
 } from '@/api/meter'
 import { getSimpleTenantList } from '@/api/useReport'
 import { meterPriceList, authSendSmsCode } from '@/api/meterPrice'
@@ -619,6 +704,9 @@ import {
 } from '@/utils/enums/meter'
 import { mapGetters } from 'vuex'
 import * as XLSX from 'xlsx'
+
+// 导出全部的单次上限（与后端分页参数对应）
+const EXPORT_ALL_LIMIT = 2000
 
 export default {
   name: 'MeterManagement',
@@ -650,7 +738,7 @@ export default {
         id: '',
         managerId: '',
         meterName: '',
-        onlineStatus: null,
+        offlineType: null,
         serial: '',
         switchStatus: null
       },
@@ -662,8 +750,11 @@ export default {
       tableData: [],
       loading: false,
       submitting: false,
+      exportAllLoading: false,
       pageData: { current: 1, size: 15, total: 0 },
-      selectedData: [],
+      selectedRowsMap: {},
+      batchOfflineTypeDialog: { visible: false, offlineType: null, offlineComment: '' },
+      batchSubmitting: false,
       dialogVisible: false,
       editForm: {
         id: '',
@@ -688,6 +779,12 @@ export default {
   },
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
+    selectedRows () {
+      return Object.keys(this.selectedRowsMap).map((id) => this.selectedRowsMap[id])
+    },
+    selectedCount () {
+      return Object.keys(this.selectedRowsMap).length
+    },
     kztMenuNos () {
       const list = this.$store.getters.kztMenuNos
       return Array.isArray(list) ? list : []
@@ -712,6 +809,7 @@ export default {
         { label: t('colPhase'), checked: true, key: 'phaseLabel', width: '120', isTag: true },
         { label: t('colSwitch'), checked: true, key: 'switchStatusLabel', width: '120', isTag: true },
         { label: t('colOnline'), checked: true, key: 'onlineStatusStatus', width: '100', type: 'status', isTag: true },
+        { label: t('colOfflineComment'), key: 'offlineComment', width: '160', checked: true },
         { label: t('colSyncTime'), key: 'syncTime', width: '160', checked: true },
         { label: t('colCreateTime'), key: 'createTime', width: '160', checked: true }
       ]
@@ -755,7 +853,7 @@ export default {
       if (this.smsCountdownIdle) return this.$t('deviceElectricity.sendSmsCode')
       return `${s}s`
     },
-    // 高级字段：在线状态（第5个，超出一行4个）
+    // 高级字段：分合闸状态（第5个，超出一行4个）
     hasAdvancedFields () { return true },
     userPhone () {
       return this.$store.state.user.phone || ''
@@ -794,7 +892,7 @@ export default {
     },
     viewMode (val) {
       try { window.localStorage.setItem('device.electricity.viewMode', val) } catch (e) {}
-      if (val !== 'list') this.selectedData = []
+      if (val !== 'list') this.selectedRowsMap = {}
     },
     '$i18n.locale' () {
       if (!this.rawTableRows) return
@@ -840,33 +938,37 @@ export default {
       }
     },
 
+    buildQueryParams (size, current) {
+      const normalizeSelect = (v) => {
+        if (v === null || v === undefined) return ''
+        if (v === '__ALL__') return ''
+        return v
+      }
+      const keyword = (this.queryData.serial || '').trim()
+      // 纯数字且不少于 8 位视为序列号，否则按电表名称
+      const isSerialKeyword = /^\d+$/.test(keyword) && keyword.length >= 8
+      return {
+        bindId: normalizeSelect(this.queryData.bindId),
+        bindType: normalizeSelect(this.queryData.bindType),
+        id: this.queryData.id,
+        managerId: this.queryData.managerId,
+        meterName: keyword && !isSerialKeyword ? keyword : '',
+        offlineType: normalizeSelect(this.queryData.offlineType),
+        page: {
+          current,
+          size,
+          orders: [{ asc: false, column: 'createTime' }]
+        },
+        serial: keyword && isSerialKeyword ? keyword : '',
+        switchStatus: normalizeSelect(this.queryData.switchStatus)
+      }
+    },
+
     async fetchTableData () {
       if (!this.queryData.managerId) return
       this.loading = true
       try {
-        const normalizeSelect = (v) => {
-          if (v === null || v === undefined) return ''
-          if (v === '__ALL__') return ''
-          return v
-        }
-        const keyword = (this.queryData.serial || '').trim()
-        // 纯数字且不少于 8 位视为序列号，否则按电表名称
-        const isSerialKeyword = /^\d+$/.test(keyword) && keyword.length >= 8
-        const params = {
-          bindId: normalizeSelect(this.queryData.bindId),
-          bindType: normalizeSelect(this.queryData.bindType),
-          id: this.queryData.id,
-          managerId: this.queryData.managerId,
-          meterName: keyword && !isSerialKeyword ? keyword : '',
-          onlineStatus: normalizeSelect(this.queryData.onlineStatus),
-          page: {
-            current: this.pageData.current,
-            size: this.pageData.size,
-            orders: [{ asc: false, column: 'createTime' }]
-          },
-          serial: keyword && isSerialKeyword ? keyword : '',
-          switchStatus: normalizeSelect(this.queryData.switchStatus)
-        }
+        const params = this.buildQueryParams(this.pageData.size, this.pageData.current)
         const response = await meterPageMeterInfoByAdmin(params)
         if (response.code === 200 && response.data) {
           this.rawTableRows = response.data.dataList || []
@@ -902,6 +1004,13 @@ export default {
         const meterPriceDetail = item.meterPriceDto || null
         return { ...item, bindTenantName, bindName, bindTypeLabel, logicPayTypeLabel, switchStatusLabel, onlineStatusStatus, phaseLabel, meterPriceName, meterPriceDetail }
       })
+    },
+
+    offlineTypeTip (row) {
+      const type = row.offlineType
+      if (type === 1) return this.$t('deviceElectricity.offlineTypeAbnormal')
+      if (type === 2) return this.$t('deviceElectricity.offlineTypeNormal')
+      return '-'
     },
 
     formatBindTypeLabel (v) {
@@ -975,7 +1084,7 @@ export default {
         id: '',
         managerId: this.currentManagerId || '',
         meterName: '',
-        onlineStatus: null,
+        offlineType: null,
         serial: '',
         switchStatus: null
       }
@@ -1212,42 +1321,160 @@ export default {
       this.$router.push({ path: `/metering/tenant/detail/${row.bindId}` })
     },
 
-    handleExport () {
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+
+    /** 生成并触发 xlsx 下载（入参为已 formatTableData 处理后的行） */
+    buildXlsx (rows) {
+      const headers = this.displayColumns.map((col) => col.label)
+      const keys = this.displayColumns.map((col) => col.key)
+      const data = rows.map((row) => keys.map((key) => this.formatExportCell(row, key)))
+      const wsData = [headers, ...data]
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+      ws['!cols'] = headers.map((h) => ({ wch: Math.max(h.length * 2, 15) }))
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('deviceElectricity.exportSheetName'))
+      const now = new Date()
+      const timeStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + String(now.getSeconds()).padStart(2, '0')
+      const fileName = `${this.$t('deviceElectricity.exportFilePrefix')}_${timeStr}.xlsx`
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    },
+
+    exportCurrentPage () {
       if (this.tableData.length === 0) { this.$message.warning(this.$t('deviceElectricity.warnNoExportData')); return }
       try {
-        const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-        const headers = this.displayColumns.map((col) => col.label)
-        const keys = this.displayColumns.map((col) => col.key)
-        const data = exportData.map((row) => {
-          return keys.map((key) => this.formatExportCell(row, key))
-        })
-        const wsData = [headers, ...data]
-        const ws = XLSX.utils.aoa_to_sheet(wsData)
-        ws['!cols'] = headers.map((h) => ({ wch: Math.max(h.length * 2, 15) }))
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('deviceElectricity.exportSheetName'))
-        const now = new Date()
-        const timeStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + String(now.getSeconds()).padStart(2, '0')
-        const fileName = `${this.$t('deviceElectricity.exportFilePrefix')}_${timeStr}.xlsx`
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-        this.$message.success(this.$t('deviceElectricity.successExported', { count: exportData.length }))
+        this.buildXlsx(this.tableData)
+        this.$message.success(this.$t('deviceElectricity.successExported', { count: this.tableData.length }))
       } catch (error) {
         console.error('导出失败:', error)
         this.$apiError.notify(error, this.$t('deviceElectricity.errExport'))
       }
     },
 
-    handleSelectionChange (selection) { this.selectedData = selection },
+    exportSelected () {
+      if (this.selectedRows.length === 0) { this.$message.warning(this.$t('deviceElectricity.warnNoSelectedExport')); return }
+      try {
+        this.buildXlsx(this.selectedRows)
+        this.$message.success(this.$t('deviceElectricity.successExported', { count: this.selectedRows.length }))
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$apiError.notify(error, this.$t('deviceElectricity.errExport'))
+      }
+    },
+
+    async exportAll () {
+      if (!this.queryData.managerId || this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({
+        lock: true,
+        text: this.$t('deviceElectricity.exporting'),
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
+      try {
+        const params = this.buildQueryParams(EXPORT_ALL_LIMIT, 1)
+        const response = await meterPageMeterInfoByAdmin(params)
+        if (response.code === 200 && response.data) {
+          const rawList = response.data.dataList || []
+          const total = response.data.total || 0
+          if (rawList.length === 0) { this.$message.warning(this.$t('deviceElectricity.warnNoExportData')); return }
+          const rows = this.formatTableData(rawList)
+          this.buildXlsx(rows)
+          if (total > EXPORT_ALL_LIMIT) {
+            this.$message.success(this.$t('deviceElectricity.successExportedLimit', { count: rows.length, total }))
+          } else {
+            this.$message.success(this.$t('deviceElectricity.successExported', { count: rows.length }))
+          }
+        } else {
+          this.$message.error(response.msg || this.$t('deviceElectricity.errExport'))
+        }
+      } catch (error) {
+        console.error('导出全部失败:', error)
+        this.$apiError.notify(error, this.$t('deviceElectricity.errExport'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
+      }
+    },
+
+    handleSelect (selection, row) {
+      const isSelected = selection.some((item) => item.id === row.id)
+      if (isSelected) {
+        this.$set(this.selectedRowsMap, row.id, row)
+      } else {
+        this.$delete(this.selectedRowsMap, row.id)
+      }
+    },
+    handleSelectAll (selection) {
+      const currentPageIds = this.tableData.map((item) => item.id)
+      currentPageIds.forEach((id) => { this.$delete(this.selectedRowsMap, id) })
+      selection.forEach((row) => { this.$set(this.selectedRowsMap, row.id, row) })
+    },
+    openBatchOfflineTypeDialog () {
+      if (this.selectedCount === 0) {
+        this.$message.warning(this.$t('deviceElectricity.warnNoMeterSelected'))
+        return
+      }
+      const onlineCount = this.selectedRows.filter((row) => Number(row.onlineStatus) === 1).length
+      if (onlineCount > 0) {
+        this.$message.warning(this.$t('deviceElectricity.warnOnlineMeterSelected', { count: onlineCount }))
+        return
+      }
+      this.batchOfflineTypeDialog = { visible: true, offlineType: 2, offlineComment: '' }
+    },
+    closeBatchOfflineTypeDialog () {
+      this.batchOfflineTypeDialog.visible = false
+      this.batchOfflineTypeDialog.offlineType = null
+      this.batchOfflineTypeDialog.offlineComment = ''
+      this.batchSubmitting = false
+    },
+    async confirmBatchOfflineType () {
+      const offlineType = this.batchOfflineTypeDialog.offlineType
+      // 仅允许设置「正常离线」
+      if (offlineType !== 2) {
+        this.$message.warning(this.$t('deviceElectricity.warnSelectOfflineType'))
+        return
+      }
+      const idList = this.selectedRows.map((row) => row.id)
+      if (idList.length === 0) {
+        this.$message.warning(this.$t('deviceElectricity.warnNoMeterSelected'))
+        return
+      }
+      this.batchSubmitting = true
+      try {
+        const response = await meterBatchUpdateOfflineType({
+          idList,
+          offlineType,
+          offlineComment: this.batchOfflineTypeDialog.offlineComment
+        })
+        if (response.code === 200) {
+          this.$message.success(this.$t('deviceElectricity.successBatchOfflineType'))
+          this.closeBatchOfflineTypeDialog()
+          this.selectedRowsMap = {}
+          this.fetchTableData()
+        } else {
+          this.$message.error(response.msg || this.$t('deviceElectricity.errBatchOfflineType'))
+        }
+      } catch (error) {
+        this.$message.error(error?.msg || this.$t('deviceElectricity.errBatchOfflineType'))
+        console.error('批量设置离线类型失败:', error)
+      } finally {
+        this.batchSubmitting = false
+      }
+    },
     handleSizeChange (val) { this.pageData.size = val; this.pageData.current = 1; this.fetchTableData() },
     handleCurrentChange (val) { this.pageData.current = val; this.fetchTableData() }
   }
@@ -1405,7 +1632,7 @@ export default {
     grid-column: 5;
   }
 
-  .search-advanced-grid .advanced-online {
+  .search-advanced-grid .advanced-switch {
     grid-column: 1;
   }
 
@@ -1499,6 +1726,8 @@ export default {
   padding: 0;
 
   .table-toolbar {
+    display: flex;
+    align-items: center;
     padding: 10px 0;
     .selection-info {
       font-size: 13px;
@@ -1785,6 +2014,10 @@ export default {
 
   &.offline {
     background: #d9d9d9;
+  }
+
+  &.offline-abnormal {
+    background: #E6A23C;
   }
 }
 

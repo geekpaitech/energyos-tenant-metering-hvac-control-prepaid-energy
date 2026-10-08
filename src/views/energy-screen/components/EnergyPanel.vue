@@ -1,7 +1,7 @@
 <template>
   <article class="energy-panel" :class="variant ? `energy-panel--${variant}` : ''">
     <header class="energy-panel__header">
-      <h2>{{ title }}<span v-if="period" class="panel-period">{{ period }}</span></h2>
+      <h2><slot name="title">{{ title }}</slot><span v-if="period" class="panel-period">{{ period }}</span></h2>
       <slot name="meta" />
     </header>
     <div class="energy-panel__content">

@@ -48,6 +48,7 @@ import moment from 'moment'
 import { mapGetters } from 'vuex'
 import { getSimpleTenantList } from '@/api/useReport'
 import { queryTenantSankey, isDemoManager } from '@/api/newDashboard'
+import { fetchYesterdayPvKwh } from '@/api/dashboardPv'
 
 const SANKEY_COLORS = [
   '#5B8FF9',
@@ -68,7 +69,9 @@ export default {
       loading: false,
       tenantList: [],
       maxDisplayTenants: 6,
-      sankeyData: null
+      sankeyData: null,
+      pvDayKwh: 0,
+      rawSankeyData: null
     }
   },
   computed: {
@@ -105,7 +108,10 @@ export default {
       this.chart = echarts.init(el)
 
       this.chart.on('click', (params) => {
-        if (params.componentType === 'series') {
+        if (params.componentType !== 'series') return
+        if (params.dataType === 'node' && params.name === (this.$t('dashboard.sankey.pv') || '光伏')) {
+          this.$router.push('/energy/photovoltaic')
+        } else {
           this.$router.push('/energy/electricity-sankey')
         }
       })
@@ -220,6 +226,7 @@ export default {
             ]
           }
           const processed = this.processSankeyData(mock)
+          this.rawSankeyData = mock
           this.sankeyData = processed
           return
         }
@@ -241,6 +248,7 @@ export default {
         })
 
         const raw = (res && res.data) ? res.data : res
+        this.rawSankeyData = raw
         const processed = this.processSankeyData(raw)
         this.sankeyData = processed && processed.links && processed.links.length ? processed : null
       } catch (e) {
@@ -251,6 +259,40 @@ export default {
         await this.$nextTick()
         this.renderChart()
         this.handleResize()
+      }
+
+      // 光伏数据：异步加载，不阻塞桑基图首屏渲染
+      this.fetchPvData()
+    },
+    async fetchPvData () {
+      // 仅南都广场显示光伏数据
+      const managerName = this.rawSankeyData && this.rawSankeyData.managerName
+      console.log('[PV] managerName:', managerName)
+      if (!managerName || !managerName.includes('南都')) {
+        this.pvDayKwh = 0
+        return
+      }
+      try {
+        const kwh = await fetchYesterdayPvKwh()
+        console.log('[PV] fetchYesterdayPvKwh result:', kwh)
+        if (typeof kwh === 'number' && kwh > 0) {
+          this.pvDayKwh = kwh
+        }
+      } catch (e) {
+        console.error('[PV] fetchYesterdayPvKwh error:', e)
+        this.pvDayKwh = 0
+      }
+      console.log('[PV] pvDayKwh after fetch:', this.pvDayKwh)
+      // PV 数据到达后重绘主桑基图
+      if (this.rawSankeyData) {
+        const reprocessed = this.processSankeyData(this.rawSankeyData)
+        console.log('[PV] reprocessed nodes:', reprocessed && reprocessed.nodes && reprocessed.nodes.map(n => n.name))
+        console.log('[PV] reprocessed links count:', reprocessed && reprocessed.links && reprocessed.links.length)
+        this.sankeyData = reprocessed && reprocessed.links && reprocessed.links.length
+          ? reprocessed
+          : null
+        await this.$nextTick()
+        this.renderChart()
       }
     },
     processSankeyData (data) {
@@ -270,7 +312,8 @@ export default {
       const privateTotalElec = data.privateTotalElec || 0
       const shareTotalElec = data.shareTotalElec || 0
 
-      nodes.push({ name: totalNodeName, itemStyle: { color: '#1890ff' } })
+      const rootNode = { name: totalNodeName, itemStyle: { color: '#1890ff' } }
+      nodes.push(rootNode)
 
       if (privateTotalElec > 0) {
         nodes.push({ name: Ld, itemStyle: { color: '#52c41a' } })
@@ -354,16 +397,39 @@ export default {
           const color = SANKEY_COLORS[index % SANKEY_COLORS.length]
           const nodeName = this.$displayDynamicName(tenant.tenantName, 14)
           if (!nodes.find(n => n.name === nodeName)) nodes.push({ name: nodeName, itemStyle: { color } })
-          links.push({ source: Ls, target: nodeName, value: tenant.totalElec })
-        })
+        links.push({ source: Ls, target: nodeName, value: tenant.totalElec })
+      })
 
-        if (othersShareElec > 0) {
-          if (!nodes.find(n => n.name === Lo)) nodes.push({ name: Lo, itemStyle: { color: '#c0c4cc' } })
+      if (othersShareElec > 0) {
+        if (!nodes.find(n => n.name === Lo)) nodes.push({ name: Lo, itemStyle: { color: '#c0c4cc' } })
           links.push({ source: Ls, target: Lo, value: othersShareElec })
         }
       }
 
       if (links.length === 0) return null
+
+      // 光伏作为与根节点平级的源节点，按比例分流到专用/公摊设备
+      const pvKwh = this.pvDayKwh || 0
+      const totalElec = privateTotalElec + shareTotalElec
+      if (pvKwh > 0 && totalElec > 0) {
+        const pvNodeName = this.$t('dashboard.sankey.pv') || '光伏'
+        // 光伏节点加粗边框，视觉上更突出
+        nodes.push({ name: pvNodeName, itemStyle: { color: '#fa8c16', borderWidth: 3, borderColor: '#e0780a' } })
+
+        // 光伏连线提高不透明度，视觉上更"粗实"
+        const pvLineStyle = { opacity: 0.55 }
+        if (privateTotalElec > 0 && shareTotalElec > 0) {
+          const ratio = privateTotalElec / totalElec
+          const pvToDedicated = Math.round(pvKwh * ratio)
+          const pvToShared = pvKwh - pvToDedicated
+          if (pvToDedicated > 0) links.push({ source: pvNodeName, target: Ld, value: pvToDedicated, lineStyle: pvLineStyle })
+          if (pvToShared > 0) links.push({ source: pvNodeName, target: Ls, value: pvToShared, lineStyle: pvLineStyle })
+        } else if (privateTotalElec > 0) {
+          links.push({ source: pvNodeName, target: Ld, value: pvKwh, lineStyle: pvLineStyle })
+        } else if (shareTotalElec > 0) {
+          links.push({ source: pvNodeName, target: Ls, value: pvKwh, lineStyle: pvLineStyle })
+        }
+      }
 
       return { nodes, links }
     },

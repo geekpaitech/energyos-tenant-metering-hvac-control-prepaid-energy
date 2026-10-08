@@ -4,24 +4,36 @@
       v-for="item in list"
       :key="item.key"
       class="kpi-cell"
-      :class="{ 'kpi-cell--alarm': !!item.extra }"
+      :class="{
+        'kpi-cell--alarm': !!item.extra,
+        'kpi-cell--clickable': isClickable(item)
+      }"
+      :role="isClickable(item) ? 'button' : null"
+      :tabindex="isClickable(item) ? 0 : null"
+      :aria-label="isClickable(item) ? `查看${item.label}明细` : null"
+      @click="handleSelect(item)"
+      @keydown.enter="handleSelect(item)"
+      @keydown.space.prevent="handleSelect(item)"
     >
       <div class="kpi-cell__head">
         <i class="kpi-cell__bar" aria-hidden="true" />
         <span class="kpi-cell__label">{{ item.label }}</span>
+        <span v-if="isClickable(item)" class="kpi-cell__detail">
+          查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+        </span>
       </div>
       <div class="kpi-cell__body">
         <div v-if="item.extra" class="kpi-cell__alarm">
           <div class="alarm-stat r" :class="{ 'alarm-stat--on': isAlarmActive(item.extra.high) }">
-            <span class="alarm-stat__lbl">高</span>
+            <span class="alarm-stat__lbl">火警</span>
             <span class="alarm-stat__num" :class="{ 'is-empty': item.extra.high === '--' }">{{ item.extra.high }}</span>
           </div>
           <div class="alarm-stat o" :class="{ 'alarm-stat--on': isAlarmActive(item.extra.mid) }">
-            <span class="alarm-stat__lbl">中</span>
+            <span class="alarm-stat__lbl">预警</span>
             <span class="alarm-stat__num" :class="{ 'is-empty': item.extra.mid === '--' }">{{ item.extra.mid }}</span>
           </div>
           <div class="alarm-stat y" :class="{ 'alarm-stat--on': isAlarmActive(item.extra.low) }">
-            <span class="alarm-stat__lbl">低</span>
+            <span class="alarm-stat__lbl">故障</span>
             <span class="alarm-stat__num" :class="{ 'is-empty': item.extra.low === '--' }">{{ item.extra.low }}</span>
           </div>
         </div>
@@ -60,6 +72,12 @@ export default {
     }
   },
   methods: {
+    isClickable (item) {
+      return item && ['onlineRate', 'workOrderRate', 'energyPerArea', 'collectionRate', 'hazardFix'].includes(item.key)
+    },
+    handleSelect (item) {
+      if (this.isClickable(item)) this.$emit('select', item)
+    },
     hasTrend (item) {
       return item.trend != null && item.trend !== '' && !Number.isNaN(Number(item.trend))
     },
@@ -115,6 +133,25 @@ $kpi-col-gap: 10px;
     0 9px 18px rgba(2, 8, 16, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
     inset 0 0 12px rgba(82, 145, 182, 0.025);
+
+  &--clickable {
+    cursor: pointer;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: rgba(110, 203, 235, 0.72);
+      box-shadow:
+        0 11px 22px rgba(2, 8, 16, 0.25),
+        0 0 0 1px rgba(110, 203, 235, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.055);
+      transform: translateY(-1px);
+      outline: none;
+    }
+  }
 
   &::before {
     content: '';
@@ -190,6 +227,20 @@ $kpi-col-gap: 10px;
     text-overflow: ellipsis;
     letter-spacing: 0.2px;
     text-shadow: none;
+  }
+
+  &__detail {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 2px;
+    margin-left: 7px;
+    color: rgba(145, 207, 242, 0.9);
+    font-size: 10px;
+    font-weight: 400;
+    white-space: nowrap;
   }
 
   &__body {

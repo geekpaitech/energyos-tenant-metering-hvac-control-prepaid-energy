@@ -103,9 +103,9 @@
             fontWeight: '600',
           }"
         >
-          <el-table-column prop="seqNo" :label="$t('bankJournalPage.colSeqNo')" width="180" show-overflow-tooltip />
-          <el-table-column prop="payeeName" :label="$t('bankJournalPage.colPayeeName')" width="200" show-overflow-tooltip />
-          <el-table-column prop="bankNumber" :label="$t('bankJournalPage.colBankNumber')" width="200" show-overflow-tooltip />
+          <el-table-column prop="seqNo" :label="$t('bankJournalPage.colSeqNo')" width="180" show-overflow-tooltip fixed="left" />
+          <el-table-column prop="payeeName" :label="$t('bankJournalPage.colPayeeName')" width="200" show-overflow-tooltip fixed="left" />
+          <el-table-column prop="bankNumber" :label="$t('bankJournalPage.colBankNumber')" width="200" show-overflow-tooltip fixed="left" />
           <el-table-column :label="$t('bankJournalPage.colAmountYuan')" width="120" align="right">
             <template slot-scope="scope">{{ formatMoney(scope.row.balance) }}</template>
           </el-table-column>

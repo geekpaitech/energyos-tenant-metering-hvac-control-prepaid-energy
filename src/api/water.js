@@ -260,3 +260,29 @@ export function queryWaterUseStatis (data) {
     data
   })
 }
+
+// 批量设置-查询水表（租户绑定水表分页）
+export function waterTenantWater (data) {
+  return request({
+    url: '/api/ebc-content/water/tenantWater',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 批量设置-水表付费模式
+export function waterBatchSetPayType (data) {
+  return request({
+    url: '/api/ebc-content/water/batchSetPayType',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}

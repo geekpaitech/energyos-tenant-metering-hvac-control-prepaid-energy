@@ -55,6 +55,7 @@
               <el-option :label="$t('consumptionBillPage.tenantType0')" :value="0" />
               <el-option :label="$t('consumptionBillPage.tenantType1')" :value="1" />
               <el-option :label="$t('consumptionBillPage.tenantType2')" :value="2" />
+              <el-option :label="$t('consumptionBillPage.tenantType3')" :value="3" />
             </el-select>
           </div>
           <div class="field-item">
@@ -83,7 +84,16 @@
             </span>
             <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('consumptionBillPage.btnSearch') }}</el-button>
             <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('consumptionBillPage.btnReset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('consumptionBillPage.btnExport') }}</el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button type="success" size="small" icon="el-icon-download">
+                {{ $t('consumptionBillPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('consumptionBillPage.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('consumptionBillPage.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('consumptionBillPage.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </div>
         </div>
 
@@ -101,6 +111,19 @@
               <el-option :label="$t('consumptionBillPage.settleWay2')" value="2" />
             </el-select>
           </div>
+          <div class="field-item advanced-pay-type">
+            <el-select
+              v-model="queryData.payType"
+              :placeholder="$t('consumptionBillPage.phPayType')"
+              clearable
+              size="small"
+              style="width: 100%"
+              @change="handleSearch"
+            >
+              <el-option :label="$t('consumptionBillPage.optPayPrepaid')" :value="0" />
+              <el-option :label="$t('consumptionBillPage.optPayPostpaid')" :value="1" />
+            </el-select>
+          </div>
           <div class="search-actions search-actions-phantom">
             <span class="toggle-advanced">
               {{ showAdvanced ? $t('consumptionBillPage.btnCollapse') : $t('consumptionBillPage.btnExpand') }}
@@ -108,7 +131,7 @@
             </span>
             <el-button type="primary" size="small" icon="el-icon-search">{{ $t('consumptionBillPage.btnSearch') }}</el-button>
             <el-button size="small" icon="el-icon-refresh">{{ $t('consumptionBillPage.btnReset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download">{{ $t('consumptionBillPage.btnExport') }}</el-button>
+            <el-button type="success" size="small" icon="el-icon-download">{{ $t('consumptionBillPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" /></el-button>
           </div>
         </div>
       </el-form>
@@ -236,6 +259,7 @@
           v-loading="loading"
           border
           :data="tableData"
+          row-key="rid"
           :max-height="tableMaxHeight"
           stripe
           style="width: 100%"
@@ -247,7 +271,7 @@
             fontWeight: '600',
           }"
         >
-          <el-table-column type="selection" width="55" align="center" />
+          <el-table-column type="selection" width="55" align="center" reserve-selection />
 
           <el-table-column
             v-for="col in displayColumns"
@@ -277,6 +301,12 @@
                   <i class="el-icon-user"></i>
                   {{ $displayBizHybrid(scope.row.tenantName || '') || '-' }}
                 </el-link>
+              </template>
+
+              <template v-else-if="col.key === 'payType'">
+                <el-tag :type="getPayTypeTagType(scope.row.payType)" size="small" effect="plain">
+                  {{ getPayTypeLabel(scope.row.payType) }}
+                </el-tag>
               </template>
 
               <template v-else-if="col.key === 'billType'">
@@ -366,6 +396,9 @@ import { tenantPageTenant } from '@/api/tenant'
 import * as XLSX from 'xlsx'
 import BillDetailDrawer from '../components/BillDetailDrawer.vue'
 
+// 导出全部单次上限（与电表页一致）
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'ConsumptionBillPage',
   components: {
@@ -379,6 +412,7 @@ export default {
         { key: 'occurDate', width: '120', checked: true },
         { key: 'createTime', width: '160', checked: true },
         { key: 'tenantInfo', width: '200', checked: true, disabled: true },
+        { key: 'payType', width: '100', checked: true },
         { key: 'billType', width: '120', checked: true },
         { key: 'settleWay', width: '120', checked: true },
         { key: 'balance', width: '120', checked: true },
@@ -399,6 +433,7 @@ export default {
         tenantId: '',
         tenantType: 0,
         useType: null,
+        payType: null,
         payStatus: '',
         withdrawStatus: '',
         settleWay: null,
@@ -423,6 +458,8 @@ export default {
         total: 0
       },
       selectedData: [],
+      // 导出全部遮罩防重
+      exportAllLoading: false,
       detailDrawer: {
         show: false,
         id: '',
@@ -501,6 +538,7 @@ export default {
         occurDate: 'colOccurDate',
         createTime: 'colCreateTime',
         tenantInfo: 'colTenantInfo',
+        payType: 'colPayType',
         billType: 'colBillType',
         settleWay: 'colSettleWay',
         balance: 'colBalance',
@@ -561,7 +599,8 @@ export default {
       handler (newVal) {
         if (newVal) {
           this.queryData.managerId = newVal
-          this.setDefaultTimeRange()
+          // 看板跳转带入日期区间，优先使用路由参数；否则用默认区间
+          this.initTimeRange()
           this.fetchTableData()
           this.getStatisticsData()
           this.getTenantList()
@@ -583,10 +622,19 @@ export default {
     } else if (!this.queryData.managerId) {
       this.queryData.managerId = this.currentManagerId || ''
     }
-
-    this.setDefaultTimeRange()
   },
   methods: {
+    // 初始化时间区间：优先读取路由参数（看板跳转），否则用默认上月~今天
+    initTimeRange () {
+      const routeStart = this.$route.query.startDate
+      const routeEnd = this.$route.query.endDate
+      const dateRe = /^\d{4}-\d{2}-\d{2}$/
+      if (routeStart && routeEnd && dateRe.test(routeStart) && dateRe.test(routeEnd) && !isNaN(Date.parse(routeStart)) && !isNaN(Date.parse(routeEnd))) {
+        this.queryData.timeRange = [routeStart, routeEnd]
+      } else {
+        this.setDefaultTimeRange()
+      }
+    },
     normalizeSelect (v) {
       if (v === null || v === undefined) return ''
       return v
@@ -596,7 +644,7 @@ export default {
       if (['balance', 'discountAmt', 'realAmt'].includes(key)) {
         return 'right'
       }
-      if (['billType', 'settleWay', 'payStatus', 'status'].includes(key)) {
+      if (['billType', 'settleWay', 'payStatus', 'status', 'payType'].includes(key)) {
         return 'center'
       }
       return 'left'
@@ -644,6 +692,7 @@ export default {
         rid: '',
         tenantId: tenantIdVal === null || tenantIdVal === undefined ? '' : tenantIdVal,
         tenantType: this.queryData.tenantType,
+        payType: this.queryData.payType,
         payStatus: this.queryData.payStatus,
         withdrawStatus: this.queryData.withdrawStatus,
         settleWay: settleWayParam,
@@ -767,6 +816,7 @@ export default {
         tenantId: '',
         tenantType: 0,
         useType: null,
+        payType: null,
         payStatus: '',
         withdrawStatus: '',
         settleWay: null,
@@ -779,106 +829,173 @@ export default {
       this.handleSearch()
     },
 
-    handleExport () {
+    // XLSX 生成（导出本页 / 导出选中 / 导出全部 共用）
+    buildXlsx (exportData, isSelected, total) {
+      const headers = this.displayColumns.map((col) => col.label)
+      const data = exportData.map((row) => {
+        return this.displayColumns.map((col) => {
+          const value = row[col.key]
+
+          switch (col.key) {
+            case 'tenantInfo':
+              return this.$displayBizHybrid(row.tenantName || '', 200)
+            case 'billType':
+              return this.getBillTypeLabel(row.useType)
+            case 'payType':
+              return this.getPayTypeLabel(value)
+            case 'settleWay':
+              return this.getSettleWayLabel(value)
+            case 'balance':
+            case 'discountAmt':
+            case 'realAmt':
+              return value ? parseFloat(value).toFixed(2) : '0.00'
+            case 'payStatus':
+              return Number(value) === 1 ? this.$t('consumptionBillPage.payPaid') : this.$t('consumptionBillPage.payUnpaid')
+            case 'status':
+              return this.getInvoiceStatusLabel(value)
+            default:
+              return value || ''
+          }
+        })
+      })
+
+      const wsData = [headers, ...data]
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+      const colWidths = this.displayColumns.map((col) => {
+        if (col.width) {
+          return {
+            wch: Math.max(parseInt(col.width) / 8, col.label.length + 2)
+          }
+        } else if (col.minWidth) {
+          return {
+            wch: Math.max(
+              parseInt(col.minWidth) / 8,
+              col.label.length + 2
+            )
+          }
+        }
+        return { wch: Math.max(15, col.label.length + 2) }
+      })
+      ws['!cols'] = colWidths
+
+      const headerRange = XLSX.utils.decode_range(ws['!ref'])
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
+        if (!ws[cellAddress]) continue
+
+        ws[cellAddress].s = {
+          font: { bold: true, color: { rgb: '1f2329' } },
+          fill: { fgColor: { rgb: 'F8F9FC' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        }
+      }
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('consumptionBillPage.exportSheetName'))
+
+      const fileName = this.generateFileName()
+
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+
+      document.body.appendChild(link)
+      link.click()
+
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) {
+        successMsg = this.$t('consumptionBillPage.msgExportOkSelected', { count: exportCount })
+      } else if (total != null && total > exportCount) {
+        // 命中数超过 2000 上限：只导出前 2000 条并提示（与电表页一致）
+        successMsg = this.$t('consumptionBillPage.successExportedLimit', { count: exportCount, total })
+      } else if (total != null) {
+        successMsg = this.$t('consumptionBillPage.successExported', { count: exportCount })
+      } else {
+        successMsg = this.$t('consumptionBillPage.msgExportOk', { count: exportCount })
+      }
+      this.$message.success(successMsg)
+    },
+
+    // 导出本页
+    exportCurrentPage () {
       if (this.tableData.length === 0) {
         this.$message.warning(this.$t('consumptionBillPage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
 
+    // 导出选中
+    exportSelected () {
+      if (this.selectedData.length === 0) {
+        this.$message.warning(this.$t('consumptionBillPage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+
+    // 导出全部：按当前查询条件重新拉取，封顶 2000 条
+    async exportAll () {
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('consumptionBillPage.exporting') })
       try {
-        const exportData =
-          this.selectedData.length > 0 ? this.selectedData : this.tableData
-
-        const headers = this.displayColumns.map((col) => col.label)
-        const data = exportData.map((row) => {
-          return this.displayColumns.map((col) => {
-            const value = row[col.key]
-
-            switch (col.key) {
-              case 'tenantInfo':
-                return this.$displayBizHybrid(row.tenantName || '', 200)
-              case 'billType':
-                return this.getBillTypeLabel(row.useType)
-              case 'settleWay':
-                return this.getSettleWayLabel(value)
-              case 'balance':
-              case 'discountAmt':
-              case 'realAmt':
-                return value ? parseFloat(value).toFixed(2) : '0.00'
-              case 'payStatus':
-                return Number(value) === 1 ? this.$t('consumptionBillPage.payPaid') : this.$t('consumptionBillPage.payUnpaid')
-              case 'status':
-                return this.getInvoiceStatusLabel(value)
-              default:
-                return value || ''
-            }
-          })
-        })
-
-        const wsData = [headers, ...data]
-        const ws = XLSX.utils.aoa_to_sheet(wsData)
-
-        const colWidths = this.displayColumns.map((col) => {
-          if (col.width) {
-            return {
-              wch: Math.max(parseInt(col.width) / 8, col.label.length + 2)
-            }
-          } else if (col.minWidth) {
-            return {
-              wch: Math.max(
-                parseInt(col.minWidth) / 8,
-                col.label.length + 2
-              )
-            }
-          }
-          return { wch: Math.max(15, col.label.length + 2) }
-        })
-        ws['!cols'] = colWidths
-
-        const headerRange = XLSX.utils.decode_range(ws['!ref'])
-        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
-          if (!ws[cellAddress]) continue
-
-          ws[cellAddress].s = {
-            font: { bold: true, color: { rgb: '1f2329' } },
-            fill: { fgColor: { rgb: 'F8F9FC' } },
-            alignment: { horizontal: 'center', vertical: 'center' }
-          }
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('consumptionBillPage.msgNoDataExport'))
+          return
         }
-
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('consumptionBillPage.exportSheetName'))
-
-        const fileName = this.generateFileName()
-
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        })
-
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        link.style.display = 'none'
-
-        document.body.appendChild(link)
-        link.click()
-
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-
-        const exportCount = exportData.length
-        const isSelectedExport = this.selectedData.length > 0
-        this.$message.success(
-          isSelectedExport
-            ? this.$t('consumptionBillPage.msgExportOkSelected', { count: exportCount })
-            : this.$t('consumptionBillPage.msgExportOk', { count: exportCount })
-        )
+        this.buildXlsx(rows, false, total)
       } catch (error) {
         console.error('导出失败:', error)
         this.$apiError.notify(error, this.$t('consumptionBillPage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
+      }
+    },
+
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+
+    // 按查询条件拉取全部（封顶 EXPORT_ALL_LIMIT）
+    async fetchAllForExport () {
+      const base = this.buildListFilterParams()
+      const params = {
+        ...base,
+        page: {
+          size: EXPORT_ALL_LIMIT,
+          current: 1,
+          searchCount: true,
+          orders: [
+            { asc: false, column: 'occurDate' },
+            { asc: false, column: 'rid' }
+          ]
+        }
+      }
+      const response = await settlePageTenantDailyBill(params)
+      if (response.code !== 200) {
+        this.$message.error(response.msg || this.$t('consumptionBillPage.msgFetchListFail'))
+        return { rows: [], total: 0 }
+      }
+      return {
+        rows: response.data?.dataList || [],
+        total: response.data?.total || 0
       }
     },
 
@@ -942,6 +1059,20 @@ export default {
         0: 'primary',
         2: 'success',
         7: 'warning'
+      }
+      return typeMap[String(type)] || 'info'
+    },
+
+    getPayTypeLabel (type) {
+      const map = { 0: 'optPayPrepaid', 1: 'optPayPostpaid' }
+      const key = map[type] || map[String(type)]
+      return key ? this.$t(`consumptionBillPage.${key}`) : '-'
+    },
+
+    getPayTypeTagType (type) {
+      const typeMap = {
+        0: 'success',
+        1: 'warning'
       }
       return typeMap[String(type)] || 'info'
     },
@@ -1071,6 +1202,10 @@ export default {
 
   .search-advanced-grid .advanced-field {
     grid-column: 1;
+  }
+
+  .search-advanced-grid .advanced-pay-type {
+    grid-column: 2;
   }
 
   .search-advanced-grid > .search-actions-phantom {

@@ -1,3 +1,5 @@
+import { EMS_API_ROOT } from '@/config/services'
+
 async function emsPost (path, body = {}, signal) {
   const token = await getEmsToken()
   const url = `${EMS_BASE}${path}`
@@ -21,12 +23,12 @@ async function emsPost (path, body = {}, signal) {
 /**
  * EMS 能耗管理平台 API（南都广场本地电表数据）
  *
- * 基地址：https://cp-ems.szcloudpulse.com:86/prod-api
+ * 基地址由 vue.config.js 的 emsOrigin / emsApiPath 配置
  * 认证：mockLogin → token（jipai/123456）
  * 独立 fetch 链路，不与项目 axios 实例共享拦截器
  */
 
-const EMS_BASE = 'https://cp-ems.szcloudpulse.com:86/prod-api'
+const EMS_BASE = EMS_API_ROOT
 const LOGIN_URL = `${EMS_BASE}/mockLogin`
 const LOGIN_CREDENTIALS = { username: 'jipai', password: '123456' }
 

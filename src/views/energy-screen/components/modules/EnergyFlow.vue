@@ -32,14 +32,14 @@
       <span class="flow-branch-tail flow-branch-tail--left" aria-hidden="true" />
       <span class="flow-branch-tail flow-branch-tail--right" aria-hidden="true" />
 
-      <article class="flow-source flow-source--grid">
+      <article class="flow-source flow-source--grid" @click="drilldown('electricity-report')">
         <span class="flow-source__icon"><energy-icon :name="data.grid.icon" /></span>
-        <div><h3>{{ data.grid.title }}</h3><p>今日购电 <b>{{ number(data.grid.energy, 1) }} kWh</b></p><p>今日费用 <b>¥{{ number(data.grid.cost, 2) }}</b></p></div>
+        <div><h3>{{ data.grid.title }}</h3><p>{{ label }}购电 <b>{{ number(data.grid.energy, 1) }} kWh</b></p><p>{{ label }}费用 <b>¥{{ number(data.grid.cost, 2) }}</b></p></div>
       </article>
 
-      <article class="flow-source flow-source--pv">
+      <article class="flow-source flow-source--pv" @click="drilldown('photovoltaic')">
         <span class="flow-source__icon"><energy-icon :name="data.photovoltaic.icon" /></span>
-        <div><h3>{{ data.photovoltaic.title }}</h3><p>今日发电 <b>{{ number(data.photovoltaic.energy, 1) }} kWh</b></p><p>当前功率 <b>{{ number(data.photovoltaic.power, 2) }} kW</b></p></div>
+        <div><h3>{{ data.photovoltaic.title }}</h3><p>{{ label }}发电 <b>{{ number(data.photovoltaic.energy, 1) }} kWh</b></p><p>当前功率 <b>{{ number(data.photovoltaic.power, 2) }} kW</b></p></div>
       </article>
 
       <div class="flow-campus">
@@ -47,22 +47,22 @@
         <strong>{{ data.center.title }}</strong>
       </div>
 
-      <span class="flow-side-value flow-side-value--left">今日购电 <b>{{ number(data.center.purchased, 1) }} kWh</b></span>
-      <span class="flow-side-value flow-side-value--right">今日发电 <b>{{ number(data.center.generated, 1) }} kWh</b></span>
+      <span class="flow-side-value flow-side-value--left">{{ label }}购电 <b>{{ number(data.center.purchased, 1) }} kWh</b></span>
+      <span class="flow-side-value flow-side-value--right">{{ label }}发电 <b>{{ number(data.center.generated, 1) }} kWh</b></span>
 
       <div class="flow-destinations">
-        <article v-for="item in data.destinations" :key="item.key" class="flow-destination" :class="`is-${item.tone}`">
+        <article v-for="item in data.destinations" :key="item.key" class="flow-destination" :class="`is-${item.tone}`" @click="drilldown('electricity-report')">
           <header><energy-icon :name="item.icon" /><h3>{{ item.title }}</h3></header>
-          <p>今日用电 <b>{{ number(item.usage, 2) }} kWh</b></p>
+          <p>{{ label }}用电 <b>{{ number(item.usage, 2) }} kWh</b></p>
           <p>占比 <b>{{ item.percent }}%</b></p>
           <span class="flow-progress"><i :style="{ width: item.usage == null ? '0%' : `${Math.max(item.percent, 4)}%` }" /></span>
         </article>
       </div>
 
       <footer class="flow-summary">
-        <span>今日总负荷 <b>{{ number(data.totalLoad, 2) }} kWh</b></span>
+        <span>{{ label }}总负荷 <b>{{ number(data.totalLoad, 2) }} kWh</b></span>
         <i />
-        <span>实时总功率 <b>{{ number(data.realtimePower, 2) }} kW</b></span>
+        <span>实时功率 <b>{{ number(data.realtimePower, 2) }} kW</b></span>
       </footer>
     </div>
   </energy-panel>
@@ -76,7 +76,20 @@ import campusAsset from '../../energy.png'
 export default {
   name: 'EnergyFlow',
   components: { EnergyPanel, EnergyIcon },
-  props: { data: { type: Object, required: true } },
+  inject: { energyScreenDrilldown: { default: null } },
+  props: {
+    data: { type: Object, required: true },
+    period: { type: String, default: 'day' }
+  },
+  computed: {
+    label () {
+      switch (this.period) {
+        case 'month': return '本月'
+        case 'year': return '本年'
+        default: return '今日'
+      }
+    }
+  },
   data () {
     return {
       campusAsset,
@@ -88,6 +101,9 @@ export default {
     }
   },
   methods: {
+    drilldown (target) {
+      if (this.energyScreenDrilldown) this.energyScreenDrilldown(target)
+    },
     number (value, digits) {
       if (value === null || value === undefined || value === '') return '--'
       const number = Number(value)

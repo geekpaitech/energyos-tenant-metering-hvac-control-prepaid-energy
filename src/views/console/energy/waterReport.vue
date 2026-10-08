@@ -74,6 +74,7 @@
           <el-option :label="$t('waterReport.tenantType0')" :value="0" />
           <el-option :label="$t('waterReport.tenantType1')" :value="1" />
           <el-option :label="$t('waterReport.tenantType2')" :value="2" />
+          <el-option :label="$t('waterReport.tenantType3')" :value="3" />
         </el-select>
       </div>
 
@@ -94,6 +95,23 @@
                 v-model="switchDeviceDetail"
                 @change="handleSwitchChange"
                 :disabled="realTenantList.length === 0"
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </el-tooltip>
+
+        <!-- 第二个tab的设备明细 -->
+        <el-tooltip v-if="reportType === 'detail'" effect="dark"
+          :content="$t('waterReport.tooltipDetailDeviceDetail')" placement="top">
+          <div class="detail-switch">
+            <label class="switch-text" for="waterDetailDeviceDetailSwitch">{{ $t('waterReport.deviceDetailSwitch') }}</label>
+            <label class="toggle-switch">
+              <input
+                id="waterDetailDeviceDetailSwitch"
+                type="checkbox"
+                v-model="switchDetailDeviceDetail"
+                @change="handleDetailDeviceDetailChange"
               />
               <span class="toggle-slider"></span>
             </label>
@@ -234,7 +252,7 @@
       </div>
 
       <!-- 租户用水明细 - 租户列表表格 -->
-      <div class="table-section" v-if="reportType === 'detail'">
+      <div class="table-section" v-if="reportType === 'detail' && !switchDetailDeviceDetail">
         <div class="section-header">
           <h2 class="section-title">{{ $t('waterReport.sectionDetailTitle') }}</h2>
         </div>
@@ -279,6 +297,53 @@
           <p>{{ $t('waterReport.emptyNoData') }}</p>
         </div>
       </div>
+
+      <!-- 租户用水明细 - 设备明细表格 -->
+      <div class="table-section" v-if="reportType === 'detail' && switchDetailDeviceDetail">
+        <div class="section-header">
+          <h2 class="section-title">{{ $t('waterReport.sectionDeviceDetailTitle') }}</h2>
+        </div>
+        <el-table v-if="tenantDeviceDetailTableData.length > 0" :data="tenantDeviceDetailTableData"
+          :span-method="objectSpanMethod" height="calc(100vh - 400px)" :highlight-current-row="true"
+          :row-class-name="tableRowClassName">
+          <el-table-column :label="$t('waterReport.colTenantId')" width="120">
+            <template slot-scope="scope">{{
+              scope.row.tenantId !== -1 ? scope.row.tenantId : $t('waterReport.summaryTotal')
+            }}</template>
+          </el-table-column>
+          <el-table-column :label="$t('waterReport.colTenantName')" min-width="200">
+            <template slot-scope="scope">{{
+              $displayBizHybrid(scope.row.tenantName) || "-"
+            }}</template>
+          </el-table-column>
+          <el-table-column :label="$t('waterReport.colDevice')" width="180">
+            <template slot-scope="scope">{{
+              scope.row.tenantId === -1 ? "-" : $displayBizHybrid(scope.row.waterName) || "-"
+            }}</template>
+          </el-table-column>
+          <el-table-column :label="$t('waterReport.colWaterFeeParen')" width="140" align="right">
+            <template slot-scope="scope">{{
+              scope.row.tenantId === -1
+                ? formatNumber(scope.row.useAmount)
+                : formatNumber(scope.row.userAmount)
+            }}</template>
+          </el-table-column>
+          <el-table-column :label="$t('waterReport.colWaterVolumeParen')" width="140" align="right">
+            <template slot-scope="scope">{{
+              scope.row.tenantId === -1
+                ? formatNumber(scope.row.waterUse)
+                : formatNumber(scope.row.userWater)
+            }}</template>
+          </el-table-column>
+        </el-table>
+        <div class="empty-state" v-else-if="!loading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="7" width="18" height="14" rx="2" />
+            <path d="M8 3v4m8-4v4M3 11h18" />
+          </svg>
+          <p>{{ $t('waterReport.emptyNoDeviceDetail') }}</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -314,7 +379,9 @@ export default {
       tableData: [],
       deviceDetailData: [],
       tenantDetailData: [],
+      tenantDeviceDetailTableData: [],
       switchDeviceDetail: false,
+      switchDetailDeviceDetail: false,
       mainChartInstance: null,
       pickerOptions: {
         disabledDate (time) {
@@ -490,6 +557,21 @@ export default {
       },
       immediate: true
     },
+    '$route' (to) {
+      if (!to.path.includes('water-report')) return
+      if (!this.currentManagerId) return
+      const routeManagerId = to.query ? to.query.managerId : null
+      const managerChanged = routeManagerId != null &&
+        routeManagerId !== '' &&
+        String(routeManagerId) !== String(this.currentManagerId)
+      if (managerChanged) {
+        // 固定名称的新窗口会复用同一个报表实例；先切管理方，
+        // 后续由 currentManagerId watcher 按新路由完整初始化。
+        this.applyManagerFromRoute(to)
+        return
+      }
+      this.initializeData()
+    },
     '$i18n.locale' () {
       this.$nextTick(() => {
         if (this.mainChartInstance && this.chartData.length) this.updateMainChart()
@@ -531,6 +613,7 @@ export default {
 
     async initializeData () {
       this.setDefaultDateRange()
+      this.applyManagerFromRoute(this.$route)
 
       // 从 URL 获取参数
       const { tenantId, startDate, endDate, showDetail } = this.$route.query
@@ -540,13 +623,13 @@ export default {
         this.queryParams.dateRange = [startDate, endDate]
       }
 
-      this.queryParams.tenantType = 0
+      this.queryParams.tenantType = this.getTenantTypeFromRoute(this.$route)
       await this.getTenantList()
 
       // 如果有租户参数，使用传入的租户ID
       if (tenantId) {
         const targetTenantId = Number(tenantId) || tenantId
-        const tenant = this.tenantList.find(t => t.tenantId == targetTenantId)
+        const tenant = this.tenantList.find(t => String(t.tenantId) === String(targetTenantId))
         if (tenant) {
           this.queryParams.tenantId = tenant.tenantId
           this.clearTenantType()
@@ -568,6 +651,28 @@ export default {
       if (this.reportType === 'statistics') {
         this.handleSearch()
       }
+    },
+
+    /**
+     * 大屏下钻时按 managerId 恢复管理方；普通菜单进入没有该参数，行为不变。
+     */
+    applyManagerFromRoute (route) {
+      const managerId = route && route.query ? route.query.managerId : null
+      if (managerId == null || managerId === '') return false
+      const list = this.$store.state.manager.managerList || []
+      const manager = list.find(item => String(item.managerId) === String(managerId))
+      if (!manager) return false
+      this.$store.commit('manager/SET_CURRENT_MANAGER_ID', manager.managerId)
+      this.$store.commit('manager/SET_CURRENT_MANAGER', manager)
+      return true
+    },
+
+    getTenantTypeFromRoute (route) {
+      const value = route && route.query ? route.query.tenantType : null
+      if (value === 0 || value === '0') return 0
+      if (value === 1 || value === '1') return 1
+      if (value === 2 || value === '2') return 2
+      return 0
     },
 
     setDefaultDateRange () {
@@ -626,6 +731,7 @@ export default {
       this.reportType = type
 
       this.switchDeviceDetail = false
+      this.switchDetailDeviceDetail = false
 
       // 如果切换回统计模式，且当前选择的时间范围超过100天，则重置为默认时间
       if (type === 'statistics' && this.queryParams.dateRange && this.queryParams.dateRange.length === 2) {
@@ -640,6 +746,7 @@ export default {
       this.chartData = []
       this.deviceDetailData = []
       this.tenantDetailData = []
+      this.tenantDeviceDetailTableData = []
 
       if (type === 'detail') {
         this.initDetailTenantQueryMode()
@@ -691,7 +798,11 @@ export default {
             await this.getDeviceDetailData()
           }
         } else {
-          await this.getTenantDetailData()
+          if (this.switchDetailDeviceDetail) {
+            await this.getTenantDeviceDetailData()
+          } else {
+            await this.getTenantDetailData()
+          }
         }
       } catch (error) {
         this.$apiError.notify(error, this.$t('waterReport.msgFetchFail'))
@@ -792,17 +903,56 @@ export default {
         startDate: this.queryParams.dateRange[0],
         endDate: this.queryParams.dateRange[1],
         dataType: 1,
-        useType: 0
+        useType: 0,
+        isMeterDetail: false
       }
       this.appendDetailTenantParams(params)
       const { data } = await queryTenantWaterUse(params)
       this.tenantDetailData = data || []
     },
 
+    async getTenantDeviceDetailData () {
+      const params = {
+        managerId: this.currentManagerId,
+        startDate: this.queryParams.dateRange[0],
+        endDate: this.queryParams.dateRange[1],
+        dataType: 1,
+        useType: 0,
+        isMeterDetail: true
+      }
+      this.appendDetailTenantParams(params)
+      const { data } = await queryTenantWaterUse(params)
+      const tableData = []
+      if (data && data.length > 0) {
+        data.forEach(item => {
+          if (item.meterUseDetail && item.meterUseDetail.length) {
+            item.meterUseDetail.forEach((meter, idx) => {
+              tableData.push({
+                ...item,
+                waterName: meter.waterName,
+                userAmount: meter.userAmount,
+                userWater: meter.userWater,
+                tip: idx === 0 ? item.meterUseDetail.length : 0
+              })
+            })
+          } else {
+            tableData.push({
+              ...item,
+              waterName: '-',
+              userAmount: undefined,
+              userWater: undefined,
+              tip: 1
+            })
+          }
+        })
+      }
+      this.tenantDeviceDetailTableData = tableData
+    },
+
     /** 租户类型、租户选择二选一 */
     hasTenantTypeFilter () {
       const t = this.queryParams.tenantType
-      return t === 0 || t === 1 || t === 2
+      return t === 0 || t === 1 || t === 2 || t === 3
     },
 
     getTenantListTenantType () {
@@ -854,6 +1004,7 @@ export default {
 
     clearDetailTableData () {
       this.tenantDetailData = []
+      this.tenantDeviceDetailTableData = []
     },
 
     handleTenantChange (tenantId) {
@@ -894,8 +1045,12 @@ export default {
     },
 
     async handleReset () {
+      if (this.$route.query && Object.keys(this.$route.query).length) {
+        this.$router.replace({ path: this.$route.path, query: {} })
+      }
       this.setDefaultDateRange()
       this.switchDeviceDetail = false
+      this.switchDetailDeviceDetail = false
       this.queryParams.tenantType = 0
       this.queryParams.tenantId = ''
       await this.getTenantList()
@@ -1253,6 +1408,10 @@ export default {
       this.handleSearch()
     },
 
+    handleDetailDeviceDetailChange () {
+      this.handleSearch()
+    },
+
     tableRowClassName ({ row }) {
       if (row.tenantId === -1) {
         return 'total-row'
@@ -1265,6 +1424,15 @@ export default {
         return {
           rowspan: row.col,
           colspan: row.col > 0 ? 1 : 0
+        }
+      }
+    },
+
+    objectSpanMethod ({ row, columnIndex }) {
+      if (columnIndex < 2) {
+        return {
+          rowspan: row.tip,
+          colspan: row.tip > 0 ? 1 : 0
         }
       }
     },

@@ -8,11 +8,16 @@ export default {
     phDeviceName: 'Device name',
     phTenant: 'Tenant name or ID',
     phOnlineStatus: 'Online status',
+    phPowerStatus: 'Power status',
+    all: 'All',
     online: 'Online',
     offline: 'Offline',
     btnSearch: 'Search',
     btnReset: 'Reset',
     btnExport: 'Export',
+    exportCurrentPage: 'Export current page',
+    exportSelected: 'Export selected',
+    exportAll: 'Export all',
     sectionIndoorCard: 'Indoor unit cards',
     sectionIndoorList: 'Indoor unit list',
     batchAction: 'Batch',
@@ -39,7 +44,7 @@ export default {
     colTemp: 'Temp (°C)',
     colFanSpeed: 'Fan',
     colFault: 'Fault',
-    colCreateTime: 'First online',
+    colLastReportTime: 'Latest report time',
     colSerialShort: 'Serial',
     colId: 'Id',
     colOp: 'Actions',
@@ -210,6 +215,15 @@ export default {
     successSerialCopied: 'Serial copied',
     errCopy: 'Copy failed',
     errOutdoorFetch: 'Failed to load outdoor systems',
-    warnNoMeterForOutdoor: 'No meter linked to this outdoor unit'
+    warnNoMeterForOutdoor: 'No meter linked to this outdoor unit',
+
+    warnNoExportData: 'No data to export',
+    warnNoSelectedExport: 'Please select rows to export',
+    successExported: 'Exported {count} row(s)',
+    successExportedLimit: '{total} row(s) in total, first {count} row(s) exported',
+    errExport: 'Export failed',
+    exporting: 'Exporting...',
+    exportSheetName: 'Indoor units',
+    exportFilePrefix: 'indoor-units'
   }
 }

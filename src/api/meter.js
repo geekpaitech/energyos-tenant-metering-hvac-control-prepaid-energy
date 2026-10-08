@@ -377,3 +377,42 @@ export function getMeterPList (params) {
     params
   })
 }
+
+// 批量设置-查询电表（租户绑定电表分页）
+export function meterTenantMeter (data) {
+  return request({
+    url: '/api/ebc-content/meter/tenantMeter',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 批量设置-电表付费模式
+export function meterBatchSetPayType (data) {
+  return request({
+    url: '/api/ebc-device/meter/batchSetPayType',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
+// 批量更新电表离线类型（1-异常离线，2-正常离线）
+export function meterBatchUpdateOfflineType (data) {
+  return request({
+    url: '/api/ebc-device/meter/batchUpdateOfflineType',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}

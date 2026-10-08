@@ -1,0 +1,10 @@
+Use case: precise-object-edit / isolated interface decorative raster asset.
+Create ONLY a narrow horizontal HEADER DECORATION STRIP based on the TOP 0-85 pixels of the supplied reference, not the full dashboard.
+Requested output dimensions: 1920 pixels wide by 100 pixels high, extremely wide short banner aspect 19.2:1. This asset will be placed behind a page header with CSS screen blend. Pure solid black background (#000000), with no colored fill or atmosphere away from the thin frame lines.
+
+ISOLATE AND RECONSTRUCT this shape language: refined symmetrical deep navy/steel-blue beveled mechanical header ornament, thin cyan luminous stepped/polygonal horizontal lines. The left and right wings run inward from the far edges toward the title region. Near x30% and x70%, each inward wing drops gently through a clean diagonal machine-cut corner to create a recessed central title area. Two restrained delicate parallel angular rails have a few bright cyan highlights at the bends and tapering ends. Slight polished-metal shading confined very tightly to the rails. Elegant and sophisticated, thin linework, controlled small glow, no giant flares.
+
+The central TITLE SPACE (approximately middle 40% of width) must be EMPTY BLACK with no wording or icon, reserved for actual Chinese title implemented in HTML later. Frame the area gracefully with the side rail descents and a subtle thin underline below it. Symmetric, balanced, horizontally dominant silhouette, all content inside the shallow 100-pixel strip.
+Do not reproduce the reference's existing title, subtitle, brand, date, KPI strip, cards or city.
+ABSOLUTELY NO TEXT, no characters, no digits, no symbols/icons, no charts, no building, no skyline, no interface panels, no rings, no all-screen surrounding border. Just the standalone top decorative angular rail asset on pure black.
+The visual should read as a beautifully machined futuristic dashboard title header, matching the cyan/deep blue restrained top ornament of the supplied reference.

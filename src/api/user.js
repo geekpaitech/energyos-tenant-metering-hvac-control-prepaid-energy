@@ -14,12 +14,16 @@ export function login (data) {
       code: '',
       password: data.password,
       phone: data.username // 将username映射为phone字段
-    }
+    },
+    // 大屏静默恢复时不弹出全局错误，也不让登录接口自身触发 token 失效事件
+    skipErrorMessage: !!data.silent,
+    skipTokenExpiredHandling: true,
+    timeout: data.timeout || undefined
   })
 }
 
 // 获取用户信息 - 真实接口
-export function getUserInfo (token) {
+export function getUserInfo (token, options = {}) {
   return request({
     url: '/api/ebc-auth/auth/userInfo',
     method: 'post',
@@ -27,7 +31,9 @@ export function getUserInfo (token) {
       Authorization: token,
       userDeviceType: 'PC',
       'Content-Type': 'application/json'
-    }
+    },
+    skipErrorMessage: !!options.silent,
+    timeout: options.timeout || undefined
   })
 }
 

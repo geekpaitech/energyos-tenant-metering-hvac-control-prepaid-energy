@@ -25,6 +25,7 @@ export default {
     btnCancel: '取消',
     btnConfirm: '确定',
     dialogBindTitle: '批量绑定租户',
+    phTenantSearch: '租户名称/编号',
     bindCurrentLabel: '当前标签：',
     btnSelectAll: '全选',
     btnClear: '清空',

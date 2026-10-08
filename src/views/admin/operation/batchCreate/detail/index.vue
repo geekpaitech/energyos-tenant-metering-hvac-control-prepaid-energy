@@ -24,9 +24,9 @@
         <el-row :gutter="20" style="margin-top:16px">
           <el-col :xs="24" :sm="8">
             <el-form-item label="项目信息">
-              <el-link type="primary" :underline="false" @click="toManager(detailData)">
+              <span>
                 {{ detailData.managerId ? '(' + detailData.managerId + ')' + detailData.managerName : '-' }}
-              </el-link>
+              </span>
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="5">
@@ -56,12 +56,12 @@
           <span>补单明细 - 电表</span>
         </div>
       </div>
-      <el-table ref="table1" :data="tableData" border stripe max-height="65vh">
+      <el-table ref="table1" :data="tableData" border stripe>
         <el-table-column label="租户信息" width="260" show-overflow-tooltip>
           <template slot-scope="{ row }">
-            <el-button v-if="row.tenantId" type="text" @click="toTenant(row)">
+            <span v-if="row.tenantId">
               ({{ row.tenantId }}){{ row.tenantName }}
-            </el-button>
+            </span>
             <span v-else>-</span>
           </template>
         </el-table-column>
@@ -139,12 +139,12 @@
           <span>补单明细 - 水表</span>
         </div>
       </div>
-      <el-table ref="table2" :data="tableData" border stripe max-height="65vh">
+      <el-table ref="table2" :data="tableData" border stripe>
         <el-table-column label="租户信息" width="260" show-overflow-tooltip>
           <template slot-scope="{ row }">
-            <el-button v-if="row.tenantId" type="text" @click="toTenant(row)">
+            <span v-if="row.tenantId">
               ({{ row.tenantId }}){{ row.tenantName }}
-            </el-button>
+            </span>
             <span v-else>-</span>
           </template>
         </el-table-column>
@@ -327,22 +327,6 @@ export default {
     onBack () {
       this.$router.go(-1)
     },
-    toTenant (row) {
-      if (row.tenantId && this.detailData.managerId) {
-        this.$router.push({
-          path: '/admin/tenant/detail',
-          query: { id: row.tenantId, managerId: this.detailData.managerId }
-        })
-      }
-    },
-    toManager (row) {
-      if (row.managerId) {
-        this.$router.push({
-          path: '/admin/operation/batchCreate',
-          query: {}
-        })
-      }
-    },
     onCreate () {
       this.showCreate = true
     },
@@ -423,8 +407,11 @@ export default {
 
 <style lang="scss" scoped>
 .admin-batch-detail-page {
+  box-sizing: border-box;
+  height: 100%;
   padding: 16px 20px 24px;
-  min-height: calc(100vh - 100px);
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #f0f2f5;
 }
 

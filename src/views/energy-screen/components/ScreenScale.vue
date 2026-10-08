@@ -15,17 +15,18 @@ export default {
   data () {
     return {
       scale: 1,
-      canvasHeight: DESIGN_HEIGHT,
-      offsetX: 0
+      canvasWidth: DESIGN_WIDTH,
+      canvasHeight: DESIGN_HEIGHT
     }
   },
   computed: {
     innerStyle () {
       return {
-        width: `${DESIGN_WIDTH}px`,
+        width: `${this.canvasWidth}px`,
         height: `${this.canvasHeight}px`,
+        '--energy-canvas-width': `${this.canvasWidth}px`,
         '--energy-canvas-height': `${this.canvasHeight}px`,
-        transform: `translate3d(${this.offsetX}px, 0, 0) scale(${this.scale})`,
+        transform: `scale(${this.scale})`,
         transformOrigin: '0 0'
       }
     }
@@ -57,11 +58,11 @@ export default {
       const widthScale = width / DESIGN_WIDTH
       const heightScale = height / DESIGN_HEIGHT
 
-      // Preserve the design geometry. Taller viewports (for example 1440x900)
-      // receive extra logical canvas height instead of a second, distorting scale.
+      // Keep one uniform scale so text and icons never deform. Any viewport space
+      // beyond the 16:9 design is absorbed by the logical canvas in that axis.
       this.scale = Math.min(widthScale, heightScale)
+      this.canvasWidth = Math.max(DESIGN_WIDTH, width / this.scale)
       this.canvasHeight = Math.max(DESIGN_HEIGHT, height / this.scale)
-      this.offsetX = Math.max(0, (width - (DESIGN_WIDTH * this.scale)) / 2)
       this.$emit('scale-change', this.scale)
     }
   }

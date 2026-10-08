@@ -58,7 +58,16 @@
           <div class="search-actions">
             <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('tenantRefundPage.btnSearch') }}</el-button>
             <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('tenantRefundPage.btnReset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('tenantRefundPage.btnExport') }}</el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button type="success" size="small" icon="el-icon-download">
+                {{ $t('tenantRefundPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('tenantRefundPage.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('tenantRefundPage.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('tenantRefundPage.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </div>
         </div>
       </el-form>
@@ -80,12 +89,14 @@
       </div>
 
       <div class="list-view">
-        <el-table
-          :key="'tenant-refund-' + localeKey"
-          v-loading="loading"
-          border
-          :data="tableData"
-          stripe
+      <el-table
+        :key="'tenant-refund-' + localeKey"
+        v-loading="loading"
+        border
+        :data="tableData"
+        @selection-change="handleSelectionChange"
+        row-key="rid"
+        stripe
           style="width: 100%"
           class="custom-table light-border-table"
           :header-cell-style="{
@@ -94,6 +105,7 @@
             fontWeight: '600',
           }"
         >
+          <el-table-column type="selection" width="55" align="center" reserve-selection />
           <el-table-column prop="rid" :label="$t('tenantRefundPage.colRid')" width="180" align="center" show-overflow-tooltip />
           <el-table-column prop="applyTime" :label="$t('tenantRefundPage.colApplyTime')" width="168" align="center" show-overflow-tooltip />
           <el-table-column :label="$t('tenantRefundPage.colTenantName')" min-width="160" show-overflow-tooltip>
@@ -196,6 +208,8 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 import * as XLSX from 'xlsx'
+
+const EXPORT_ALL_LIMIT = 2000
 import {
   tenantRefundPageRefundRecord,
   tenantRefundTenantRefundDetails
@@ -221,6 +235,8 @@ export default {
       },
       tableData: [],
       loading: false,
+      selectedData: [],
+      exportAllLoading: false,
       pageData: {
         current: 1,
         size: 15,
@@ -537,42 +553,104 @@ export default {
       this.handleSearch()
     },
 
-    handleExport () {
+    buildXlsx (exportData, isSelected, total) {
+      const headers = [
+        this.$t('tenantRefundPage.colRid'),
+        this.$t('tenantRefundPage.colApplyTime'),
+        this.$t('tenantRefundPage.colTenantName'),
+        this.$t('tenantRefundPage.colBizType'),
+        this.$t('tenantRefundPage.colRefundType'),
+        this.$t('tenantRefundPage.colApplyAmt'),
+        this.$t('tenantRefundPage.colActualAmt'),
+        this.$t('tenantRefundPage.colAuditStatus')
+      ]
+      const rows = exportData.map((row) => [
+        row.rid || '',
+        row.applyTime || '',
+        this.$displayBizHybrid(row.tenantName) || '',
+        this.getBizTypeLabel(row.bizType),
+        this.formatRefundType(),
+        row.applyAmt != null && row.applyAmt !== '' ? Number(row.applyAmt).toFixed(2) : '',
+        row.actualAmt != null && row.actualAmt !== '' ? Number(row.actualAmt).toFixed(2) : '',
+        this.refundStatusLabel(row)
+      ])
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+      const headerRange = XLSX.utils.decode_range(ws['!ref'])
+      for (let c = headerRange.s.c; c <= headerRange.e.c; c++) {
+        const cell = XLSX.utils.encode_cell({ r: 0, c })
+        if (ws[cell]) {
+          ws[cell].s = { font: { bold: true, color: { rgb: '303133' } }, fill: { fgColor: { rgb: 'F5F7FA' } }, alignment: { horizontal: 'center', vertical: 'center' } }
+        }
+      }
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('tenantRefundPage.exportSheetName'))
+      const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
+      XLSX.writeFile(wb, `${this.$t('tenantRefundPage.filePrefix')}_${timeStr}.xlsx`)
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) successMsg = this.$t('tenantRefundPage.msgExportOkSelected', { count: exportCount })
+      else if (total != null && total > exportCount) successMsg = this.$t('tenantRefundPage.successExportedLimit', { count: exportCount, total })
+      else if (total != null) successMsg = this.$t('tenantRefundPage.successExported', { count: exportCount })
+      else successMsg = this.$t('tenantRefundPage.msgExportOk', { count: exportCount })
+      this.$message.success(successMsg)
+    },
+    exportCurrentPage () {
       if (!this.tableData.length) {
         this.$message.warning(this.$t('tenantRefundPage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
+    exportSelected () {
+      if (!this.selectedData.length) {
+        this.$message.warning(this.$t('tenantRefundPage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+    async exportAll () {
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('tenantRefundPage.exporting') })
       try {
-        const headers = [
-          this.$t('tenantRefundPage.colRid'),
-          this.$t('tenantRefundPage.colApplyTime'),
-          this.$t('tenantRefundPage.colTenantName'),
-          this.$t('tenantRefundPage.colBizType'),
-          this.$t('tenantRefundPage.colRefundType'),
-          this.$t('tenantRefundPage.colApplyAmt'),
-          this.$t('tenantRefundPage.colActualAmt'),
-          this.$t('tenantRefundPage.colAuditStatus')
-        ]
-        const rows = this.tableData.map((row) => [
-          row.rid || '',
-          row.applyTime || '',
-          this.$displayBizHybrid(row.tenantName) || '',
-          this.getBizTypeLabel(row.bizType),
-          this.formatRefundType(),
-          row.applyAmt != null && row.applyAmt !== '' ? Number(row.applyAmt).toFixed(2) : '',
-          row.actualAmt != null && row.actualAmt !== '' ? Number(row.actualAmt).toFixed(2) : '',
-          this.refundStatusLabel(row)
-        ])
-        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('tenantRefundPage.exportSheetName'))
-        const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
-        XLSX.writeFile(wb, `${this.$t('tenantRefundPage.filePrefix')}_${timeStr}.xlsx`)
-        this.$message.success(this.$t('tenantRefundPage.msgExportOk', { count: this.tableData.length }))
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('tenantRefundPage.msgNoDataExport'))
+          return
+        }
+        this.buildXlsx(rows, false, total)
       } catch (e) {
         console.error(e)
         this.$apiError.notify(e, this.$t('tenantRefundPage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
       }
+    },
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+    handleSelectionChange (selection) {
+      this.selectedData = selection
+    },
+    async fetchAllForExport () {
+      const tenantId = this.normalizeSelect(this.queryData.tenantId)
+      const st = this.normalizeSelect(this.queryData.status)
+      const response = await tenantRefundPageRefundRecord({
+        type: 0,
+        startDate: this.queryData.timeRange ? this.queryData.timeRange[0] : '',
+        endDate: this.queryData.timeRange ? this.queryData.timeRange[1] : '',
+        managerId: this.queryData.managerId,
+        tenantId: tenantId === undefined ? undefined : tenantId,
+        refundStatus: st === undefined ? '' : st,
+        page: { current: 1, size: EXPORT_ALL_LIMIT, orders: [{ asc: false, column: 'applyTime' }] }
+      })
+      if (response.code !== 200 || !response.data) {
+        throw new Error(response.msg || this.$t('tenantRefundPage.msgRefundListFail'))
+      }
+      return { rows: response.data.dataList || [], total: response.data.total || 0 }
     },
 
     handleAudit (row) {

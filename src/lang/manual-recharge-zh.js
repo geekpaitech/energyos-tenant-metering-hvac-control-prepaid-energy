@@ -33,6 +33,14 @@ export default {
     msgExportOk: '已导出 {count} 条',
     msgExportFail: '导出失败',
     exportSheetName: '手动充值',
-    filePrefix: '手动充值'
+    filePrefix: '手动充值',
+    exportCurrentPage: '导出本页',
+    exportSelected: '导出选中',
+    exportAll: '导出全部',
+    warnNoSelectedExport: '请先选择要导出的数据',
+    msgExportOkSelected: '已导出选中 {count} 条',
+    successExported: '已导出 {count} 条',
+    successExportedLimit: '数据量超过 {total} 条，已导出前 {count} 条',
+    exporting: '导出中...'
   }
 }

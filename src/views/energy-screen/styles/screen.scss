@@ -2,10 +2,11 @@
   --energy-page-margin: 24px;
   --energy-nav-height: 86px;
   --energy-nav-gap: 16px;
-  --energy-section-gap: 20px;
+  --energy-section-gap: 16px;
   --energy-column-gap: 16px;
   --energy-card-gap: 16px;
   --energy-card-padding: 20px;
+  --energy-footer-height: 122px;
   --energy-panel-border: rgba(0, 132, 234, 0.62);
   --energy-panel-bg: rgba(2, 27, 54, 0.78);
   --energy-panel-highlight: rgba(77, 187, 255, 0.12);
@@ -84,7 +85,7 @@ body.energy-screen-page,
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-rows: var(--energy-nav-height) var(--energy-nav-gap) 116px var(--energy-section-gap) minmax(0, 1fr) var(--energy-section-gap) 158px;
+  grid-template-rows: var(--energy-nav-height) var(--energy-nav-gap) 116px var(--energy-section-gap) minmax(0, 1fr) var(--energy-section-gap) var(--energy-footer-height);
   grid-template-areas:
     'header'
     '.'
@@ -93,7 +94,7 @@ body.energy-screen-page,
     'main'
     '.'
     'footer';
-  width: 1920px;
+  width: var(--energy-canvas-width, 1920px);
   height: var(--energy-canvas-height, 1080px);
   padding: 0 var(--energy-page-margin) var(--energy-page-margin);
   color: var(--energy-text);
@@ -160,10 +161,18 @@ body.energy-screen-page,
 }
 
 .energy-header__manager {
+  position: relative;
+  width: 188px;
+}
+
+.energy-header__manager-zone {
   position: absolute;
   z-index: 5;
   top: 54%;
   left: var(--energy-page-margin);
+  display: flex;
+  align-items: center;
+  gap: 14px;
   transform: translateY(-50%);
 }
 
@@ -172,6 +181,75 @@ body.energy-screen-page,
   width: 188px;
   color: var(--energy-text);
   font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+
+.energy-business-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--energy-text);
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+
+.energy-business-switcher__label {
+  flex: 0 0 auto;
+  position: relative;
+  color: #95afc7;
+  font-size: 10px;
+  letter-spacing: .5px;
+  padding-right: 8px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    right: 0;
+    width: 1px;
+    background: rgba(67, 154, 211, .38);
+  }
+}
+
+.energy-business-switcher__group {
+  display: inline-flex;
+  align-items: center;
+  height: 31px;
+  padding: 2px;
+  border: 1px solid rgba(32, 149, 220, .46);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(6, 72, 122, .22), rgba(3, 40, 77, .1) 70%, transparent);
+}
+
+.energy-business-switcher__btn {
+  position: relative;
+  min-width: 56px;
+  height: 25px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 3px;
+  color: #bcd6ec;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  background: transparent;
+  transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, text-shadow .18s ease;
+
+  & + & { margin-left: 4px; }
+  &:hover:not(.is-active) {
+    color: #e1f0ff;
+    background: rgba(8, 75, 123, .26);
+  }
+
+  &.is-active {
+    color: #fff;
+    background: linear-gradient(180deg, rgba(20, 119, 197, .85), rgba(7, 64, 116, .92));
+    box-shadow:
+      inset 0 1px 0 rgba(125, 207, 255, .35),
+      inset 0 -1px 0 rgba(0, 14, 28, .35),
+      0 0 12px rgba(0, 124, 211, .35);
+    text-shadow: 0 0 6px rgba(115, 207, 255, .45);
+  }
 }
 
 .energy-manager-switcher__trigger {
@@ -397,7 +475,7 @@ body.energy-screen-page,
   right: 18px;
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 16px;
   transform: translateY(-50%);
 }
 
@@ -412,20 +490,52 @@ body.energy-screen-page,
   span { color: rgba(213,229,246,.78); font-size: 10px; line-height: 1.2; }
 }
 
-.energy-header__weather {
-  display: flex;
+.energy-period-switcher {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  color: #e8f3ff;
-  font-size: 14px;
-  white-space: nowrap;
+  height: 31px;
+  padding: 2px;
+  border: 1px solid rgba(32, 149, 220, .46);
+  border-bottom: 1px solid rgba(32, 149, 220, .46);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(6, 72, 122, .22), rgba(3, 40, 77, .1) 70%, transparent);
+  box-shadow: none;
+}
 
-  .energy-icon {
-    width: 42px;
-    height: 36px;
-    color: #eef7ff;
-    filter: drop-shadow(0 0 6px rgba(75,175,255,.5));
+.energy-period-switcher__btn {
+  position: relative;
+  min-width: 36px;
+  height: 25px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 3px;
+  color: #bcd6ec;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  background: transparent;
+  transition: background-color .18s ease, color .18s ease, box-shadow .18s ease;
+
+  & + & { margin-left: 4px; }
+  &:hover:not(.is-active) {
+    color: #e1f0ff;
+    background: rgba(8, 75, 123, .26);
   }
+
+  &.is-active {
+    color: #fff;
+    background: linear-gradient(180deg, rgba(20, 119, 197, .85), rgba(7, 64, 116, .92));
+    box-shadow:
+      inset 0 1px 0 rgba(125, 207, 255, .35),
+      inset 0 -1px 0 rgba(0, 14, 28, .35),
+      0 0 12px rgba(0, 124, 211, .35);
+    text-shadow: 0 0 6px rgba(115, 207, 255, .45);
+  }
+}
+
+.energy-header__period {
+  /* 复用 manager-switcher 触发的样式语言，靠 .energy-period-switcher 装配 */
 }
 
 .kpi-strip {
@@ -481,6 +591,7 @@ body.energy-screen-page,
   &.is-blue { --kpi-color: #2aafff; --kpi-rgb: 42,175,255; }
 }
 
+.kpi-card.is-drillable { cursor: pointer; }
 .kpi-card:hover {
   background: rgba(var(--kpi-rgb), .045);
   box-shadow: inset 0 0 24px rgba(var(--kpi-rgb), .08);
@@ -539,7 +650,7 @@ body.energy-screen-page,
 
 .energy-screen__main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, .98fr) minmax(0, 1.5fr) minmax(0, 1.12fr);
   gap: var(--energy-column-gap);
   min-width: 0;
   min-height: 0;
@@ -552,8 +663,15 @@ body.energy-screen-page,
   min-height: 0;
 }
 
-.energy-column--left { grid-template-rows: 1.18fr 1fr .9fr; }
-.energy-column--right { grid-template-rows: 1.1fr 1fr .6fr; }
+/* 左右两列均保持三行布局，让
+ *   行 1：用电趋势 ↔ 光伏动态收益分析
+ *   行 2：分项能耗结构 ↔ 配电安全态势
+ *   行 3：费用构成 ↔ 配电运维告警
+ * 两两高度对齐，避免挤压/留白。
+ */
+.energy-column--left { grid-template-rows: 1fr 1fr 1fr; }
+.energy-column--right { grid-template-rows: minmax(0, 1fr) 150px 145px; }
+.energy-column--right.is-without-return { grid-template-rows: 150px minmax(0, 1fr); }
 
 .energy-panel {
   position: relative;
@@ -605,6 +723,7 @@ body.energy-screen-page,
   z-index: 1;
 }
 
+.energy-panel.is-drillable { cursor: pointer; }
 .energy-panel:hover {
   border-color: rgba(39, 169, 255, .88);
   box-shadow:
@@ -780,8 +899,8 @@ body.energy-screen-page,
   p b { color: #eff7ff; font-size: var(--energy-font-body); font-weight: 600; }
 }
 
-.flow-source--grid { left: 1%; }
-.flow-source--pv { right: 1%; }
+.flow-source--grid { left: 1%; cursor: pointer; }
+.flow-source--pv { right: 1%; cursor: pointer; }
 .flow-source__icon { width: var(--energy-icon-flow-source); height: var(--energy-icon-flow-source); padding: 6px; color: #0b91ff; filter: drop-shadow(0 0 7px rgba(0,137,255,.55)); }
 .flow-source--pv .flow-source__icon { color: #0b91ff; }
 
@@ -852,6 +971,7 @@ body.energy-screen-page,
 
 .flow-destination {
   --destination: #22b3ff;
+  cursor: pointer;
   min-width: 0;
   height: 124px;
   padding: 12px 14px;
@@ -893,56 +1013,312 @@ body.energy-screen-page,
   i { width: 1px; height: 20px; background: rgba(68,135,192,.5); }
 }
 
-.arrears-list {
-  display: grid;
-  grid-template-rows: repeat(5, minmax(0, 1fr));
-  gap: 3px;
-  height: 100%;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* === 光伏动态收益分析（右上角紧凑驾驶舱）=== */
+.photovoltaic-return-card.energy-panel {
+  --pv-blue: #1aa8ff;
+  --pv-green: #36dc8f;
+  --pv-gold: #ffc43f;
+  --pv-violet: #8b72ff;
+  padding: 12px 14px 11px;
 }
 
-.arrears-list li {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  min-height: 0;
-  padding: 1px 4px;
-  border-bottom: 1px solid rgba(0, 102, 190, .2);
-  color: #b9cce0;
-  font-size: var(--energy-font-body);
-  line-height: 1.4;
+.photovoltaic-return-card .energy-panel__header {
+  flex-basis: 26px;
+  margin-bottom: 7px;
 }
 
-.arrears-list__rank {
-  display: grid;
-  place-items: center;
+.photovoltaic-return-card .energy-panel__header h2 {
+  gap: 7px;
+  font-size: 16px;
+}
+
+.photovoltaic-return-card.energy-panel::after {
+  top: 42px;
+  left: 14px;
+  right: 14px;
+}
+
+.photovoltaic-return-card .energy-panel__content { padding-top: 6px; }
+
+.photovoltaic-return-card__title-icon {
   width: 24px;
   height: 24px;
-  border: 1px solid rgba(130,169,205,.55);
-  border-radius: 50%;
-  color: #edf7ff;
-  font-weight: 700;
-  background: rgba(18,49,82,.74);
+  color: var(--pv-gold);
+  filter: drop-shadow(0 0 6px rgba(255, 196, 63, .42));
 }
 
-.arrears-list__rank.rank-1 { border-color: #ff7a26; background: #ef681a; }
-.arrears-list__rank.rank-2 { border-color: #5a8dff; background: #2f62cc; }
-.arrears-list__rank.rank-3 { border-color: #3d8dff; background: #1264bf; }
-.arrears-list__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.arrears-list li > b { color: #f4746b; font-size: 13px; font-weight: 600; text-shadow: 0 0 6px rgba(244, 91, 81, .12); white-space: nowrap; }
-.arrears-list li.arrears-list__empty {
-  grid-row: 1 / -1;
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 0;
-  color: #6688a9;
+.pv-return-analysis {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 62px;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
 }
+
+.pv-return-analysis__top {
+  display: grid;
+  grid-template-columns: .72fr 1.48fr;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pv-return-highlight,
+.pv-return-metrics,
+.pv-return-flow {
+  border: 1px solid rgba(0, 116, 209, .25);
+  border-radius: 7px;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(20, 143, 231, .09), transparent 42%),
+    linear-gradient(180deg, rgba(4, 45, 83, .72), rgba(2, 28, 56, .72));
+  box-shadow: inset 0 1px 0 rgba(92, 193, 255, .06);
+}
+
+.pv-return-highlight {
+  display: grid;
+  grid-template-rows: 18px minmax(0, 1fr) 32px;
+  align-items: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px 12px;
+}
+
+.pv-return-highlight h3 {
+  margin: 0;
+  color: #e8f3ff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pv-return-highlight__value {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.pv-return-highlight__icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 8px;
+  border: 1px solid rgba(54, 220, 143, .55);
+  border-radius: 50%;
+  color: var(--pv-green);
+  background: radial-gradient(circle, rgba(26, 145, 101, .2), rgba(2, 35, 57, .84) 72%);
+  filter: drop-shadow(0 0 5px rgba(54, 220, 143, .28));
+}
+
+.pv-return-highlight__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+}
+
+.pv-return-highlight__copy strong {
+  color: #effbff;
+  font-family: 'DIN Alternate', 'Roboto Condensed', sans-serif;
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .2px;
+  white-space: nowrap;
+  text-shadow: 0 0 10px rgba(54, 220, 143, .18);
+}
+
+.pv-return-highlight__copy span {
+  margin-top: 2px;
+  color: var(--pv-green);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.pv-return-highlight p {
+  overflow: hidden;
+  margin: 0;
+  color: #9eb6ce;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-return-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.pv-return-metric {
+  --metric-tone: var(--pv-blue);
+  display: grid;
+  grid-template-columns: 39px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 0;
+  padding: 7px 12px;
+  border-right: 1px solid rgba(0, 116, 209, .24);
+  border-bottom: 1px solid rgba(0, 116, 209, .24);
+}
+
+.pv-return-metric:nth-child(2n) { border-right: 0; }
+.pv-return-metric:nth-child(n+3) { border-bottom: 0; }
+.pv-return-metric.tone-gold { --metric-tone: var(--pv-gold); }
+.pv-return-metric.tone-violet { --metric-tone: var(--pv-violet); }
+.pv-return-metric.tone-green { --metric-tone: var(--pv-green); }
+
+.pv-return-metric__icon {
+  display: grid;
+  place-items: center;
+  width: 39px;
+  height: 39px;
+  padding: 8px;
+  border: 1px solid rgba(26, 168, 255, .48);
+  border-radius: 50%;
+  color: var(--metric-tone);
+  background: rgba(2, 28, 54, .76);
+  filter: drop-shadow(0 0 4px rgba(26, 168, 255, .22));
+}
+
+.pv-return-metric.tone-gold .pv-return-metric__icon { border-color: rgba(255, 196, 63, .5); filter: drop-shadow(0 0 4px rgba(255, 196, 63, .2)); }
+.pv-return-metric.tone-violet .pv-return-metric__icon { border-color: rgba(139, 114, 255, .5); filter: drop-shadow(0 0 4px rgba(139, 114, 255, .2)); }
+.pv-return-metric.tone-green .pv-return-metric__icon { border-color: rgba(54, 220, 143, .5); filter: drop-shadow(0 0 4px rgba(54, 220, 143, .2)); }
+
+.pv-return-metric > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.pv-return-metric > div > span {
+  color: #d0deeb;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.22;
+  white-space: normal;
+  text-shadow: 0 0 6px rgba(85, 181, 236, .12);
+}
+
+.pv-return-metric > div > span small { font-size: 9px; }
+
+.pv-return-metric strong {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-top: 2px;
+  color: #f1f8ff;
+  font-family: 'DIN Alternate', 'Roboto Condensed', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.pv-return-metric strong.is-capacity { font-size: 20px; }
+.pv-return-metric strong small { color: var(--metric-tone); font-size: 10px; font-weight: 500; }
+
+.pv-return-metric em {
+  overflow: hidden;
+  margin-top: 2px;
+  color: #a9bfd3;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-return-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) 12px minmax(0, 1.04fr) 12px minmax(0, 1.24fr);
+  align-items: center;
+  min-width: 0;
+  padding: 7px 9px;
+}
+
+.pv-return-flow__item {
+  --flow-tone: var(--pv-blue);
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 0 3px;
+}
+
+.pv-return-flow__item.tone-green { --flow-tone: var(--pv-green); }
+.pv-return-flow__item.tone-gold { --flow-tone: var(--pv-gold); }
+
+.pv-return-flow__icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  border: 1px solid rgba(26, 168, 255, .46);
+  border-radius: 50%;
+  color: var(--flow-tone);
+  background: rgba(2, 29, 56, .75);
+}
+
+.pv-return-flow__item.tone-green .pv-return-flow__icon { border-color: rgba(54, 220, 143, .46); }
+.pv-return-flow__item.tone-gold .pv-return-flow__icon { border-color: rgba(255, 196, 63, .46); }
+
+.pv-return-flow__item > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pv-return-flow__item > div > span,
+.pv-return-flow__item em {
+  overflow: hidden;
+  color: #cbdbe9;
+  font-size: 10.5px;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-return-flow__item strong {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  overflow: hidden;
+  color: #f2f8ff;
+  font-family: 'DIN Alternate', 'Roboto Condensed', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.pv-return-flow__item strong small { color: var(--flow-tone); font-size: 9px; font-weight: 600; }
+.pv-return-flow__item em { color: #93abc1; font-size: 9px; font-weight: 400; }
+
+.pv-return-flow__arrow {
+  width: 13px;
+  height: 13px;
+  color: var(--pv-blue);
+  opacity: .9;
+}
+
+.pv-return-flow__arrow.is-green { color: var(--pv-green); }
 
 .pv-info {
   display: grid;
@@ -993,7 +1369,7 @@ body.energy-screen-page,
 
 .device-status-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   height: 100%;
 }
@@ -1024,6 +1400,285 @@ body.energy-screen-page,
   small { margin-left: 3px; font-size: 10px; }
 }
 
+/* === 配电安全态势（2×2 紧凑状态矩阵） === */
+.power-safety-panel.energy-panel {
+  padding: 11px 14px 10px;
+}
+
+.power-safety-panel .energy-panel__header {
+  flex-basis: 24px;
+  margin-bottom: 4px;
+}
+
+.power-safety-panel.energy-panel::after {
+  top: 37px;
+  left: 14px;
+  right: 14px;
+}
+
+.power-safety-panel .energy-panel__content { padding-top: 4px; }
+
+.power-safety-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(0, 110, 195, .3);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(36, 168, 240, .08), transparent 38%),
+    linear-gradient(180deg, rgba(5, 47, 86, .58), rgba(2, 28, 56, .62));
+  box-shadow: inset 0 1px 0 rgba(96, 196, 255, .07);
+}
+
+.power-safety-cell {
+  --tone: #4dd5c2;
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  padding: 4px 10px;
+  border-right: 1px solid rgba(0, 110, 195, .24);
+  border-bottom: 1px solid rgba(0, 110, 195, .24);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+
+  &.tone-cyan { --tone: #4fc8ff; }
+  &.tone-gold { --tone: #ffc23a; }
+  &.tone-green { --tone: #4ddc89; }
+  &.tone-violet { --tone: #9891ff; }
+  &.tone-red { --tone: #ff5757; }
+}
+
+.power-safety-cell:nth-child(2n) { border-right: 0; }
+.power-safety-cell:nth-child(n+3) { border-bottom: 0; }
+
+.power-safety-cell__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  border: 1px solid rgba(0, 110, 195, .42);
+  border-radius: 50%;
+  color: var(--tone);
+  background: radial-gradient(circle, rgba(0, 110, 195, .22), rgba(1, 20, 43, .85) 72%);
+  filter: drop-shadow(0 0 5px rgba(0, 124, 211, .32));
+}
+
+.power-safety-cell__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  align-self: stretch;
+  justify-content: space-between;
+}
+
+.power-safety-cell__label {
+  color: #d0dfec;
+  font-size: 11px;
+  font-weight: 500;
+  text-shadow: 0 0 6px rgba(85, 181, 236, .12);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.power-safety-cell__value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.power-safety-cell__value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  color: #f3faff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(79, 200, 255, .18);
+  font-family: 'DIN Alternate', 'Roboto Condensed', sans-serif;
+
+  small {
+    color: #c5d4e8;
+    font-size: 11px;
+    font-weight: 500;
+  }
+}
+
+.power-safety-cell__status {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border: 1px solid rgba(77, 220, 137, .42);
+  border-radius: 10px;
+  background: rgba(77, 220, 137, .14);
+  color: #6dee9b;
+  font-size: 9px;
+  font-style: normal;
+  flex-shrink: 0;
+  white-space: nowrap;
+
+  &.is-warning {
+    border-color: rgba(255, 188, 56, .42);
+    background: rgba(255, 188, 56, .12);
+    color: #ffc966;
+  }
+  &.is-error {
+    border-color: rgba(255, 90, 90, .42);
+    background: rgba(255, 90, 90, .12);
+    color: #ff7474;
+  }
+
+  .status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 5px currentColor;
+  }
+}
+
+/* === 配电运维告警（仅表格，无顶部 KPI）=== */
+.alarm-panel.energy-panel { padding: 13px 16px 12px; }
+.alarm-panel .energy-panel__header { flex-basis: 25px; margin-bottom: 5px; }
+.alarm-panel.energy-panel::after { top: 40px; left: 16px; right: 16px; }
+.alarm-panel .energy-panel__content { padding-top: 4px; }
+
+.alarm-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding-top: 4px;
+}
+
+.alarm-table__head,
+.alarm-table__row {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 64px 72px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px;
+  font-size: 11px;
+}
+
+.alarm-table__head {
+  padding: 0 6px 8px;
+  border-bottom: 1px solid rgba(0, 102, 190, .22);
+  color: #6f8eaf;
+  font-size: 10px;
+  letter-spacing: .5px;
+  text-shadow: none;
+}
+
+.alarm-table__list {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 0;
+  overflow: hidden auto;
+  list-style: none;
+  min-height: 0;
+
+  scrollbar-color: rgba(39, 162, 231, .65) rgba(2, 31, 61, .65);
+  scrollbar-width: thin;
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: rgba(2, 31, 61, .65); }
+  &::-webkit-scrollbar-thumb { border-radius: 4px; background: rgba(39, 162, 231, .65); }
+}
+
+.alarm-table__row {
+  border-bottom: 1px solid rgba(0, 102, 190, .14);
+  color: #c9d9ec;
+}
+
+.alarm-col--time {
+  color: #6f8eaf;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.alarm-col--content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alarm-col--level,
+.alarm-col--status {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+
+  &.is-warning {
+    border: 1px solid rgba(255, 188, 56, .42);
+    background: rgba(255, 188, 56, .12);
+    color: #ffc966;
+  }
+  &.is-emerg {
+    border: 1px solid rgba(255, 90, 90, .5);
+    background: rgba(255, 90, 90, .18);
+    color: #ff7d7d;
+  }
+  &.is-recover {
+    border: 1px solid rgba(77, 220, 137, .42);
+    background: rgba(77, 220, 137, .14);
+    color: #6dee9b;
+  }
+  &.is-normal {
+    border: 1px solid rgba(150, 180, 200, .42);
+    background: rgba(150, 180, 200, .08);
+    color: #b9c9d9;
+  }
+  &.is-pre {
+    border: 1px solid rgba(255, 188, 56, .42);
+    background: rgba(255, 188, 56, .12);
+    color: #ffc966;
+  }
+  &.is-done {
+    border: 1px solid rgba(77, 220, 137, .42);
+    background: rgba(77, 220, 137, .14);
+    color: #6dee9b;
+  }
+}
+
+.level-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.alarm-table__empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 0;
+  color: #6688a9;
+}
+
 .footer-strip {
   display: grid;
   grid-template-columns: 1.08fr .98fr 1fr;
@@ -1032,9 +1687,10 @@ body.energy-screen-page,
   min-height: 0;
 }
 
-.footer-strip .energy-panel { padding-top: 14px; padding-bottom: 14px; }
-.footer-strip .energy-panel__header { flex-basis: 26px; margin-bottom: 8px; }
-.footer-strip .energy-panel::after { top: 42px; }
+.footer-strip .energy-panel { padding: 11px 12px; }
+.footer-strip .energy-panel__header { flex-basis: 22px; margin-bottom: 4px; }
+.footer-strip .energy-panel__content { padding-top: 4px; }
+.footer-strip .energy-panel::after { top: 35px; left: 12px; right: 12px; }
 .footer-strip .energy-panel__header h2 { font-size: 16px; }
 
 .footer-metrics {
@@ -1046,6 +1702,23 @@ body.energy-screen-page,
 .footer-metrics--assets { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .footer-metrics--achievement { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .footer-metrics--environment { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.footer-metrics--environment-monitor {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.footer-metrics .footer-metric__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.footer-metric__label {
+  color: #9cb5d1;
+  font-size: 11px;
+  white-space: nowrap;
+}
 
 .footer-metrics article {
   position: relative;

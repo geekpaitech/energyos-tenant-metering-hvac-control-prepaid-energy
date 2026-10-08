@@ -206,7 +206,12 @@
         </el-form-item>
         <el-form-item :label="$t('deviceWater.labelAccessChannel')" prop="waterType">
           <el-select v-model="editForm.waterType" style="width: 100%">
-            <el-option :label="$t('deviceWater.channelNs')" value="ZHWL_NS" />
+            <el-option
+              v-for="item in waterChannelOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('deviceWater.labelDeviceModel')">
@@ -313,6 +318,14 @@ export default {
         bindType: [{ required: true, message: this.$t('deviceWater.ruleBindType'), trigger: 'change' }],
         waterType: [{ required: true, message: this.$t('deviceWater.ruleChannel'), trigger: 'change' }]
       }
+    },
+    waterChannelOptions () {
+      return [
+        { value: 'ZHWL_NS', label: this.$t('deviceWater.channelNs') },
+        { value: 'ZHWL_NS_NEW', label: this.$t('deviceWater.channelNsNew') },
+        { value: 'ZHWL_NS_ZF', label: this.$t('deviceWater.channelNsThirdParty') },
+        { value: 'SXZD', label: this.$t('deviceWater.channelCameraDirect') }
+      ]
     },
     editDialogLabelWidth () {
       return this.$i18n.locale === 'en' ? '132px' : '110px'

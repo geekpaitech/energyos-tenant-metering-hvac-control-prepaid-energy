@@ -1,68 +1,60 @@
 <template>
   <header class="energy-header" :style="frameStyle">
-    <manager-switcher
-      class="energy-header__manager"
-      :managers="managers"
-      :current-manager-id="currentManagerId"
-      :loading="loading"
-      @change="$emit('manager-change', $event)"
-    />
+    <div class="energy-header__manager-zone">
+      <manager-switcher
+        class="energy-header__manager"
+        :managers="managers"
+        :current-manager-id="currentManagerId"
+        :group-fallback="groupFallback"
+        :loading="loading"
+        @change="$emit('manager-change', $event)"
+      />
+      <business-format-switcher
+        v-if="isGroupMode"
+        class="energy-header__business"
+        :value="business"
+        @change="$emit('business-change', $event)"
+      />
+    </div>
     <div class="energy-header__title-zone">
       <h1>{{ title }}</h1>
     </div>
     <div class="energy-header__meta">
-      <div class="energy-header__clock">
-        <time>{{ clockTime }}</time>
-        <span>{{ clockDate }}</span>
-      </div>
-      <div class="energy-header__weather" aria-label="天气信息">
-        <energy-icon name="cloud" />
-        <span>{{ weather.text }}</span>
-        <span>{{ weather.temperature }}</span>
-      </div>
+      <period-switcher
+        class="energy-header__period"
+        :value="period"
+        @change="$emit('period-change', $event)"
+      />
     </div>
   </header>
 </template>
 
 <script>
-import EnergyIcon from './EnergyIcon.vue'
 import ManagerSwitcher from './ManagerSwitcher.vue'
+import BusinessFormatSwitcher from './BusinessFormatSwitcher.vue'
+import PeriodSwitcher from './PeriodSwitcher.vue'
+import { GROUP_FALLBACK } from '../config'
 
-const HEADER_FRAME_URL = 'https://oss.example.com/web-file/header-frame.png'
+const HEADER_FRAME_URL = 'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/header-frame.png'
 
 export default {
   name: 'EnergyHeader',
-  components: { EnergyIcon, ManagerSwitcher },
+  components: { ManagerSwitcher, BusinessFormatSwitcher, PeriodSwitcher },
   props: {
     title: { type: String, default: '综合能源管理大屏' },
-    weather: {
-      type: Object,
-      default: () => ({ text: '阴-多云', temperature: '29℃~35℃' })
-    },
     managers: { type: Array, default: () => [] },
     currentManagerId: { type: [String, Number], default: null },
+    business: { type: String, default: 'all' },
+    period: { type: String, default: 'day' },
     loading: { type: Boolean, default: false }
   },
-  data () {
-    return { clockTime: '', clockDate: '', timer: null }
-  },
   computed: {
-    frameStyle () { return { '--energy-header-frame': `url(${HEADER_FRAME_URL})` } }
-  },
-  mounted () {
-    this.tick()
-    this.timer = setInterval(this.tick, 1000)
-  },
-  beforeDestroy () {
-    clearInterval(this.timer)
-  },
-  methods: {
-    tick () {
-      const now = new Date()
-      const pad = value => String(value).padStart(2, '0')
-      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
-      this.clockTime = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
-      this.clockDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${weekdays[now.getDay()]}`
+    frameStyle () { return { '--energy-header-frame': `url(${HEADER_FRAME_URL})` } },
+    isGroupMode () {
+      return this.currentManagerId == null || this.currentManagerId === ''
+    },
+    groupFallback () {
+      return GROUP_FALLBACK
     }
   }
 }

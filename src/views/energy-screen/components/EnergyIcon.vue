@@ -15,6 +15,30 @@
     <g v-else-if="name === 'yuan'" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
       <path d="m17 10 15 20 15-20M32 30v25M17 32h30M17 43h30" />
     </g>
+    <g v-else-if="name === 'growth'" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 49 24 34l10 9 20-25" stroke-width="6" />
+      <path d="M42 18h12v12" stroke-width="5" />
+      <path d="M13 54V43M25 54V39M37 54V34M49 54V27" stroke-width="5" />
+    </g>
+    <g v-else-if="name === 'investment'">
+      <path d="M16 21c2-8 9-13 16-13s14 5 16 13c5 4 9 11 9 19 0 12-10 19-25 19S7 52 7 40c0-8 4-15 9-19Z" fill="currentColor" opacity=".9" />
+      <path d="M23 8c3 3 6 4 9 4s6-1 9-4" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="3" stroke-linecap="round" />
+      <path d="m24 27 8 10 8-10M32 37v14M24 39h16M25 46h14" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+    <g v-else-if="name === 'percentage'" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round">
+      <circle cx="20" cy="19" r="7" />
+      <circle cx="44" cy="45" r="7" />
+      <path d="m47 12-30 40" />
+    </g>
+    <g v-else-if="name === 'savings'" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="38" cy="22" r="12" stroke-width="4" />
+      <path d="m33 16 5 6 5-6M38 22v10M33 24h10" stroke-width="3" />
+      <path d="M7 46c8-7 14-7 22-1h13c5 0 7 6 2 9H26" stroke-width="4" />
+      <path d="M7 45v12h12l8-3" stroke-width="4" />
+    </g>
+    <g v-else-if="name === 'flow-arrow'" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m10 16 16 16-16 16M32 16l16 16-16 16" />
+    </g>
     <g v-else-if="name === 'monitor' || name === 'cabinet'">
       <rect x="10" y="10" width="44" height="34" rx="3" fill="none" stroke="currentColor" stroke-width="4" />
       <path d="M20 18h24v18H20zM27 44v8M37 44v8M22 53h20" fill="none" stroke="currentColor" stroke-width="3" />
@@ -33,6 +57,13 @@
     <g v-else-if="name === 'building'">
       <path d="M8 55V25h18v30M26 55V9h22v46M48 55V31h9v24M4 55h56" fill="none" stroke="currentColor" stroke-width="4" />
       <path d="M33 17h4M33 26h4M33 35h4M14 33h5M14 42h5" stroke="currentColor" stroke-width="3" />
+    </g>
+    <g v-else-if="name === 'shop'" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 22V14a4 4 0 0 1 4-4h40a4 4 0 0 1 4 4v8" stroke-width="4" />
+      <path d="M5 22h54l-4 8H9Z" stroke-width="3" />
+      <path d="M11 30v22h42V30" stroke-width="4" />
+      <path d="M22 52v-12h20v12" stroke-width="3" />
+      <path d="M14 18v-2M22 18v-2M30 18v-2M38 18v-2M46 18v-2" stroke-width="3" />
     </g>
     <g v-else-if="name === 'bulb'">
       <path d="M19 27a13 13 0 1 1 25 0c-1 5-5 7-7 11H26c-2-4-6-6-7-11ZM26 44h12M28 51h8" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
@@ -74,6 +105,40 @@
     <g v-else-if="name === 'warning'">
       <path d="M32 7 59 56H5z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round" />
       <path d="M32 23v16M32 47v2" stroke="currentColor" stroke-width="5" stroke-linecap="round" />
+    </g>
+    <g v-else-if="name === 'smoke'" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="14" y="22" width="36" height="28" rx="5" stroke-width="4" />
+      <path d="M22 30h20M22 36h20M22 42h12" stroke-width="3" />
+      <circle cx="32" cy="14" r="5" stroke-width="3" />
+      <path d="M27 11h10M22 14c-3 0-5-3-3-6M42 14c3 0 5-3 3-6" stroke-width="2.5" />
+    </g>
+    <g v-else-if="name === 'flood'" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="8" y="14" width="48" height="22" rx="3" stroke-width="4" />
+      <path d="M16 50h32" stroke-width="4" />
+      <path d="M16 50c3-7 7-7 10 0s7 7 10 0 7-7 10 0" stroke-width="3" />
+      <circle cx="32" cy="25" r="3" />
+    </g>
+    <g v-else-if="name === 'load'" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="32" cy="32" r="22" stroke-width="4" />
+      <path d="M32 14v18l12 7" stroke-width="4" />
+      <path d="M14 32a18 18 0 0 0 36 0" stroke-width="3" stroke-dasharray="3 4" />
+    </g>
+    <g v-else-if="name === 'peak-temperature'" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 6h22v32a11 11 0 1 1-22 0z" stroke-width="4" />
+      <path d="M28 14h8v22a8 8 0 1 1-8 0z" stroke-width="3" />
+      <circle cx="32" cy="46" r="3" fill="currentColor" />
+      <path d="M32 6V2M16 6c-3-3 0-7 5-5M48 6c3-3 0-7-5-5" stroke-width="2.5" />
+    </g>
+    <g v-else-if="name === 'ground'" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M32 8 16 16v16l16 8 16-8V16z" stroke-width="4" />
+      <path d="M32 8v32M16 16l16 8 16-8" stroke-width="3" />
+      <path d="M28 50h8M26 56h12" stroke-width="3" />
+    </g>
+    <g v-else-if="name === 'residual'" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M32 8a14 14 0 0 1 14 14v8a14 14 0 1 1-28 0v-8A14 14 0 0 1 32 8Z" stroke-width="4" />
+      <path d="M22 40c-3 3-7 5-11 5M42 40c3 3 7 5 11 5" stroke-width="3" />
+      <path d="M28 26c0-3 2-5 4-5s4 2 4 5-4 7-4 11" stroke-width="3" />
+      <circle cx="32" cy="40" r="2" fill="currentColor" />
     </g>
     <circle v-else cx="32" cy="32" r="22" fill="none" stroke="currentColor" stroke-width="4" />
   </svg>

@@ -115,6 +115,14 @@ export default {
     expColCreator: 'Created by',
     expColCreateTime: 'Created',
     exportSheetName: 'Floating tariff',
-    filePrefix: 'FloatingTariff'
+    filePrefix: 'FloatingTariff',
+    // Export (current page / selected / all) unified copy
+    exportCurrentPage: 'Export current page',
+    exportSelected: 'Export selected',
+    exportAll: 'Export all',
+    warnNoSelectedExport: 'Please select rows to export first',
+    successExported: 'Exported {count} row(s).',
+    successExportedLimit: '{total} matched, up to {count} per export, first {count} exported',
+    exporting: 'Exporting all data...'
   }
 }

@@ -205,7 +205,7 @@
         <!-- 右侧用户区域 -->
         <div class="navbar-right">
           <!-- 综合能源大屏：跟随当前部署环境，在新标签页打开 -->
-          <div class="openapi-container">
+          <div v-if="showEnergyScreenEntry" class="openapi-container">
             <a
               href="/#/group/energy-screen"
               target="_blank"
@@ -227,7 +227,7 @@
 
           <div class="openapi-container">
             <a
-              href="https://oss.example.com/web-file/guide.pdf"
+              href="https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/glfcz.pdf"
               target="_blank"
               rel="noopener noreferrer"
               class="openapi-link"
@@ -410,6 +410,7 @@ import {
   MONITORING_ROOT_PATH
 } from '@/config/monitoringAccess'
 import { avatarInitial } from '@/utils/localeDisplayText'
+import { ENERGY_SCREEN_MANAGER_IDS } from '@/views/energy-screen/config'
 
 export default {
   name: 'Layout',
@@ -552,6 +553,10 @@ export default {
         openSidebar: this.sidebar.opened,
         withoutAnimation: this.sidebar.withoutAnimation
       }
+    },
+    showEnergyScreenEntry () {
+      const id = this.currentManagerId
+      return id != null && ENERGY_SCREEN_MANAGER_IDS.includes(String(id))
     },
 
     activeMenu () {

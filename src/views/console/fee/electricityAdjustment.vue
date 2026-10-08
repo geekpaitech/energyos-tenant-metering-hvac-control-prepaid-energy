@@ -67,15 +67,20 @@
               <el-button size="small" icon="el-icon-refresh" @click="handleReset">
                 {{ $t('electricityAdjustmentPage.btnReset') }}
               </el-button>
-              <el-button
+              <el-dropdown
                 v-if="canOperate"
-                type="success"
-                size="small"
-                icon="el-icon-download"
-                @click="handleExport"
+                trigger="hover"
+                @command="handleExportCommand"
               >
-                {{ $t('electricityAdjustmentPage.btnExport') }}
-              </el-button>
+                <el-button type="success" size="small" icon="el-icon-download">
+                  {{ $t('electricityAdjustmentPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+                </el-button>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="currentPage">{{ $t('electricityAdjustmentPage.exportCurrentPage') }}</el-dropdown-item>
+                  <el-dropdown-item command="selected">{{ $t('electricityAdjustmentPage.exportSelected') }}</el-dropdown-item>
+                  <el-dropdown-item command="all">{{ $t('electricityAdjustmentPage.exportAll') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
             </div>
           </div>
         </el-form>
@@ -107,6 +112,7 @@
             ref="table"
             v-loading="loading"
             :data="tableData"
+            row-key="rid"
             :max-height="tableMaxHeight"
             border
             stripe
@@ -123,7 +129,7 @@
               <el-empty :description="$t('electricityAdjustmentPage.emptyTable')" />
             </template>
 
-            <el-table-column v-if="canOperate" type="selection" width="55" align="center" />
+            <el-table-column v-if="canOperate" type="selection" width="55" align="center" reserve-selection />
 
             <el-table-column
               :label="$t('electricityAdjustmentPage.colRid')"
@@ -289,6 +295,10 @@ import {
 
 import { mapGetters } from 'vuex'
 import moment from 'moment'
+import * as XLSX from 'xlsx'
+
+// 导出全部单次上限（与电表页一致）
+const EXPORT_ALL_LIMIT = 2000
 
 export default {
   name: 'ElectricityAdjustmentPage',
@@ -318,6 +328,8 @@ export default {
       tableData: [],
       // 选中的数据
       selectedData: [],
+      // 导出全部遮罩防重
+      exportAllLoading: false,
       // 加载状态
       loading: false,
 
@@ -574,29 +586,189 @@ export default {
     },
 
     // 导出数据
-    handleExport () {
+    // XLSX 生成（导出本页 / 导出选中 / 导出全部 共用）
+    buildXlsx (exportData, isSelected, total) {
+      const t = this.$t.bind(this.$t)
+      const headers = [
+        t('electricityAdjustmentPage.colRid'),
+        t('electricityAdjustmentPage.colMeter'),
+        t('electricityAdjustmentPage.colSerial'),
+        t('electricityAdjustmentPage.colPricePlan'),
+        t('electricityAdjustmentPage.colPrices'),
+        t('electricityAdjustmentPage.colTime'),
+        t('electricityAdjustmentPage.colResult')
+      ]
+      const data = exportData.map(row => {
+        const meterName = this.$displayBizHybrid(row.meterName || '')
+        const priceName = this.$displayBizHybrid(row.priceName || '')
+        let resultLabel = t('electricityAdjustmentPage.resultExpired')
+        if (row.result === 'SUCCESS') resultLabel = t('electricityAdjustmentPage.resultSuccess')
+        else if (row.result === 'FAIL') resultLabel = t('electricityAdjustmentPage.resultFail')
+        return [
+          row.rid || '',
+          `${meterName}(${row.meterId || ''})`,
+          row.serial || '',
+          `${priceName}(${row.priceId || ''})`,
+          `${row.powerPeakPrice ?? ''}/${row.powerTopPrice ?? ''}/${row.powerFlatPrice ?? ''}/${row.powerValleyPrice ?? ''}`,
+          row.occurTime || '',
+          resultLabel
+        ]
+      })
+
+      // 创建工作表数据
+      const wsData = [headers, ...data]
+
+      // 创建工作表
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+      // 设置列宽
+      const colWidths = headers.map((h, i) => {
+        const contentLen = data.reduce((m, r) => Math.max(m, String(r[i] == null ? '' : r[i]).length), 0)
+        return { wch: Math.max(h.length + 2, contentLen + 2, 12) }
+      })
+      ws['!cols'] = colWidths
+
+      // 创建工作簿
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, t('electricityAdjustmentPage.exportSheetName'))
+
+      // 生成文件名
+      const fileName = this.generateFileName()
+
+      // 导出文件（使用原生方法）
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+
+      // 触发下载
+      document.body.appendChild(link)
+      link.click()
+
+      // 清理
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) {
+        successMsg = t('electricityAdjustmentPage.msgExportOkSelected', { count: exportCount })
+      } else if (total != null && total > exportCount) {
+        // 命中数超过 2000 上限：只导出前 2000 条并提示（与电表页一致）
+        successMsg = t('electricityAdjustmentPage.successExportedLimit', { count: exportCount, total })
+      } else if (total != null) {
+        successMsg = t('electricityAdjustmentPage.successExported', { count: exportCount })
+      } else {
+        successMsg = t('electricityAdjustmentPage.msgExportOk', { count: exportCount })
+      }
+      this.$message.success(successMsg)
+    },
+
+    // 导出本页
+    exportCurrentPage () {
       if (!this.canOperate) {
         this.$message.warning(this.$t('electricityAdjustmentPage.msgNoOperate'))
         return
       }
-      const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-
-      if (exportData.length === 0) {
-        this.$message.warning(this.$t('electricityAdjustmentPage.msgNoExport'))
+      if (this.tableData.length === 0) {
+        this.$message.warning(this.$t('electricityAdjustmentPage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
 
-      // 这里实现导出功能
-      if (this.$store.dispatch) {
-        const params = {
-          ele: this.$refs.table?.$el,
-          name: this.$t('electricityAdjustmentPage.exportFileName'),
-          data: exportData
-        }
-        this.$store.dispatch('export/export', params)
-      } else {
-        this.$message.info(this.$t('electricityAdjustmentPage.msgExportDev'))
+    // 导出选中
+    exportSelected () {
+      if (!this.canOperate) {
+        this.$message.warning(this.$t('electricityAdjustmentPage.msgNoOperate'))
+        return
       }
+      if (this.selectedData.length === 0) {
+        this.$message.warning(this.$t('electricityAdjustmentPage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+
+    // 导出全部：按当前查询条件重新拉取，封顶 2000 条
+    async exportAll () {
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('electricityAdjustmentPage.exporting') })
+      try {
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('electricityAdjustmentPage.msgNoDataExport'))
+          return
+        }
+        this.buildXlsx(rows, false, total)
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$apiError.notify(error, this.$t('electricityAdjustmentPage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
+      }
+    },
+
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+
+    // 按查询条件拉取全部（封顶 EXPORT_ALL_LIMIT）
+    async fetchAllForExport () {
+      if (!this.canOperate) {
+        this.$message.warning(this.$t('electricityAdjustmentPage.msgNoOperate'))
+        return { rows: [], total: 0 }
+      }
+      let startDateTime = ''
+      let endDateTime = ''
+      if (this.queryData.timeRange && this.queryData.timeRange.length === 2) {
+        startDateTime = this.queryData.timeRange[0]
+        endDateTime = this.queryData.timeRange[1]
+      }
+      const params = {
+        managerId: this.queryData.managerId,
+        serial: this.queryData.serial,
+        startDateTime,
+        endDateTime,
+        page: {
+          size: EXPORT_ALL_LIMIT,
+          current: 1,
+          searchCount: true,
+          orders: [
+            {
+              asc: false,
+              column: 'occurTime'
+            }
+          ]
+        }
+      }
+      if (this.queryData.result && this.queryData.result !== '') {
+        params.result = this.queryData.result
+      }
+      const response = await priceModifyRecordPageRecord(params)
+      if (response.code !== 200) {
+        this.$message.error(response.msg || this.$t('electricityAdjustmentPage.msgFetchFail'))
+        return { rows: [], total: 0 }
+      }
+      return {
+        rows: response.data?.dataList || [],
+        total: response.data?.total || 0
+      }
+    },
+
+    generateFileName () {
+      const prefix = this.$t('electricityAdjustmentPage.filePrefix')
+      const timeStr = moment().format('YYYYMMDD_HHmmss')
+      return `${prefix}_${timeStr}.xlsx`
     },
 
     // 分页大小变化

@@ -15,7 +15,7 @@ function getToken () {
 }
 
 // 白名单路由
-const whiteList = ['/login', '/sso/callback', '/404', '/401', '/switching', '/bigscreen/property-screen']
+const whiteList = ['/login', '/sso/callback', '/404', '/401', '/switching', '/bigscreen/property-screen', '/bigscreen/energy-screen']
 
 router.beforeEach(async (to, from, next) => {
   NProgress.start()
@@ -31,7 +31,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // 大屏免登入口始终放行，由页面内完成自动登录、生成路由、再跳转
-  if (to.path === '/bigscreen/property-screen') {
+  if (to.path === '/bigscreen/property-screen' || to.path === '/bigscreen/energy-screen') {
     next()
     NProgress.done()
     return

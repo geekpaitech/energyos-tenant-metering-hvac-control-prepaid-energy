@@ -1,3 +1,5 @@
+import { GROUP_ENERGY_MANAGERS } from '@/api/groupEnergyOverview'
+
 /** 顶栏业态文案 → 接口 bizType */
 export const BIZ_TYPE_MAP = {
   产业园: 1,
@@ -40,20 +42,22 @@ export function getTodayTimeRange () {
   }
 }
 
-/** 本年 1月1日 00:00:00 ~ 12月31日 23:59:59 */
+/** 当年 1 月 1 日 00:00:00 ~ 当前日期 23:59:59 */
 export function getYearTimeRange () {
   const now = new Date()
+  const p = n => String(n).padStart(2, '0')
   const y = now.getFullYear()
+  const today = `${y}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
   return {
     startTime: `${y}-01-01 00:00:00`,
-    endTime: `${y}-12-31 23:59:59`
+    endTime: `${today} 23:59:59`
   }
 }
 
 /** 顶栏时间筛选文案 → 时间范围（默认本月） */
 export function getPeriodTimeRange (period) {
   if (period === '今日') return getTodayTimeRange()
-  if (period === '本年') return getYearTimeRange()
+  if (period === '截至当前' || period === '本年') return getYearTimeRange()
   return getMonthTimeRange()
 }
 
@@ -76,11 +80,11 @@ export function buildParkingScreenDto ({ scope, period } = {}) {
   }
 }
 
-/** 仓库经营管理：固定按本月查询，不受顶栏时间筛选切换影响 */
+/** 仓库经营管理：固定按当年年初至今天查询，不受顶栏时间筛选切换影响 */
 export function buildWarehouseScreenDto ({ scope } = {}) {
   return {
     ...withBizType(scope),
-    ...getMonthTimeRange()
+    ...getYearTimeRange()
   }
 }
 
@@ -91,4 +95,28 @@ export function buildProviderEvaluationDto ({ period, pageIndex = 0, pageSize = 
     pageIndex,
     pageSize
   }
+}
+
+/** 管理方 ID → 业态 映射 */
+export const MANAGER_BIZ_TYPE_MAP = Object.freeze({
+  1000107: '商办', // 南都广场
+  1000175: '商办', // 苏旺商务中心
+  1000183: '商办', // 塔韵商务广场
+  1000178: '产业园' // 经开-机器人产业园
+})
+
+export function getManagerBizType (managerId) {
+  return MANAGER_BIZ_TYPE_MAP[managerId] || null
+}
+
+/**
+ * 根据业态 scope 过滤管理方列表（用于详情面板）
+ * @param {'全部'|'产业园'|'商办'|'公寓'} scope
+ */
+export function getManagersByScope (scope) {
+  if (scope === '全部') return [...GROUP_ENERGY_MANAGERS]
+  if (scope === '公寓') return []
+  return GROUP_ENERGY_MANAGERS.filter(
+    m => getManagerBizType(m.managerId) === scope
+  )
 }

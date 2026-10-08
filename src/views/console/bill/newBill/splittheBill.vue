@@ -93,6 +93,7 @@
           v-loading="loading"
           border
           :data="tableData"
+          row-key="rid"
           :max-height="tableMaxHeight"
           stripe
           style="width: 100%"
@@ -104,7 +105,7 @@
             fontWeight: '600',
           }"
         >
-          <el-table-column type="selection" width="55" align="center" />
+          <el-table-column type="selection" width="55" align="center" reserve-selection />
 
           <el-table-column
             v-for="col in displayColumns"
@@ -330,6 +331,9 @@ import { mapGetters } from 'vuex'
 import moment from 'moment'
 import * as XLSX from 'xlsx'
 
+// 导出全部单次上限（与电表页一致）
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'SplitBillPage',
   data () {
@@ -371,6 +375,8 @@ export default {
         total: 0
       },
       selectedData: [],
+      // 导出全部遮罩防重
+      exportAllLoading: false,
       detailDrawer: {
         show: false,
         base: null,
@@ -672,82 +678,197 @@ export default {
       return this.$t('splitBillPage.deviceTypeDash')
     },
 
-    handleExport () {
+    // 导出数据
+    // XLSX 生成（导出本页 / 导出选中 / 导出全部 共用）
+    buildXlsx (exportData, isSelected, total) {
+      const headers = this.displayColumns.map(col => col.label)
+      const data = exportData.map(row => {
+        return this.displayColumns.map(col => {
+          const value = row[col.key]
+          switch (col.key) {
+            case 'shareTypeLabel':
+              return value || this.$t('splitBillPage.shareTypeShort')
+            case 'settleStatus':
+              return this.getStatusLabel(value)
+            default:
+              if (col.type === 'money') {
+                return value ? parseFloat(value).toFixed(2) : '0.00'
+              } else if (col.type === 'area') {
+                return value ? `${value}` : '0'
+              }
+              return value || ''
+          }
+        })
+      })
+
+      const wsData = [headers, ...data]
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+      const colWidths = this.displayColumns.map(col => {
+        if (col.width) {
+          return { wch: Math.max(parseInt(col.width) / 8, col.label.length + 2) }
+        } else if (col.minWidth) {
+          return { wch: Math.max(parseInt(col.minWidth) / 8, col.label.length + 2) }
+        }
+        return { wch: Math.max(15, col.label.length + 2) }
+      })
+      ws['!cols'] = colWidths
+
+      const headerRange = XLSX.utils.decode_range(ws['!ref'])
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
+        if (!ws[cellAddress]) continue
+        ws[cellAddress].s = {
+          font: { bold: true, color: { rgb: '606266' } },
+          fill: { fgColor: { rgb: 'F5F7FA' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        }
+      }
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('splitBillPage.exportSheetName'))
+      const fileName = this.generateFileName()
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) {
+        successMsg = this.$t('splitBillPage.msgExportOkSelected', { count: exportCount })
+      } else if (total != null && total > exportCount) {
+        // 命中数超过 2000 上限：只导出前 2000 条并提示（与电表页一致）
+        successMsg = this.$t('splitBillPage.successExportedLimit', { count: exportCount, total })
+      } else if (total != null) {
+        successMsg = this.$t('splitBillPage.successExported', { count: exportCount })
+      } else {
+        successMsg = this.$t('splitBillPage.msgExportOk', { count: exportCount })
+      }
+      this.$message.success(successMsg)
+    },
+
+    // 导出本页
+    exportCurrentPage () {
       if (this.tableData.length === 0) {
         this.$message.warning(this.$t('splitBillPage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
 
+    // 导出选中
+    exportSelected () {
+      if (this.selectedData.length === 0) {
+        this.$message.warning(this.$t('splitBillPage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+
+    // 导出全部：按当前查询条件重新拉取，封顶 2000 条
+    async exportAll () {
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('splitBillPage.exporting') })
       try {
-        const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-        const headers = this.displayColumns.map(col => col.label)
-        const data = exportData.map(row => {
-          return this.displayColumns.map(col => {
-            const value = row[col.key]
-            switch (col.key) {
-              case 'shareTypeLabel':
-                return value || this.$t('splitBillPage.shareTypeShort')
-              case 'settleStatus':
-                return this.getStatusLabel(value)
-              default:
-                if (col.type === 'money') {
-                  return value ? parseFloat(value).toFixed(2) : '0.00'
-                } else if (col.type === 'area') {
-                  return value ? `${value}` : '0'
-                }
-                return value || ''
-            }
-          })
-        })
-
-        const wsData = [headers, ...data]
-        const ws = XLSX.utils.aoa_to_sheet(wsData)
-        const colWidths = this.displayColumns.map(col => {
-          if (col.width) {
-            return { wch: Math.max(parseInt(col.width) / 8, col.label.length + 2) }
-          } else if (col.minWidth) {
-            return { wch: Math.max(parseInt(col.minWidth) / 8, col.label.length + 2) }
-          }
-          return { wch: Math.max(15, col.label.length + 2) }
-        })
-        ws['!cols'] = colWidths
-
-        const headerRange = XLSX.utils.decode_range(ws['!ref'])
-        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
-          if (!ws[cellAddress]) continue
-          ws[cellAddress].s = {
-            font: { bold: true, color: { rgb: '606266' } },
-            fill: { fgColor: { rgb: 'F5F7FA' } },
-            alignment: { horizontal: 'center', vertical: 'center' }
-          }
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('splitBillPage.msgNoDataExport'))
+          return
         }
-
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('splitBillPage.exportSheetName'))
-        const fileName = this.generateFileName()
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-
-        const exportCount = exportData.length
-        const isSelectedExport = this.selectedData.length > 0
-        this.$message.success(
-          isSelectedExport
-            ? this.$t('splitBillPage.msgExportOkSelected', { count: exportCount })
-            : this.$t('splitBillPage.msgExportOk', { count: exportCount })
-        )
+        this.buildXlsx(rows, false, total)
       } catch (error) {
         console.error('导出失败:', error)
         this.$apiError.notify(error, this.$t('splitBillPage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
+      }
+    },
+
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+
+    // 按查询条件拉取全部（封顶 EXPORT_ALL_LIMIT），与列表查询逻辑一致
+    async fetchAllForExport () {
+      const shareIdParam = this.normalizeSelect(this.queryData.shareId)
+      const tr = this.queryData.timeRange
+      const params = {
+        managerId: this.currentManagerId,
+        shareId: shareIdParam,
+        startDate: tr && tr.length > 0 ? tr[0] : '',
+        endDate: tr && tr.length > 1 ? tr[1] : '',
+        page: {
+          size: EXPORT_ALL_LIMIT,
+          current: 1,
+          searchCount: true,
+          orders: [{ asc: false, column: 'occurDate' }]
+        }
+      }
+      const st = this.queryData.shareType
+
+      if (st === null || st === undefined || st === '') {
+        const [elecResponse, waterResponse] = await Promise.all([
+          sharePageSettleShare(params),
+          waterSharePageWaterSettleShare(params)
+        ])
+        let elecData = []
+        let waterData = []
+        let totalCount = 0
+        if (elecResponse.code === 200 && elecResponse.data) {
+          elecData = (elecResponse.data.dataList || []).map(item => ({
+            ...item,
+            shareTypeLabel: this.$t('splitBillPage.shareTypeElec')
+          }))
+          totalCount += elecResponse.data.total || 0
+        }
+        if (waterResponse.code === 200 && waterResponse.data) {
+          waterData = (waterResponse.data.dataList || []).map(item => ({
+            ...item,
+            shareTypeLabel: this.$t('splitBillPage.shareTypeWater')
+          }))
+          totalCount += waterResponse.data.total || 0
+        }
+        const merged = [...elecData, ...waterData]
+          .sort((a, b) => new Date(b.occurDate) - new Date(a.occurDate))
+          .slice(0, EXPORT_ALL_LIMIT)
+        return { rows: merged, total: totalCount }
+      } else if (st === 1) {
+        const response = await sharePageSettleShare(params)
+        if (response.code !== 200) {
+          this.$message.error(response.msg || this.$t('splitBillPage.msgFetchFail'))
+          return { rows: [], total: 0 }
+        }
+        return {
+          rows: (response.data?.dataList || []).map(item => ({
+            ...item,
+            shareTypeLabel: this.$t('splitBillPage.shareTypeElec')
+          })),
+          total: response.data?.total || 0
+        }
+      } else {
+        const response = await waterSharePageWaterSettleShare(params)
+        if (response.code !== 200) {
+          this.$message.error(response.msg || this.$t('splitBillPage.msgFetchFail'))
+          return { rows: [], total: 0 }
+        }
+        return {
+          rows: (response.data?.dataList || []).map(item => ({
+            ...item,
+            shareTypeLabel: this.$t('splitBillPage.shareTypeWater')
+          })),
+          total: response.data?.total || 0
+        }
       }
     },
 

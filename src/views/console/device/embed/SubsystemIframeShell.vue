@@ -66,11 +66,12 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import { FMCS_ROOT, PARKING_OAUTH_URL } from '@/config/services'
 import Cookies from 'js-cookie'
 import { logAppNavigate, maskTokenInUrl } from '@/utils/appNavigateLog'
 import { getUserInfo } from '@/api/user'
 
-const FMCS_BASE = 'https://jp.brcon.com.cn'
+const FMCS_BASE = FMCS_ROOT
 /** 超过此时长后展示「请耐心等待」类 B 端说明（不出现刷新） */
 const PATIENT_HINT_MS = 15000
 /** 满此时长后才展示「刷新」操作，避免首屏即引导用户打断加载 */
@@ -186,7 +187,7 @@ export default {
           parkId: String(this.ai2parkParkId),
           _r: String(this.ai2parkNonce)
         })
-        return `https://www.ai2park.cn/#/oauth?${q.toString()}`
+        return `${PARKING_OAUTH_URL}?${q.toString()}`
       }
 
       if (!this.resolvedManagerId) return ''
@@ -283,7 +284,7 @@ export default {
         if (this.isAi2parkTarget) {
           console.log('[停车系统] iframe 完整地址:', normalized)
           console.log('[停车系统] 地址组成:', {
-            base: 'https://www.ai2park.cn/#/oauth',
+            base: PARKING_OAUTH_URL,
             parkId: this.ai2parkParkId,
             managerId: this.currentManagerId,
             parkingLotId: this.currentManager && this.currentManager.parkingLotId,

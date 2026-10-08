@@ -27,7 +27,16 @@
             <div class="search-actions">
               <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearchClick">{{ $t('floatPriceBillPage.btnSearch') }}</el-button>
               <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('floatPriceBillPage.btnReset') }}</el-button>
-              <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('floatPriceBillPage.btnExport') }}</el-button>
+              <el-dropdown trigger="hover" @command="handleExportCommand">
+                <el-button type="success" size="small" icon="el-icon-download">
+                  {{ $t('floatPriceBillPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+                </el-button>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="currentPage">{{ $t('floatPriceBillPage.exportCurrentPage') }}</el-dropdown-item>
+                  <el-dropdown-item command="selected">{{ $t('floatPriceBillPage.exportSelected') }}</el-dropdown-item>
+                  <el-dropdown-item command="all">{{ $t('floatPriceBillPage.exportAll') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
             </div>
           </div>
         </el-form>
@@ -66,6 +75,7 @@
             v-loading="loading"
             border
             :data="tableData"
+            row-key="rid"
             :max-height="tableMaxHeight"
             stripe
             style="width: 100%"
@@ -77,7 +87,7 @@
               fontWeight: '600',
             }"
           >
-            <el-table-column type="selection" width="55" align="center" />
+            <el-table-column type="selection" width="55" align="center" reserve-selection />
             <el-table-column prop="rid" :label="$t('floatPriceBillPage.colRid')" min-width="100" show-overflow-tooltip />
             <el-table-column :label="$t('floatPriceBillPage.colFloatRange')" min-width="200" show-overflow-tooltip>
               <template slot-scope="scope">
@@ -546,6 +556,10 @@ import { mapGetters } from 'vuex'
 import { floatPageFloat, floatPreQuery, floatDoFloat, tenantPage, queryFloatDetail } from '@/api/floatPrice'
 import { tierSelectTenantTierList } from '@/api/tier'
 import * as XLSX from 'xlsx'
+
+// 导出全部单次上限（与电表页一致）
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'FloatingPrice',
   data () {
@@ -613,7 +627,9 @@ export default {
         remark: ''
       },
       queryResult: [],
-      selectedData: []
+      selectedData: [],
+      // 导出全部遮罩防重
+      exportAllLoading: false
     }
   },
   computed: {
@@ -1365,105 +1381,168 @@ export default {
       this.fetchTableData()
     },
 
-    handleExport () {
+    // 导出数据
+    // XLSX 生成（导出本页 / 导出选中 / 导出全部 共用）
+    buildXlsx (exportData, isSelected, total) {
+      const t = this.$t.bind(this.$t)
+      const headers = [
+        t('floatPriceBillPage.expColRid'),
+        t('floatPriceBillPage.expColRange'),
+        t('floatPriceBillPage.expColFloatType'),
+        t('floatPriceBillPage.expColBillDate'),
+        t('floatPriceBillPage.expColTarget'),
+        t('floatPriceBillPage.expColFloatAmt'),
+        t('floatPriceBillPage.expColCreator'),
+        t('floatPriceBillPage.expColCreateTime')
+      ]
+
+      const data = exportData.map(row => {
+        return [
+          row.rid || '',
+          this.formatFloatRange(row),
+          this.getFloatTypeLabel(row.floatType),
+          row.settleDate || row.billDate || '',
+          this.formatTargetElectricityPrice(row),
+          row.totalFloatBalance != null ? String(row.totalFloatBalance) : '0',
+          row.userPhone || '',
+          row.createTime || ''
+        ]
+      })
+
+      // 创建工作表数据
+      const wsData = [headers, ...data]
+
+      // 创建工作表
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+      // 设置列宽
+      const colWidths = [
+        { wch: 14 }, { wch: 28 }, { wch: 12 }, { wch: 12 },
+        { wch: 28 }, { wch: 14 }, { wch: 15 }, { wch: 20 }
+      ]
+      ws['!cols'] = colWidths
+
+      // 设置表头样式
+      const headerRange = XLSX.utils.decode_range(ws['!ref'])
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
+        if (!ws[cellAddress]) continue
+
+        ws[cellAddress].s = {
+          font: { bold: true, color: { rgb: '303133' } },
+          fill: { fgColor: { rgb: 'F5F7FA' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        }
+      }
+
+      // 创建工作簿
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, t('floatPriceBillPage.exportSheetName'))
+
+      // 生成文件名
+      const fileName = this.generateFileName()
+
+      // 导出文件（使用原生方法）
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+
+      // 触发下载
+      document.body.appendChild(link)
+      link.click()
+
+      // 清理
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) {
+        successMsg = t('floatPriceBillPage.msgExportOkSelected', { count: exportCount })
+      } else if (total != null && total > exportCount) {
+        // 命中数超过 2000 上限：只导出前 2000 条并提示（与电表页一致）
+        successMsg = t('floatPriceBillPage.successExportedLimit', { count: exportCount, total })
+      } else if (total != null) {
+        successMsg = t('floatPriceBillPage.successExported', { count: exportCount })
+      } else {
+        successMsg = t('floatPriceBillPage.msgExportOk', { count: exportCount })
+      }
+      this.$message.success(successMsg)
+    },
+
+    // 导出本页
+    exportCurrentPage () {
       if (!this.canView) return
       if (this.tableData.length === 0) {
         this.$message.warning(this.$t('floatPriceBillPage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
 
+    // 导出选中
+    exportSelected () {
+      if (!this.canView) return
+      if (this.selectedData.length === 0) {
+        this.$message.warning(this.$t('floatPriceBillPage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+
+    // 导出全部：按当前查询条件重新拉取，封顶 2000 条
+    async exportAll () {
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('floatPriceBillPage.exporting') })
       try {
-        // 确定要导出的数据：优先导出选中数据，无选中则导出当前页
-        const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-
-        // 构建导出的表头和数据
-        const headers = [
-          this.$t('floatPriceBillPage.expColRid'),
-          this.$t('floatPriceBillPage.expColRange'),
-          this.$t('floatPriceBillPage.expColFloatType'),
-          this.$t('floatPriceBillPage.expColBillDate'),
-          this.$t('floatPriceBillPage.expColTarget'),
-          this.$t('floatPriceBillPage.expColFloatAmt'),
-          this.$t('floatPriceBillPage.expColCreator'),
-          this.$t('floatPriceBillPage.expColCreateTime')
-        ]
-
-        const data = exportData.map(row => {
-          return [
-            row.rid || '',
-            this.formatFloatRange(row),
-            this.getFloatTypeLabel(row.floatType),
-            row.settleDate || row.billDate || '',
-            this.formatTargetElectricityPrice(row),
-            row.totalFloatBalance != null ? String(row.totalFloatBalance) : '0',
-            row.userPhone || '',
-            row.createTime || ''
-          ]
-        })
-
-        // 创建工作表数据
-        const wsData = [headers, ...data]
-
-        // 创建工作表
-        const ws = XLSX.utils.aoa_to_sheet(wsData)
-
-        // 设置列宽
-        const colWidths = [
-          { wch: 14 }, { wch: 28 }, { wch: 12 }, { wch: 12 },
-          { wch: 28 }, { wch: 14 }, { wch: 15 }, { wch: 20 }
-        ]
-        ws['!cols'] = colWidths
-
-        // 设置表头样式
-        const headerRange = XLSX.utils.decode_range(ws['!ref'])
-        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
-          if (!ws[cellAddress]) continue
-
-          ws[cellAddress].s = {
-            font: { bold: true, color: { rgb: '303133' } },
-            fill: { fgColor: { rgb: 'F5F7FA' } },
-            alignment: { horizontal: 'center', vertical: 'center' }
-          }
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('floatPriceBillPage.msgNoDataExport'))
+          return
         }
-
-        // 创建工作簿
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('floatPriceBillPage.exportSheetName'))
-
-        // 生成文件名
-        const fileName = this.generateFileName()
-
-        // 导出文件（使用原生方法）
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-
-        // 创建下载链接
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        link.style.display = 'none'
-
-        // 触发下载
-        document.body.appendChild(link)
-        link.click()
-
-        // 清理
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-
-        // 显示导出信息
-        const exportCount = exportData.length
-        const isSelectedExport = this.selectedData.length > 0
-        this.$message.success(
-          isSelectedExport
-            ? this.$t('floatPriceBillPage.msgExportOkSelected', { count: exportCount })
-            : this.$t('floatPriceBillPage.msgExportOk', { count: exportCount })
-        )
+        this.buildXlsx(rows, false, total)
       } catch (error) {
         console.error('导出失败:', error)
         this.$apiError.notify(error, this.$t('floatPriceBillPage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
+      }
+    },
+
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+
+    // 按查询条件拉取全部（封顶 EXPORT_ALL_LIMIT）
+    async fetchAllForExport () {
+      const response = await floatPageFloat({
+        managerId: this.queryData.managerId,
+        startDate: this.queryData.startDate,
+        endDate: this.queryData.endDate,
+        page: {
+          current: 1,
+          size: EXPORT_ALL_LIMIT,
+          searchCount: true,
+          orders: [{ asc: false, column: 'createTime' }]
+        }
+      })
+      if (response.code !== 200) {
+        this.$message.error(response.msg || this.$t('floatPriceBillPage.msgFetchFail'))
+        return { rows: [], total: 0 }
+      }
+      return {
+        rows: response.data?.dataList || [],
+        total: response.data?.total || 0
       }
     },
 

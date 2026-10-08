@@ -4,6 +4,7 @@ export const SSO_USER_MESSAGES = {
   titleFailed: '登录失败',
   noEntry: '请从企业门户进入本系统，勿直接访问或收藏本链接。',
   idpDenied: '登录已取消，或当前账号无访问权限。',
+  invalidCredential: '单点登录凭证无效或已失效，请确认链接中的 code 完整无误后刷新重试；若仍失败，请重新从统一门户进入。',
   networkFailed: '登录失败，请稍后重试；或使用账号密码登录。',
   loginBtn: '账号密码登录',
   success: '登录成功'
@@ -24,6 +25,23 @@ export function toUserFriendlySsoError (raw) {
   if (lower.includes('access_denied') || text.includes('拒绝') || text.includes('取消')) {
     return SSO_USER_MESSAGES.idpDenied
   }
+  if (
+    lower.includes('des') ||
+    lower.includes('decrypt') ||
+    lower.includes('padding') ||
+    lower.includes('padded') ||
+    lower.includes('bad key') ||
+    lower.includes('final block') ||
+    lower.includes('invalid code') ||
+    lower.includes('code invalid') ||
+    text.includes('解密') ||
+    text.includes('凭证无效') ||
+    text.includes('凭证过期') ||
+    text.includes('code无效') ||
+    text.includes('code过期')
+  ) {
+    return SSO_USER_MESSAGES.invalidCredential
+  }
   // 后端若已是中文业务文案，直接展示
   if (/[\u4e00-\u9fa5]/.test(text) && !/凭证|ticket|token|code|sso|oauth/i.test(text)) {
     return text
@@ -32,7 +50,7 @@ export function toUserFriendlySsoError (raw) {
 }
 
 /**
- * 从 SSO 回调 URL 解析凭证（兼容常见 IdP 参数名）
+ * 从 SSO 回调 URL 解析 DES 手机号密文及可选的管理方参数。
  */
 export function parseSsoCallbackQuery (query = {}) {
   const code =
@@ -40,16 +58,8 @@ export function parseSsoCallbackQuery (query = {}) {
     query.authCode ||
     query.authorization_code ||
     ''
-  const ticket = query.ticket || query.sso_ticket || ''
-  // 部分门户用 token / access_token 传一次性票据（非我方最终 Admin-Token）
-  const exchangeToken =
-    query.token ||
-    query.ssoToken ||
-    query.exchangeToken ||
-    query.access_token ||
-    query.accessToken ||
-    ''
-  const state = query.state || ''
+  const groupCode = query.groupCode || query.group_code || ''
+  const managerId = query.managerId || query.manager_id || ''
   const error = query.error || query.err || ''
   const errorDescription =
     query.error_description ||
@@ -57,18 +67,16 @@ export function parseSsoCallbackQuery (query = {}) {
     query.msg ||
     ''
 
-  const codeStr = String(code).trim()
-  const ticketStr = String(ticket).trim()
-  const exchangeStr = String(exchangeToken).trim()
+  // Base64 密文中的 “+” 可能被查询参数解析为空格，密文本身不会包含空格，可安全恢复。
+  const codeStr = String(code).trim().replace(/ /g, '+')
 
   return {
     code: codeStr,
-    ticket: ticketStr,
-    exchangeToken: exchangeStr,
-    state: String(state).trim(),
+    groupCode: String(groupCode).trim(),
+    managerId: String(managerId).trim(),
     error: String(error).trim(),
     errorDescription: String(errorDescription).trim(),
-    hasCredential: Boolean(codeStr || ticketStr || exchangeStr)
+    hasCredential: Boolean(codeStr)
   }
 }
 
@@ -107,11 +115,10 @@ export function applySsoManagerId (raw) {
 }
 
 /**
- * 当前页完整地址，供后端校验 redirect_uri
+ * 清除本地记忆的管理方 ID。
+ * SSO 换账号前调用，避免上一个账号的管理方选择残留到新账号。
  */
-export function getCurrentCallbackUri () {
-  if (typeof window === 'undefined') {
-    return ''
-  }
-  return window.location.href.split('#')[0] + '#/sso/callback'
+export function clearSsoManagerId () {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(SSO_MANAGER_ID_STORAGE_KEY)
 }

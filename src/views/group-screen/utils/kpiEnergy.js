@@ -1,5 +1,6 @@
 import { mapFireManagementKpiExtra } from './fireManagement'
 import { applyWorkOrderKpi } from './workOrderManagement'
+import { calculateParkingTurnoverRate } from './screenBenchmark'
 
 /** 顶部 KPI：能耗接口字段 → 展示值 */
 export function formatKpiPercent (val) {
@@ -16,6 +17,16 @@ export function formatKpiEnergyPerArea (val) {
   return num.toLocaleString(undefined, { maximumFractionDigits: 2 })
 }
 
+function formatParkingTurnover (val) {
+  if (val == null || val === '') return '--'
+  const num = Number(val)
+  if (Number.isNaN(num)) return '--'
+  return num.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
 /**
  * 将 getEnergyManagement 根字段写入 KPI 列表副本
  * @param {Array} list cloneKpiListTemplate()
@@ -23,9 +34,7 @@ export function formatKpiEnergyPerArea (val) {
  */
 export function applyEnergyManagementKpi (list, data) {
   const fieldMap = {
-    onlineRate: { field: 'deviceOnlineRate', format: formatKpiPercent },
-    energyPerArea: { field: 'unitAreaEnergyConsumption', format: formatKpiEnergyPerArea },
-    collectionRate: { field: 'tenantWaterElecCollectRate', format: formatKpiPercent }
+    energyPerArea: { field: 'unitAreaEnergyConsumption', format: formatKpiEnergyPerArea }
   }
   return list.map(item => {
     const cfg = fieldMap[item.key]
@@ -35,19 +44,36 @@ export function applyEnergyManagementKpi (list, data) {
   })
 }
 
-/** 顶部 KPI：停车接口 totalRevenue → 停车营收汇总 */
-export function formatKpiMoney (val) {
-  if (val == null || val === '') return '--'
-  const num = Number(val)
-  if (Number.isNaN(num)) return '--'
-  return num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+export function applyDeviceKpi (list, data) {
+  return list.map(item => {
+    if (item.key !== 'onlineRate') return item
+    return {
+      ...item,
+      value: formatKpiPercent(data ? data.rate : null),
+      trend: null
+    }
+  })
+}
+
+export function applyCollectionKpi (list, data) {
+  return list.map(item => {
+    if (item.key !== 'collectionRate') return item
+    return {
+      ...item,
+      value: formatKpiPercent(data ? data.rate : null),
+      trend: null
+    }
+  })
 }
 
 export function applyParkingKpi (list, data) {
   return list.map(item => {
-    if (item.key !== 'parkingRevenue') return item
-    const raw = data ? data.totalRevenue : null
-    return { ...item, value: formatKpiMoney(raw), trend: null }
+    if (item.key !== 'parkingTurnover') return item
+    return {
+      ...item,
+      value: formatParkingTurnover(calculateParkingTurnoverRate(data || {})),
+      trend: null
+    }
   })
 }
 
@@ -59,11 +85,21 @@ export function applyFireManagementKpi (list, data) {
   })
 }
 
-/** 合并写入顶部 KPI（能耗 + 停车 + 消防 + 工单） */
-export function applyScreenTopKpi (list, { energy, parking, fire, workOrder } = {}) {
+/** 合并写入顶部 KPI（能耗 + 设备 + 收缴 + 停车 + 消防 + 工单） */
+export function applyScreenTopKpi (list, { energy, device, collection, parking, fire, workOrder } = {}) {
+  // 设备在线率优先取主接口 energy.deviceOnlineRate（已含业态过滤）
+  const deviceData = (energy && energy.deviceOnlineRate != null)
+    ? { rate: energy.deviceOnlineRate }
+    : device
   return applyWorkOrderKpi(
     applyFireManagementKpi(
-      applyParkingKpi(applyEnergyManagementKpi(list, energy), parking),
+      applyParkingKpi(
+        applyCollectionKpi(
+          applyDeviceKpi(applyEnergyManagementKpi(list, energy), deviceData),
+          collection
+        ),
+        parking
+      ),
       fire
     ),
     workOrder

@@ -1,0 +1,479 @@
+// This screen owns every selector and all presentation tokens.
+.nandu-screen {
+  position: fixed; inset: 0; overflow: hidden; background: #02101d; color: #e7f4ff;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; -webkit-font-smoothing: antialiased;
+  --nandu-cyan: #61e9ff; --nandu-mint: #4ff5d4; --nandu-orange: #ffa24c;
+  *, *::before, *::after { box-sizing: border-box; }
+  h1,h2,h3,h4,p { margin: 0; }
+  button, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, select:focus-visible { outline: 2px solid #afffff; outline-offset: 3px; }
+  button:disabled { opacity: .35; cursor: default; }
+  strong { font-weight: 600; }
+  small { font-size: 18px; font-weight: 400; margin-left: 5px; }
+  .nandu-orange { color: var(--nandu-orange) !important; }
+  .nandu-mint { color: var(--nandu-mint); }
+}
+.nandu-stage { position: absolute; top: 50%; left: 50%; width: 1920px; height: 1080px; transform-origin: center; overflow: hidden; isolation: isolate; background: #031421; }
+.nandu-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; opacity: 0; transition: opacity 800ms ease; }
+.nandu-stage--ready .nandu-scene { opacity: 1; }
+.nandu-scene-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,15,34,.35), transparent 26%, transparent 72%, rgba(0,16,28,.55)), linear-gradient(90deg, rgba(0,18,33,.6), rgba(0,24,44,.12) 28%, transparent 42%, transparent 74%, rgba(0,18,32,.5)); }
+.nandu-enter { opacity: 0; }
+.nandu-stage--ready .nandu-enter { animation: nandu-enter 650ms ease both; }
+.nandu-stage--ready .nandu-overview, .nandu-stage--ready .nandu-headline { animation-delay: 120ms; }
+.nandu-stage--ready .nandu-trend-panel, .nandu-stage--ready .nandu-pv { animation-delay: 210ms; }
+.nandu-stage--ready .nandu-consumption, .nandu-stage--ready .nandu-devices { animation-delay: 280ms; }
+.nandu-stage--ready .nandu-project-card, .nandu-stage--ready .nandu-events { animation-delay: 340ms; }
+.nandu-stage--ready .nandu-landmarks { animation-delay: 440ms; }
+.nandu-stage--ready .nandu-flow, .nandu-stage--ready .nandu-finance { animation-delay: 380ms; }
+@keyframes nandu-enter { from { opacity: 0; translate: 0 7px; } to { opacity: 1; translate: 0 0; } }
+.nandu-loading,.nandu-image-error { position: absolute; z-index: 9; top: 48%; left: 50%; transform: translate(-50%, -50%); padding: 20px 28px; border: 1px solid #276584; border-radius: 6px; background: #062136; font-size: 20px; color: #b3dfef; }
+.nandu-image-error button { background: #07516a; border: 1px solid #26cbea; padding: 8px 16px; border-radius: 4px; margin-left: 15px; }
+.nandu-panel { border: 1px solid rgba(37,173,224,.62); border-radius: 10px; background: linear-gradient(115deg, rgba(0,28,50,.91), rgba(0,24,44,.71)); box-shadow: inset 0 0 26px rgba(1,103,157,.09), 0 0 12px rgba(0,129,191,.14); }
+.nandu-panel::before { content: ''; pointer-events: none; position: absolute; top: -1px; left: 28px; width: 45%; height: 1px; background: linear-gradient(90deg, transparent, #60e5ff, transparent); box-shadow: 0 0 9px #1ca7ff; }
+.nandu-panel-heading { position: relative; display: flex; align-items: center; justify-content: space-between; height: 51px; margin: 0 14px; border-bottom: 1px solid rgba(35,153,205,.42); }
+.nandu-panel-heading h2 { position: relative; padding-left: 17px; font-size: 24px; font-weight: 600; line-height: 32px; letter-spacing: 1px; white-space: nowrap; }
+.nandu-panel-heading h2::before { content: ''; position: absolute; left: 0; top: 6px; width: 4px; height: 20px; background: #32eedf; box-shadow: 0 0 10px #17d3d2; }
+.nandu-panel-heading button { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 6px 0 6px 8px; border: 0; background: transparent; color: #6cd6fa; }
+.nandu-panel-heading button:hover { color: #e7ffff; text-shadow: 0 0 8px #1bdcff; }
+.nandu-panel-heading button .nandu-icon { font-size: 22px; }
+.nandu-panel-heading button span { font-size: 14px; letter-spacing: 1px; }
+.nandu-panel-heading--icon h2 { display: flex; align-items: center; gap: 13px; padding-left: 0; }
+.nandu-panel-heading--icon h2::before { display: none; }
+.nandu-panel-heading--icon h2 .nandu-icon { font-size: 36px; color: #5eeaff; filter: drop-shadow(0 0 6px #168fba); }
+.nandu-unit { font-size: 14px; color: #a2cce0; white-space: nowrap; }
+.nandu-number { display: block; font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 41px; line-height: 1.15; color: var(--nandu-cyan); letter-spacing: -.7px; text-shadow: 0 0 18px rgba(29,194,245,.2); white-space: nowrap; }
+.nandu-number small { font-size: 23px; letter-spacing: 0; }
+.nandu-orb { flex: 0 0 auto; display: grid; place-items: center; width: 70px; height: 70px; border-radius: 50%; border: 1px solid rgba(46,209,255,.68); background: radial-gradient(circle at 40% 34%, rgba(15,123,180,.84), rgba(0,40,65,.9) 54%, rgba(0,19,34,.92) 72%); box-shadow: inset 0 0 0 5px rgba(0,34,53,.73), 0 0 16px rgba(12,167,234,.13); color: #6de9ff; }
+.nandu-orb .nandu-icon { font-size: 41px; filter: drop-shadow(0 0 6px #008dd1); }
+.nandu-orb--mint { border-color: #48d9c1; color: #37ebd8; }
+.nandu-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #2ce8c8; box-shadow: 0 0 7px rgba(25,239,204,.25); flex: 0 0 auto; }
+.nandu-dot--blue { background: #2baff4; }
+.nandu-metric-label { display: block; color: #d3e8f7; font-size: 18px; margin-bottom: 4px; white-space: nowrap; }
+
+.nandu-header { position: absolute; top: 0; left: 0; right: 0; height: 86px; background: linear-gradient(180deg, rgba(0,19,43,.88), rgba(0,41,73,.58) 70%, transparent); display: flex; align-items: flex-start; justify-content: space-between; padding: 0 28px; }
+.nandu-header::after { content: ''; position: absolute; bottom: 15px; left: 28px; right: 28px; height: 1px; background: linear-gradient(90deg, #2cb5e5, #239fcc 28%, transparent 37%, transparent 64%, #239fcc 73%, #2cb5e5); box-shadow: 0 0 8px rgba(51,194,255,.6); }
+.nandu-header__project { display: flex; gap: 15px; align-items: center; margin-top: 25px; font-size: 24px; color: #84deff; letter-spacing: 1px; white-space: nowrap; }
+.nandu-header__project strong { color: #ecf7ff; font-size: 25px; }
+.nandu-header__heading { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); text-align: center; white-space: nowrap; }
+.nandu-header h1 { font-size: 43px; line-height: 1.35; letter-spacing: 3px; font-weight: 700; color: #effaff; text-shadow: 0 3px 0 #216f99, 0 0 25px rgba(11,156,229,.55); }
+.nandu-header__heading p { margin-top: 2px; font-size: 18px; letter-spacing: 7px; color: #c1deef; }
+.nandu-header__meta { display: flex; align-items: center; gap: 22px; margin-top: 19px; font: 21px Arial, sans-serif; white-space: nowrap; }
+.nandu-demo-badge { padding: 7px 14px; color: #ffcf72 !important; border: 1px solid #d29c42; border-radius: 6px; background: rgba(55,45,28,.48); font-size: 17px !important; box-shadow: inset 0 0 12px rgba(226,165,45,.18), 0 0 7px rgba(232,158,30,.12); }
+.nandu-demo-badge:hover { background: #61502d; }
+.nandu-headline { position: absolute; top: 99px; left: 468px; width: 974px; height: 91px; display: flex; align-items: center; padding: 9px 24px; border-color: rgba(55,197,254,.85); background: linear-gradient(90deg, rgba(0,37,69,.82), rgba(0,53,85,.73), rgba(0,34,58,.82)); box-shadow: inset 0 0 18px rgba(15,149,220,.19), 0 0 12px rgba(17,181,255,.26); }
+.nandu-headline__metric { flex: 1; display: flex; align-items: center; justify-content: center; text-align: left; gap: 16px; background: transparent; border: 0; min-width: 0; padding: 0 14px; }
+.nandu-headline__metric + .nandu-headline__metric { border-left: 1px solid rgba(57,162,205,.3); }
+.nandu-headline__metric:hover .nandu-orb { box-shadow: 0 0 20px rgba(24,213,248,.4); }
+.nandu-headline .nandu-orb { width: 64px; height: 64px; }
+.nandu-headline .nandu-number { font-size: 39px; }
+.nandu-headline .nandu-number small { font-size: 21px; }
+.nandu-headline .nandu-metric-label { font-size: 19px; }
+
+.nandu-overview { position: absolute; left: 20px; top: 86px; width: 424px; height: 330px; }
+.nandu-today-list { padding: 2px 19px 0; }
+.nandu-today-metric { height: 91px; display: flex; align-items: center; gap: 20px; }
+.nandu-today-metric + .nandu-today-metric { border-top: 1px solid rgba(60,138,174,.3); }
+.nandu-today-metric h3 { font-size: 20px; line-height: 29px; font-weight: 400; color: #c9dfef; }
+.nandu-today-metric .nandu-number { font-size: 40px; }
+.nandu-trend-panel { position: absolute; left: 20px; top: 430px; width: 424px; height: 258px; }
+.nandu-trend-panel .nandu-trend { height: 199px; width: 100%; margin-top: 4px; }
+.nandu-trend-panel .nandu-panel-heading h2 { letter-spacing: 0; font-size: 23px; }
+.nandu-consumption { position: absolute; left: 20px; top: 702px; width: 424px; height: 245px; }
+.nandu-consumption__body { display: flex; align-items: center; height: 190px; padding: 4px 10px 5px 0; gap: 8px; }
+.nandu-ring { position: relative; flex: 0 0 auto; width: 186px; height: 186px; }
+.nandu-ring__chart { position: absolute; inset: 0; }
+.nandu-ring__caption { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; pointer-events: none; color: #ebfaff; }
+.nandu-ring__caption strong { font: 600 28px Arial, sans-serif; letter-spacing: -.7px; }
+.nandu-ring__caption span { font: 18px Arial, sans-serif; margin-top: 2px; }
+.nandu-ring__caption small { font-size: 15px; margin-top: 2px; margin-left: 0; color: #afdcf1; }
+.nandu-consumption__legend { flex: 1; min-width: 0; }
+.nandu-consumption__legend > div + div { margin-top: 27px; }
+.nandu-consumption__legend h3 { display: flex; align-items: center; gap: 11px; font-size: 19px; font-weight: 400; color: #a2efee; }
+.nandu-consumption__legend strong { display: flex; align-items: baseline; color: #63f0ef; font: 600 25px Arial, sans-serif; white-space: nowrap; margin-top: 7px; }
+.nandu-consumption__legend small { font-size: 17px; margin-left: 4px; font-weight: 400; }
+.nandu-consumption__legend em { margin-left: auto; font-size: 21px; font-style: normal; color: #b8eefa; }
+.nandu-landmarks { position: absolute; inset: 0; pointer-events: none; }
+.nandu-landmarks__connections { position: absolute; inset: 0; }
+.nandu-landmark { position: absolute; padding: 8px 14px; border: 1px solid #4ad8fa; border-radius: 8px; font-size: 19px !important; font-weight: 600 !important; line-height: 24px; white-space: nowrap; background: rgba(0,34,54,.91); box-shadow: inset 0 0 10px rgba(8,156,221,.21), 0 0 15px rgba(0,176,249,.3); pointer-events: auto; transition: box-shadow 160ms, background 160ms; }
+.nandu-landmark:hover { background: #065578; box-shadow: 0 0 22px rgba(29,207,255,.6); }
+.nandu-project-card { position: absolute; top: 233px; left: 1106px; width: 294px; height: 242px; border-color: #26bbfa; background: linear-gradient(120deg,rgba(0,36,66,.94),rgba(1,44,70,.76)); box-shadow: 0 0 16px rgba(19,183,250,.45), inset 0 0 12px rgba(30,131,181,.2); }
+.nandu-project-card .nandu-panel-heading { height: 48px; }
+.nandu-project-card .nandu-panel-heading h2 { font-size: 23px; }
+.nandu-project-metric { display: flex; align-items: center; gap: 17px; height: 62px; padding: 0 21px; }
+.nandu-project-metric > .nandu-icon { font-size: 34px; color: #5ad6ff; filter: drop-shadow(0 0 7px #0c7aaa); }
+.nandu-project-metric h3 { font-size: 16px; font-weight: 400; color: #bfdcee; margin-bottom: 3px; }
+.nandu-project-metric strong { font: 600 27px Arial, sans-serif; color: #69ebff; white-space: nowrap; }
+.nandu-project-metric small { font-size: 18px; }
+
+.nandu-pv { position: absolute; left: 1477px; top: 86px; width: 423px; height: 259px; }
+.nandu-pv__overview { display: flex; align-items: center; height: 105px; padding: 8px 18px; gap: 10px; }
+.nandu-pv__overview h3 { font-size: 20px; font-weight: 400; margin-bottom: 4px; }
+.nandu-pv__overview .nandu-number { font-size: 45px; }
+.nandu-pv__overview .nandu-number small { font-size: 19px; }
+.nandu-pv__percent { margin-left: auto; border-left: 1px solid #28687f; padding-left: 15px; font-size: 16px; color: #b7dce9; }
+.nandu-pv__percent strong { display: block; margin-top: 5px; color: #4af2da; font: 600 24px Arial, sans-serif; }
+.nandu-pv .nandu-ring { width: 90px; height: 90px; margin-right: -7px; }
+.nandu-pv .nandu-ring__caption strong { font-size: 20px; }
+.nandu-pv__track { height: 19px; margin: 10px 19px 0; border-radius: 12px; background: linear-gradient(90deg,#2989cf,#7ac9f6); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(100,214,255,.3); }
+.nandu-pv__track > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#16dba8,#55f7da); }
+.nandu-pv__details { display: flex; align-items: center; padding: 12px 20px; gap: 26px; }
+.nandu-pv__details > div { display: flex; align-items: flex-start; gap: 12px; flex: 1; font-size: 16px; }
+.nandu-pv__details .nandu-dot { margin-top: 2px; }
+.nandu-pv__details strong { display: block; font: 600 25px Arial, sans-serif; color: #61e5ff; margin-top: 2px; white-space: nowrap; }
+.nandu-pv__details small { font-size: 17px; }
+.nandu-devices { position: absolute; left: 1477px; top: 357px; width: 423px; height: 402px; }
+.nandu-online-rate { display: flex; align-items: center; gap: 26px; padding: 12px 28px 9px; }
+.nandu-online-rate > span { border: 1px solid #30d4ff; box-shadow: 0 0 10px rgba(0,177,238,.25); border-radius: 22px; padding: 6px 20px; font-size: 17px; color: #8fe9fb; white-space: nowrap; }
+.nandu-online-rate > strong { font: 600 60px/1 Arial, sans-serif; color: #65ecff; letter-spacing: -1px; text-shadow: 0 0 18px rgba(15,214,255,.22); }
+.nandu-online-rate > strong small { font-size: 38px; }
+.nandu-device-counts { display: flex; margin: 7px 21px 15px; }
+.nandu-device-counts > div { flex: 1; }
+.nandu-device-counts > div + div { border-left: 1px solid rgba(85,177,214,.6); padding-left: 20px; }
+.nandu-device-counts h3 { display: flex; align-items: center; gap: 7px; font-size: 17px; color: #bddce9; font-weight: 400; line-height: 23px; }
+.nandu-device-counts h3 .nandu-icon { font-size: 24px; color: #4ac9ff; }
+.nandu-device-counts strong { font: 600 31px Arial, sans-serif; color: #5deaff; white-space: nowrap; }
+.nandu-device-counts small { font-size: 18px; }
+.nandu-device-counts .nandu-orange strong,.nandu-device-counts .nandu-orange .nandu-icon { color: #ffa252; }
+.nandu-device-types { display: flex; gap: 7px; margin: 0 16px; }
+.nandu-device-types button { display: flex; align-items: center; justify-content: center; gap: 8px; height: 68px; flex: 1; min-width: 0; border: 1px solid rgba(19,109,156,.53); border-radius: 8px; background: linear-gradient(130deg,rgba(0,57,90,.55),rgba(0,27,47,.24)); text-align: left; }
+.nandu-device-types button:hover { border-color: #3bccf9; background: #06445f; }
+.nandu-device-types .nandu-icon { font-size: 36px; color: #65deff; filter: drop-shadow(0 0 6px #1389bb); }
+.nandu-device-types button > span { font-size: 14px; color: #c8e3f2; white-space: nowrap; }
+.nandu-device-types strong { display: block; color: #64e9ff; font: 600 25px Arial, sans-serif; margin-top: 3px; }
+.nandu-device-types small { font-size: 15px; }
+.nandu-ac { margin: 12px 21px 0; }
+.nandu-ac > h3 { font-size: 17px; font-weight: 400; color: #c4deed; }
+.nandu-ac__track { display: flex; height: 19px; border-radius: 12px; overflow: hidden; margin-top: 8px; }
+.nandu-ac__track > .nandu-ac--running { background: linear-gradient(90deg,#1fdfb1,#49f0d4); }
+.nandu-ac__track > .nandu-ac--standby { background: #31a6ed; }
+.nandu-ac__track > .nandu-ac--offline { background: #ffb24d; }
+.nandu-ac__legend { display: flex; justify-content: space-between; padding-top: 9px; }
+.nandu-ac__legend h4 { display: flex; align-items: center; gap: 11px; font-size: 16px; font-weight: 400; }
+.nandu-ac__legend strong { display: block; color: #69ebff; font: 600 24px Arial, sans-serif; padding-left: 27px; margin-top: 3px; }
+.nandu-ac__legend small { font-size: 16px; }
+.nandu-ac--standby .nandu-dot { background: #2baff4; }
+.nandu-ac--offline .nandu-dot { background: #ffac4e; }
+.nandu-ac--offline strong { color: #ffbb74; }
+.nandu-events { position: absolute; left: 1477px; top: 773px; width: 423px; height: 174px; }
+.nandu-event-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 8px 16px; gap: 0 11px; }
+.nandu-event-grid > button,.nandu-event-grid > div { display: flex; align-items: center; gap: 8px; height: 50px; padding: 0; border: 0; border-bottom: 1px solid rgba(29,118,156,.24); background: transparent; text-align: left; }
+.nandu-event-grid button:hover { background: rgba(3,87,120,.4); }
+.nandu-event-grid .nandu-icon { font-size: 29px; color: #55cbff; flex-shrink: 0; }
+.nandu-event-grid > :nth-child(odd) .nandu-icon { color: #ffad57; }
+.nandu-event-grid span { color: #c4dbea; font-size: 14px; white-space: nowrap; }
+.nandu-event-grid strong { display: inline-block; margin-left: 6px; color: #ffab64; font: 600 25px Arial,sans-serif; }
+.nandu-event-grid small { font-size: 16px; }
+.nandu-event-grid .nandu-event-time { font-size: 20px; color: #60ddff; }
+
+.nandu-flow { position: absolute; left: 475px; top: 827px; width: 964px; height: 134px; border: 1px solid rgba(30,188,246,.73); border-radius: 18px; background: linear-gradient(100deg,rgba(0,37,61,.84),rgba(0,31,48,.9) 55%,rgba(0,37,65,.82)); box-shadow: inset 0 0 18px rgba(5,164,225,.23),0 0 16px rgba(20,161,230,.14); }
+.nandu-flow > h2 { font-size: 15px; color: #a5d3e5; font-weight: 400; padding: 7px 17px; }
+.nandu-flow__unit { font-size: 13px; color: #7faabe; margin-left: 10px; }
+.nandu-flow__connections { position: absolute; top: -9px; left: 0; width: 940px; height: 150px; pointer-events: none; }
+.nandu-flow__node { position: absolute; display: flex; align-items: center; gap: 11px; height: 78px; padding: 8px 13px; }
+.nandu-flow__node .nandu-icon { font-size: 44px; color: #65d4ff; filter: drop-shadow(0 0 7px #087fc0); }
+.nandu-flow__node span:not(.nandu-icon) { display: block; color: #d4e9f5; font-size: 16px; margin-bottom: 5px; }
+.nandu-flow__node strong { display: block; color: #5eeaff; font: 600 26px Arial,sans-serif; white-space: nowrap; }
+.nandu-flow__grid { left: 4px; top: 43px; width: 177px; }
+.nandu-flow__plus { position: absolute; left: 193px; top: 55px; font-size: 40px; color: #55edff; }
+.nandu-flow__solar { left: 224px; top: 43px; width: 167px; gap: 10px; padding-left: 9px; }
+.nandu-flow__solar .nandu-icon { color: #38edc6; }
+.nandu-flow__solar strong { color: #52edda; }
+.nandu-flow__total { position: absolute; left: 424px; top: 43px; width: 221px; height: 78px; padding: 9px; text-align: center; border: 1px solid #40d9fa; border-radius: 13px; background: linear-gradient(90deg,rgba(0,98,136,.58),rgba(0,44,69,.82)); box-shadow: inset 0 0 15px rgba(0,198,238,.22),0 0 10px rgba(0,178,231,.25); }
+.nandu-flow__total span { display: block; font-size: 18px; }
+.nandu-flow__total strong { display: block; color: #66f0ff; font: 600 37px Arial,sans-serif; margin-top: 2px; }
+.nandu-flow__tenant,.nandu-flow__common { left: 701px; width: 239px; height: 56px; gap: 12px; border: 1px solid rgba(29,158,220,.48); border-radius: 8px; padding: 4px 13px; background: rgba(0,55,82,.45); }
+.nandu-flow__tenant { top: 17px; }
+.nandu-flow__common { top: 83px; height: 43px; }
+.nandu-flow__tenant .nandu-icon,.nandu-flow__common .nandu-icon { font-size: 35px; }
+.nandu-flow__tenant span:not(.nandu-icon),.nandu-flow__common span:not(.nandu-icon) { font-size: 15px; margin-bottom: 0; }
+.nandu-flow__tenant strong,.nandu-flow__common strong { font-size: 24px; }
+.nandu-flow__tenant small,.nandu-flow__common small { font-size: 15px; }
+
+.nandu-finance { position: absolute; left: 20px; right: 20px; top: 973px; height: 91px; display: flex; align-items: center; padding: 12px 14px; background: linear-gradient(90deg,rgba(0,35,53,.97),rgba(0,31,51,.82),rgba(0,27,44,.92)); }
+.nandu-finance > h2 { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 600; padding-right: 24px; white-space: nowrap; }
+.nandu-finance > h2 .nandu-icon { color: #64d6fb; font-size: 38px; }
+.nandu-finance__metrics { flex: 1; display: flex; align-items: center; }
+.nandu-finance__metric { flex: 1; display: flex; align-items: center; gap: 15px; min-width: 0; border: 0; border-left: 1px solid rgba(126,189,217,.65); background: transparent; padding: 0 24px; text-align: left; }
+.nandu-finance__metric:hover .nandu-orb { box-shadow: 0 0 16px rgba(1,195,255,.35); }
+.nandu-finance .nandu-orb { width: 58px; height: 58px; border-color: rgba(43,141,180,.22); }
+.nandu-finance .nandu-orb .nandu-icon { font-size: 34px; }
+.nandu-finance .nandu-metric-label { font-size: 17px; }
+.nandu-finance__metric strong { color: #68dfff; font: 600 30px Arial,sans-serif; white-space: nowrap; }
+.nandu-finance__metric strong small { font-size: 25px; margin: 0 5px 0 0; }
+.nandu-finance__metric.nandu-orange strong,.nandu-finance__metric.nandu-orange .nandu-icon { color: #ffa651; }
+.nandu-period { position: absolute; bottom: 2px; right: 28px; font: 12px Arial,'Microsoft YaHei',sans-serif; color: #8fbccc; line-height: 13px; }
+.nandu-period span { margin-left: 12px; color: #b7dbe4; }
+
+.nandu-dialog-backdrop { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(0,9,20,.63); backdrop-filter: blur(7px); }
+.nandu-dialog { width: 1320px; height: 792px; border: 1px solid #25b5df; border-radius: 16px; background: linear-gradient(130deg,#07314a,#031c30 55%,#072b40); box-shadow: 0 30px 120px rgba(0,0,0,.7),inset 0 0 40px rgba(0,134,190,.12),0 0 25px rgba(12,155,227,.15); overflow: hidden; animation: nandu-dialog-enter 230ms ease both; }
+@keyframes nandu-dialog-enter { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.nandu-dialog__header { display: flex; align-items: center; height: 103px; padding: 22px 30px; gap: 19px; border-bottom: 1px solid #1b536d; background: linear-gradient(90deg,rgba(7,92,127,.28),transparent); }
+.nandu-dialog__title-icon { display: grid; place-items: center; width: 56px; height: 56px; background: rgba(9,123,165,.2); border: 1px solid #157394; border-radius: 12px; color: #58e3f6; }
+.nandu-dialog__title-icon .nandu-icon { font-size: 34px; }
+.nandu-dialog__header p { color: #59c5dd; font: 12px Arial,sans-serif; letter-spacing: 3px; margin-bottom: 7px; }
+.nandu-dialog__header p span { letter-spacing: 1px; margin-left: 10px; color: #89afc2; font-size: 13px; }
+.nandu-dialog__header h2 { color: #edfaff; font-size: 29px; font-weight: 600; letter-spacing: 1px; }
+.nandu-dialog__demo { margin-left: auto; padding: 6px 11px; font-size: 14px; color: #edba67; border: 1px solid #776435; border-radius: 5px; background: rgba(108,77,22,.1); }
+.nandu-dialog__close { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #295a70; background: #0b3448; border-radius: 8px; color: #b8deeb; margin-left: 12px; }
+.nandu-dialog__close:hover { background: #15536b; color: #fff; }
+.nandu-dialog__close .nandu-icon { font-size: 26px; }
+.nandu-dialog__body { display: grid; grid-template-columns: 310px minmax(0,1fr); height: 628px; padding: 25px 29px; gap: 28px; }
+.nandu-detail-visual { position: relative; border: 1px solid #285e70; border-radius: 11px; overflow: hidden; background: #062d40; }
+.nandu-detail-visual > img { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: 50% center; }
+.nandu-detail-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg,rgba(0,26,43,.6),transparent 30%,rgba(0,24,40,.5) 55%,#062536 94%); }
+.nandu-detail-visual__top { position: absolute; z-index: 1; top: 19px; left: 17px; display: flex; align-items: center; gap: 8px; color: #d1edf4; font-size: 14px; }
+.nandu-live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #3ce1be; box-shadow: 0 0 8px rgba(25,230,192,.5); }
+.nandu-detail-visual__bottom { position: absolute; z-index: 1; left: 24px; right: 24px; bottom: 26px; }
+.nandu-detail-visual__bottom > .nandu-icon { font-size: 41px; color: #52e3e9; margin-bottom: 14px; }
+.nandu-detail-visual__bottom h3 { font-size: 24px; line-height: 1.5; letter-spacing: .5px; font-weight: 600; margin-bottom: 12px; }
+.nandu-detail-visual__bottom p { font-size: 16px; color: #bedbe5; line-height: 1.85; }
+.nandu-detail-visual__bottom > span { display: block; border-top: 1px solid #23546b; padding-top: 16px; margin-top: 22px; color: #5fced8; font-size: 14px; }
+.nandu-detail-content { min-width: 0; }
+.nandu-detail-kpis { display: flex; gap: 14px; margin-bottom: 22px; }
+.nandu-detail-kpis > div { flex: 1; min-width: 0; border: 1px solid #205168; border-radius: 8px; background: linear-gradient(125deg,rgba(6,78,104,.48),rgba(0,35,53,.4)); padding: 18px; }
+.nandu-detail-kpis > div > span { display: block; color: #a9cbdb; font-size: 15px; margin-bottom: 10px; }
+.nandu-detail-kpis strong { display: block; font: 600 34px Arial,sans-serif; color: #61e5f6; white-space: nowrap; }
+.nandu-detail-kpis strong small { font-size: 16px; margin-left: 6px; color: #a6d5e4; }
+.nandu-detail-filters { display: flex; align-items: center; gap: 20px; margin-bottom: 17px; font-size: 15px; color: #b2d1df; }
+.nandu-detail-filters label { display: flex; align-items: center; gap: 10px; }
+.nandu-detail-filters select { background: #082f46; border: 1px solid #24647e; border-radius: 5px; padding: 6px 27px 6px 10px; font-size: 15px; }
+.nandu-detail-filters > span { margin-left: auto; color: #72c9e3; }
+.nandu-detail-table { width: 100%; border-collapse: collapse; text-align: left; font: 15px Arial,'Microsoft YaHei',sans-serif; table-layout: fixed; }
+.nandu-detail-table th { background: #0b344b; color: #91bfd0; font-weight: 400; height: 39px; padding: 0 15px; font-size: 14px; }
+.nandu-detail-table td { border-bottom: 1px solid #173c51; height: 42px; padding: 0 15px; color: #d0e7f0; }
+.nandu-detail-table tbody tr:nth-child(even) { background: rgba(6,49,68,.3); }
+.nandu-detail-table--spacious td { height: 61px; }
+.nandu-status { display: flex; align-items: center; gap: 7px; color: #46e3c4; white-space: nowrap; font-size: 14px; }
+.nandu-status i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.nandu-status--standby { color: #63bef8; }
+.nandu-status--offline { color: #ffad64; }
+.nandu-table-empty { text-align: center; color: #6d99ab !important; height: 245px !important; }
+.nandu-pagination { display: flex; align-items: center; gap: 13px; margin-top: 15px; font-size: 14px; color: #a8c9d8; }
+.nandu-pagination > span:first-child { margin-right: auto; font-size: 12px; color: #7fabbf; }
+.nandu-pagination button { border: 1px solid #26617a; border-radius: 4px; padding: 6px 10px; background: #0b354c; }
+.nandu-pagination button:not(:disabled):hover { background: #105675; }
+.nandu-detail-section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 13px; border-bottom: 1px solid #225066; }
+.nandu-detail-section-heading h3 { font-size: 20px; font-weight: 500; }
+.nandu-detail-section-heading > span { color: #86b2c4; font-size: 13px; }
+.nandu-event-list { display: flex; flex-direction: column; gap: 15px; }
+.nandu-event-list article { display: flex; align-items: flex-start; gap: 14px; padding: 17px; border: 1px solid #254f63; border-radius: 8px; background: rgba(7,48,65,.4); }
+.nandu-event-list__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 9px; background: rgba(229,142,43,.1); color: #ffaa57; flex-shrink: 0; }
+.nandu-event-list__icon .nandu-icon { font-size: 25px; }
+.nandu-event-list__icon.is-resolved { color: #41dcbc; background: rgba(31,185,157,.1); }
+.nandu-event-list article > div { flex: 1; }
+.nandu-event-list h4 { display: flex; align-items: center; font-size: 17px; font-weight: 500; margin-bottom: 9px; }
+.nandu-event-list time { margin-left: auto; color: #7ba8ba; font: 14px Arial,sans-serif; }
+.nandu-event-list p { color: #a9cad7; font-size: 14px; line-height: 1.6; }
+.nandu-event-tag { display: inline-block; margin-top: 10px; padding: 3px 7px; border-radius: 4px; font-size: 12px; background: #4b3a29; color: #ffc079; }
+.nandu-event-tag.is-resolved { background: #0d4c49; color: #70dcc2; }
+.nandu-detail-callout { display: flex; align-items: flex-start; gap: 12px; padding: 20px; border: 1px solid #25596c; border-radius: 8px; background: rgba(17,79,98,.22); margin-top: 29px; color: #a7cbd8; font-size: 16px; line-height: 1.8; }
+.nandu-detail-callout > .nandu-icon { font-size: 24px; color: #50c9df; flex-shrink: 0; }
+.nandu-detail-callout strong { color: #69e1ed; margin: 0 7px; }
+.nandu-detail-solar { display: flex; align-items: center; justify-content: space-around; height: 197px; margin-top: -7px; margin-bottom: 10px; }
+.nandu-detail-solar .nandu-ring { width: 186px; height: 186px; }
+.nandu-detail-solar > div:last-child { width: 45%; }
+.nandu-detail-solar p { display: flex; align-items: center; gap: 10px; color: #a8cbd8; font-size: 16px; flex-wrap: wrap; }
+.nandu-detail-solar p + p { margin-top: 20px; }
+.nandu-detail-solar > div:last-child strong { width: 100%; padding-left: 26px; font: 600 30px Arial,sans-serif; color: #59e9ef; }
+.nandu-detail-footnote { color: #81abbc; font-size: 13px; line-height: 1.7; margin-top: 15px !important; }
+.nandu-detail-tabs { display: flex; gap: 25px; border-bottom: 1px solid #20556d; margin-bottom: 25px; }
+.nandu-detail-tabs button { border: 0; border-bottom: 2px solid transparent; background: transparent; font-size: 17px; color: #91b9cb; padding: 8px 4px 12px; }
+.nandu-detail-tabs button.is-active { color: #57e5f3; border-bottom-color: #39d9e4; }
+.nandu-detail-energy > div { margin-bottom: 24px; }
+.nandu-detail-energy > div > div:first-child { display: flex; align-items: center; justify-content: space-between; font-size: 18px; color: #bad8e5; margin-bottom: 12px; }
+.nandu-detail-energy strong { font: 600 26px Arial,sans-serif; color: #64e2f0; }
+.nandu-detail-energy em { display: inline-block; width: 68px; text-align: right; font-size: 17px; font-style: normal; color: #9ec8db; }
+.nandu-detail-energy small { font-size: 16px; }
+.nandu-detail-meter { height: 12px; background: #123f55; border-radius: 6px; overflow: hidden; }
+.nandu-detail-meter span { display: block; height: 100%; border-radius: inherit; }
+.nandu-detail-equation { font-size: 15px; line-height: 1.8; color: #a0c4d1; padding: 16px; border: 1px solid #245a6e; border-radius: 6px; background: #093447; }
+.nandu-detail-trend { height: 310px; }
+.nandu-data-notes { margin: 0; }
+.nandu-data-notes > div { display: flex; gap: 24px; border-bottom: 1px solid #20495d; padding: 20px 0; }
+.nandu-data-notes dt { flex: 0 0 75px; color: #58d9e9; font-size: 17px; }
+.nandu-data-notes dd { margin: 0; color: #accddc; font-size: 16px; line-height: 1.7; }
+.nandu-dialog__footer { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-top: 1px solid #205268; background: rgba(0,20,34,.35); font-size: 13px; color: #88b4c7; }
+.nandu-dialog__footer .nandu-live-dot { margin-right: 8px; }
+.nandu-dialog__footer b { margin-left: 18px; color: #c7a967; font-size: 12px; font-weight: 400; }
+.nandu-screen--paused .nandu-enter { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .nandu-screen *, .nandu-screen *::before, .nandu-screen *::after { animation: none !important; transition: none !important; }
+  .nandu-stage--ready .nandu-enter { opacity: 1; }
+}
+
+
+// Layout refinements: no letterboxing; keep type in the browser's layout pass.
+.nandu-stage { left: 0; top: 0; transform: none; }
+.nandu-scene-layer { position: absolute; inset: 0; overflow: hidden; }
+.nandu-scene { right: auto; bottom: auto; object-fit: fill; transition: opacity 800ms ease; }
+.nandu-pv,.nandu-devices,.nandu-events { left: auto; right: 20px; }
+.nandu-headline { left: calc(50% - 492px); }
+.nandu-project-card { left: calc(50% + 146px); }
+.nandu-flow { left: calc(50% - 485px); top: auto; bottom: 125px; height: 147px; }
+.nandu-finance { top: auto; bottom: 16px; }
+.nandu-consumption { top: auto; bottom: 133px; }
+.nandu-events { top: auto; bottom: 133px; }
+.nandu-trend-panel { top: calc(430px + (100% - 1080px) * .35); }
+.nandu-devices { top: calc(357px + (100% - 1080px) * .4); }
+.nandu-header h1 { font-size: 40px; letter-spacing: 2px; text-shadow: 0 2px 0 #216f99, 0 0 17px rgba(11,156,229,.35); }
+.nandu-header__project { font-size: 21px; }
+.nandu-header__project strong { font-size: 24px; }
+.nandu-header__heading p { font-size: 17px; letter-spacing: 5px; }
+.nandu-header__meta { font-size: 19px; }
+.nandu-panel-heading h2 { font-weight: 500; font-size: 22px; letter-spacing: .4px; }
+.nandu-panel-heading--icon h2 .nandu-icon { font-size: 32px; }
+.nandu-headline { padding-left: 19px; padding-right: 19px; }
+.nandu-headline__metric { padding: 0 16px; gap: 18px; }
+.nandu-headline .nandu-number { font-size: 36px; letter-spacing: -1px; }
+.nandu-headline .nandu-number small { font-size: 18px; letter-spacing: 0; margin-left: 8px; color: #b4e5f7; }
+.nandu-headline .nandu-metric-label { font-size: 17px; margin-bottom: 6px; }
+.nandu-today-metric h3 { font-size: 18px; }
+.nandu-today-metric .nandu-number { font-size: 38px; }
+.nandu-today-metric .nandu-number small { font-size: 19px; margin-left: 9px; color: #b2e1ef; }
+.nandu-trend-panel .nandu-panel-heading h2 { font-size: 21px; }
+.nandu-consumption__legend h3 { font-size: 17px; }
+.nandu-consumption__legend strong { font-size: 24px; }
+.nandu-consumption__legend small { font-size: 15px; color: #b2e1ef; margin-left: 7px; }
+.nandu-consumption__legend em { font-size: 19px; }
+.nandu-project-metric { padding: 0 24px; gap: 20px; }
+.nandu-project-metric h3 { font-size: 15px; }
+.nandu-project-metric strong { font-size: 25px; }
+.nandu-project-metric small { font-size: 16px; margin-left: 8px; color: #b7e0f0; }
+.nandu-project-card .nandu-panel-heading h2 { font-size: 22px; }
+.nandu-pv__overview { padding-left: 20px; padding-right: 15px; gap: 9px; }
+.nandu-pv__overview .nandu-number { font-size: 40px; letter-spacing: -1.5px; }
+.nandu-pv__overview .nandu-number small { font-size: 16px; margin-left: 7px; letter-spacing: 0; color: #b0e6e4; }
+.nandu-pv__overview h3 { font-size: 18px; }
+.nandu-pv__percent { padding-left: 10px; font-size: 14px; }
+.nandu-pv__percent strong { font-size: 21px; }
+.nandu-pv .nandu-ring { width: 88px; height: 88px; }
+.nandu-pv__details strong { font-size: 24px; }
+.nandu-pv__details small { font-size: 15px; color: #afdcee; margin-left: 8px; }
+.nandu-online-rate { gap: 25px; padding-top: 13px; padding-bottom: 9px; }
+.nandu-online-rate > strong { font-size: 55px; }
+.nandu-online-rate > strong small { font-size: 31px; margin-left: 6px; }
+.nandu-online-rate > span { font-size: 16px; padding: 5px 17px; }
+.nandu-device-counts { margin-bottom: 14px; }
+.nandu-device-counts strong { font-size: 29px; }
+.nandu-device-counts small { font-size: 16px; color: #adcfde; margin-left: 7px; }
+.nandu-device-types button { height: 62px; gap: 10px; }
+.nandu-device-types .nandu-icon { font-size: 31px; }
+.nandu-device-types strong { font-size: 23px; }
+.nandu-device-types small { margin-left: 7px; font-size: 14px; color: #a8d0e1; }
+.nandu-ac { margin-top: 13px; }
+.nandu-ac__legend strong { font-size: 22px; }
+.nandu-event-grid { grid-template-columns: 1.12fr 1fr; gap: 0 12px; }
+.nandu-event-grid strong { font-size: 22px; margin-left: 7px; }
+.nandu-event-grid .nandu-icon { font-size: 25px; }
+.nandu-event-grid span { font-size: 13px; }
+.nandu-event-grid small { font-size: 14px; margin-left: 4px; }
+.nandu-event-grid .nandu-event-time { font-size: 17px; }
+.nandu-flow > h2 { font-size: 14px; padding: 10px 20px; color: #a0cddd; }
+.nandu-flow__connections { top: 0; }
+.nandu-flow__grid,.nandu-flow__solar,.nandu-flow__total { top: 48px; }
+.nandu-flow__total { height: 78px; padding-top: 10px; }
+.nandu-flow__total strong { font-size: 35px; }
+.nandu-flow__total span { font-size: 16px; }
+.nandu-flow__plus { top: 63px; }
+.nandu-flow__node .nandu-icon { font-size: 39px; }
+.nandu-flow__node span:not(.nandu-icon) { font-size: 15px; margin-bottom: 5px; }
+.nandu-flow__node strong { font-size: 24px; }
+.nandu-flow__tenant,.nandu-flow__common { width: 231px; height: 55px; gap: 16px; padding: 7px 14px; }
+.nandu-flow__tenant { top: 24px; }
+.nandu-flow__common { top: 86px; }
+.nandu-flow__tenant .nandu-icon,.nandu-flow__common .nandu-icon { font-size: 32px; }
+.nandu-flow__tenant span:not(.nandu-icon),.nandu-flow__common span:not(.nandu-icon) { font-size: 14px; margin-bottom: 5px; line-height: 16px; }
+.nandu-flow__tenant strong,.nandu-flow__common strong { font-size: 22px; line-height: 23px; }
+.nandu-flow__tenant small,.nandu-flow__common small { font-size: 15px; margin-left: 9px; color: #abdbef; }
+.nandu-finance__metric { padding: 0 22px; gap: 17px; }
+.nandu-finance__metric strong { font-size: 28px; }
+.nandu-finance__metric strong small { font-size: 20px; margin-right: 9px; }
+.nandu-finance .nandu-metric-label { font-size: 15px; margin-bottom: 7px; }
+.nandu-finance > h2 { font-size: 21px; }
+.nandu-finance .nandu-orb { width: 52px; height: 52px; }
+.nandu-finance .nandu-orb .nandu-icon { font-size: 29px; }
+
+.nandu-screen--compact {
+  overflow-y: auto;
+  .nandu-stage { position: relative; display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; padding: 12px; min-height: 100vh; overflow: visible; }
+  .nandu-stage > .nandu-panel, .nandu-header, .nandu-scene-layer { position: relative; inset: auto; width: 100%; }
+  .nandu-header { grid-row: 1; height: 96px; padding: 0; }
+  .nandu-header__heading { top: 0; width: 100%; }
+  .nandu-header h1 { font-size: clamp(21px,4vw,30px); }
+  .nandu-header__heading p { font-size: 12px; letter-spacing: 2px; }
+  .nandu-header__project { margin-top: 66px; font-size: 13px; gap: 8px; }
+  .nandu-header__project strong { font-size: 15px; }
+  .nandu-header__meta { margin-top: 63px; font-size: 12px; gap: 8px; }
+  .nandu-demo-badge { font-size: 12px !important; padding: 4px 8px; }
+  .nandu-header::after { bottom: 0; left: 0; right: 0; }
+  .nandu-headline { grid-row: 2; height: 85px; padding: 8px 4px; }
+  .nandu-headline__metric { padding: 0 6px; gap: 8px; }
+  .nandu-headline .nandu-orb { display: none; }
+  .nandu-headline .nandu-metric-label { font-size: 12px; }
+  .nandu-headline .nandu-number { font-size: clamp(20px,4vw,28px); }
+  .nandu-headline .nandu-number small { font-size: 12px; margin-left: 4px; }
+  .nandu-scene-layer { grid-row: 3; height: 380px; border-radius: 10px; }
+  .nandu-scene-shade { background: linear-gradient(180deg,rgba(0,20,36,.1),transparent 70%,rgba(0,20,36,.5)); }
+  .nandu-landmark { font-size: 13px !important; line-height: 18px; padding: 5px 8px; }
+  .nandu-overview { grid-row: 4; height: 330px; }
+  .nandu-trend-panel { grid-row: 5; height: 265px; }
+  .nandu-trend-panel .nandu-trend { height: 205px; }
+  .nandu-consumption { grid-row: 6; height: 245px; }
+  .nandu-consumption__body { justify-content: center; }
+  .nandu-consumption__legend { max-width: 270px; padding-right: 12px; }
+  .nandu-pv { grid-row: 7; height: 259px; }
+  .nandu-pv__overview { justify-content: space-between; }
+  .nandu-pv__percent { margin-left: 0; }
+  .nandu-devices { grid-row: 8; height: 414px; }
+  .nandu-events { grid-row: 9; height: 174px; }
+  .nandu-flow { grid-row: 10; left: auto; top: auto; bottom: auto; width: 940px; height: 150px; zoom: var(--compact-flow-scale); justify-self: center; }
+  .nandu-project-card { display: none; }
+  .nandu-finance { grid-row: 11; height: auto; display: block; padding: 20px 8px; }
+  .nandu-finance > h2 { padding: 0 12px 17px; font-size: 19px; }
+  .nandu-finance__metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px 0; }
+  .nandu-finance__metric { border: 0; padding: 8px; gap: 12px; }
+  .nandu-finance__metric strong { font-size: 23px; }
+  .nandu-finance .nandu-orb { width: 39px; height: 39px; }
+  .nandu-finance .nandu-orb .nandu-icon { font-size: 24px; }
+  .nandu-finance .nandu-metric-label { font-size: 13px; }
+  .nandu-period { position: relative; inset: auto; grid-row: 12; font-size: 11px; line-height: 20px; text-align: right; }
+  .nandu-dialog-backdrop { position: fixed; height: 100dvh; padding: 12px; }
+  .nandu-dialog { width: 100%; height: auto; max-height: calc(100dvh - 24px); overflow: auto; }
+  .nandu-dialog__header { padding: 16px; gap: 10px; height: 90px; }
+  .nandu-dialog__header h2 { font-size: 21px; }
+  .nandu-dialog__header p { font-size: 10px; }
+  .nandu-dialog__header p span { display: none; }
+  .nandu-dialog__title-icon { width: 40px; height: 40px; }
+  .nandu-dialog__demo { display: none; }
+  .nandu-dialog__close { margin-left: auto; flex-shrink: 0; }
+  .nandu-dialog__body { display: block; height: auto; padding: 16px; }
+  .nandu-detail-visual { display: none; }
+  .nandu-detail-kpis { gap: 8px; }
+  .nandu-detail-kpis > div { padding: 12px 8px; }
+  .nandu-detail-kpis > div > span { font-size: 12px; }
+  .nandu-detail-kpis strong { font-size: 23px; }
+  .nandu-detail-kpis small { font-size: 12px; }
+  .nandu-detail-filters { gap: 12px; font-size: 12px; flex-wrap: wrap; }
+  .nandu-detail-filters select { font-size: 12px; padding-right: 10px; }
+  .nandu-detail-table { font-size: 12px; }
+  .nandu-detail-table td,.nandu-detail-table th { padding: 0 6px; }
+  .nandu-detail-table th { font-size: 11px; }
+  .nandu-status { font-size: 12px; }
+  .nandu-pagination > span:first-child { display: none; }
+  .nandu-pagination { justify-content: flex-end; font-size: 12px; }
+  .nandu-dialog__footer { height: auto; padding: 12px 16px; flex-wrap: wrap; gap: 8px; font-size: 11px; }
+  .nandu-detail-section-heading > span { font-size: 11px; }
+  .nandu-data-notes > div { gap: 12px; }
+  .nandu-data-notes dt { flex-basis: 66px; font-size: 15px; }
+  .nandu-data-notes dd { font-size: 14px; }
+}
+
+
+.nandu-back-group { padding: 7px 14px; background: rgba(5,65,92,.7); border: 1px solid #2286ac; border-radius: 5px; font-size: 16px !important; }
+.nandu-water-total { display: flex; gap: 22px; align-items: center; padding: 22px 25px 14px; }
+.nandu-water-total > .nandu-icon { font-size: 50px; color: #4edaff; }
+.nandu-water-total h3 { font-size: 17px; font-weight: 400; margin-bottom: 8px; }
+.nandu-water-bottom { display: flex; flex-direction: column; gap: 14px; margin: 0 25px; padding-top: 12px; border-top: 1px solid #18536c; color: #9bc6da; font-size: 15px; }
+.nandu-water-bottom b { color: #4ee9ed; margin-left: 15px; }
+.nandu-flow--grid-only .nandu-flow__grid { width: 345px; justify-content: center; }

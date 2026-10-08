@@ -1,13 +1,7 @@
-// AI 服务配置
-// 通过注释切换本地和线上环境
+import { AI_ROOT } from '@/config/services'
 
-// ------------------------------------------------------------------
-// 1. 本地开发环境 (Local Development)
-// export const AI_SERVICE_URL = 'http://localhost:8000'
-
-// 2. 线上生产环境 (Production)
-export const AI_SERVICE_URL = 'https://ai.example.com'
-// ------------------------------------------------------------------
+// 保留原有调用入口；地址统一在 vue.config.js 配置。
+export const AI_SERVICE_URL = AI_ROOT
 
 /**
  * 获取完整的 API 路径

@@ -68,6 +68,14 @@ export default {
     filePrefixAll: '公摊账单',
     filePrefixElec: '用电公账单',
     filePrefixWater: '用水公账单',
-    unitSqm: '㎡'
+    unitSqm: '㎡',
+    // 导出（本页/选中/全部）统一文案
+    exportCurrentPage: '导出本页',
+    exportSelected: '导出选中',
+    exportAll: '导出全部',
+    warnNoSelectedExport: '请先选择要导出的数据',
+    successExported: '导出成功，共 {count} 条',
+    successExportedLimit: '命中 {total} 条，单次最多导出 {count} 条，已导出前 {count} 条',
+    exporting: '正在导出全部数据...'
   }
 }

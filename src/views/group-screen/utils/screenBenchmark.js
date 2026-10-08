@@ -12,6 +12,9 @@ export const INDUSTRY_BASELINE = {
   parkingRevenue: null
 }
 
+/** 总车位数 */
+export const TOTAL_PARKING_SPACES = 1780
+
 const BENCHMARK_PEER_COUNT = 5
 
 function num (val) {
@@ -32,10 +35,11 @@ function fmtNum (val, digits = 1) {
   return n.toLocaleString(undefined, { maximumFractionDigits: digits })
 }
 
-function fmtMoney (val) {
-  const n = num(val)
-  if (n == null) return '--'
-  return n.toLocaleString(undefined, { maximumFractionDigits: 0 })
+/** 统计区间出场车辆数 ÷ 总车位数，返回平均每个车位的周转次数。 */
+export function calculateParkingTurnoverRate (parking = {}) {
+  const exitCount = num(parking.totalExitCount)
+  if (exitCount == null || TOTAL_PARKING_SPACES <= 0) return null
+  return exitCount / TOTAL_PARKING_SPACES
 }
 
 /** 越高越好 → 1/5；越低越好（能耗）反向 */
@@ -53,18 +57,20 @@ function simRank (projectVal, industryVal, higherIsBetter = true) {
 }
 
 /**
- * @param {{ energy?: object, parking?: object, maintenance?: object }} sources
+ * @param {{ energy?: object, device?: object, collection?: object, parking?: object, maintenance?: object }} sources
  */
 export function buildBenchmarkRows (sources = {}) {
   const energy = sources.energy || {}
+  const device = sources.device || {}
+  const collection = sources.collection || {}
   const parking = sources.parking || {}
   const maintenance = sources.maintenance || {}
 
-  const deviceOnline = num(energy.deviceOnlineRate)
+  const deviceOnline = device.complete ? num(device.rate) : null
   const unitArea = num(energy.unitAreaEnergyConsumption)
-  const collectRate = num(energy.tenantWaterElecCollectRate) ?? num(energy.feeCollection?.collectRate)
+  const collectRate = num(collection.rate)
   const maintRate = num(maintenance.completionRate)
-  const parkingRev = num(parking.totalRevenue)
+  const turnoverRate = calculateParkingTurnoverRate(parking)
 
   const rows = [
     {
@@ -104,12 +110,13 @@ export function buildBenchmarkRows (sources = {}) {
       higherIsBetter: true
     },
     {
-      metric: '周转率',
-      projectRaw: null,
+      metric: '车位周转率',
+      projectRaw: turnoverRate,
       industryRaw: null,
-      project: '--',
+      project: turnoverRate != null ? turnoverRate.toFixed(2) : '--',
       industry: '--',
       rank: '--',
+      unit: '次/车位',
       higherIsBetter: true
     }
   ]

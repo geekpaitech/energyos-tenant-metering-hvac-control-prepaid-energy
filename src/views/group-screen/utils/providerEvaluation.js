@@ -2,22 +2,11 @@
 
 export const EMPTY_SUPPLIERS = []
 export const SUPPLIER_PAGE_SIZE = 20
-export const SUPPLIER_PLACEHOLDER_COUNT = 5
 
 function num (val) {
   if (val == null || val === '') return null
   const n = Number(val)
   return Number.isNaN(n) ? null : n
-}
-
-export function createPlaceholderSuppliers (count = SUPPLIER_PLACEHOLDER_COUNT) {
-  return Array.from({ length: count }, (_, index) => ({
-    id: `placeholder-${index}`,
-    name: '--',
-    score: '--',
-    grade: '--',
-    placeholder: true
-  }))
 }
 
 export function mapProviderEvaluationItems (data) {

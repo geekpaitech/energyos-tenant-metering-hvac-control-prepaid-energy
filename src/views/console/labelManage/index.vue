@@ -134,6 +134,13 @@
             <el-tag size="mini" effect="plain">{{ $displayBizHybrid(currentLabel.name || '') || '-' }}</el-tag>
           </div>
           <div class="bind-actions">
+            <el-input
+              v-model="bindSearchKeyword"
+              :placeholder="$t('labelManagePage.phTenantSearch')"
+              clearable
+              size="mini"
+              style="width: 180px"
+            />
             <el-button size="mini" @click="selectAllTenants">{{ $t('labelManagePage.btnSelectAll') }}</el-button>
             <el-button size="mini" @click="clearTenants">{{ $t('labelManagePage.btnClear') }}</el-button>
           </div>
@@ -142,7 +149,7 @@
         <el-table
           ref="tenantTable"
           v-loading="tenantsLoading"
-          :data="tenantOptions"
+          :data="filteredTenantOptions"
           border
           stripe
           style="width: 100%"
@@ -202,6 +209,7 @@ export default {
       },
 
       bindVisible: false,
+      bindSearchKeyword: '',
       tenantsLoading: false,
       binding: false,
       tenantOptions: [],
@@ -245,6 +253,16 @@ export default {
       const kw = (this.queryKeyword || '').trim().toLowerCase()
       if (!kw) return this.labelData
       return this.labelData.filter((r) => (r.name || '').toLowerCase().includes(kw))
+    },
+    /** 批量绑定弹窗：按租户名称/编号筛选 */
+    filteredTenantOptions () {
+      const kw = (this.bindSearchKeyword || '').trim().toLowerCase()
+      if (!kw) return this.tenantOptions
+      return this.tenantOptions.filter((t) => {
+        const idStr = String(t.id || '')
+        const nameStr = (t.name || '').toLowerCase()
+        return idStr.includes(kw) || nameStr.includes(kw)
+      })
     }
   },
   watch: {
@@ -367,6 +385,7 @@ export default {
       if (!this.currentManagerId) return
       this.currentLabel = row || {}
       this.bindVisible = true
+      this.bindSearchKeyword = ''
       this.selectedTenantRows = []
       this.bindSubmitSeq = 0
       await this.fetchTenants()
@@ -412,7 +431,7 @@ export default {
       const table = this.$refs.tenantTable
       if (!table) return
       table.clearSelection()
-      this.tenantOptions.forEach((row) => {
+      this.filteredTenantOptions.forEach((row) => {
         table.toggleRowSelection(row, true)
       })
     },
@@ -700,5 +719,11 @@ export default {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+
+  .bind-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 }
 </style>

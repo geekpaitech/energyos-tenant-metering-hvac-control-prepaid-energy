@@ -1,43 +1,46 @@
 import request from '@/utils/request'
 
 /**
- * SSO 回调换票（本系统 Admin-Token）
+ * SSO 登录：统一认证通过 redirect 带入 DES 手机号密文，后端解密校验后换发本系统 token。
  *
- * 约定（与现有 login 保持一致，后端落地后可微调）：
- * - 请求 POST /api/ebc-auth/auth/sso/callback
- * - Body: { channel, code?, ticket?, exchangeToken?, state?, redirectUri? }
- * - 成功: { code: 200, data: "<token字符串>" }  — data 形态同 /auth/login
+ * - 请求 POST /api/ebc-auth/auth/ssoLogin
+ * - Body: { code, groupCode?, managerId? }
+ *   - code      必填，DES 加密的手机号密文
+ *   - groupCode 选填，管理方（项目）编码，优先级高于 managerId
+ *   - managerId 选填，项目 ID（integer）
+ * - 成功: { code: 200, data: "<token字符串>" } — data 与 /auth/login 返回一致
  *
  * @param {Object} payload
- * @param {string} [payload.code] OAuth2 授权码
- * @param {string} [payload.ticket] CAS / 门户 ticket
- * @param {string} [payload.exchangeToken] 门户一次性 token（对应 URL ?token=）
- * @param {string} [payload.state] 防 CSRF，发起登录时生成
- * @param {string} [payload.redirectUri] 当前回调完整地址（部分 IdP 校验 redirect_uri）
+ * @param {string} payload.code DES 加密的手机号密文
+ * @param {string} [payload.groupCode] 管理方（项目）编码
+ * @param {string|number} [payload.managerId] 项目 ID
  */
 export function ssoExchange (payload) {
   const {
     code = '',
-    ticket = '',
-    exchangeToken = '',
-    state = '',
-    redirectUri = ''
+    groupCode = '',
+    managerId
   } = payload || {}
 
+  const data = { code }
+  if (groupCode) {
+    data.groupCode = groupCode
+  }
+
+  const numericManagerId = Number(managerId)
+  if (Number.isInteger(numericManagerId) && numericManagerId > 0) {
+    data.managerId = numericManagerId
+  }
+
   return request({
-    url: '/api/ebc-auth/auth/sso/callback',
+    url: '/api/ebc-auth/auth/ssoLogin',
     method: 'post',
     headers: {
       userDeviceType: 'PC',
       'Content-Type': 'application/json'
     },
-    data: {
-      channel: 1,
-      code,
-      ticket,
-      exchangeToken,
-      state,
-      redirectUri
-    }
+    data,
+    skipAuth: true,
+    skipErrorMessage: true
   })
 }

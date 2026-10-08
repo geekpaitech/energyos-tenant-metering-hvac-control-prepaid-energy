@@ -33,6 +33,14 @@ export default {
     msgExportOk: 'Exported {count} row(s).',
     msgExportFail: 'Export failed',
     exportSheetName: 'Manual top-up',
-    filePrefix: 'ManualTopUp'
+    filePrefix: 'ManualTopUp',
+    exportCurrentPage: 'Export current page',
+    exportSelected: 'Export selected',
+    exportAll: 'Export all',
+    warnNoSelectedExport: 'Select rows to export first',
+    msgExportOkSelected: 'Exported {count} selected row(s).',
+    successExported: 'Exported {count} row(s).',
+    successExportedLimit: 'Over {total} rows matched; exported first {count}.',
+    exporting: 'Exporting…'
   }
 }

@@ -54,12 +54,71 @@
               <el-option :label="$t('floatingPriceTenantPage.tenantType0')" :value="0" />
               <el-option :label="$t('floatingPriceTenantPage.tenantType1')" :value="1" />
               <el-option :label="$t('floatingPriceTenantPage.tenantType2')" :value="2" />
+              <el-option :label="$t('floatingPriceTenantPage.tenantType3')" :value="3" />
+            </el-select>
+          </div>
+          <div class="field-item">
+            <el-select
+              v-model="queryData.payType"
+              :placeholder="$t('floatingPriceTenantPage.phPayType')"
+              clearable
+              size="small"
+              style="width: 100%"
+              @change="handleSearch"
+            >
+              <el-option :label="$t('floatingPriceTenantPage.optPayPrepaid')" :value="0" />
+              <el-option :label="$t('floatingPriceTenantPage.optPayPostpaid')" :value="1" />
             </el-select>
           </div>
           <div class="search-actions">
+            <span
+              v-if="hasAdvancedFields"
+              class="toggle-advanced"
+              @click="showAdvanced = !showAdvanced"
+            >
+              {{ showAdvanced ? $t('floatingPriceTenantPage.btnCollapse') : $t('floatingPriceTenantPage.btnExpand') }}
+              <i :class="showAdvanced ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" />
+            </span>
             <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('floatingPriceTenantPage.btnSearch') }}</el-button>
             <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('floatingPriceTenantPage.btnReset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('floatingPriceTenantPage.btnExport') }}</el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button type="success" size="small" icon="el-icon-download">
+                {{ $t('floatingPriceTenantPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('floatingPriceTenantPage.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('floatingPriceTenantPage.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('floatingPriceTenantPage.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </div>
+        </div>
+
+        <div v-if="showAdvanced && hasAdvancedFields" class="search-advanced-grid">
+          <div class="field-item advanced-field">
+            <el-select
+              v-model="queryData.arrearsType"
+              :placeholder="$t('floatingPriceTenantPage.phArrearsType')"
+              clearable
+              size="small"
+              style="width: 100%"
+              @change="handleSearch"
+            >
+              <el-option :label="$t('floatingPriceTenantPage.arrearsType1')" :value="1" />
+              <el-option :label="$t('floatingPriceTenantPage.arrearsType2')" :value="2" />
+              <el-option :label="$t('floatingPriceTenantPage.arrearsType3')" :value="3" />
+              <el-option :label="$t('floatingPriceTenantPage.arrearsType4')" :value="4" />
+              <el-option :label="$t('floatingPriceTenantPage.arrearsType5')" :value="5" />
+            </el-select>
+          </div>
+          <div class="search-actions search-actions-phantom">
+            <span class="toggle-advanced">
+              {{ showAdvanced ? $t('floatingPriceTenantPage.btnCollapse') : $t('floatingPriceTenantPage.btnExpand') }}
+              <i :class="showAdvanced ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" />
+            </span>
+            <el-button type="primary" size="small" icon="el-icon-search">{{ $t('floatingPriceTenantPage.btnSearch') }}</el-button>
+            <el-button size="small" icon="el-icon-refresh">{{ $t('floatingPriceTenantPage.btnReset') }}</el-button>
+            <el-button type="success" size="small" icon="el-icon-download">{{ $t('floatingPriceTenantPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" /></el-button>
           </div>
         </div>
       </el-form>
@@ -123,6 +182,7 @@
           v-loading="loading"
           border
           :data="tableData"
+          row-key="tenantId"
           :max-height="tableMaxHeight"
           stripe
           style="width: 100%"
@@ -134,7 +194,7 @@
             fontWeight: '600',
           }"
         >
-          <el-table-column type="selection" width="55" align="center" />
+          <el-table-column type="selection" width="55" align="center" reserve-selection />
 
           <el-table-column
             v-for="col in displayColumns"
@@ -152,6 +212,21 @@
                 <span class="rid-text">{{ scope.row.tenantId || '-' }}</span>
               </template>
 
+              <template v-else-if="col.key === 'resourceList'">
+                <el-tooltip
+                  v-if="resourceCount(scope.row) > 0"
+                  :disabled="resourceCount(scope.row) <= 1"
+                  :content="resourceTooltipContent(scope.row)"
+                  placement="top"
+                >
+                  <span class="resource-tag">
+                    <i class="el-icon-office-building"></i>
+                    {{ resourceDisplay(scope.row) }}
+                  </span>
+                </el-tooltip>
+                <span v-else>-</span>
+              </template>
+
               <template v-else-if="col.key === 'tenantName'">
                 <el-link
                   type="primary"
@@ -162,6 +237,12 @@
                   <i class="el-icon-user"></i>
                   {{ $displayBizHybrid(scope.row.tenantName || '') || '-' }}
                 </el-link>
+              </template>
+
+              <template v-else-if="col.key === 'payType'">
+                <el-tag :type="getPayTypeTagType(scope.row.payType)" size="small" effect="plain">
+                  {{ getPayTypeLabel(scope.row.payType) }}
+                </el-tag>
               </template>
 
               <template v-else-if="col.type === 'money'">
@@ -208,6 +289,9 @@ import { mapGetters } from 'vuex'
 import moment from 'moment'
 import * as XLSX from 'xlsx'
 
+// 导出全部单次上限（与电表页一致）
+const EXPORT_ALL_LIMIT = 2000
+
 /** 默认日期：本月 1 日～今日（与大屏「本月」电费卡片一致） */
 function defaultMonthTimeRange () {
   return [
@@ -226,6 +310,7 @@ export default {
     }
     return {
       sortOrder: 'default',
+      showAdvanced: false,
       pickerOptions: {
         disabledDate (time) {
           return time.getTime() > Date.now()
@@ -244,6 +329,8 @@ export default {
       queryData: {
         tenantId: null,
         tenantType: 0,
+        payType: null,
+        arrearsType: null,
         timeRange
       },
 
@@ -270,6 +357,8 @@ export default {
 
       // 选中的数据
       selectedData: [],
+      // 导出全部遮罩防重
+      exportAllLoading: false,
 
       // 表格列配置（文案由 computed tableKey 注入）
       columnDefs: [
@@ -280,10 +369,22 @@ export default {
           disabled: true
         },
         {
+          key: 'resourceList',
+          width: '200',
+          checked: true,
+          disabled: true,
+          align: 'left'
+        },
+        {
           key: 'tenantName',
           minWidth: '200',
           checked: true,
           disabled: true
+        },
+        {
+          key: 'payType',
+          width: '100',
+          checked: true
         },
         {
           key: 'elecAmt',
@@ -346,10 +447,16 @@ export default {
   computed: {
     ...mapGetters('manager', ['currentManagerId']),
 
+    hasAdvancedFields () {
+      return true
+    },
+
     tableKey () {
       const labelKeyByCol = {
         tenantId: 'colTenantId',
+        resourceList: 'colResourceList',
         tenantName: 'colTenantName',
+        payType: 'colPayType',
         elecAmt: 'colElecAmt',
         elecPayAmt: 'colElecPayAmt',
         elecNoPayAmt: 'colElecNoPayAmt',
@@ -418,13 +525,45 @@ export default {
       return v
     },
 
+    // 资源列表：列表接口返回的 resourceList
+    resourceListOf (row) {
+      return Array.isArray(row.resourceList) ? row.resourceList : []
+    },
+
+    resourceCount (row) {
+      return this.resourceListOf(row).length
+    },
+
+    // 资源展示文本：单个直接显示资源名，多个显示「首个资源名 等N个资源」
+    resourceDisplay (row) {
+      const list = this.resourceListOf(row)
+      if (!list.length) return ''
+      const first = list[0].resourceName || list[0].buildingName || ''
+      if (list.length === 1) return first
+      return this.$t('floatingPriceTenantPage.resourceMore', {
+        name: first,
+        count: list.length
+      })
+    },
+
+    // 多资源时 hover 展示完整列表
+    resourceTooltipContent (row) {
+      return this.resourceListOf(row)
+        .map((r) => r.resourceName || `${r.buildingName || ''}-${r.floorName || ''}`)
+        .join('\n')
+    },
+
     // 获取租户列表
     async getTenantList () {
       try {
         const params = {
           tenantStatus: 0,
           managerId: this.currentManagerId,
-          tenantType: this.queryData.tenantType
+          tenantType: this.queryData.tenantType,
+          page: {
+            size: 999,
+            current: 1
+          }
         }
         const response = await tenantPageTenant(params)
 
@@ -470,7 +609,9 @@ export default {
           startDate: tr[0],
           endDate: tr[1],
           tenantStatus: '0',
-          tenantType: this.queryData.tenantType
+          tenantType: this.queryData.tenantType,
+          payType: this.queryData.payType,
+          arrearsType: this.queryData.arrearsType
         }).catch(() => null)
         const dto = this.normalizeTenantSettleStatis(res)
         this.kpiBillTotalAmt = dto.billTotalAmt
@@ -497,6 +638,8 @@ export default {
           managerId: this.currentManagerId,
           tenantId: tenantIdVal,
           tenantType: this.queryData.tenantType,
+          payType: this.queryData.payType,
+          arrearsType: this.queryData.arrearsType,
           startDate: this.queryData.timeRange
             ? this.queryData.timeRange[0]
             : '',
@@ -533,6 +676,20 @@ export default {
       return `¥${parseFloat(value).toFixed(2)}`
     },
 
+    getPayTypeLabel (type) {
+      const map = { 0: 'optPayPrepaid', 1: 'optPayPostpaid' }
+      const key = map[type] || map[String(type)]
+      return key ? this.$t(`floatingPriceTenantPage.${key}`) : '-'
+    },
+
+    getPayTypeTagType (type) {
+      const typeMap = {
+        0: 'success',
+        1: 'warning'
+      }
+      return typeMap[String(type)] || 'info'
+    },
+
     // 查询
     handleSearch () {
       this.pageData.current = 1
@@ -548,9 +705,12 @@ export default {
 
     // 重置
     handleReset () {
+      this.showAdvanced = false
       this.queryData = {
         tenantId: null,
         tenantType: 0,
+        payType: null,
+        arrearsType: null,
         timeRange: defaultMonthTimeRange()
       }
       this.getTenantList()
@@ -576,86 +736,167 @@ export default {
     },
 
     // 导出数据
-    handleExport () {
+    // XLSX 生成（导出本页 / 导出选中 / 导出全部 共用）
+    buildXlsx (exportData, isSelected, total) {
+      const headers = this.displayColumns.map(col => col.label)
+      const data = exportData.map(row => {
+        return this.displayColumns.map(col => {
+          const value = row[col.key]
+
+          if (col.key === 'tenantName') {
+            return this.$displayBizHybrid(row.tenantName || '', 200)
+          }
+
+          if (col.key === 'resourceList') {
+            return this.resourceListOf(row)
+              .map(r => r.resourceName || `${r.buildingName || ''}-${r.floorName || ''}`)
+              .join(', ')
+          }
+
+          if (col.key === 'payType') {
+            return this.getPayTypeLabel(value)
+          }
+
+          // 处理金额类型的字段
+          if (col.type === 'money') {
+            if (value === null || value === undefined || value === '') {
+              return '0.00'
+            }
+            return parseFloat(value).toFixed(2)
+          }
+
+          // 处理其他字段
+          return value || ''
+        })
+      })
+
+      // 创建工作表数据
+      const wsData = [headers, ...data]
+
+      // 创建工作表
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+      // 设置列宽
+      const colWidths = this.displayColumns.map(col => {
+        if (col.width) {
+          return { wch: Math.max(parseInt(col.width) / 8, col.label.length + 2) }
+        } else if (col.minWidth) {
+          return { wch: Math.max(parseInt(col.minWidth) / 8, col.label.length + 2) }
+        }
+        return { wch: Math.max(15, col.label.length + 2) }
+      })
+      ws['!cols'] = colWidths
+
+      // 创建工作簿
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('floatingPriceTenantPage.exportSheetName'))
+
+      // 生成文件名
+      const fileName = this.generateFileName()
+
+      // 导出文件（使用原生方法）
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+
+      // 触发下载
+      document.body.appendChild(link)
+      link.click()
+
+      // 清理
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) {
+        successMsg = this.$t('floatingPriceTenantPage.msgExportOkSelected', { count: exportCount })
+      } else if (total != null && total > exportCount) {
+        // 命中数超过 2000 上限：只导出前 2000 条并提示（与电表页一致）
+        successMsg = this.$t('floatingPriceTenantPage.successExportedLimit', { count: exportCount, total })
+      } else if (total != null) {
+        successMsg = this.$t('floatingPriceTenantPage.successExported', { count: exportCount })
+      } else {
+        successMsg = this.$t('floatingPriceTenantPage.msgExportOk', { count: exportCount })
+      }
+      this.$message.success(successMsg)
+    },
+
+    // 导出本页
+    exportCurrentPage () {
       if (this.tableData.length === 0) {
         this.$message.warning(this.$t('floatingPriceTenantPage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
 
+    // 导出选中
+    exportSelected () {
+      if (this.selectedData.length === 0) {
+        this.$message.warning(this.$t('floatingPriceTenantPage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+
+    // 导出全部：按当前查询条件重新拉取，封顶 2000 条
+    async exportAll () {
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('floatingPriceTenantPage.exporting') })
       try {
-        // 确定要导出的数据
-        const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-
-        // 构建导出的表头和数据
-        const headers = this.displayColumns.map(col => col.label)
-        const data = exportData.map(row => {
-          return this.displayColumns.map(col => {
-            const value = row[col.key]
-
-            if (col.key === 'tenantName') {
-              return this.$displayBizHybrid(row.tenantName || '', 200)
-            }
-
-            // 处理金额类型的字段
-            if (col.type === 'money') {
-              if (value === null || value === undefined || value === '') {
-                return '0.00'
-              }
-              return parseFloat(value).toFixed(2)
-            }
-
-            // 处理其他字段
-            return value || ''
-          })
-        })
-
-        // 创建工作表数据
-        const wsData = [headers, ...data]
-
-        // 创建工作表
-        const ws = XLSX.utils.aoa_to_sheet(wsData)
-
-        // 设置列宽
-        const colWidths = this.displayColumns.map(col => {
-          if (col.width) {
-            return { wch: Math.max(parseInt(col.width) / 8, col.label.length + 2) }
-          } else if (col.minWidth) {
-            return { wch: Math.max(parseInt(col.minWidth) / 8, col.label.length + 2) }
-          }
-          return { wch: Math.max(15, col.label.length + 2) }
-        })
-        ws['!cols'] = colWidths
-
-        // 创建工作簿
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('floatingPriceTenantPage.exportSheetName'))
-
-        // 生成文件名
-        const fileName = this.generateFileName()
-
-        // 导出文件（使用原生方法）
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-
-        // 创建下载链接
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        link.style.display = 'none'
-
-        // 触发下载
-        document.body.appendChild(link)
-        link.click()
-
-        // 清理
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-
-        this.$message.success(this.$t('floatingPriceTenantPage.msgExportOk'))
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('floatingPriceTenantPage.msgNoDataExport'))
+          return
+        }
+        this.buildXlsx(rows, false, total)
       } catch (error) {
         console.error('导出失败:', error)
         this.$apiError.notify(error, this.$t('floatingPriceTenantPage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
+      }
+    },
+
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+
+    // 按查询条件拉取全部（封顶 EXPORT_ALL_LIMIT）
+    async fetchAllForExport () {
+      const tr = this.queryData.timeRange
+      const params = {
+        managerId: this.currentManagerId,
+        tenantId: this.normalizeTenantId(this.queryData.tenantId),
+        tenantType: this.queryData.tenantType,
+        payType: this.queryData.payType,
+        arrearsType: this.queryData.arrearsType,
+        startDate: tr ? tr[0] : '',
+        endDate: tr ? tr[1] : '',
+        page: {
+          current: 1,
+          size: EXPORT_ALL_LIMIT
+        }
+      }
+      const response = await settleTenantSettleStatistics(params)
+      if (response.code !== 200) {
+        this.$message.error(response.msg || this.$t('floatingPriceTenantPage.msgFetchFail'))
+        return { rows: [], total: 0 }
+      }
+      return {
+        rows: response.data?.dataList || [],
+        total: response.data?.total || 0
       }
     },
     generateFileName () {
@@ -734,6 +975,30 @@ export default {
     grid-column: 5;
   }
 
+  .search-advanced-grid {
+    width: 100%;
+    display: grid;
+    align-items: center;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 0;
+  }
+
+  .search-advanced-grid .advanced-field {
+    grid-column: 1;
+  }
+
+  .search-advanced-grid > .search-actions-phantom {
+    grid-column: 5;
+  }
+
+  .search-actions-phantom {
+    visibility: hidden;
+    pointer-events: none;
+    user-select: none;
+  }
+
   .field-item {
     width: 100%;
     min-width: 0;
@@ -806,6 +1071,22 @@ export default {
     white-space: nowrap;
     justify-self: end;
     line-height: 1;
+
+    .toggle-advanced {
+      font-size: 13px;
+      color: #409eff;
+      cursor: pointer;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin: 0 6px 0 8px;
+      white-space: nowrap;
+
+      &:hover {
+        color: #66b1ff;
+      }
+    }
 
     ::v-deep .el-button + .el-button {
       margin-left: 0 !important;
@@ -1037,6 +1318,33 @@ export default {
 
 .tenant-link {
   font-weight: 500;
+}
+
+.tenant-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.resource-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 180px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: #606266;
+  background: #f0f2f5;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+
+  i {
+    color: #909399;
+  }
 }
 
 .amount-text {

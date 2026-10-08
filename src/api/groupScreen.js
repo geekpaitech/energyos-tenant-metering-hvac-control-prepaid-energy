@@ -5,7 +5,7 @@ import Cookies from 'js-cookie'
 const BASE = '/api/ebc-content/propertyScreen'
 
 function buildScreenHeaders () {
-  const rawToken = store.getters.token || Cookies.get('Admin-Token') || ''
+  const rawToken = Cookies.get('Admin-Token') || store.getters.token || ''
   const authorization = rawToken
     ? (String(rawToken).startsWith('Bearer ') ? rawToken : `Bearer ${rawToken}`)
     : ''
@@ -43,12 +43,41 @@ export function getEnergyManagement (data) {
   return postScreen(`${BASE}/getEnergyManagement`, data)
 }
 
+/** 获取单位面积能耗下钻明细 */
+export function getUnitAreaEnergyConsumptionDetail (data) {
+  return postScreen(`${BASE}/getUnitAreaEnergyConsumptionDetail`, data)
+}
+
+function numberOrNull (value) {
+  if (value == null || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+/** 单位面积能耗项目明细（标准化接口空值，避免组件直接依赖后端字段形态） */
+export async function queryUnitAreaEnergyConsumptionDetails (params) {
+  const response = await getUnitAreaEnergyConsumptionDetail(params)
+  if (!response || Number(response.code) !== 200) {
+    throw new Error((response && (response.msg || response.error)) || '单位面积能耗明细请求失败')
+  }
+  const rows = Array.isArray(response.data) ? response.data : []
+  return rows.map((item, index) => ({
+    id: item.managerId == null ? `unit-energy-${index}` : item.managerId,
+    managerId: item.managerId,
+    managerName: item.managerName || '--',
+    bizType: numberOrNull(item.bizType),
+    coveredArea: numberOrNull(item.coveredArea),
+    electricityValue: numberOrNull(item.electricityValue),
+    unitAreaEnergyConsumption: numberOrNull(item.unitAreaEnergyConsumption)
+  }))
+}
+
 /** 获取维保计划统计（本月） */
 export function getMaintenanceManagement (data) {
   return postScreen(`${BASE}/getMaintenanceManagement`, data)
 }
 
-/** 获取全品类工单统计（本月） */
+/** 获取服务工单统计（本月） */
 export function getWorkOrderManagement (data) {
   return postScreen(`${BASE}/getWorkOrderManagement`, data)
 }

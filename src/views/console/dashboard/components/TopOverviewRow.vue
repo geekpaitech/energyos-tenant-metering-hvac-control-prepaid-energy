@@ -75,12 +75,30 @@
             </div>
             <div class="head-foot bad">
               <span class="offline-dot"></span>
-              {{ $t('dashboard.topOverview.offline') }}
-              <template v-if="disableBottomAnimations">
-                <span class="offline-val">{{ item.offlineText }}</span>
-              </template>
+              <el-tooltip
+                v-if="item.abnormalOfflineText !== undefined"
+                :content="offlineTip(item)"
+                placement="top"
+                effect="dark"
+              >
+                <span class="offline-inline">
+                  {{ $t('dashboard.topOverview.offline') }}
+                  <template v-if="disableBottomAnimations">
+                    <span class="offline-val">{{ item.offlineText }}</span>
+                  </template>
+                  <template v-else>
+                    <rolling-number-text class="offline-val" :text="item.offlineText" />
+                  </template>
+                </span>
+              </el-tooltip>
               <template v-else>
-                <rolling-number-text class="offline-val" :text="item.offlineText" />
+                {{ $t('dashboard.topOverview.offline') }}
+                <template v-if="disableBottomAnimations">
+                  <span class="offline-val">{{ item.offlineText }}</span>
+                </template>
+                <template v-else>
+                  <rolling-number-text class="offline-val" :text="item.offlineText" />
+                </template>
               </template>
             </div>
           </div>
@@ -205,6 +223,11 @@ export default {
       if (!Number.isFinite(n)) return '--'
       return Math.max(0, Math.round(n)).toLocaleString()
     },
+    elecAbnormalOfflineText () {
+      const n = Number(this.topDto && this.topDto.meterAbnormalOfflineCount)
+      if (!Number.isFinite(n)) return '--'
+      return Math.max(0, Math.round(n)).toLocaleString()
+    },
     waterCountText () {
       const n = Number(this.topDto && this.topDto.waterCount)
       if (!Number.isFinite(n)) return '--'
@@ -265,6 +288,8 @@ export default {
           valueText: this.elecMeterCountText,
           offlineRaw: this.safeInt(this.topDto && this.topDto.meterOfflineCount),
           offlineText: this.elecOfflineText,
+          abnormalOfflineText: this.elecAbnormalOfflineText,
+          abnormalOfflineRaw: this.safeInt(this.topDto && this.topDto.meterAbnormalOfflineCount),
           route: '/device/electricity'
         },
         {
@@ -335,6 +360,12 @@ export default {
       if (!route) return
       this.goTo(route)
     },
+    offlineTip (item) {
+      const abnormal = (item && item.abnormalOfflineRaw) || 0
+      const total = (item && item.offlineRaw) || 0
+      const normal = Math.max(0, total - abnormal)
+      return `${this.$t('dashboard.topOverview.abnormalOffline')}：${abnormal.toLocaleString()}  ${this.$t('dashboard.topOverview.normalOffline')}：${normal.toLocaleString()}`
+    },
     sanitizeTopDto (raw) {
       const dto = raw || {}
       const readCount = (key) => {
@@ -349,6 +380,7 @@ export default {
         monthNewTenantCount: readCount('monthNewTenantCount'),
         meterCount: readCount('meterCount'),
         meterOfflineCount: readCount('meterOfflineCount'),
+        meterAbnormalOfflineCount: readCount('meterAbnormalOfflineCount'),
         waterCount: readCount('waterCount'),
         waterOfflineCount: readCount('waterOfflineCount'),
         airCount: readCount('airCount'),
@@ -381,6 +413,7 @@ export default {
             monthNewTenantCount: 10,
             meterCount: 8,
             meterOfflineCount: 0,
+            meterAbnormalOfflineCount: 0,
             waterCount: 7,
             waterOfflineCount: 7, // 模拟水表全部离线
             airCount: 8,
@@ -918,6 +951,7 @@ $text-light:  #64748B;
   font-size: 11px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 3px;
   opacity: 0;
 
@@ -945,6 +979,12 @@ $text-light:  #64748B;
   background: $red;
   flex-shrink: 0;
   opacity: 0.7;
+}
+
+.offline-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 /* ─── BOX-3 ─── */

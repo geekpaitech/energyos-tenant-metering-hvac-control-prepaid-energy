@@ -12,12 +12,10 @@
  * - MOCK_DAY_RUNTIME_RECORDS / MOCK_MONTH_RUNTIME_RECORDS / MOCK_YEAR_RUNTIME_RECORDS
  */
 
-// ------------------------------------------------------------------
-// 1. 本地联调（Node 中转，默认端口 3000）
-export const PHOTOVOLTAIC_SERVICE_URL = 'https://pv-proxy.example.com'
-// 2. 上线部署（改为实际域名）
-// export const PHOTOVOLTAIC_SERVICE_URL = 'https://pv-proxy.example.com'
-// ------------------------------------------------------------------
+import { GRID_ROOT } from '@/config/services'
+
+// 地址统一在 vue.config.js 的 gridRoot 配置。
+export const PHOTOVOLTAIC_SERVICE_URL = GRID_ROOT
 
 function getPhotovoltaicApiUrl (path) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
@@ -108,29 +106,130 @@ export function fetchStationYearRuntime (year, params = {}, signal) {
   })
 }
 
-/** 电站快照 mock（样例数据，开源版本已脱敏） */
+const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'
+const OPEN_METEO_ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1/archive'
+const OPEN_METEO_CACHE_TTL = 30 * 60 * 1000
+const openMeteoMonthCache = new Map()
+
+function formatLocalDate (date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function resolveOpenMeteoMonthRange (month) {
+  const match = /^(\d{4})-(\d{2})$/.exec(String(month || ''))
+  if (!match) return null
+
+  const year = Number(match[1])
+  const monthNumber = Number(match[2])
+  if (!Number.isInteger(year) || monthNumber < 1 || monthNumber > 12) return null
+
+  const startDate = `${match[1]}-${match[2]}-01`
+  const monthEnd = formatLocalDate(new Date(year, monthNumber, 0))
+  const today = formatLocalDate(new Date())
+  if (startDate > today) return null
+
+  return {
+    startDate,
+    endDate: monthEnd < today ? monthEnd : today
+  }
+}
+
+function normalizeOpenMeteoDaily (daily) {
+  if (!daily || !Array.isArray(daily.time)) return {}
+  const minValues = Array.isArray(daily.temperature_2m_min) ? daily.temperature_2m_min : []
+  const maxValues = Array.isArray(daily.temperature_2m_max) ? daily.temperature_2m_max : []
+  const sunshineValues = Array.isArray(daily.sunshine_duration) ? daily.sunshine_duration : []
+  const toNullableNumber = value => {
+    if (value == null || value === '') return null
+    const number = Number(value)
+    return Number.isFinite(number) ? number : null
+  }
+
+  return daily.time.reduce((result, date, index) => {
+    const temperatureMin = toNullableNumber(minValues[index])
+    const temperatureMax = toNullableNumber(maxValues[index])
+    const sunshineSeconds = toNullableNumber(sunshineValues[index])
+    result[date] = {
+      temperatureMin,
+      temperatureMax,
+      sunshineHours: sunshineSeconds != null
+        ? Math.max(sunshineSeconds, 0) / 3600
+        : null
+    }
+    return result
+  }, {})
+}
+
+/**
+ * 查询指定电站整月的每日温度与日照信息。
+ * 当前月走 forecast（可覆盖近期历史），较早月份走 archive；请求失败由页面静默降级。
+ */
+export async function fetchOpenMeteoMonthWeather ({ latitude, longitude, month, signal } = {}) {
+  const lat = Number(latitude)
+  const lng = Number(longitude)
+  const range = resolveOpenMeteoMonthRange(month)
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90 ||
+      !Number.isFinite(lng) || lng < -180 || lng > 180 || !range) {
+    return {}
+  }
+
+  const archiveBoundary = new Date()
+  archiveBoundary.setDate(archiveBoundary.getDate() - 5)
+  const endpoint = range.endDate < formatLocalDate(archiveBoundary)
+    ? OPEN_METEO_ARCHIVE_URL
+    : OPEN_METEO_FORECAST_URL
+  const cacheKey = [lat.toFixed(5), lng.toFixed(5), range.startDate, range.endDate, endpoint].join('|')
+  const cached = openMeteoMonthCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.data
+
+  const url = new URL(endpoint)
+  url.searchParams.set('latitude', String(lat))
+  url.searchParams.set('longitude', String(lng))
+  url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_max,sunshine_duration')
+  url.searchParams.set('timezone', 'Asia/Shanghai')
+  url.searchParams.set('start_date', range.startDate)
+  url.searchParams.set('end_date', range.endDate)
+
+  const response = await fetch(url.toString(), { signal })
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok || body.error) {
+    throw new Error(body.reason || `Open-Meteo HTTP ${response.status}`)
+  }
+
+  const data = normalizeOpenMeteoDaily(body.daily)
+  openMeteoMonthCache.set(cacheKey, {
+    data,
+    expiresAt: Date.now() + OPEN_METEO_CACHE_TTL
+  })
+  return data
+}
+
+/** 电站快照 mock（2026-06-26 南都广场 stationDetail 样例） */
 export const MOCK_STATION_DETAIL = {
-  id: '',
-  dataTimestamp: '',
-  mobile: '',
-  fullHour: 0,
-  monthCarbonDioxide: 0,
-  installerId: '',
-  installer: '',
+  id: '1299184320439459357',
+  dataTimestamp: '1782448968898',
+  mobile: '18013676716',
+  fullHour: 3.62,
+  monthCarbonDioxide: 7.54,
+  installerId: '1300319277300466199',
+  installer: '苏州旭晖能源科技有限公司',
   installerMobile: '',
   installerEmail: '',
-  stationName: '示例电站',
-  sno: '',
+  stationName: '南都广场',
+  sno: '666B0B',
   country: '1',
   countryStr: '中国',
-  region: '',
+  region: '848',
   regionStr: '江苏省',
-  city: '',
+  city: '853',
   cityStr: '苏州市',
-  county: '',
-  countyStr: '',
-  addr: '',
-  gdAreaCode: 0,
+  county: '7626',
+  countyStr: '吴中区',
+  addr: '城南街道南都广场',
+  gdAreaCode: 320506,
   state: 1,
   dip: 30.000,
   azimuth: 0.000,
@@ -161,8 +260,8 @@ export const MOCK_STATION_DETAIL = {
   epmType: 0,
   gridSwitch: 0,
   gridSwitch1: 0,
-  longitude: '120.000000',
-  latitude: '31.000000',
+  longitude: '120.63795419783563',
+  latitude: '31.231813659889166',
   shareProcess: 1,
   dcInputType: 15,
   stationTypeNew: 0,
@@ -307,7 +406,7 @@ export const MOCK_STATION_DETAIL = {
   homeLoadTodayEnergyStr: 'MWh',
   homeLoadMonthEnergy: 2.496,
   homeLoadYearEnergy: 2.496,
-  picUrl: 'https://oss.example.com/picDefault/STATION_default_industry.png',
+  picUrl: 'https://ginlong-product.oss-cn-shanghai.aliyuncs.com/picDefault/STATION_default_industry.png?Expires=1782473363&OSSAccessKeyId=LTAI5t8kj43aCsSuhSKiKd8P&Signature=90X%2BNdFxzlWaszoeCHzgduVyS7E%3D',
   weather: '日出:04:56 日落:19:06 19 - 29 苏州市 阴',
   sr: '04:56',
   ss: '19:06',
@@ -349,7 +448,7 @@ export const MOCK_STATION_DETAIL = {
       type: 0,
       source: 0,
       sellBuy: 0,
-      refId: '',
+      refId: '1299184320439459357',
       price: 0.7000
     },
     {
@@ -357,7 +456,7 @@ export const MOCK_STATION_DETAIL = {
       type: 0,
       source: 0,
       sellBuy: 1,
-      refId: ''
+      refId: '1299184320439459357'
     }
   ],
   generatorPower: 0,

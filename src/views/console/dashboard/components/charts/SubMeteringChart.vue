@@ -162,7 +162,7 @@ export default {
 
   methods: {
     goToAll () {
-      this.$router.push({ path: '/energy/sub-metering' })
+      this.$router.push({ path: '/power-analysis/energy-overview' })
     },
     replayPreview () {
       this.$refs.previewTree && this.$refs.previewTree.restart()

@@ -50,7 +50,6 @@ export interface EnergyMetric {
   tone?: string
 }
 
-export interface ArrearsItem { name: string; amount: number }
 export interface DeviceStatusItem extends EnergyMetric { value: number | null; tone: string }
 
 export interface EnergyScreenOverview {
@@ -70,7 +69,6 @@ export interface EnergyScreenOverview {
     realtimePower: number | null
   }
   right: {
-    arrears: ArrearsItem[]
     photovoltaic: { available: boolean; name: string; online: boolean | null; capacity: string; inverter: string; address: string }
     deviceStatus: DeviceStatusItem[]
   }

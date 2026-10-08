@@ -1,0 +1,26 @@
+Use case: precise-object-edit.
+Asset type: production cinematic aerial background for a full-screen energy dashboard, with NO dashboard UI. Target final raster 1920 x 1080 pixels, landscape 16:9.
+
+INPUT ROLES:
+Image 1 is the framing/composition EDIT TARGET: preserve its underlying city scene and slightly smaller, lower-positioned main tower and podium. Remove all UI.
+Image 2 is the previous CLEAN scene and an architectural/lighting fidelity reference.
+Images 3 and 4 are real rooftop photographs providing authoritative evidence for the photovoltaic placement ONLY; do not import their daylight, close-up camera, elevated highway or different framing.
+
+PRIMARY CHANGES:
+1. Deliver ONLY the clean underlying blue cinematic night scene. Completely remove every panel, page title, subtitle, date, number, chart, diagram, icon, badge, bar, UI border, blue ring, annotation, leader line, luminous interface outline and foreground data overlay from image 1. Reconstruct the underlying buildings, river, trees, roads and skyline naturally.
+2. Correct the main podium rooftop to match the real solar installation: substantial contiguous rectangular photovoltaic arrays must be clearly visible on BOTH the LEFT and RIGHT roof wings around the central recessed atrium/skylight area. Each side has several orderly large panel banks, with fine realistic cell grids, mounted slightly above the roof. Panels occupy a meaningful majority of the usable roof surfaces on both wings. Do NOT leave the left wing empty green lawn and do NOT depict only one small patch on the right. Maintain visible green maintenance strips, walkways between banks, and keep the central atrium and glass skylights completely unobstructed. Map this real installation onto the same existing podium geometry and aerial perspective, do not add building masses.
+3. The real small luminous vertical facade sign on the tower must read EXACTLY four Chinese characters top to bottom: 南 都 广 场. Correct strokes, legible white-cyan illuminated sign, perspective matched. This is the ONLY readable text allowed in the scene.
+
+COMPOSITION INVARIANTS:
+Use image 1's overall aerial view and architectural identity. The highest point of the main tower is around 19%-20% image height, tower base where it meets the podium about 55%, and bottom/front of podium about 76%-77%. Main architecture occupies roughly x40%-73%. The tower must remain in the central-left part of the composition around x41%-54%. The top central 0%-18% is low-contrast distant skyline/night sky for separate real KPI overlays added later by code. Preserve view direction, stepped tower rooftop, vertical facade fins, river on the right behind building, long road on left and curving entrance road below. Do not zoom so the tower reaches the top edge. Do not put additional towers into the central scene.
+LIGHTING: dark rich blue night skyline and trees, warm realistic lit facade windows and roads, modest cyan architectural edge lighting on podium/building grounds, controlled contrast. Photoreal architectural visualization quality consistent with image 2. No exaggerated neon wireframes, no new UI darkening panels, no fog concealing the PV panels.
+OUTPUT: a single clean full 16:9 architectural background at 1920x1080 if supported; no added border, no caption, no watermark. All future UI will be separately implemented as code.
+
+TARGETED SECOND EDIT
+Use case: precise-object-edit.
+Image 1 is the clean NIGHT SCENE EDIT TARGET. Image 2 is a dashboard COMPOSITION reference ONLY, never reproduce its UI.
+Make ONE targeted compositional correction to image 1: its main tower is too large and too high. Reduce the ENTIRE central Nandu tower-and-podium architectural complex uniformly to approximately 88% of its current size, with the transform anchored near the front-bottom center of its podium at x54%, y77%. Reconstruct surrounding roads/trees naturally where needed. Do not merely move/crop the whole image.
+The resulting highest rooftop point of the Nandu tower MUST be at y19%-20% of the full canvas, NOT y10%-11%; the tower base at podium level should be about y55%; front podium bottom around y77%. The tower is around x41%-54%. This is essential because functional KPI code will overlay the horizontal band at y9%-18%; the tower and real sign must sit BELOW that band and remain unobstructed.
+Use image 2's visibly smaller, lower tower placement as the visual guide. Preserve source architectural proportions through uniform scaling, do not shorten tower by deleting floors. Preserve the existing camera direction and full city skyline and river.
+Keep all successful details of image 1: substantial blue photovoltaic arrays on BOTH podium roof wings; exposed central glass skylight/atrium, green maintenance strips; the accurate real vertical sign reading exactly 南都广场 top to bottom; warm facade and street lighting; dark blue night palette and modest cyan edge lights.
+Output one CLEAN 1920x1080 16:9 background, full city scene, ZERO dashboard panels, icons, labels, charts, UI lines, captions or added text. Only the real 南都广场 sign can contain text. Make the requested scaling/downward composition correction clearly visible.

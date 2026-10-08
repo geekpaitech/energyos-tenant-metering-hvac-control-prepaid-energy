@@ -96,6 +96,12 @@
           <span>{{ tenantInfo.publicArea || "--" }}m²</span>
         </div>
 
+        <!-- 后付费备注（仅后付费时显示） -->
+        <div v-if="tenantInfo.payType === 1" class="info-item">
+          <label>{{ $t('tenantDetailPage.labelPostPayComment') }}</label>
+          <span>{{ tenantInfo.postPayComment || '--' }}</span>
+        </div>
+
         <!-- 电费相关信息 -->
         <!-- <div class="info-item">
           <label>电费方案：</label>
@@ -296,6 +302,7 @@
       :tenant-data="editForm"
       :label-list="labelList"
       :manager-id="currentManagerId"
+      :mysoft-enabled="isMysoftEnabled"
       @success="handleEditSuccess"
     />
 
@@ -364,7 +371,7 @@ export default {
   },
 
   computed: {
-    ...mapGetters('manager', ['currentManagerId']),
+    ...mapGetters('manager', ['currentManagerId', 'currentManager', 'managerList']),
     ...mapGetters(['kztMenuNos']),
     hasKztPermission () {
       const allow = new Set((this.kztMenuNos || []).map((v) => String(v)))
@@ -384,6 +391,15 @@ export default {
     },
     canCloseAccount () {
       return this.hasKztPermission('660015')
+    },
+    isMysoftEnabled () {
+      const manager = Array.isArray(this.managerList)
+        ? this.managerList.find(item => String(item.managerId) === String(this.currentManagerId))
+        : null
+      const switchValue = manager && manager.mysoftSwitch !== undefined
+        ? manager.mysoftSwitch
+        : this.currentManager && this.currentManager.mysoftSwitch
+      return Number(switchValue) === 1
     },
 
     // 是否有电费专户
@@ -444,7 +460,7 @@ export default {
 
     /** 英文界面：租户名词典+拼音；中文原样 */
     displayTenantName () {
-      const raw = (this.tenantInfo.name || '').trim()
+      const raw = String(this.tenantInfo.name || '').trim()
       if (!raw) return '--'
       return this.$displayBizHybrid(raw)
     }

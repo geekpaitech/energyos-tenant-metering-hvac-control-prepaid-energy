@@ -327,7 +327,7 @@ export const consoleRoutes = [
           menuNo: '63011',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['数字物宇']
+            names: ['数字物宇', '南都广场']
           }
         }
       },
@@ -342,7 +342,7 @@ export const consoleRoutes = [
           menuNo: '63012',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['数字物宇']
+            names: ['数字物宇', '南都广场']
           }
         }
       },
@@ -357,11 +357,11 @@ export const consoleRoutes = [
           menuNo: '63013',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['数字物宇']
+            names: ['数字物宇', '南都广场', '经开', 'OPC']
           }
         }
       },
-      // 给排水（iframe 嵌入 fmcs 子系统，仅数字物宇）
+      // 给排水（iframe 嵌入 fmcs 子系统，仅南都广场 / 数字物宇）
       {
         path: '/project/waterSupplyAndDrainageSubsystem',
         name: 'ProjectWaterSupplyDrainageSubsystem',
@@ -372,11 +372,11 @@ export const consoleRoutes = [
           menuNo: '63015',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['数字物宇']
+            names: ['数字物宇', '南都广场']
           }
         }
       },
-      // 历史数据（iframe 嵌入 fmcs 子系统，仅数字物宇）
+      // 历史数据（iframe 嵌入 fmcs 子系统，仅南都广场 / 数字物宇）
       {
         path: '/device/historicalData',
         name: 'DeviceHistoricalData',
@@ -387,11 +387,11 @@ export const consoleRoutes = [
           menuNo: '63016',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['数字物宇']
+            names: ['数字物宇', '南都广场']
           }
         }
       },
-      // 面积切分（iframe 嵌入 fmcs 子系统，仅数字物宇）
+      // 面积切分（iframe 嵌入 fmcs 子系统，仅南都广场 / 数字物宇）
       {
         path: '/desk/areaData',
         name: 'DeskAreaData',
@@ -402,8 +402,19 @@ export const consoleRoutes = [
           menuNo: '63017',
           refreshOnManagerSwitch: false,
           managerVisibility: {
-            names: ['数字物宇']
+            names: ['数字物宇', '南都广场']
           }
+        }
+      },
+      // 摄像头（AI 报警记录列表）
+      {
+        path: '/camera/cameraList',
+        name: 'CameraAlarmList',
+        component: () => import('@/views/console/camera/cameraList'),
+        meta: {
+          title: '摄像头',
+          icon: 'icon-icon-jiankongtai',
+          menuNo: '63018'
         }
       }
     ]
@@ -909,6 +920,78 @@ export const consoleRoutes = [
           refreshOnManagerSwitch: false,
           emsEmbedPath: 'data-query/electric-params'
         }
+      },
+      {
+        path: '/energy-analysis/mom-analysis',
+        name: 'MonitoringMomAnalysis',
+        component: () => import('@/views/console/finance/embed/EmsTokenIframeEmbed.vue'),
+        meta: {
+          title: '环比分析',
+          icon: 'icon-baobiao',
+          menuNo: '68004',
+          refreshOnManagerSwitch: false,
+          emsEmbedPath: 'energy-analysis/mom-analysis'
+        }
+      },
+      {
+        path: '/energy-analysis/energy-trend',
+        name: 'MonitoringEnergyTrend',
+        component: () => import('@/views/console/finance/embed/EmsTokenIframeEmbed.vue'),
+        meta: {
+          title: '用电趋势',
+          icon: 'icon-baobiao',
+          menuNo: '68005',
+          refreshOnManagerSwitch: false,
+          emsEmbedPath: 'energy-analysis/energy-trend'
+        }
+      },
+      {
+        path: '/sys-alarm/realtime',
+        name: 'MonitoringAlarmRealtime',
+        component: () => import('@/views/console/finance/embed/EmsTokenIframeEmbed.vue'),
+        meta: {
+          title: '实时报警',
+          icon: 'icon-icon-jiankongtai',
+          menuNo: '68006',
+          refreshOnManagerSwitch: false,
+          emsEmbedPath: 'sys-alarm/realtime'
+        }
+      },
+      {
+        path: '/sys-alarm/history',
+        name: 'MonitoringAlarmHistory',
+        component: () => import('@/views/console/finance/embed/EmsTokenIframeEmbed.vue'),
+        meta: {
+          title: '历史报警',
+          icon: 'icon-icon-jiankongtai',
+          menuNo: '68007',
+          refreshOnManagerSwitch: false,
+          emsEmbedPath: 'sys-alarm/history'
+        }
+      },
+      {
+        path: '/sys-alarm/rule',
+        name: 'MonitoringAlarmRule',
+        component: () => import('@/views/console/finance/embed/EmsTokenIframeEmbed.vue'),
+        meta: {
+          title: '报警规则',
+          icon: 'icon-shezhipeizhi',
+          menuNo: '68008',
+          refreshOnManagerSwitch: false,
+          emsEmbedPath: 'sys-alarm/rule'
+        }
+      },
+      {
+        path: '/sys-alarm/analysis',
+        name: 'MonitoringAlarmAnalysis',
+        component: () => import('@/views/console/finance/embed/EmsTokenIframeEmbed.vue'),
+        meta: {
+          title: '规警分析',
+          icon: 'icon-baobiao',
+          menuNo: '68009',
+          refreshOnManagerSwitch: false,
+          emsEmbedPath: 'sys-alarm/analysis'
+        }
       }
     ]
   },
@@ -1328,6 +1411,24 @@ export const adminRoutes = [
         name: 'AdminOperationDelivery',
         component: () => import('@/views/admin/operation/delivery/index'),
         meta: { title: '交付监测', icon: 'icon-jiaofujiance' }
+      },
+      {
+        path: 'pushText',
+        name: 'AdminOperationPushText',
+        component: () => import('@/views/admin/operation/pushText/index'),
+        meta: { title: '微信推文', icon: 'icon-fenxiangyongneng' }
+      },
+      {
+        path: 'configMessage',
+        name: 'AdminOperationConfigMessage',
+        component: () => import('@/views/admin/operation/configMessage/index'),
+        meta: { title: '消息配置', icon: 'icon-shezhipeizhi' }
+      },
+      {
+        path: 'pushMessage',
+        name: 'AdminOperationPushMessage',
+        component: () => import('@/views/admin/operation/pushMessage/index'),
+        meta: { title: '推送记录', icon: 'icon-baobiao' }
       },
       {
         path: 'orderTool/detail',

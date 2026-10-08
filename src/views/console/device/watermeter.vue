@@ -30,10 +30,32 @@
               <el-option :label="$t('deviceWater.bindTypeFormula')" value="3" />
             </el-select>
           </div>
+          <div class="field-item field-status">
+            <el-select
+              v-model="queryData.onlineStatus"
+              :placeholder="$t('deviceWater.onlineStatusPlaceholder')"
+              clearable
+              size="small"
+              style="width: 100%"
+              @change="handleSearch"
+            >
+              <el-option :label="$t('deviceWater.online')" :value="1" />
+              <el-option :label="$t('deviceWater.offline')" :value="0" />
+            </el-select>
+          </div>
           <div class="search-actions">
             <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('deviceWater.search') }}</el-button>
             <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('deviceWater.reset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('deviceWater.export') }}</el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button type="success" size="small" icon="el-icon-download">
+                {{ $t('deviceWater.export') }}<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('deviceWater.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('deviceWater.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('deviceWater.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </div>
         </div>
       </el-form>
@@ -196,6 +218,14 @@
                   {{ $t('deviceWater.valveClose') }}
                 </el-tag>
                 <span v-else>-</span>
+              </template>
+
+              <!-- 在线状态 -->
+              <template v-else-if="col.key === 'onlineStatusStatus'">
+                <div class="status-wrapper">
+                  <span :class="['status-dot', Number(scope.row.onlineStatus) === 1 ? 'online' : 'offline']" />
+                  <span>{{ Number(scope.row.onlineStatus) === 1 ? $t('deviceWater.online') : $t('deviceWater.offline') }}</span>
+                </div>
               </template>
 
               <!-- 最新数据时间 -->
@@ -488,6 +518,9 @@ import meterCardImg from '@/assets/images/sb.png'
 import { mapGetters } from 'vuex'
 import * as XLSX from 'xlsx'
 
+// 导出全部的单次上限（与后端分页参数对应）
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'WaterManagement',
   components: {
@@ -515,6 +548,7 @@ export default {
       // 查询参数
       queryData: {
         bindType: null,
+        onlineStatus: null,
         waterName: '',
         serial: '',
         managerId: ''
@@ -524,7 +558,8 @@ export default {
         basic: [
           { prop: 'serial', label: '设备号', type: 'input' },
           { prop: 'waterName', label: '水表名称', type: 'input' },
-          { prop: 'bindType', label: '水表类型', type: 'select' }
+          { prop: 'bindType', label: '水表类型', type: 'select' },
+          { prop: 'onlineStatus', label: '在线状态', type: 'select' }
         ],
         advanced: []
       },
@@ -534,6 +569,7 @@ export default {
       // 加载状态
       loading: false,
       submitting: false,
+      exportAllLoading: false,
       // 是否显示高级筛选
       showAdvanced: false,
       // 分页数据
@@ -608,6 +644,7 @@ export default {
         { label: t('colValveSupport'), key: 'withSwitch', width: '100', checked: true, isTag: true },
         { label: t('colPayMode'), checked: true, key: 'logicPayTypeLabel', width: '100', isTag: true },
         { label: t('colValveStatus'), checked: true, key: 'switchStatusLabel', width: '120', isTag: true },
+        { label: t('colOnline'), checked: true, key: 'onlineStatusStatus', width: '100', isTag: true },
         { label: t('colUpdateTime'), key: 'updateTime', width: '160', checked: true },
         { label: t('colCreateTime'), key: 'createTime', width: '160', checked: true }
       ]
@@ -640,7 +677,12 @@ export default {
       ]
     },
     waterChannelOptions () {
-      return [{ value: 'ZHWL_NS', label: this.$t('deviceWater.channelNs') }]
+      return [
+        { value: 'ZHWL_NS', label: this.$t('deviceWater.channelNs') },
+        { value: 'ZHWL_NS_NEW', label: this.$t('deviceWater.channelNsNew') },
+        { value: 'ZHWL_NS_ZF', label: this.$t('deviceWater.channelNsThirdParty') },
+        { value: 'SXZD', label: this.$t('deviceWater.channelCameraDirect') }
+      ]
     },
     dataLength () {
       return this.tableData.length
@@ -706,28 +748,32 @@ export default {
     },
 
     // 获取水表列表数据
+    buildQueryParams (size, current) {
+      const keyword = (this.queryData.serial || '').trim()
+      const isSerialKeyword = /^\d+$/.test(keyword)
+      const normalizeSelect = (v) => {
+        if (v === null || v === undefined) return ''
+        if (v === '__ALL__') return ''
+        return v
+      }
+      return {
+        bindType: normalizeSelect(this.queryData.bindType),
+        onlineStatus: normalizeSelect(this.queryData.onlineStatus),
+        waterName: keyword && !isSerialKeyword ? keyword : '',
+        serial: keyword && isSerialKeyword ? keyword : '',
+        managerId: this.queryData.managerId,
+        page: {
+          size,
+          current
+        }
+      }
+    },
+
     async fetchTableData () {
       if (!this.queryData.managerId) return
       this.loading = true
       try {
-        const keyword = (this.queryData.serial || '').trim()
-        const isSerialKeyword = /^\d+$/.test(keyword)
-        const normalizeSelect = (v) => {
-          if (v === null || v === undefined) return ''
-          if (v === '__ALL__') return ''
-          return v
-        }
-
-        const params = {
-          bindType: normalizeSelect(this.queryData.bindType),
-          waterName: keyword && !isSerialKeyword ? keyword : '',
-          serial: keyword && isSerialKeyword ? keyword : '',
-          managerId: this.queryData.managerId,
-          page: {
-            size: this.pageData.size,
-            current: this.pageData.current
-          }
-        }
+        const params = this.buildQueryParams(this.pageData.size, this.pageData.current)
 
         const response = await waterPageWater(params)
 
@@ -799,6 +845,9 @@ export default {
     },
 
     formatExportCell (row, key) {
+      if (key === 'onlineStatusStatus') {
+        return Number(row.onlineStatus) === 1 ? this.$t('deviceWater.online') : this.$t('deviceWater.offline')
+      }
       if (key === 'withSwitch') {
         return row.withSwitch ? this.$t('deviceWater.supportShort') : this.$t('deviceWater.notSupportShort')
       }
@@ -845,6 +894,7 @@ export default {
     handleReset () {
       this.queryData = {
         bindType: null,
+        onlineStatus: null,
         waterName: '',
         serial: '',
         managerId: this.currentManagerId || ''
@@ -1000,7 +1050,7 @@ export default {
       }
 
       // 如果是公摊表(bindType=2)，跳转到公摊详情页
-      if (row.bindType == 2) {
+      if (Number(row.bindType) === 2) {
         this.$router.push({
           path: '/metering/fee/watermeterSharing/detail',
           query: {
@@ -1016,61 +1066,92 @@ export default {
       })
     },
 
-    // 导出数据
-    handleExport () {
-      if (this.tableData.length === 0) {
-        this.$message.warning(this.$t('deviceWater.warnNoExportData'))
-        return
-      }
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
 
+    /** 生成并触发 xlsx 下载（入参为已 formatTableData 处理后的行） */
+    buildXlsx (rows) {
+      const headers = this.displayColumns.map(col => col.label)
+      const keys = this.displayColumns.map(col => col.key)
+      const data = rows.map(row => keys.map(key => this.formatExportCell(row, key)))
+      const wsData = [headers, ...data]
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+      ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 15) }))
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('deviceWater.exportSheetName'))
+      const fileName = this.generateFileName()
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    },
+
+    exportCurrentPage () {
+      if (this.tableData.length === 0) { this.$message.warning(this.$t('deviceWater.warnNoExportData')); return }
       try {
-        const exportData = this.selectedData.length > 0 ? this.selectedData : this.tableData
-
-        // 获取表头和对应的key（只导出当前显示列）
-        const headers = this.displayColumns.map(col => col.label)
-        const keys = this.displayColumns.map(col => col.key)
-
-        // 构建数据
-        const data = exportData.map(row => {
-          return keys.map(key => this.formatExportCell(row, key))
-        })
-
-        // 组合表头 + 数据
-        const wsData = [headers, ...data]
-
-        // 创建工作表
-        const ws = XLSX.utils.aoa_to_sheet(wsData)
-
-        // 列宽
-        ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 15) }))
-
-        // 创建工作簿并追加
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('deviceWater.exportSheetName'))
-
-        // 文件名
-        const fileName = this.generateFileName()
-
-        // 导出
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-
-        const msgKey = this.selectedData.length > 0 ? 'deviceWater.successExportedSelection' : 'deviceWater.successExported'
-        this.$message.success(this.$t(msgKey, { count: exportData.length }))
+        this.buildXlsx(this.tableData)
+        this.$message.success(this.$t('deviceWater.successExported', { count: this.tableData.length }))
       } catch (error) {
         console.error('导出失败:', error)
         this.$apiError.notify(error, this.$t('deviceWater.errExport'))
+      }
+    },
+
+    exportSelected () {
+      if (this.selectedData.length === 0) { this.$message.warning(this.$t('deviceWater.warnNoSelectedExport')); return }
+      try {
+        this.buildXlsx(this.selectedData)
+        this.$message.success(this.$t('deviceWater.successExported', { count: this.selectedData.length }))
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$apiError.notify(error, this.$t('deviceWater.errExport'))
+      }
+    },
+
+    async exportAll () {
+      if (!this.queryData.managerId || this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({
+        lock: true,
+        text: this.$t('deviceWater.exporting'),
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
+      try {
+        const params = this.buildQueryParams(EXPORT_ALL_LIMIT, 1)
+        const response = await waterPageWater(params)
+        if (response.code === 200 && response.data) {
+          const rawList = response.data.dataList || []
+          const total = response.data.total || 0
+          if (rawList.length === 0) { this.$message.warning(this.$t('deviceWater.warnNoExportData')); return }
+          const rows = this.formatTableData(rawList)
+          this.buildXlsx(rows)
+          if (total > EXPORT_ALL_LIMIT) {
+            this.$message.success(this.$t('deviceWater.successExportedLimit', { count: rows.length, total }))
+          } else {
+            this.$message.success(this.$t('deviceWater.successExported', { count: rows.length }))
+          }
+        } else {
+          this.$message.error(response.msg || this.$t('deviceWater.errExport'))
+        }
+      } catch (error) {
+        console.error('导出全部失败:', error)
+        this.$apiError.notify(error, this.$t('deviceWater.errExport'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
       }
     },
 
@@ -1132,7 +1213,7 @@ export default {
     width: 100%;
     display: grid;
     align-items: center;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto minmax(0, 1fr);
     gap: 10px;
   }
 
@@ -1164,13 +1245,17 @@ export default {
     grid-column: 2;
   }
 
+  .field-status {
+    grid-column: 3;
+  }
+
   .search-actions {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
     white-space: nowrap;
-    grid-column: 3;
+    grid-column: 4;
     justify-self: start;
     line-height: 1;
 
@@ -1205,6 +1290,29 @@ export default {
   overflow: hidden;
   flex: 1;
   padding: 16px 16px 10px;
+}
+
+.status-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+
+  &.online {
+    background: #52c41a;
+    box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+  }
+
+  &.offline {
+    background: #d9d9d9;
+  }
 }
 
 .content-toolbar {

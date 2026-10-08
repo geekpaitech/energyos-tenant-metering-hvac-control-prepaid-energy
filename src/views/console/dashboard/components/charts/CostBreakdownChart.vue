@@ -166,8 +166,9 @@ export default {
         return
       }
 
-      const end = moment().subtract(1, 'day')
-      const begin = end.clone().startOf('year')
+      const yesterday = moment().subtract(1, 'day')
+      const begin = moment().startOf('year')
+      const end = yesterday.isBefore(begin, 'day') ? begin : yesterday
       const res = await getTenantFeeComposition({
         beginTime: begin.format('YYYY-MM-DD'),
         endTime: end.format('YYYY-MM-DD'),

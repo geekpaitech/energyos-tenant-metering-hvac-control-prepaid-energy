@@ -10,28 +10,34 @@
         <div class="video-tv">
           <div class="video-tv__shell">
             <span class="video-tv__led" aria-hidden="true" />
-            <span class="video-tv__live">LIVE</span>
+            <span class="video-tv__live">告警</span>
             <div class="video-tv__screen">
               <i class="video-tv__corner video-tv__corner--tl" aria-hidden="true" />
               <i class="video-tv__corner video-tv__corner--tr" aria-hidden="true" />
               <i class="video-tv__corner video-tv__corner--bl" aria-hidden="true" />
               <i class="video-tv__corner video-tv__corner--br" aria-hidden="true" />
-              <div class="video-stage__media">
+              <div
+                class="video-stage__media"
+                role="button"
+                tabindex="0"
+                aria-label="查看视频AI风控工单明细"
+                @click="openVideoAiDetail"
+                @keydown.enter="openVideoAiDetail"
+                @keydown.space.prevent="openVideoAiDetail"
+              >
                 <img
                   v-for="(url, idx) in videoSnapshots"
-                  :key="url"
+                  :key="`${url}-${idx}`"
                   class="video-stage__img"
                   :class="{ 'video-stage__img--active': idx === videoSlideIndex }"
                   :src="url"
-                  alt=""
+                  alt="视频AI告警截图"
+                  @error="handleSnapshotError(url)"
                 />
+                <span v-if="!videoSnapshots.length" class="video-stage__empty">暂无告警截图</span>
               </div>
               <div class="video-stage__shade video-stage__shade--top" aria-hidden="true" />
               <div class="video-stage__scan" aria-hidden="true" />
-              <div class="video-stage__meta">
-                <span class="video-stage__cam">{{ cameraName }}</span>
-              </div>
-              <span class="video-stage__time">{{ nowTime }}</span>
               <div v-if="videoSnapshots.length > 1" class="video-stage__dots" aria-hidden="true">
                 <i
                   v-for="(_, idx) in videoSnapshots"
@@ -48,26 +54,32 @@
         </div>
         <aside class="video-side">
           <div class="video-side__stat video-side__stat--alert">
-            <span class="video-side__lbl">今日触发告警</span>
-            <span class="video-side__val">{{ videoAi.alertCount }}<i>次</i></span>
+            <span class="video-side__lbl">{{ videoAlertLabel }}</span>
+            <span class="video-side__val">{{ formatCount(videoAi.alertCount) }}<i v-if="videoAi.alertCount != null">次</i></span>
           </div>
           <div class="video-side__stat">
             <span class="video-side__lbl">已处置</span>
-            <span class="video-side__val">{{ videoAi.handledCount }}<i>次</i></span>
+            <span class="video-side__val">{{ formatCount(videoAi.handledCount) }}<i v-if="videoAi.handledCount != null">次</i></span>
           </div>
           <div class="video-side__stat video-side__stat--rate">
             <span class="video-side__lbl">处置率</span>
-            <span class="video-side__val">{{ videoAi.handleRate }}<i>%</i></span>
-          </div>
-          <div class="video-side__stat video-side__stat--cam">
-            <span class="video-side__lbl">监控点位</span>
-            <span class="video-side__val">{{ videoSnapshots.length }}<i>路</i></span>
+            <span class="video-side__val">{{ formatRate(videoAi.handleRate) }}<i v-if="videoAi.handleRate != null">%</i></span>
           </div>
         </aside>
       </div>
     </panel-box>
 
-    <panel-box title="仓库管理" tier="secondary" class="blk blk-warehouse">
+    <panel-box
+      title="仓库管理"
+      tier="secondary"
+      class="blk blk-warehouse"
+      role="button"
+      tabindex="0"
+      aria-label="查看仓库管理详情"
+      @click.native="openWarehouseDetail"
+      @keydown.enter.native.self="openWarehouseDetail"
+      @keydown.space.native.self.prevent="openWarehouseDetail"
+    >
       <div class="warehouse-module">
         <div class="warehouse-kpi">
           <div class="warehouse-kpi__item">
@@ -88,6 +100,9 @@
           <header class="warehouse-ratio__head">
             <span class="warehouse-ratio__title">类别价值占比</span>
             <span class="warehouse-ratio__info" title="仅展示占比前5的类别，其余合并为「其他」">i</span>
+            <button type="button" class="module-detail-link" @click.stop="openWarehouseDetail">
+              查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+            </button>
           </header>
 
           <div class="warehouse-ratio__body">
@@ -105,7 +120,7 @@
                     class="warehouse-donut__slice"
                     @mouseenter="donutHover = slice"
                   >
-                    <title>{{ slice.name }} {{ slice.pct }}%</title>
+                    <title>{{ slice.name }} {{ formatPct(slice.pct) }}</title>
                   </path>
                 </svg>
                 <div
@@ -114,7 +129,7 @@
                   :style="donutHover.tipStyle"
                 >
                   <span class="warehouse-donut__tip-name">{{ donutHover.name }}</span>
-                  <span class="warehouse-donut__tip-meta">{{ donutHover.pct }}% · ¥{{ formatMoney(donutHover.amount) }}</span>
+                  <span class="warehouse-donut__tip-meta">{{ formatPct(donutHover.pct) }} · ¥{{ formatMoney(donutHover.amount) }}</span>
                 </div>
                 <div class="warehouse-donut__hole">
                   <span class="warehouse-donut__lbl">总价值</span>
@@ -154,17 +169,18 @@
         </div>
       </div>
     </panel-box>
+
   </div>
 </template>
 
 <script>
 import PanelBox from '../PanelBox.vue'
 import StatSection from '../StatSection.vue'
-import { groupScreenOss } from '../../image/oss'
-import { fireSafety, powerSafety, videoAi } from '../../mock'
-import { getWarehouseManagement } from '@/api/groupScreen'
-import { buildWarehouseScreenDto } from '../../utils/screenQuery'
-import { EMPTY_WAREHOUSE, mapWarehouseManagement } from '../../utils/warehouseManagement'
+import { powerSafety } from '../../mock'
+import { queryVideoAiRiskControl, queryWarehouseOverview } from '@/api/groupPropertyMingYuan'
+import { buildMingYuanQuery, buildMingYuanWarehouseQuery } from '../../utils/mingYuanQuery'
+import { EMPTY_WAREHOUSE } from '../../utils/warehouseManagement'
+import { mapFireSafetyMetrics } from '../../utils/fireManagement'
 
 const VIDEO_CAROUSEL_INTERVAL = 5000
 const DESIGN_WIDTH = 1920
@@ -186,33 +202,54 @@ const WAREHOUSE_ACCENT_COLORS = [
   '#1C3D5E'
 ]
 
+function emptyVideoAi () {
+  return {
+    alertCount: null,
+    handledCount: null,
+    handleRate: null
+  }
+}
+
 export default {
   name: 'LeftColumn',
   components: { PanelBox, StatSection },
   props: {
     activeScope: { type: String, default: '全部' },
-    activeTime: { type: String, default: '本月' }
+    activeTime: { type: String, default: '本月' },
+    fireManagement: { type: Object, default: null }
   },
   data () {
     return {
-      fireSafety,
       powerSafety,
-      videoAi,
+      videoAi: emptyVideoAi(),
       warehouse: { ...EMPTY_WAREHOUSE, categories: [] },
       warehouseColors: WAREHOUSE_ACCENT_COLORS,
       warehouseDonutScaleX: 1,
       warehouseDonutScaleY: 1,
-      videoSnapshots: groupScreenOss.cameraCarousel,
+      videoSnapshots: [],
       videoSlideIndex: 0,
-      cameraName: '南都广场1F大厅',
-      nowTime: '',
       donutHover: null,
+      videoAiRequestId: 0,
       warehouseRequestId: 0,
-      clockTimer: null,
       carouselTimer: null
     }
   },
   computed: {
+    videoAlertLabel () {
+      const periodLabel = {
+        今日: '今日',
+        本月: '本月',
+        截至当前: '累计'
+      }[this.activeTime] || '累计'
+      if (periodLabel === '累计') return '累计告警'
+      return `${periodLabel}告警`
+    },
+    fireSafety () {
+      return {
+        title: '智慧消防',
+        metrics: mapFireSafetyMetrics(this.fireManagement)
+      }
+    },
     warehouseDonutStyle () {
       let acc = 0
       const stops = (this.warehouse.categories || []).map((cat, i) => {
@@ -251,25 +288,57 @@ export default {
   },
   watch: {
     activeScope () {
+      this.fetchVideoAiRiskControl()
       this.fetchWarehouseManagement()
+    },
+    activeTime () {
+      this.fetchVideoAiRiskControl()
     }
   },
   methods: {
+    openWarehouseDetail () {
+      this.$emit('open-property-detail', 'warehouse')
+    },
+    openVideoAiDetail () {
+      this.$emit('open-property-detail', 'videoAi')
+    },
+    handleSnapshotError (url) {
+      this.videoSnapshots = this.videoSnapshots.filter(item => item !== url)
+      if (this.videoSlideIndex >= this.videoSnapshots.length) this.videoSlideIndex = 0
+    },
     async fetchWarehouseManagement () {
       const requestId = ++this.warehouseRequestId
       try {
-        const dto = buildWarehouseScreenDto({ scope: this.activeScope })
-        const res = await getWarehouseManagement(dto)
+        // 仓库固定查询当年年初至今天，只随业态变化，不跟随右上角时间切换。
+        const dto = buildMingYuanWarehouseQuery({ scope: this.activeScope })
+        const data = await queryWarehouseOverview(dto)
         if (requestId !== this.warehouseRequestId) return
-        if (res && res.code === 200 && res.data) {
-          this.warehouse = mapWarehouseManagement(res.data)
-        } else {
-          this.warehouse = { ...EMPTY_WAREHOUSE, categories: [] }
-        }
+        this.warehouse = data
       } catch (e) {
         if (requestId !== this.warehouseRequestId) return
-        console.error('[group-screen] getWarehouseManagement failed', e)
+        console.error('[group-screen] queryWarehouseOverview failed', e)
         this.warehouse = { ...EMPTY_WAREHOUSE, categories: [] }
+      }
+    },
+    async fetchVideoAiRiskControl () {
+      const requestId = ++this.videoAiRequestId
+      try {
+        const dto = buildMingYuanQuery({ scope: this.activeScope, period: this.activeTime })
+        const data = await queryVideoAiRiskControl(dto)
+        if (requestId !== this.videoAiRequestId) return
+        this.videoAi = {
+          alertCount: data.alertCount,
+          handledCount: data.handledCount,
+          handleRate: data.handleRate
+        }
+        this.videoSnapshots = (data.alarmPhotos || []).slice(0, 5)
+        this.videoSlideIndex = 0
+      } catch (e) {
+        if (requestId !== this.videoAiRequestId) return
+        console.error('[group-screen] queryVideoAiRiskControl failed', e)
+        this.videoAi = emptyVideoAi()
+        this.videoSnapshots = []
+        this.videoSlideIndex = 0
       }
     },
     polarToCartesian (cx, cy, r, angleDeg) {
@@ -296,7 +365,8 @@ export default {
       ].join(' ')
     },
     buildDonutItem (cat, midPct, ringR) {
-      const pct = Number(cat.pct) || 0
+      const rawPct = cat.pct == null || cat.pct === '' ? null : Number(cat.pct)
+      const pct = Number.isFinite(rawPct) ? rawPct : null
       const deg = midPct * 3.6
       const rad = ((deg - 90) * Math.PI) / 180
       const x = 50 + ringR * Math.cos(rad)
@@ -317,14 +387,6 @@ export default {
         acc += pct
         return this.buildDonutItem(cat, mid, ringR)
       })
-    },
-    tickClock () {
-      const d = new Date()
-      this.nowTime = this.formatTime(d)
-    },
-    formatTime (d) {
-      const p = n => String(n).padStart(2, '0')
-      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
     },
     formatCount (val) {
       if (val == null || val === '') return '--'
@@ -353,6 +415,12 @@ export default {
       if (Number.isNaN(n)) return '--'
       return `${n % 1 === 0 ? n : n.toFixed(1)}%`
     },
+    formatRate (val) {
+      if (val == null || val === '') return '--'
+      const n = Number(val)
+      if (!Number.isFinite(n)) return '--'
+      return n % 1 === 0 ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 })
+    },
     resizeCharts () {
       this.updateWarehouseDonutScale()
     },
@@ -380,22 +448,19 @@ export default {
   },
   mounted () {
     this.updateWarehouseDonutScale()
-    this.tickClock()
     window.addEventListener('resize', this.updateWarehouseDonutScale)
-    this.clockTimer = setInterval(() => this.tickClock(), 1000)
     this.carouselTimer = setInterval(() => {
       const len = this.videoSnapshots.length
       if (len <= 1) return
       this.videoSlideIndex = (this.videoSlideIndex + 1) % len
     }, VIDEO_CAROUSEL_INTERVAL)
+    this.fetchVideoAiRiskControl()
     this.fetchWarehouseManagement()
   },
   beforeDestroy () {
+    this.videoAiRequestId += 1
+    this.warehouseRequestId += 1
     window.removeEventListener('resize', this.updateWarehouseDonutScale)
-    if (this.clockTimer) {
-      clearInterval(this.clockTimer)
-      this.clockTimer = null
-    }
     if (this.carouselTimer) {
       clearInterval(this.carouselTimer)
       this.carouselTimer = null
@@ -452,6 +517,12 @@ export default {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 1px solid rgba(109, 193, 192, 0.72);
+    outline-offset: 2px;
+  }
 
   ::v-deep .ds-panel__body {
     flex: 1 1 0;
@@ -589,6 +660,16 @@ export default {
   &__media {
     position: absolute;
     inset: 0;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  &__empty {
+    color: rgba(168, 192, 220, 0.5);
+    font-size: 12px;
+    letter-spacing: 0.4px;
+    pointer-events: none;
   }
 
   &__img {
@@ -634,30 +715,6 @@ export default {
       rgba(255, 255, 255, 0.02) 4px
     );
     opacity: 0.35;
-  }
-
-  &__meta {
-    position: absolute;
-    top: 8px;
-    left: 22px;
-    right: 68px;
-    z-index: 3;
-    pointer-events: none;
-  }
-
-  &__cam {
-    display: inline-block;
-    max-width: 100%;
-    padding: 2px 7px;
-    border-radius: 2px;
-    font-size: 11px;
-    line-height: 1.3;
-    color: rgba(245, 250, 255, 0.96);
-    background: rgba(16, 42, 72, 0.16);
-    border: 1px solid rgba(109, 193, 192, 0.12);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   &__time {
@@ -947,6 +1004,26 @@ export default {
   }
 }
 
+.module-detail-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: rgba(145, 207, 242, 0.9);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: #e8f7ff;
+    outline: none;
+  }
+}
+
 .warehouse-donut {
   width: 88px;
   height: 88px;
@@ -1132,4 +1209,5 @@ export default {
     text-overflow: ellipsis;
   }
 }
+
 </style>

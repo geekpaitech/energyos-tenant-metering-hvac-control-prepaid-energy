@@ -8,17 +8,18 @@ import Cookies from 'js-cookie'
 
 import { createApiError, getApiErrorMessage, notifyApiError } from '@/utils/apiError'
 
-// 后端 API 根地址（开源版本请替换为实际部署地址，并同步 vue.config.js proxy）
+import { BACKEND_ROOT, API_BASE_URL, REQUEST_TIMEOUT } from '@/config/services'
 
-export const API_BACKEND_ROOT = ''
+// 保留已有导出，地址统一在 vue.config.js 配置。
+export const API_BACKEND_ROOT = BACKEND_ROOT
 
 // 创建axios实例
 
 const service = axios.create({
 
-  baseURL: process.env.NODE_ENV === 'development' ? '' : API_BACKEND_ROOT,
+  baseURL: API_BASE_URL,
 
-  timeout: 10000
+  timeout: REQUEST_TIMEOUT
 
 })
 
@@ -31,17 +32,21 @@ export function isPermissionTestEnv () {
 // 防止重复处理10002和重复刷新
 let isHandlingTokenExpired = false
 let hasRefreshed = false
+let bigscreenTokenExpiredReleaseTimer = null
 
 // 大屏免登录路由标识
-const BIGSCREEN_ROUTE = '/bigscreen/property-screen'
+const BIGSCREEN_ROUTES = ['/bigscreen/property-screen', '/bigscreen/energy-screen']
 // 大屏token失效事件名
 const BIGSCREEN_TOKEN_EXPIRED_EVENT = 'bigscreen:tokenExpired'
 
 // 判断当前是否在大屏免登录路由
 function isOnBigscreenRoute () {
   try {
-    return window.location.hash === `#${BIGSCREEN_ROUTE}` ||
-           window.location.hash.startsWith(`#${BIGSCREEN_ROUTE}?`)
+    const hashPath = window.location.hash
+      .replace(/^#/, '')
+      .split('?')[0]
+      .replace(/\/+$/, '')
+    return BIGSCREEN_ROUTES.includes(hashPath)
   } catch (e) {
     return false
   }
@@ -58,9 +63,14 @@ service.interceptors.request.use(
 
     // 兼容首屏初始化时vuex token尚未回填，回退读取cookie
 
-    const token = store.getters.token || Cookies.get('Admin-Token')
+    // Cookie 在同源标签页之间共享，应作为跨标签页的最新 token 来源
+    const token = Cookies.get('Admin-Token') || store.getters.token
+    const skipAuth = !!config.skipAuth
 
-    if (token) {
+    // 记录请求发出时使用的 token，用于识别新会话建立后才返回的旧请求
+    config.__authToken = skipAuth ? '' : (token || '')
+
+    if (token && !skipAuth) {
       config.headers['X-Token'] = token
 
       config.headers.Authorization = token
@@ -89,7 +99,20 @@ service.interceptors.response.use(
 
       console.error('当前URL:', window.location.href)
 
-      if (!isHandlingTokenExpired) {
+      const requestToken = response.config && response.config.__authToken
+      const currentToken = Cookies.get('Admin-Token') || store.getters.token || ''
+      const isStaleTokenResponse = !!(
+        requestToken &&
+        currentToken &&
+        requestToken !== currentToken
+      )
+      const skipTokenExpiredHandling = !!(
+        response.config && response.config.skipTokenExpiredHandling
+      )
+
+      if (isStaleTokenResponse) {
+        console.log('忽略旧token请求的迟到失效响应')
+      } else if (!skipTokenExpiredHandling && !isHandlingTokenExpired) {
         isHandlingTokenExpired = true
 
         handleTokenExpiredSimple(res.msg || '您已在其他地方登录')
@@ -136,11 +159,15 @@ function handleTokenExpiredSimple (message) {
   // 如果在大屏免登录路由，触发事件让大屏组件自动重登，不要跳首页
   if (isOnBigscreenRoute()) {
     console.log('=== 大屏路由token失效，触发自动重登 ===')
-    isHandlingTokenExpired = false
     // 触发全局事件，通知大屏组件重登
     if (window.dispatchEvent) {
       window.dispatchEvent(new CustomEvent(BIGSCREEN_TOKEN_EXPIRED_EVENT, { detail: { message } }))
     }
+    // 给页面恢复逻辑一个去重窗口，防止并行接口形成重登风暴
+    clearTimeout(bigscreenTokenExpiredReleaseTimer)
+    bigscreenTokenExpiredReleaseTimer = setTimeout(() => {
+      isHandlingTokenExpired = false
+    }, 1200)
     return
   }
 
@@ -215,6 +242,12 @@ window.addEventListener('load', () => {
       sessionStorage.removeItem(refreshFlag)
     }
   }, 3000)
+})
+
+// 大屏建立新会话后立即释放拦截器锁，后续新 token 异常仍可被及时感知
+window.addEventListener('bigscreen:authRecovered', () => {
+  clearTimeout(bigscreenTokenExpiredReleaseTimer)
+  isHandlingTokenExpired = false
 })
 
 export { getApiErrorMessage }

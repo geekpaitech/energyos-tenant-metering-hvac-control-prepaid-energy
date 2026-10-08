@@ -1,6 +1,6 @@
 <template>
   <section class="energy-column energy-column--left">
-    <trend-card ref="trendCard" :data="trend" />
+    <trend-card ref="trendCard" :data="trend" :period="period" />
     <structure-card ref="structureCard" :data="structure" />
     <cost-card ref="costCard" :data="costs" />
   </section>
@@ -17,7 +17,8 @@ export default {
   props: {
     trend: { type: Object, required: true },
     structure: { type: Object, required: true },
-    costs: { type: Object, required: true }
+    costs: { type: Object, required: true },
+    period: { type: String, default: 'day' }
   },
   methods: {
     resizeCharts () {

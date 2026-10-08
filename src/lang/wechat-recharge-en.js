@@ -37,6 +37,14 @@ export default {
     msgExportFail: 'Export failed',
     exportSheetName: 'WeChat top-up',
     filePrefix: 'WeChatTopUp',
+    exportCurrentPage: 'Export current page',
+    exportSelected: 'Export selected',
+    exportAll: 'Export all',
+    warnNoSelectedExport: 'Select rows to export first',
+    msgExportOkSelected: 'Exported {count} selected row(s).',
+    successExported: 'Exported {count} row(s).',
+    successExportedLimit: 'Over {total} rows matched; exported first {count}.',
+    exporting: 'Exporting…',
     msgRefundDev: 'Refund is not available yet.'
   }
 }

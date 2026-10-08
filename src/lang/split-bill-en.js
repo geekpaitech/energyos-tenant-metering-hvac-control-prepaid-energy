@@ -68,6 +68,14 @@ export default {
     filePrefixAll: 'ShareBill',
     filePrefixElec: 'ElecShareBill',
     filePrefixWater: 'WaterShareBill',
-    unitSqm: ' m²'
+    unitSqm: ' m²',
+    // Export (current page / selected / all) unified copy
+    exportCurrentPage: 'Export current page',
+    exportSelected: 'Export selected',
+    exportAll: 'Export all',
+    warnNoSelectedExport: 'Please select rows to export first',
+    successExported: 'Exported {count} row(s).',
+    successExportedLimit: '{total} matched, up to {count} per export, first {count} exported',
+    exporting: 'Exporting all data...'
   }
 }

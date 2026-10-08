@@ -142,3 +142,11 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+/* 租户多选 tags 溢出控制 */
+::v-deep .el-select__tags {
+  max-height: 96px;
+  overflow-y: auto;
+}
+</style>

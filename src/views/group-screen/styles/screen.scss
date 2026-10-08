@@ -119,3 +119,23 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* 停车收入统计表暗色滚动条，覆盖 App.vue 全局白色 */
+.group-screen .park-table-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(109, 193, 192, 0.18) transparent;
+}
+.group-screen .park-table-body::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+.group-screen .park-table-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.group-screen .park-table-body::-webkit-scrollbar-thumb {
+  background: rgba(109, 193, 192, 0.18);
+  border-radius: 3px;
+}
+.group-screen .park-table-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(109, 193, 192, 0.35);
+}

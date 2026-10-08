@@ -23,11 +23,12 @@
 </template>
 
 <script>
+import { isNavigationFailure, NavigationFailureType } from 'vue-router'
 import {
   parseSsoCallbackQuery,
   resolveSafeRedirect,
-  getCurrentCallbackUri,
   applySsoManagerId,
+  clearSsoManagerId,
   SSO_USER_MESSAGES,
   toUserFriendlySsoError
 } from '@/utils/sso'
@@ -64,21 +65,18 @@ export default {
       }
 
       try {
-        // 清除可能过期的本地 token，避免换票请求携带旧凭证
-        await this.$store.dispatch('user/resetToken')
-
+        // 不提前清除共享 Cookie；同源的其他标签页可能仍在使用当前有效 token。
         await this.$store.dispatch('user/ssoLogin', {
           code: parsed.code,
-          ticket: parsed.ticket,
-          exchangeToken: parsed.exchangeToken,
-          state: parsed.state,
-          redirectUri: getCurrentCallbackUri()
+          groupCode: parsed.groupCode,
+          managerId: parsed.managerId
         })
 
-        applySsoManagerId(query.managerId)
+        // 新 token 已原子覆盖旧 token，再刷新当前标签页的账号关联状态。
+        await this.refreshSessionAfterExchange(parsed.managerId)
 
         this.$message.success(SSO_USER_MESSAGES.success)
-        await this.$router.replace({ path: redirect }).catch(() => {})
+        await this.navigateAfterLogin(redirect)
       } catch (err) {
         await this.fail(toUserFriendlySsoError(err && err.message))
       }
@@ -86,21 +84,47 @@ export default {
     async fail (message) {
       this.status = 'error'
       this.errorMessage = message
-      // 失败态必须清掉残留登录态，否则点「账号密码登录」会被守卫当成已登录而跳进 401
-      try {
-        await this.$store.dispatch('user/resetToken')
-      } catch (e) {}
+      // 换票失败时保留原有有效 token，避免影响同源的其他已登录标签页。
     },
     async goLogin () {
-      try {
-        await this.$store.dispatch('user/resetToken')
-      } catch (e) {}
+      await this.clearSessionForPasswordLogin()
       const redirect = resolveSafeRedirect(this.$route.query.redirect)
       const loginQuery =
         redirect && redirect !== '/'
           ? { redirect: encodeURIComponent(redirect) }
           : {}
       this.$router.replace({ path: '/login', query: loginQuery }).catch(() => {})
+    },
+    async refreshSessionAfterExchange (managerId) {
+      await this.$store.dispatch('permission/resetRoutes')
+      await this.$store.dispatch('manager/resetManager')
+      clearSsoManagerId()
+      applySsoManagerId(managerId)
+      await this.$store.dispatch('user/getUserInfo', { force: true })
+    },
+    async navigateAfterLogin (redirect) {
+      try {
+        await this.$router.replace({ path: redirect })
+      } catch (error) {
+        const isExpectedRedirect =
+          isNavigationFailure(error, NavigationFailureType.redirected) ||
+          isNavigationFailure(error, NavigationFailureType.duplicated) ||
+          isNavigationFailure(error, NavigationFailureType.cancelled)
+        if (!isExpectedRedirect) throw error
+      }
+    },
+    async clearSessionForPasswordLogin () {
+      try {
+        await this.$store.dispatch('user/resetToken')
+      } catch (e) {
+        console.warn('清理旧用户会话失败:', e)
+      }
+      try {
+        await this.$store.dispatch('manager/resetManager')
+      } catch (e) {
+        console.warn('清理旧管理方状态失败:', e)
+      }
+      clearSsoManagerId()
     }
   }
 }

@@ -2,7 +2,6 @@ import { expect } from 'chai'
 import {
   buildParkingScreenDto,
   buildPropertyScreenDto,
-  buildTodayPropertyScreenDto,
   scopeToBizType
 } from '@/views/group-screen/utils/screenQuery'
 
@@ -16,7 +15,7 @@ describe('group screen query', () => {
     expect(scopeToBizType('全部')).to.equal(null)
     expect(buildPropertyScreenDto({ scope: '全部' })).to.not.have.property('bizType')
     expect(buildParkingScreenDto({ scope: '全部' })).to.not.have.property('bizType')
-    expect(buildTodayPropertyScreenDto({ scope: '全部' })).to.not.have.property('bizType')
+    expect(buildPropertyScreenDto({ scope: '全部', period: '今日' })).to.not.have.property('bizType')
   })
 
   it('maps supported scopes to backend bizType values', () => {

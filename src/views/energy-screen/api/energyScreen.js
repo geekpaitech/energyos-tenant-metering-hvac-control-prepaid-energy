@@ -1,11 +1,12 @@
 import moment from 'moment'
 import request from '@/utils/request'
-import { mapStationToEnergyFlow, resolveInverterOnlineStatus } from '@/utils/energyFlowMapper'
+import { GRID_ROOT } from '@/config/services'
+import { mapStationToEnergyFlow } from '@/utils/energyFlowMapper'
 
 const CONTENT_BASE = '/api/ebc-content'
 const SETTLE_BASE = '/api/ebc-settle/capitalManage'
-const PHOTOVOLTAIC_SERVICE_URL = 'https://pv-proxy.example.com'
-const NANDU_MANAGER_ID = ''
+const PHOTOVOLTAIC_SERVICE_URL = GRID_ROOT
+const NANDU_MANAGER_ID = '1000107'
 
 const ENERGY_SCREEN_HEADERS = {
   userDeviceType: 'PC',
@@ -64,13 +65,6 @@ export function queryEnergyAllocation (managerId, beginTime, endTime) {
       startTime: `${beginTime} 00:00:00`,
       endTime: `${endTime} 23:59:59`
     }
-  })
-}
-
-/** 租户余额/欠费排行。复制自计量看板 getTenantStatusList。 */
-export function queryTenantBalances (managerId) {
-  return internalPost(`${CONTENT_BASE}/overview/tenantStatusList`, {
-    params: { managerId }
   })
 }
 
@@ -205,26 +199,6 @@ function normalizeTrendRecords (raw) {
   }
 }
 
-function normalizeTenantBalances (raw) {
-  const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.tenantStatusList) ? raw.tenantStatusList : [])
-  return list
-    .map((item, index) => {
-      const explicitArrears = firstNumber(item.arrearsAmount, item.amount)
-      const balance = numberOrNull(item.tenantBalance)
-      const amount = explicitArrears !== null
-        ? Math.max(0, explicitArrears)
-        : (balance !== null && balance < 0 ? Math.abs(balance) : null)
-      return {
-        id: item.tenantId || item.id || index,
-        name: item.tenantName || item.name || '--',
-        amount
-      }
-    })
-    .filter(item => item.amount !== null && item.amount > 0)
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5)
-}
-
 function normalizeDeviceSummary (raw) {
   const source = raw || {}
   const tenant = firstNumber(source.tenantCount)
@@ -293,22 +267,24 @@ export function createEnergyScreenSkeleton () {
       realtimePower: null
     },
     right: {
-      arrears: [],
-      photovoltaic: { available: false, name: '--', online: null, capacity: '--', inverter: '--', address: '--' },
-      deviceStatus: [
-        { label: '设备总数', value: null, unit: '台', icon: 'monitor', tone: 'blue' },
-        { label: '在线设备', value: null, unit: '台', icon: 'monitor', tone: 'green' },
-        { label: '离线设备', value: null, unit: '台', icon: 'warning', tone: 'red' },
-        { label: '告警设备', value: null, unit: '台', icon: 'warning', tone: 'gold' }
-      ]
+      powerSafety: {
+        cells: [
+          { key: 'transformerLoad', label: '变压器负载率', value: null, unit: '%', icon: 'load', tone: 'cyan', status: '--', statusTone: 'ok' },
+          { key: 'maxTemp', label: '最高测点温度', value: null, unit: '℃', icon: 'peak-temperature', tone: 'gold', status: '--', statusTone: 'ok' },
+          { key: 'groundResistance', label: '接地电阻', value: null, unit: 'Ω', icon: 'ground', tone: 'green', status: '--', statusTone: 'ok' },
+          { key: 'maxResidual', label: '最大剩余电流', value: null, unit: 'mA', icon: 'residual', tone: 'violet', status: '--', statusTone: 'ok' }
+        ]
+      },
+      alarm: {
+        list: []
+      }
     },
     footer: {
-      assets: [
-        { label: '逆变器', value: null, unit: '台', icon: 'inverter' },
-        { label: '电表', value: null, unit: '台', icon: 'cabinet' },
-        { label: '水表', value: null, unit: '台', icon: 'water' },
-        { label: '空调机', value: null, unit: '台', icon: 'air' },
-        { label: '其他设备', value: null, unit: '台', icon: 'monitor' }
+      environmentPanel: [
+        { key: 'temperature', label: '当前温度', value: null, unit: '℃', icon: 'thermometer', tone: 'cyan', status: '--', statusTone: 'ok' },
+        { key: 'humidity', label: '当前湿度', value: null, unit: '%', icon: 'drop', tone: 'blue', status: '--', statusTone: 'ok' },
+        { key: 'smoke', label: '烟雾报警器', value: null, unit: '', icon: 'smoke', tone: 'gold', status: '--', statusTone: 'ok' },
+        { key: 'flood', label: '水浸', value: null, unit: '', icon: 'flood', tone: 'blue', status: '--', statusTone: 'ok' }
       ],
       achievements: [
         { label: 'CO₂减排', value: null, unit: 't', icon: 'co2', tone: 'green' },
@@ -340,10 +316,9 @@ export async function getEnergyScreenOverview (managerId) {
       queryEnergyFeeComposition(managerId, sevenDayBegin, sevenDayEndDate),
       queryEnergyAllocation(managerId, sevenDayBegin, sevenDayEndDate),
       queryEnergyAllocation(managerId, today, today),
-      queryTenantBalances(managerId),
       queryDeviceSummary(managerId, today)
     ]
-    : Array.from({ length: 8 }, () => Promise.resolve(null))
+    : Array.from({ length: 7 }, () => Promise.resolve(null))
   const results = await Promise.allSettled([
     ...internalRequests,
     isNanduManager ? queryPhotovoltaicStation() : Promise.resolve(null)
@@ -355,10 +330,9 @@ export async function getEnergyScreenOverview (managerId) {
   const feeDto = responseData(results[3]) || {}
   const sevenDayAllocationDto = responseData(results[4]) || {}
   const todayAllocationDto = responseData(results[5]) || {}
-  const tenantRaw = responseData(results[6])
-  const deviceDto = responseData(results[7]) || {}
-  const hasStation = isNanduManager && results[8].status === 'fulfilled' && !!results[8].value
-  const station = hasStation ? results[8].value : null
+  const deviceDto = responseData(results[6]) || {}
+  const hasStation = isNanduManager && results[7].status === 'fulfilled' && !!results[7].value
+  const station = hasStation ? results[7].value : null
 
   const trend = normalizeTrendRecords(trendRaw)
   const todayUse = firstNumber(todayDto.useElec)
@@ -413,8 +387,6 @@ export async function getEnergyScreenOverview (managerId) {
   const airUse = null
   const destinationValues = [tenantUse, publicUse]
   const destinationTotal = sumNumbers(destinationValues)
-  const inverter = hasStation ? resolveInverterOnlineStatus(station) : null
-  const capacity = hasStation ? numberOrNull(station.capacity) : null
   const wind = hasStation
     ? [station.windDir, station.windSpd != null && station.windSpd !== '' ? `${station.windSpd}${station.windSpdUnit || 'm/s'}` : ''].filter(Boolean).join(' ')
     : ''
@@ -440,29 +412,24 @@ export async function getEnergyScreenOverview (managerId) {
       realtimePower
     },
     right: {
-      arrears: normalizeTenantBalances(tenantRaw),
-      photovoltaic: {
-        available: hasStation,
-        name: hasStation ? (station.stationName || '--') : '--',
-        online: hasStation ? numberOrNull(station.state) === 1 : null,
-        capacity: capacity === null ? '--' : `${capacity.toLocaleString('zh-CN', { maximumFractionDigits: 2 })} ${station.capacityStr || 'kWp'}`,
-        inverter: inverter && inverter.text ? inverter.text : '--',
-        address: hasStation ? ([station.regionStr, station.cityStr, station.countyStr, station.addr].filter(Boolean).join('') || '--') : '--'
+      powerSafety: {
+        cells: [
+          { key: 'transformerLoad', label: '变压器负载率', value: null, unit: '%', icon: 'load', tone: 'cyan', status: '--', statusTone: 'ok' },
+          { key: 'maxTemp', label: '最高测点温度', value: null, unit: '℃', icon: 'peak-temperature', tone: 'gold', status: '--', statusTone: 'ok' },
+          { key: 'groundResistance', label: '接地电阻', value: null, unit: 'Ω', icon: 'ground', tone: 'green', status: '--', statusTone: 'ok' },
+          { key: 'maxResidual', label: '最大剩余电流', value: null, unit: 'mA', icon: 'residual', tone: 'violet', status: '--', statusTone: 'ok' }
+        ]
       },
-      deviceStatus: [
-        { label: '设备总数', value: devices.total, unit: '台', icon: 'monitor', tone: 'blue' },
-        { label: '在线设备', value: devices.online, unit: '台', icon: 'monitor', tone: 'green' },
-        { label: '离线设备', value: devices.offline, unit: '台', icon: 'warning', tone: 'red' },
-        { label: '告警设备', value: null, unit: '台', icon: 'warning', tone: 'gold' }
-      ]
+      alarm: {
+        list: []
+      }
     },
     footer: {
-      assets: [
-        { label: '逆变器', value: inverter ? inverter.total : null, unit: '台', icon: 'inverter' },
-        { label: '电表', value: devices.meter, unit: '台', icon: 'cabinet' },
-        { label: '水表', value: devices.water, unit: '台', icon: 'water' },
-        { label: '空调机', value: devices.air, unit: '台', icon: 'air' },
-        { label: '其他设备', value: devices.other, unit: '台', icon: 'monitor' }
+      environmentPanel: [
+        { key: 'temperature', label: '当前温度', value: null, unit: '℃', icon: 'thermometer', tone: 'cyan', status: '--', statusTone: 'ok' },
+        { key: 'humidity', label: '当前湿度', value: null, unit: '%', icon: 'drop', tone: 'blue', status: '--', statusTone: 'ok' },
+        { key: 'smoke', label: '烟雾报警器', value: null, unit: '', icon: 'smoke', tone: 'gold', status: '--', statusTone: 'ok' },
+        { key: 'flood', label: '水浸', value: null, unit: '', icon: 'flood', tone: 'blue', status: '--', statusTone: 'ok' }
       ],
       achievements: [
         { label: 'CO₂减排', value: carbon, unit: 't', icon: 'co2', tone: 'green' },

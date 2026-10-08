@@ -85,6 +85,7 @@
           <el-option :label="$t('electricityReport.tenantType0')" :value="0" />
           <el-option :label="$t('electricityReport.tenantType1')" :value="1" />
           <el-option :label="$t('electricityReport.tenantType2')" :value="2" />
+          <el-option :label="$t('electricityReport.tenantType3')" :value="3" />
         </el-select>
       </div>
 
@@ -117,47 +118,97 @@
 
     <!-- 租户用电统计 - 数据统计卡片（改为两个大模块） -->
 
-    <div class="stats-formula-cards" v-if="reportType === 'statistics' && tableData.length > 0">
-      <!-- 左侧：电量公式 -->
+    <div
+      v-if="reportType === 'statistics' && (tableData.length > 0 || todayVirtualRow)"
+      class="stats-formula-cards"
+      :class="{ 'is-history-only': !todayVirtualRow }"
+    >
+      <!-- 左侧：区间电量的时间闭环与分时闭环 -->
       <div class="formula-card electricity-usage">
-        <div class="card-top-badge" v-if="todayVirtualRow">
-          {{ $t('electricityReport.todayElecBadge', { value: formatNumber(todayVirtualRow.useElec) }) }}
+        <div v-if="todayVirtualRow" class="usage-realtime-row">
+          <div class="usage-heading">
+            <span class="usage-heading-label">{{ $t('electricityReport.todayElecRealtime') }}</span>
+            <span class="usage-heading-value">
+              {{ formatNumber(todayVirtualRow.useElec) }}
+              <small>{{ $t('electricityReport.unitKwhDisplay') }}</small>
+            </span>
+          </div>
         </div>
-        <div class="card-content">
-          <div class="formula-main">
-            <div class="main-indicator">
-              <div class="main-value">{{ formatNumber(totalStats.elec) }}</div>
-              <div class="main-label">{{ $t('electricityReport.mainTotalElec') }}</div>
+
+        <div class="usage-period-row">
+          <div class="period-total">
+            <div class="period-total-title">
+              <span>{{ $t('electricityReport.periodTotalElec') }}</span>
+            </div>
+            <div class="period-total-value">
+              {{ formatNumber(periodElecStats.elec) }}
+              <small>{{ $t('electricityReport.unitKwhDisplay') }}</small>
             </div>
           </div>
 
-          <div class="formula-operator">=</div>
+          <div v-if="tableData.length > 0" class="period-equation">
+            <div class="formula-operator">=</div>
+            <template v-if="todayVirtualRow">
+              <div class="period-breakdown-card">
+                <span>{{ $t('electricityReport.periodHistoryElec') }}</span>
+                <strong>
+                  {{ formatNumber(totalStats.elec) }}
+                  <small>{{ $t('electricityReport.unitKwhDisplay') }}</small>
+                </strong>
+              </div>
+              <div class="formula-operator formula-operator--plus">+</div>
+              <div class="period-breakdown-card period-breakdown-card--realtime">
+                <span>{{ $t('electricityReport.todayIncreaseRealtime') }}</span>
+                <strong>
+                  {{ formatNumber(todayVirtualRow.useElec) }}
+                  <small>{{ $t('electricityReport.unitKwhDisplay') }}</small>
+                </strong>
+              </div>
+            </template>
+            <template v-else>
+              <div class="period-breakdown-card">
+                <span>{{ $t('electricityReport.legendIndoorElec') }}</span>
+                <strong>
+                  {{ formatNumber(totalStats.meterUseElec) }}
+                  <small>{{ $t('electricityReport.unitKwhDisplay') }}</small>
+                </strong>
+              </div>
+              <div class="formula-operator formula-operator--plus">+</div>
+              <div class="period-breakdown-card">
+                <span>{{ $t('electricityReport.legendAcElec') }}</span>
+                <strong>
+                  {{ formatNumber(totalStats.airUseElec) }}
+                  <small>{{ $t('electricityReport.unitKwhDisplay') }}</small>
+                </strong>
+              </div>
+            </template>
+          </div>
+        </div>
 
-          <div class="formula-sub-group four-items">
-            <div class="sub-indicator">
-              <div class="sub-value">{{ formatNumber(totalStats.elecPeak) }}</div>
-              <div class="sub-label">{{ $t('electricityReport.subPeak') }}</div>
+        <div class="usage-tou-row">
+          <div class="usage-tou-title">
+            <span>{{ $t('electricityReport.periodTouComposition') }}</span>
+          </div>
+          <div class="period-tou-list">
+            <div class="period-tou-item">
+              <span class="tou-dot tou-dot--peak"></span>
+              <span>{{ $t('electricityReport.touPeakShort') }}</span>
+              <strong>{{ formatNumber(periodElecStats.elecPeak) }}</strong>
             </div>
-
-            <div class="operator-plus">+</div>
-
-            <div class="sub-indicator">
-              <div class="sub-value">{{ formatNumber(totalStats.elecTop) }}</div>
-              <div class="sub-label">{{ $t('electricityReport.subTop') }}</div>
+            <div class="period-tou-item">
+              <span class="tou-dot tou-dot--top"></span>
+              <span>{{ $t('electricityReport.touTopShort') }}</span>
+              <strong>{{ formatNumber(periodElecStats.elecTop) }}</strong>
             </div>
-
-            <div class="operator-plus">+</div>
-
-            <div class="sub-indicator">
-              <div class="sub-value">{{ formatNumber(totalStats.elecFlat) }}</div>
-              <div class="sub-label">{{ $t('electricityReport.subFlat') }}</div>
+            <div class="period-tou-item">
+              <span class="tou-dot tou-dot--flat"></span>
+              <span>{{ $t('electricityReport.touFlatShort') }}</span>
+              <strong>{{ formatNumber(periodElecStats.elecFlat) }}</strong>
             </div>
-
-            <div class="operator-plus">+</div>
-
-            <div class="sub-indicator">
-              <div class="sub-value">{{ formatNumber(totalStats.elecValley) }}</div>
-              <div class="sub-label">{{ $t('electricityReport.subValley') }}</div>
+            <div class="period-tou-item">
+              <span class="tou-dot tou-dot--valley"></span>
+              <span>{{ $t('electricityReport.touValleyShort') }}</span>
+              <strong>{{ formatNumber(periodElecStats.elecValley) }}</strong>
             </div>
           </div>
         </div>
@@ -166,7 +217,7 @@
       <!-- 右侧：电费公式 -->
       <div class="formula-card electricity-cost">
         <div class="card-top-badge" v-if="todayVirtualRow">
-          {{ $t('electricityReport.todayFeeBadge', { value: formatNumber(todayVirtualRow.useAmount) }) }}
+          {{ $t('electricityReport.todayFeeRealtime', { value: formatNumber(todayVirtualRow.useAmount) }) }}
         </div>
         <div class="card-content">
           <div class="formula-main">
@@ -857,7 +908,7 @@ export default {
         sysElec: 0,
         airSysElec: 0
       }
-      this.tableData.forEach((item) => {
+      const addRow = (item) => {
         stats.amount += Number(item.useAmount) || 0
         stats.elec += Number(item.useElec) || 0
         stats.elecPeak += Number(item.useElecPeak) || 0
@@ -870,8 +921,23 @@ export default {
         stats.airUseElec += Number(item.airUseElec) || 0
         stats.sysElec += Number(item.sysElec) || 0
         stats.airSysElec += Number(item.airSysElec) || 0
-      })
+      }
+      this.tableData.forEach(addRow)
       return stats
+    },
+    /**
+     * 报表接口的合计不包含今日实时数据；当统计区间包含今天时，
+     * 将今日接口数据并入电量与尖峰平谷，保证两组展示公式始终闭环。
+     */
+    periodElecStats () {
+      const today = this.todayVirtualRow || {}
+      return {
+        elec: this.totalStats.elec + (Number(today.useElec) || 0),
+        elecPeak: this.totalStats.elecPeak + (Number(today.useElecPeak) || 0),
+        elecTop: this.totalStats.elecTop + (Number(today.useElecTop) || 0),
+        elecFlat: this.totalStats.elecFlat + (Number(today.useElecFlat) || 0),
+        elecValley: this.totalStats.elecValley + (Number(today.useElecValley) || 0)
+      }
     },
     displayChartData () {
       if (!this.todayVirtualRow) return this.chartData
@@ -1037,9 +1103,17 @@ export default {
     '$route' (to) {
       if (!to.path.includes('electricity-report')) return
       if (!this.currentManagerId) return
-      if (this.applyDateRangeFromRoute(to)) {
-        this.handleSearch()
+      const routeManagerId = to.query ? to.query.managerId : null
+      const managerChanged = routeManagerId != null &&
+        routeManagerId !== '' &&
+        String(routeManagerId) !== String(this.currentManagerId)
+      if (managerChanged) {
+        // 固定名称的新窗口会复用同一个报表实例；先切管理方，
+        // 后续由 currentManagerId watcher 按新路由完整初始化。
+        this.applyManagerFromRoute(to)
+        return
       }
+      this.initializeData()
     }
   },
   mounted () {
@@ -1085,17 +1159,41 @@ export default {
     },
 
     async initializeData () {
+      this.applyManagerFromRoute(this.$route)
       const applied = this.applyDateRangeFromRoute(this.$route)
       if (!applied) {
         this.setDefaultDateRange()
       }
+      this.queryParams.tenantType = this.getTenantTypeFromRoute(this.$route)
       await this.getTenantList()
-      this.queryParams.tenantType = 0
       this.queryParams.tenantId = ''
       this.clearDetailTenants()
       if (this.reportType === 'statistics') {
         this.handleSearch()
       }
+    },
+
+    /**
+     * 大屏下钻时按 managerId 恢复管理方；普通菜单进入没有该参数，行为不变。
+     */
+    applyManagerFromRoute (route) {
+      const managerId = route && route.query ? route.query.managerId : null
+      if (managerId == null || managerId === '') return false
+      const list = this.$store.state.manager.managerList || []
+      const manager = list.find(item => String(item.managerId) === String(managerId))
+      if (!manager) return false
+      this.$store.commit('manager/SET_CURRENT_MANAGER_ID', manager.managerId)
+      this.$store.commit('manager/SET_CURRENT_MANAGER', manager)
+      return true
+    },
+
+    getTenantTypeFromRoute (route) {
+      const value = route && route.query ? route.query.tenantType : null
+      if (value === 0 || value === '0') return 0
+      if (value === 1 || value === '1') return 1
+      if (value === 2 || value === '2') return 2
+      if (value === 3 || value === '3') return 3
+      return 0
     },
 
     /**
@@ -1122,7 +1220,7 @@ export default {
         this.queryParams.dateRange[0] === next[0] &&
         this.queryParams.dateRange[1] === next[1]
       ) {
-        return false
+        return true
       }
       this.queryParams.dateRange = next
       return true
@@ -1292,8 +1390,11 @@ export default {
       this.loading = true
       try {
         if (this.reportType === 'statistics') {
-          await this.fetchTodayVirtualData()
-          await this.getStatisticsData()
+          const [todayVirtualRow, statisticsData] = await Promise.all([
+            this.fetchTodayVirtualData(),
+            this.getStatisticsData()
+          ])
+          this.applyStatisticsSnapshot(statisticsData, todayVirtualRow)
           if (this.switchDeviceDetail) {
             await this.getDeviceDetailData()
           }
@@ -1326,9 +1427,16 @@ export default {
       }
       this.appendStatisticsTenantParams(params)
       const { data } = await useReportQueryTenantUseStatis(params)
+      return data || []
+    },
 
-      // 原始数据(API返回的顺序)
-      const originalData = data || []
+    /**
+     * 历史统计和今日实时数据都返回后，再一次性更新视图。
+     * 避免统计区间总电量先显示半套数据、随后再跳变。
+     */
+    applyStatisticsSnapshot (statisticsData, todayVirtualRow) {
+      const originalData = statisticsData || []
+      this.todayVirtualRow = todayVirtualRow
 
       // 图表数据: 保持正序(时间从早到晚,用于图表展示)
       this.chartData = [...originalData].sort((a, b) => {
@@ -1348,16 +1456,15 @@ export default {
     },
 
     async fetchTodayVirtualData () {
-      this.todayVirtualRow = null
-      if (!this.currentManagerId) return
-      if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) return
+      if (!this.currentManagerId) return null
+      if (!this.queryParams.dateRange || this.queryParams.dateRange.length !== 2) return null
       const today = moment().format('YYYY-MM-DD')
       const start = moment(this.queryParams.dateRange[0], 'YYYY-MM-DD')
       const end = moment(this.queryParams.dateRange[1], 'YYYY-MM-DD')
       const todayMoment = moment(today, 'YYYY-MM-DD')
       // 统计区间不包含今天时，不展示“今日”数据
       if (!start.isValid() || !end.isValid() || todayMoment.isBefore(start, 'day') || todayMoment.isAfter(end, 'day')) {
-        return
+        return null
       }
       try {
         const params = { managerId: this.currentManagerId }
@@ -1368,10 +1475,10 @@ export default {
         }
         const res = await queryCwTenantTodayUse(params)
         const dto = res && res.code === 200 ? (res.data || null) : null
-        if (!dto) return
+        if (!dto) return null
         const useAmount = Number(dto.useAmount)
         const useElec = Number(dto.useElec)
-        this.todayVirtualRow = {
+        return {
           occurDate: today,
           useAmount: Number.isFinite(useAmount) ? Number(useAmount.toFixed(2)) : 0,
           meterBalance: 0,
@@ -1381,14 +1488,14 @@ export default {
           airUseElec: 0,
           sysElec: dto.sysElec != null && dto.sysElec !== '' ? Number(Number(dto.sysElec).toFixed(2)) : 0,
           airSysElec: dto.airSysElec != null && dto.airSysElec !== '' ? Number(Number(dto.airSysElec).toFixed(2)) : 0,
-          useElecPeak: 0,
-          useElecTop: 0,
-          useElecFlat: 0,
-          useElecValley: 0,
+          useElecPeak: Number(dto.useElecPeak) || 0,
+          useElecTop: Number(dto.useElecTop) || 0,
+          useElecFlat: Number(dto.useElecFlat) || 0,
+          useElecValley: Number(dto.useElecValley) || 0,
           isVirtualToday: true
         }
       } catch (error) {
-        this.todayVirtualRow = null
+        return null
       }
     },
 
@@ -1528,7 +1635,7 @@ export default {
     /** 租户类型、租户选择二选一：有 tenantType 时不传 tenantIdList，选了租户时不传 tenantType */
     hasTenantTypeFilter () {
       const t = this.queryParams.tenantType
-      return t === 0 || t === 1 || t === 2
+      return t === 0 || t === 1 || t === 2 || t === 3
     },
 
     getTenantListTenantType () {
@@ -1629,7 +1736,7 @@ export default {
     },
 
     async handleReset () {
-      if (this.$route.query && (this.$route.query.startDate || this.$route.query.endDate)) {
+      if (this.$route.query && Object.keys(this.$route.query).length) {
         this.$router.replace({ path: this.$route.path, query: {} })
       }
       this.setDefaultDateRange()
@@ -2186,7 +2293,6 @@ export default {
       // 生成数据行
       Object.keys(tenantGroups).sort((a, b) => a - b).forEach(tenantId => {
         const group = tenantGroups[tenantId]
-        const meterCount = group.meters.length
 
         group.meters.forEach((meter, idx) => {
           if (idx === 0) {
@@ -3142,87 +3248,259 @@ export default {
   }
 }
 
-// ==================== 统计卡片 - 公式样式（重构部分）====================
+// ==================== 统计卡片 - 双闭环展示 ====================
 .stats-formula-cards {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: minmax(0, 1.28fr) minmax(0, 1fr);
   gap: 20px;
   margin-bottom: 24px;
 }
 
-.card-top-badge {
-  margin: 12px 12px 0;
-  padding: 9px 14px;
-  font-size: 15px;
-  line-height: 1.45;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  border-radius: 8px;
-  color: #c2410c;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
+.formula-card {
+  min-width: 0;
+  min-height: 286px;
+  background: #ffffff;
+  border: 1px solid #edf1f6;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
 }
 
-.formula-card {
-  background: white;
+.stats-formula-cards.is-history-only {
+  .formula-card {
+    min-height: 238px;
+  }
+
+  .card-content {
+    min-height: 238px;
+  }
+}
+
+.electricity-usage {
+  padding: 18px 20px;
+}
+
+.usage-realtime-row,
+.usage-period-row,
+.usage-tou-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.usage-realtime-row {
+  min-height: 66px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8edf3;
+  gap: 18px;
+}
+
+.usage-heading {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 16px;
+}
+
+.usage-heading-label {
+  color: #172033;
+  font-size: 16px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.usage-heading-value {
+  color: #ea580c;
+  font-size: 23px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  small {
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.usage-period-row {
+  min-height: 116px;
+  padding: 16px 0;
+  gap: 18px;
+}
+
+.period-total {
+  flex: 0 1 31%;
+  min-width: 220px;
+}
+
+.period-total-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.period-total-value {
+  margin-top: 10px;
+  color: #16b96f;
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+
+  small {
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.period-equation {
+  display: grid;
+  grid-template-columns: 28px minmax(142px, 1fr) 28px minmax(142px, 1fr);
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 10px;
+}
+
+.formula-operator {
+  padding: 0;
+  color: #687386;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+}
+
+.formula-operator--plus {
+  font-size: 24px;
+}
+
+.period-breakdown-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 82px;
+  padding: 10px 12px;
+  border: 1px solid #e1e7ef;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: all 0.3s;
-  overflow: hidden;
+  background: #ffffff;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  span {
+    color: #526074;
+    font-size: 13px;
+    white-space: nowrap;
   }
 
-  &.electricity-cost {
-    .main-indicator {
-      background: linear-gradient(135deg, #5B8FF9 0%, #4A7FD9 100%);
-      box-shadow: 0 4px 12px rgba(91, 143, 249, 0.2);
-    }
-
-    .formula-cost-side-hint {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-      align-self: center;
-      margin-left: auto;
-      padding: 8px 14px;
-      font-size: 13px;
-      font-weight: 600;
-      line-height: 1.35;
-      color: #1e4db8;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-      background: linear-gradient(180deg, #f4f8ff 0%, #e8f0ff 100%);
-      border: 1px solid #8eb4f5;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(74, 127, 217, 0.18);
-      cursor: default;
-
-      .el-icon-info {
-        flex-shrink: 0;
-        font-size: 16px;
-        color: #3a7def;
-      }
-    }
+  strong {
+    margin-top: 10px;
+    color: #172033;
+    font-size: 18px;
+    font-weight: 650;
+    white-space: nowrap;
   }
 
-  &.electricity-usage {
-    .main-indicator {
-      background: linear-gradient(135deg, #72e79f 0%, #4fbb7c 100%);
-      box-shadow: 0 4px 12px rgba(54, 207, 201, 0.15);
-    }
+  small {
+    font-size: 12px;
+    font-weight: 500;
   }
+
+  &--realtime strong {
+    color: #ea580c;
+  }
+}
+
+.usage-tou-row {
+  min-height: 68px;
+  padding-top: 16px;
+  border-top: 1px solid #e8edf3;
+  gap: 16px;
+}
+
+.usage-tou-title {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.period-tou-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(104px, 1fr));
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+}
+
+.period-tou-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 9px 10px;
+  color: #344054;
+  font-size: 13px;
+  white-space: nowrap;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  strong {
+    margin-left: 5px;
+    color: #172033;
+    font-weight: 600;
+  }
+}
+
+.tou-dot {
+  flex: 0 0 11px;
+  width: 11px;
+  height: 11px;
+  margin-right: 7px;
+  border-radius: 50%;
+
+  &--peak {
+    background: #f04438;
+  }
+
+  &--top {
+    background: #f5a700;
+  }
+
+  &--flat {
+    background: #2f80ed;
+  }
+
+  &--valley {
+    background: #20b26b;
+  }
+}
+
+.card-top-badge {
+  margin: 18px 18px 0;
+  padding: 11px 14px;
+  color: #d94b12;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff8ef;
 }
 
 .card-content {
-  padding: 24px 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-wrap: nowrap;
+  min-height: 206px;
+  padding: 24px 18px;
+  gap: 14px;
   overflow: hidden;
 }
 
@@ -3235,103 +3513,106 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-width: 142px;
+  min-height: 92px;
+  padding: 16px 18px;
   gap: 8px;
-  padding: 16px 20px;
-  border-radius: 10px;
-  min-width: 120px;
+  border-radius: 12px;
+}
+
+.electricity-cost {
+  .main-indicator {
+    background: linear-gradient(135deg, #4389f8 0%, #1f6eea 100%);
+    box-shadow: 0 8px 18px rgba(47, 128, 237, 0.2);
+  }
+
+  .formula-cost-side-hint {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 8px 10px;
+    gap: 5px;
+    color: #2f6edb;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid #a9c7ff;
+    border-radius: 8px;
+    background: #f2f7ff;
+
+    .el-icon-info {
+      color: #2f80ed;
+      font-size: 14px;
+    }
+  }
 }
 
 .main-value {
+  color: #ffffff;
   font-size: 24px;
   font-weight: 700;
-  color: #ffffff;
   line-height: 1.2;
-  white-space: nowrap;
   text-align: center;
+  white-space: nowrap;
 }
 
 .main-label {
-  font-size: 13px;
   color: rgba(255, 255, 255, 0.95);
+  font-size: 13px;
   font-weight: 500;
-  white-space: nowrap;
   text-align: center;
-}
-
-.formula-operator {
-  flex-shrink: 0;
-  font-size: 28px;
-  font-weight: 300;
-  color: rgba(0, 0, 0, 0.25);
-  padding: 0 6px;
+  white-space: nowrap;
 }
 
 .formula-sub-group {
-  flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-  overflow: hidden;
+  flex: 1;
   min-width: 0;
-
-  &.two-items {
-    justify-content: flex-start;
-  }
-
-  &.four-items {
-    justify-content: space-between;
-  }
+  gap: 9px;
 }
 
 .sub-indicator {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 6px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  transition: all 0.2s;
-  min-width: 65px;
-  max-width: 100px;
-
-  &:hover {
-    background: rgba(255, 255, 255, 1);
-    border-color: rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-  }
+  flex: 1 1 112px;
+  min-width: 105px;
+  min-height: 72px;
+  padding: 10px 8px;
+  gap: 7px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
 }
 
 .sub-value {
+  max-width: 100%;
+  color: #172033;
   font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: 650;
   line-height: 1.2;
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
-  text-align: center;
 }
 
 .sub-label {
+  color: #667085;
   font-size: 12px;
-  color: #6b7280;
   font-weight: 500;
-  white-space: nowrap;
   text-align: center;
+  white-space: nowrap;
 }
 
 .operator-plus {
   flex-shrink: 0;
-  font-size: 16px;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.35);
-  padding: 0 2px;
+  padding: 0 1px;
+  color: #687386;
+  font-size: 20px;
 }
 
 // 主内容区
@@ -3733,8 +4014,7 @@ export default {
 // 大屏优化（1920px+）
 @media (min-width: 1920px) {
   .sub-indicator {
-    min-width: 75px;
-    max-width: 110px;
+    min-width: 112px;
     padding: 12px 8px;
   }
 
@@ -3747,7 +4027,11 @@ export default {
   }
 
   .main-indicator {
-    min-width: 140px;
+    min-width: 152px;
+  }
+
+  .period-total-value {
+    font-size: 29px;
   }
 }
 
@@ -3763,8 +4047,7 @@ export default {
   }
 
   .sub-indicator {
-    min-width: 60px;
-    max-width: 90px;
+    min-width: 92px;
     padding: 10px 5px;
   }
 
@@ -3779,6 +4062,33 @@ export default {
   .operator-plus {
     font-size: 14px;
   }
+
+  .usage-heading-value {
+    font-size: 20px;
+  }
+
+  .period-tou-item {
+    padding-right: 6px;
+    padding-left: 6px;
+    font-size: 12px;
+  }
+
+  .period-total {
+    min-width: 200px;
+  }
+
+  .period-total-value {
+    font-size: 24px;
+  }
+
+  .period-equation {
+    grid-template-columns: 26px minmax(120px, 1fr) 26px minmax(120px, 1fr);
+    gap: 7px;
+  }
+
+  .period-tou-list {
+    grid-template-columns: repeat(4, minmax(92px, 1fr));
+  }
 }
 
 // 较小屏幕（1400px）
@@ -3792,15 +4102,8 @@ export default {
     justify-content: space-between;
   }
 
-  .formula-sub-group {
-    &.four-items {
-      gap: 5px;
-    }
-  }
-
   .sub-indicator {
-    min-width: 58px;
-    max-width: 85px;
+    min-width: 110px;
   }
 
   .chart-section {
@@ -3815,9 +4118,26 @@ export default {
 
 // 平板（1024px）
 @media (max-width: 1024px) {
+  .usage-period-row {
+    flex-wrap: wrap;
+  }
+
+  .period-total {
+    flex-basis: 100%;
+  }
+
+  .period-equation {
+    grid-template-columns: 28px minmax(142px, 1fr) 28px minmax(142px, 1fr);
+    width: 100%;
+  }
+
+  .usage-tou-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .sub-indicator {
-    min-width: 55px;
-    max-width: 80px;
+    min-width: 92px;
     padding: 8px 4px;
   }
 
@@ -3867,32 +4187,64 @@ export default {
     flex-wrap: wrap;
   }
 
-  .card-content {
+  .electricity-usage {
+    padding: 16px;
+  }
+
+  .period-tou-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .usage-period-row {
+    justify-content: center;
+  }
+
+  .period-total {
+    min-width: 100%;
+  }
+
+  .period-total-title {
+    justify-content: center;
+  }
+
+  .period-total-value {
+    margin-left: 0;
+    text-align: center;
+  }
+
+  .period-breakdown-card {
+    min-width: 120px;
+  }
+
+  .electricity-cost .card-content {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
     padding: 20px 16px;
   }
 
-  .formula-operator {
+  .electricity-cost .formula-operator {
     align-self: center;
     transform: rotate(90deg);
     padding: 8px 0;
   }
 
-  .formula-sub-group {
+  .electricity-cost .formula-sub-group {
     justify-content: center !important;
     flex-wrap: wrap;
     gap: 8px;
   }
 
   .sub-indicator {
-    min-width: 70px;
-    max-width: 90px;
+    min-width: 120px;
   }
 
   .main-indicator {
     align-self: center;
+  }
+
+  .electricity-cost .formula-cost-side-hint {
+    margin-left: 0;
   }
 
   .chart-info {
@@ -3910,6 +4262,32 @@ export default {
 
 // 超小屏幕（480px）
 @media (max-width: 480px) {
+  .usage-heading {
+    flex-wrap: wrap;
+  }
+
+  .usage-heading-value {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .usage-period-row {
+    gap: 9px;
+  }
+
+  .period-breakdown-card {
+    min-width: 112px;
+  }
+
+  .period-equation {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .period-equation .formula-operator {
+    font-size: 20px;
+  }
+
   .main-indicator {
     padding: 12px 16px;
     min-width: 110px;
@@ -3925,8 +4303,7 @@ export default {
 
   .sub-indicator {
     padding: 8px 6px;
-    min-width: 65px;
-    max-width: 80px;
+    min-width: 110px;
   }
 
   .sub-value {

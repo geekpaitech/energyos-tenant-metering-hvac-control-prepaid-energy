@@ -6,17 +6,26 @@
         <section class="energy-zone energy-zone--bars">
           <header class="energy-zone__hd">
             <h4 class="energy-zone__title">分项能耗监测</h4>
+            <button type="button" class="energy-zone__drill" @click="openEnergyDrilldown('electricity')">
+              查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+            </button>
           </header>
           <div class="energy-zone__bd">
-            <div class="energy-hero">
+            <button type="button" class="energy-hero" @click="openEnergyDrilldown('electricity')">
               <span class="energy-hero__lbl">总用电量</span>
               <span class="energy-hero__val">{{ electricitySummary.value }}<i>{{ electricitySummary.unit }}</i></span>
-            </div>
+            </button>
             <ul class="energy-bars">
               <li
                 v-for="(item, i) in energyBreakdown"
                 :key="item.name"
                 class="energy-bar-row"
+                role="button"
+                tabindex="0"
+                :aria-label="`查看${item.name === '水' ? '用水' : '用电'}明细`"
+                @click="openEnergyDrilldown(item.name === '水' ? 'water' : 'electricity')"
+                @keydown.enter="openEnergyDrilldown(item.name === '水' ? 'water' : 'electricity')"
+                @keydown.space.prevent="openEnergyDrilldown(item.name === '水' ? 'water' : 'electricity')"
               >
                 <div class="energy-bar-row__hd">
                   <span class="energy-bar-row__name">
@@ -42,6 +51,9 @@
         <section class="energy-zone energy-zone--split">
           <header class="energy-zone__hd">
             <h4 class="energy-zone__title">租户/公区能耗拆分</h4>
+            <button type="button" class="energy-zone__drill" @click="openEnergyDrilldown('electricity')">
+              查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+            </button>
           </header>
           <div class="energy-zone__bd energy-zone__bd--split">
             <div class="split-stack">
@@ -49,7 +61,7 @@
                 <div ref="tenantPie" class="chart-box" />
               </div>
               <div class="split-stack__legend">
-                <div class="split-leg split-leg--tenant">
+                <button type="button" class="split-leg split-leg--tenant" @click="openEnergyDrilldown('electricity', 0)">
                   <div class="split-leg__row">
                     <span class="split-leg__name">
                       <i class="split-leg__dot" :style="{ background: tenantColors[0] }" />
@@ -58,8 +70,8 @@
                     <b class="split-leg__pct">{{ formatPctDisplay(tenantPublicRatio.tenant) }}<i v-if="formatPctDisplay(tenantPublicRatio.tenant) !== '--'">%</i></b>
                   </div>
                   <em class="split-leg__val">{{ tenantPublicRatio.tenantKwh }}<small>kWh</small></em>
-                </div>
-                <div class="split-leg split-leg--public">
+                </button>
+                <button type="button" class="split-leg split-leg--public" @click="openEnergyDrilldown('electricity', 1)">
                   <div class="split-leg__row">
                     <span class="split-leg__name">
                       <i class="split-leg__dot" :style="{ background: tenantColors[1] }" />
@@ -68,7 +80,7 @@
                     <b class="split-leg__pct">{{ formatPctDisplay(tenantPublicRatio.public) }}<i v-if="formatPctDisplay(tenantPublicRatio.public) !== '--'">%</i></b>
                   </div>
                   <em class="split-leg__val">{{ tenantPublicRatio.publicKwh }}<small>kWh</small></em>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -77,6 +89,9 @@
         <section class="energy-zone energy-zone--collect">
           <header class="energy-zone__hd">
             <h4 class="energy-zone__title">租户水电收缴</h4>
+            <button type="button" class="energy-zone__drill" @click="openCollectionDrilldown">
+              查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+            </button>
           </header>
           <div class="energy-zone__bd energy-zone__bd--collect">
             <div class="collect-panel">
@@ -128,18 +143,24 @@
         </div>
         <div class="park-revenue">
           <div class="park-revenue__head">
-            <span class="park-revenue__icon" aria-hidden="true">$</span>
-            <span class="park-revenue__title">停车收入统计</span>
+            <div class="park-revenue__heading">
+              <span class="park-revenue__icon" aria-hidden="true">$</span>
+              <span class="park-revenue__title">停车收入统计</span>
+            </div>
+            <button type="button" class="park-revenue__drill" @click="openParkingOrderDetail">
+              查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+            </button>
           </div>
           <div class="park-revenue__table">
             <div class="park-table-head">
               <span class="col-lot">停车场</span>
               <span class="col-money col-money--total">总收入</span>
+              <span class="col-count">总车位</span>
               <span class="col-money">临停收入</span>
-              <span class="col-money">内部续费</span>
+              <span class="col-count">月租车位</span>
               <span class="col-money">月租车续费</span>
-              <span class="col-money">储值车充值</span>
             </div>
+            <div class="park-table-body">
             <div
               v-for="(row, idx) in parkRevenueRows"
               :key="idx"
@@ -148,10 +169,11 @@
             >
               <div class="col-lot">{{ row.name }}</div>
               <div class="col-money col-money--total">{{ row.total }}</div>
+              <div class="col-count">{{ row.totalSpaces }}</div>
               <div class="col-money">{{ row.temp }}</div>
-              <div class="col-money">{{ row.inner }}</div>
+              <div class="col-count">{{ row.monthSpaces }}</div>
               <div class="col-money">{{ row.month }}</div>
-              <div class="col-money">{{ row.store }}</div>
+            </div>
             </div>
           </div>
         </div>
@@ -164,7 +186,12 @@
         <div class="eng-board__left">
           <section class="eng-pane eng-pane--order">
             <header class="eng-pane__hd">
-              <h4 class="eng-pane__title">全品类工单</h4>
+              <h4 class="eng-pane__title">服务工单</h4>
+              <div class="eng-pane__actions">
+                <button type="button" class="eng-detail-link" @click="$emit('open-property-detail', 'serviceOrder')">
+                  查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+                </button>
+              </div>
             </header>
             <div class="eng-pane__bd">
               <div class="eng-order">
@@ -179,7 +206,7 @@
                     :class="{ 'eng-order__item--alt': i % 2 === 1, 'eng-order__item--empty': t.empty }"
                   >
                     <i class="eng-order__dot" :style="{ background: chartColors[i] }" />
-                    <span class="eng-order__name">{{ t.name }}</span>
+                    <span class="eng-order__name" :title="t.name">{{ t.name }}</span>
                     <span class="eng-order__cnt">{{ formatWorkOrderCount(t.count) }}</span>
                     <span class="eng-order__pct">{{ formatWorkOrderPct(t.value) }}</span>
                   </li>
@@ -192,6 +219,9 @@
             <section class="eng-mini eng-mini--maint">
               <header class="eng-mini__hd">
                 <h4 class="eng-mini__title">维保计划</h4>
+                <button type="button" class="eng-detail-link" @click="$emit('open-property-detail', 'maintenance')">
+                  查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+                </button>
               </header>
               <div class="eng-mini__bd">
                 <div class="eng-mini-kpis">
@@ -217,11 +247,14 @@
             <section class="eng-mini eng-mini--tenant">
               <header class="eng-mini__hd">
                 <h4 class="eng-mini__title">租户服务</h4>
+                <button type="button" class="eng-detail-link" @click="$emit('open-property-detail', 'satisfaction')">
+                  查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+                </button>
               </header>
               <div class="eng-mini__bd">
                 <div class="eng-mini-kpis">
                   <div class="eng-mini-kpis__cell">
-                    <span>咨询</span>
+                    <span>维修</span>
                     <b>{{ formatMetricCount(tenantService.inquiry) }}</b>
                   </div>
                   <div class="eng-mini-kpis__cell">
@@ -241,9 +274,17 @@
         <section class="eng-pane eng-pane--supplier">
           <header class="eng-pane__hd">
             <h4 class="eng-pane__title">供应商考核</h4>
+            <button type="button" class="eng-detail-link" @click="$emit('open-property-detail', 'provider')">
+              查看明细 <i class="el-icon-arrow-right" aria-hidden="true" />
+            </button>
           </header>
           <div class="eng-pane__bd">
+            <div v-if="!suppliers.length" class="eng-supplier-empty">
+              <i class="el-icon-document" aria-hidden="true" />
+              <span>暂无供应商考核数据</span>
+            </div>
             <div
+              v-else
               class="eng-supplier-scroll"
               @mouseenter="supplierScrollPaused = true"
               @mouseleave="supplierScrollPaused = false"
@@ -262,10 +303,7 @@
                     v-for="(s, idx) in supplierRows"
                     :key="s.id"
                     class="eng-supplier__row"
-                    :class="{
-                      'eng-supplier__row--top': idx === 0 && !s.placeholder,
-                      'eng-supplier__row--placeholder': s.placeholder
-                    }"
+                    :class="{ 'eng-supplier__row--top': idx === 0 }"
                   >
                     <span class="eng-supplier__name">{{ s.name }}</span>
                     <div class="eng-supplier__score">
@@ -294,16 +332,15 @@ import {
   darkTooltip, donutWithTotal, buildTenantSplitOption
 } from '../../utils/chartTheme'
 import { EMPTY_TENANT_SERVICE, mapTenantService } from '../../utils/workOrderManagement'
-import { EMPTY_SUPPLIERS, SUPPLIER_PAGE_SIZE, createPlaceholderSuppliers, mapProviderEvaluationItems } from '../../utils/providerEvaluation'
+import { EMPTY_SUPPLIERS, SUPPLIER_PAGE_SIZE } from '../../utils/providerEvaluation'
 import {
-  getMaintenanceManagement,
-  getProviderEvaluation
-} from '@/api/groupScreen'
-import { buildPropertyScreenDto, buildProviderEvaluationDto } from '../../utils/screenQuery'
+  queryMaintenanceSummary,
+  queryProviderEvaluationDetails
+} from '@/api/groupPropertyMingYuan'
+import { buildMingYuanQuery } from '../../utils/mingYuanQuery'
 import { calcSubItemTce } from '../../utils/energyTce'
 
 const CHART_CENTER = ['50%', '50%']
-const PARK_REVENUE_ROW_COUNT = 3
 const WORK_ORDER_ROW_COUNT = 4
 const SUPPLIER_VISIBLE = 4
 const SUPPLIER_ROW_H = 40
@@ -325,16 +362,18 @@ const EMPTY_ENERGY_BREAKDOWN = [
 const EMPTY_ENERGY = {
   energyBreakdown: EMPTY_ENERGY_BREAKDOWN.map(i => ({ ...i })),
   electricitySummary: { value: '--', unit: 'kWh' },
-  tenantPublicRatio: { tenant: null, public: null, tenantKwh: '--', publicKwh: '--' },
-  collectionProgress: { rate: null, receivable: '--', collected: '--', uncollected: '--' }
+  tenantPublicRatio: { tenant: null, public: null, tenantKwh: '--', publicKwh: '--' }
 }
+
+const EMPTY_COLLECTION = { rate: null, receivable: '--', collected: '--', uncollected: '--' }
 
 const EMPTY_PARKING = {
   totalEnterCount: null,
   totalExitCount: null,
   totalVehicleFlow: null,
   totalRevenue: null,
-  parkingLotRevenueList: []
+  parkingLotRevenueList: [],
+  parkingLotCarTypeList: []
 }
 
 export default {
@@ -345,9 +384,11 @@ export default {
     activeTime: { type: String, default: '本月' },
     /** 父级统一拉取 getEnergyManagement，避免重复请求 */
     energyManagement: { type: Object, default: null },
+    /** 驾驶舱专用四管理方租户水电收缴汇总 */
+    collectionManagement: { type: Object, default: null },
     /** 父级统一拉取 getParkingManagement */
     parkingManagement: { type: Object, default: null },
-    /** 父级统一拉取 getWorkOrderManagement（随时间筛选） */
+    /** 父级统一组合明源工单统计接口（随业态与时间筛选） */
     workOrderManagement: { type: Object, default: null }
   },
   data () {
@@ -355,12 +396,13 @@ export default {
       energyBreakdown: EMPTY_ENERGY.energyBreakdown.map(i => ({ ...i })),
       electricitySummary: { ...EMPTY_ENERGY.electricitySummary },
       tenantPublicRatio: { ...EMPTY_ENERGY.tenantPublicRatio },
-      collectionProgress: { ...EMPTY_ENERGY.collectionProgress },
+      collectionProgress: { ...EMPTY_COLLECTION },
       chartColors: CHART_COLORS,
       energyColors: ENERGY_COLORS,
       tenantColors: TENANT_COLORS,
       workOrderTypes: Array.from({ length: WORK_ORDER_ROW_COUNT }, () => ({ ...EMPTY_WORK_ORDER_ROW })),
       workOrderTotal: null,
+      workOrderCompletionRate: null,
       maintenancePlan: { ...EMPTY_MAINTENANCE },
       tenantService: { ...EMPTY_TENANT_SERVICE },
       suppliers: [...EMPTY_SUPPLIERS],
@@ -389,31 +431,36 @@ export default {
       const list = (this.parkingData.parkingLotRevenueList || [])
         .slice()
         .sort((a, b) => (this.calcLotTotal(b) || 0) - (this.calcLotTotal(a) || 0))
-      const rows = []
-      for (let i = 0; i < PARK_REVENUE_ROW_COUNT; i++) {
-        const item = list[i]
-        if (item) {
-          rows.push({
-            name: item.parkingLotName || '--',
-            total: this.formatTableMoney(this.calcLotTotal(item)),
-            temp: this.formatTableMoney(item.tempMoney),
-            inner: this.formatTableMoney(item.innerRenewMoney),
-            month: this.formatTableMoney(item.monthRenewMoney),
-            store: this.formatTableMoney(item.storeChargeMoney)
-          })
-        } else {
-          rows.push({
-            name: '--',
-            total: '--',
-            temp: '--',
-            inner: '--',
-            month: '--',
-            store: '--',
-            empty: true
-          })
-        }
+      const carTypeMap = new Map(
+        (this.parkingData.parkingLotCarTypeList || []).map(item => [
+          this.normalizeParkingLotName(item.parkingLotName),
+          item
+        ])
+      )
+      if (!list.length) {
+        return Array.from({ length: 3 }, () => ({
+          parkingLotId: '',
+          name: '--',
+          total: '--',
+          totalSpaces: '--',
+          temp: '--',
+          monthSpaces: '--',
+          month: '--',
+          empty: true
+        }))
       }
-      return rows
+      return list.map(item => {
+        const carType = carTypeMap.get(this.normalizeParkingLotName(item.parkingLotName))
+        return {
+          parkingLotId: item.parkingLotId || '',
+          name: item.parkingLotName || '--',
+          total: this.formatTableMoney(this.calcLotTotal(item)),
+          totalSpaces: this.formatCount(this.calcTotalSpaces(carType)),
+          temp: this.formatTableMoney(item.tempMoney),
+          monthSpaces: this.formatCount(carType ? carType.monthCount : null),
+          month: this.formatTableMoney(item.monthRenewMoney)
+        }
+      })
     },
     maintenanceProgressWidth () {
       const rate = this.maintenancePlan.rate
@@ -427,18 +474,10 @@ export default {
       if (rate != null && rate !== '' && !Number.isNaN(Number(rate))) {
         return this.formatRateTrim(Number(rate))
       }
-      const { inquiry, complaint } = this.tenantService
-      if (inquiry === '--' || complaint === '--') return '--'
-      const total = Number(inquiry)
-      const bad = Number(complaint)
-      if (!Number.isFinite(total) || total <= 0) return '--'
-      if (!Number.isFinite(bad) || bad < 0) return '--'
-      const fallback = ((total - bad) / total) * 100
-      return this.formatRateTrim(fallback)
+      return '--'
     },
     supplierRows () {
-      if (this.suppliers.length) return this.suppliers
-      return createPlaceholderSuppliers(SUPPLIER_VISIBLE)
+      return this.suppliers
     },
     supplierNeedScroll () {
       return this.suppliers.length > SUPPLIER_VISIBLE
@@ -496,6 +535,13 @@ export default {
       },
       immediate: true
     },
+    collectionManagement: {
+      handler (val) {
+        if (val) this.applyCollectionData(val)
+        else this.collectionProgress = { ...EMPTY_COLLECTION }
+      },
+      immediate: true
+    },
     parkingManagement: {
       handler (val) {
         if (val) {
@@ -506,6 +552,9 @@ export default {
             totalRevenue: val.totalRevenue,
             parkingLotRevenueList: Array.isArray(val.parkingLotRevenueList)
               ? val.parkingLotRevenueList
+              : [],
+            parkingLotCarTypeList: Array.isArray(val.parkingLotCarTypeList)
+              ? val.parkingLotCarTypeList
               : []
           }
         } else {
@@ -538,6 +587,15 @@ export default {
     this.charts.forEach(c => c.dispose())
   },
   methods: {
+    openEnergyDrilldown (resource = 'electricity', tenantType = null) {
+      this.$emit('open-energy-detail', { resource, tenantType })
+    },
+    openCollectionDrilldown () {
+      this.$emit('open-collection-detail')
+    },
+    openParkingOrderDetail () {
+      this.$emit('open-parking-order', this.parkRevenueRows)
+    },
     formatPctDisplay (val) {
       if (val == null || val === '' || val === '--') return '--'
       const num = Number(val)
@@ -597,8 +655,11 @@ export default {
     },
     /** 分项能耗：仅电、水两项，占比按电+水折标煤归一 */
     buildEnergyBreakdownEleWater (sub, tceParts) {
+      const hasElectricity = sub.electricityValue != null && sub.electricityValue !== '' && Number.isFinite(Number(sub.electricityValue))
+      const hasWater = sub.waterValue != null && sub.waterValue !== '' && Number.isFinite(Number(sub.waterValue))
+      const hasCompleteSource = hasElectricity && hasWater
       const totalTce = tceParts.electricity + tceParts.water
-      const pct = v => (totalTce ? +((v / totalTce) * 100).toFixed(1) : 0)
+      const pct = v => (hasCompleteSource && totalTce ? +((v / totalTce) * 100).toFixed(1) : null)
       return [
         {
           name: '电',
@@ -624,29 +685,31 @@ export default {
       this.energyBreakdown = this.buildEnergyBreakdownEleWater(sub, tceParts)
 
       const share = data.shareEnergy || {}
-      const tenantVal = Number(share.tenantValue) || 0
-      const publicVal = Number(share.publicValue) || 0
+      const hasTenant = share.tenantValue != null && share.tenantValue !== '' && Number.isFinite(Number(share.tenantValue))
+      const hasPublic = share.publicValue != null && share.publicValue !== '' && Number.isFinite(Number(share.publicValue))
+      const tenantVal = hasTenant ? Number(share.tenantValue) : null
+      const publicVal = hasPublic ? Number(share.publicValue) : null
+      const hasCompleteShare = hasTenant && hasPublic
       const shareTotal = tenantVal + publicVal
       this.tenantPublicRatio = {
-        tenant: this.calcPct(tenantVal, shareTotal),
-        public: this.calcPct(publicVal, shareTotal),
+        tenant: hasCompleteShare ? this.calcPct(tenantVal, shareTotal) : null,
+        public: hasCompleteShare ? this.calcPct(publicVal, shareTotal) : null,
         tenantKwh: this.formatEnergyNum(share.tenantValue),
         publicKwh: this.formatEnergyNum(share.publicValue)
       }
-
-      const fee = data.feeCollection || {}
+    },
+    applyCollectionData (data) {
       this.collectionProgress = {
-        rate: Number(fee.collectRate) || 0,
-        receivable: this.formatMoneyPlain(fee.receivableAmount),
-        collected: this.formatMoneyPlain(fee.receivedAmount),
-        uncollected: this.formatMoneyPlain(fee.outstandingAmount)
+        rate: data.rate,
+        receivable: this.formatMoneyPlain(data.receivable),
+        collected: this.formatMoneyPlain(data.collected),
+        uncollected: this.formatMoneyPlain(data.uncollected)
       }
     },
     resetEnergyData () {
       this.energyBreakdown = EMPTY_ENERGY.energyBreakdown.map(i => ({ ...i }))
       this.electricitySummary = { ...EMPTY_ENERGY.electricitySummary }
       this.tenantPublicRatio = { ...EMPTY_ENERGY.tenantPublicRatio }
-      this.collectionProgress = { ...EMPTY_ENERGY.collectionProgress }
     },
     calcLotTotal (item) {
       if (item == null) return null
@@ -655,6 +718,19 @@ export default {
       const sum = ['tempMoney', 'monthRenewMoney', 'innerRenewMoney', 'storeChargeMoney']
         .reduce((acc, key) => acc + (Number(item[key]) || 0), 0)
       return sum || null
+    },
+    normalizeParkingLotName (value) {
+      return String(value || '').replace(/\s+/g, '')
+    },
+    calcTotalSpaces (item) {
+      if (!item) return null
+      const keys = ['groupCount', 'innerCount', 'monthCount', 'storeCount', 'visitCount']
+      const hasCount = keys.some(key => item[key] != null && item[key] !== '')
+      if (!hasCount) return null
+      return keys.reduce((sum, key) => {
+        const value = Number(item[key])
+        return sum + (Number.isFinite(value) ? value : 0)
+      }, 0)
     },
     formatCount (val) {
       if (val == null || val === '') return '--'
@@ -670,13 +746,18 @@ export default {
       if (val == null || val === '') return '--'
       const num = Number(val)
       if (Number.isNaN(num)) return '--'
-      return '¥' + num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+      return '¥' + num.toLocaleString(undefined, { maximumFractionDigits: 2 })
     },
     applyWorkOrderData (data) {
       const details = Array.isArray(data?.details) ? data.details.slice(0, WORK_ORDER_ROW_COUNT) : []
       const total = data?.totalCount
       const totalNum = total != null && total !== '' ? Number(total) : null
       this.workOrderTotal = totalNum != null && !Number.isNaN(totalNum) ? totalNum : null
+      const completionRate = data?.completionRate
+      const completionRateNum = completionRate != null && completionRate !== '' ? Number(completionRate) : null
+      this.workOrderCompletionRate = completionRateNum != null && !Number.isNaN(completionRateNum)
+        ? completionRateNum
+        : null
 
       const rows = []
       for (let i = 0; i < WORK_ORDER_ROW_COUNT; i++) {
@@ -694,7 +775,7 @@ export default {
           count: hasCount ? countNum : '--',
           value: hasCount && this.workOrderTotal
             ? +((countNum / this.workOrderTotal) * 100).toFixed(1)
-            : (hasCount ? 0 : '--'),
+            : '--',
           pieValue: hasCount ? countNum : 0
         })
       }
@@ -702,6 +783,7 @@ export default {
     },
     resetWorkOrderData () {
       this.workOrderTotal = null
+      this.workOrderCompletionRate = null
       this.workOrderTypes = Array.from({ length: WORK_ORDER_ROW_COUNT }, () => ({ ...EMPTY_WORK_ORDER_ROW }))
     },
     applyMaintenanceData (data) {
@@ -718,15 +800,21 @@ export default {
     },
     async fetchProviderEvaluation () {
       try {
-        const dto = buildProviderEvaluationDto({ period: this.activeTime, pageIndex: 0, pageSize: SUPPLIER_PAGE_SIZE })
-        const res = await getProviderEvaluation(dto)
-        if (res && res.code === 200 && res.data) {
-          this.suppliers = mapProviderEvaluationItems(res.data)
-        } else {
-          this.suppliers = [...EMPTY_SUPPLIERS]
-        }
+        const dto = buildMingYuanQuery({
+          scope: this.activeScope,
+          period: this.activeTime,
+          pageIndex: 0,
+          pageSize: SUPPLIER_PAGE_SIZE
+        })
+        const page = await queryProviderEvaluationDetails(dto)
+        this.suppliers = page.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          score: item.score == null ? '--' : Math.round(item.score),
+          grade: item.level ? String(item.level).trim().toUpperCase() : '--'
+        }))
       } catch (e) {
-        console.error('[group-screen] getProviderEvaluation failed', e)
+        console.error('[group-screen] queryProviderEvaluationDetails failed', e)
         this.suppliers = [...EMPTY_SUPPLIERS]
       }
       this.$nextTick(() => this.startSupplierScroll())
@@ -734,17 +822,17 @@ export default {
     async fetchMaintenanceManagement () {
       const requestId = ++this.maintenanceRequestId
       try {
-        const dto = buildPropertyScreenDto({ scope: this.activeScope, period: this.activeTime })
-        const res = await getMaintenanceManagement(dto)
+        const dto = buildMingYuanQuery({ scope: this.activeScope, period: this.activeTime })
+        const data = await queryMaintenanceSummary(dto)
         if (requestId !== this.maintenanceRequestId) return
-        if (res && res.code === 200 && res.data) {
-          this.applyMaintenanceData(res.data)
-        } else {
-          this.resetMaintenanceData()
-        }
+        this.applyMaintenanceData({
+          plannedTasks: data.total,
+          completedTasks: data.completed,
+          completionRate: data.rate
+        })
       } catch (e) {
         if (requestId !== this.maintenanceRequestId) return
-        console.error('[group-screen] getMaintenanceManagement failed', e)
+        console.error('[group-screen] queryMaintenanceSummary failed', e)
         this.resetMaintenanceData()
       }
     },
@@ -776,8 +864,8 @@ export default {
           value: item.pieValue,
           itemStyle: { color: CHART_COLORS[colorIndex % CHART_COLORS.length] }
         }))
-      const centerText = this.workOrderTotal != null
-        ? `${this.workOrderTotal.toLocaleString()}单`
+      const centerText = this.workOrderCompletionRate != null
+        ? `${this.formatRateTrim(this.workOrderCompletionRate)}%`
         : '--'
       const option = {
         color: CHART_COLORS,
@@ -785,8 +873,18 @@ export default {
         series: donutWithTotal(
           pieSlices,
           centerText,
-          '总工单',
-          { center: ['50%', '50%'], totalSize: 14, subSize: 11 }
+          '整体完成率',
+          {
+            center: ['50%', '50%'],
+            radius: ['57%', '72%'],
+            totalSize: 14,
+            subSize: 11,
+            subWeight: 600,
+            subColor: '#e8f7ff',
+            subLineHeight: 14,
+            subTextShadowColor: 'rgba(116, 177, 215, 0.72)',
+            subTextShadowBlur: 3
+          }
         )
       }
       if (this.orderPieChart) {
@@ -913,6 +1011,10 @@ export default {
 
   &__hd {
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     margin: 0 0 8px;
     padding: 0 0 6px;
     border-bottom: 1px solid rgba(109, 193, 192, 0.14);
@@ -924,6 +1026,24 @@ export default {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  &__drill {
+    flex-shrink: 0;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: rgba(145, 207, 242, 0.9);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: #e8f7ff;
+      outline: none;
+    }
   }
 
   &__bd {
@@ -971,6 +1091,32 @@ export default {
   }
 }
 
+.eng-detail-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: rgba(145, 207, 242, 0.9);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: #e8f7ff;
+    outline: none;
+  }
+}
+
+.eng-pane__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .energy-hero {
   flex-shrink: 0;
   display: flex;
@@ -982,6 +1128,18 @@ export default {
   box-shadow:
     $ds-card-shadow,
     inset 0 0 14px rgba(109, 193, 192, 0.05);
+  border-style: solid;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(109, 193, 192, 0.48);
+    background-color: rgba(20, 54, 86, 0.56);
+    outline: none;
+  }
 
   &__lbl {
     @include ds-data-label(12px, rgba(219, 226, 236, 0.86));
@@ -1075,6 +1233,18 @@ export default {
   box-sizing: border-box;
   box-shadow: inset -1px -1px 0 rgba(255, 255, 255, 0.05);
   overflow: hidden;
+  width: 100%;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(109, 193, 192, 0.46);
+    background: rgba(24, 64, 101, 0.48);
+    outline: none;
+  }
 
   &__row {
     display: flex;
@@ -1190,6 +1360,14 @@ export default {
   background: rgba(12, 34, 62, 0.34);
   border: 1px solid rgba(109, 193, 192, 0.09);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(109, 193, 192, 0.4);
+    background: rgba(20, 54, 86, 0.48);
+    outline: none;
+  }
 
   &__hd {
     display: flex;
@@ -1653,11 +1831,37 @@ export default {
   &__head {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 8px;
     padding-bottom: 6px;
     border-bottom: 1px solid rgba(109, 193, 192, 0.08);
     flex-shrink: 0;
+  }
+
+  &__heading {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  &__drill {
+    flex-shrink: 0;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: rgba(145, 207, 242, 0.9);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: #e8f7ff;
+      outline: none;
+    }
   }
 
   &__icon {
@@ -1687,8 +1891,8 @@ export default {
   &__table {
     height: 100%;
     min-height: 0;
-    display: grid;
-    grid-template-rows: 24px repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 6px;
   }
 }
@@ -1708,7 +1912,8 @@ export default {
     text-overflow: ellipsis;
   }
 
-  .col-money {
+  .col-money,
+  .col-count {
     min-width: 0;
     font-family: $ds-font-num;
     font-variant-numeric: tabular-nums;
@@ -1754,6 +1959,13 @@ export default {
     text-align: center;
   }
 
+  .col-count {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(224, 237, 248, 0.94);
+    text-align: center;
+  }
+
   .col-money--total {
     color: $ds-cyan-bright;
   }
@@ -1761,6 +1973,15 @@ export default {
   &--empty {
     opacity: 0.22;
   }
+}
+
+.park-table-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-auto-rows: auto;
+  gap: 6px;
 }
 
 /* 工程服务：左（工单主区 + 底部小模块）| 右（供应商主区） */
@@ -1805,6 +2026,9 @@ export default {
   }
 
   &__hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     flex: 0 0 auto;
     min-height: 22px;
     padding-bottom: 6px;
@@ -1852,6 +2076,9 @@ export default {
   background: rgba(12, 34, 62, 0.3);
 
   &__hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     flex-shrink: 0;
     margin-bottom: 3px;
   }
@@ -1942,16 +2169,16 @@ export default {
 
 .eng-order {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 3px;
   align-items: center;
   flex: 1;
   min-height: 0;
   height: 100%;
 
   &__chart {
-    width: 84px;
-    height: 84px;
+    width: 76px;
+    height: 76px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1959,10 +2186,10 @@ export default {
   }
 
   .chart-box--order {
-    width: 84px;
-    height: 84px;
-    min-width: 84px;
-    min-height: 84px;
+    width: 76px;
+    height: 76px;
+    min-width: 76px;
+    min-height: 76px;
   }
 
   &__list {
@@ -1980,9 +2207,9 @@ export default {
 
   &__item {
     display: grid;
-    grid-template-columns: 7px minmax(0, 1fr) auto auto;
+    grid-template-columns: 7px minmax(42px, 1fr) auto auto;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     padding: 3px 0;
     border-radius: 0;
     font-size: 13px;
@@ -2049,6 +2276,23 @@ export default {
   }
 }
 
+.eng-supplier-empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: rgba(168, 192, 220, 0.48);
+  font-size: 12px;
+
+  i {
+    font-size: 22px;
+    color: rgba(122, 184, 214, 0.42);
+  }
+}
+
 .eng-supplier {
   list-style: none;
   margin: 0;
@@ -2098,9 +2342,6 @@ export default {
       }
     }
 
-    &--placeholder {
-      opacity: 0.22;
-    }
   }
 
   &__name {

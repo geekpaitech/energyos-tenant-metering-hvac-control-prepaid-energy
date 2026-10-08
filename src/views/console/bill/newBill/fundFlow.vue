@@ -59,15 +59,20 @@
           <div class="search-actions">
             <el-button type="primary" size="small" icon="el-icon-search" @click="handleToolbarSearch">{{ $t('fundFlowPage.btnSearch') }}</el-button>
             <el-button size="small" icon="el-icon-refresh" @click="handleToolbarReset">{{ $t('fundFlowPage.btnReset') }}</el-button>
-            <el-button
-              type="success"
-              size="small"
-              icon="el-icon-download"
-              :loading="exportLoading"
-              @click="handleExport"
-            >
-              {{ exportLoading ? $t('fundFlowPage.btnExporting') : $t('fundFlowPage.btnExport') }}
-            </el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button
+                type="success"
+                size="small"
+                icon="el-icon-download"
+              >
+                {{ $t('fundFlowPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('fundFlowPage.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('fundFlowPage.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('fundFlowPage.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </div>
         </div>
       </el-form>
@@ -143,6 +148,8 @@
         <el-table
           :key="'fund-flow-' + localeKey"
           :data="turnoverList"
+          row-key="id"
+          @selection-change="handleSelectionChange"
           v-loading="turnoverLoading"
           border
           stripe
@@ -155,6 +162,7 @@
             fontWeight: '600',
           }"
         >
+          <el-table-column type="selection" width="55" align="center" reserve-selection />
           <el-table-column prop="id" :label="$t('fundFlowPage.colId')" align="center" width="180" />
           <el-table-column prop="createTime" :label="$t('fundFlowPage.colCreateTime')" align="center" width="200" />
 
@@ -304,6 +312,8 @@ import { getSimpleTenantList } from '@/api/useReport'
 import { tenantRetainStatis } from '@/api/newDashboard'
 import * as XLSX from 'xlsx'
 
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'FundFlow',
   data () {
@@ -335,6 +345,7 @@ export default {
       turnoverTotal: 0,
       turnoverLoading: false,
       exportLoading: false,
+      selectedData: [],
       summaryValues: {
         cash: null,
         elec: null,
@@ -541,27 +552,82 @@ export default {
       this.turnoverForm.channelList = value === '' || value === null || value === undefined ? [] : [value]
       this.handleFilterChange()
     },
-    async handleExport () {
+    exportCurrentPage () {
+      if (!this.turnoverForm.managerId) {
+        this.$message.warning(this.$t('fundFlowPage.msgNoManagerExport'))
+        return
+      }
+      if (!this.turnoverList.length) {
+        this.$message.warning(this.$t('fundFlowPage.msgNoDataExport'))
+        return
+      }
+      this.exportToExcel(this.turnoverList)
+      this.notifyExportResult(this.turnoverList.length, null, false)
+    },
+    exportSelected () {
+      if (!this.turnoverForm.managerId) {
+        this.$message.warning(this.$t('fundFlowPage.msgNoManagerExport'))
+        return
+      }
+      if (!this.selectedData.length) {
+        this.$message.warning(this.$t('fundFlowPage.warnNoSelectedExport'))
+        return
+      }
+      this.exportToExcel(this.selectedData)
+      this.notifyExportResult(this.selectedData.length, null, true)
+    },
+    async exportAll () {
       if (this.exportLoading) return
       if (!this.turnoverForm.managerId) {
         this.$message.warning(this.$t('fundFlowPage.msgNoManagerExport'))
         return
       }
       this.exportLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('fundFlowPage.exporting') })
       try {
-        const exportRows = await this.fetchExportRows()
-        if (!exportRows.length) {
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
           this.$message.warning(this.$t('fundFlowPage.msgNoDataExport'))
           return
         }
-        this.exportToExcel(exportRows)
-        this.$message.success(this.$t('fundFlowPage.msgExportOk'))
-      } catch (error) {
-        console.error('导出流水失败:', error)
-        this.$apiError.notify(error, this.$t('fundFlowPage.msgExportFail'))
+        this.exportToExcel(rows)
+        this.notifyExportResult(rows.length, total, false)
+      } catch (e) {
+        console.error('导出流水失败:', e)
+        this.$apiError.notify(e, this.$t('fundFlowPage.msgExportFail'))
       } finally {
+        loading.close()
         this.exportLoading = false
       }
+    },
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+    handleSelectionChange (selection) {
+      this.selectedData = selection
+    },
+    async fetchAllForExport () {
+      const payload = {
+        ...this.turnoverForm,
+        page: {
+          current: 1,
+          size: EXPORT_ALL_LIMIT,
+          orders: Array.isArray(this.turnoverForm.page.orders) ? this.turnoverForm.page.orders : [{ asc: false, column: 'createTime' }]
+        }
+      }
+      const response = await getTurnoverList(payload)
+      if (response.code !== 200 || !response.data) {
+        throw new Error(response.msg || this.$t('fundFlowPage.msgFetchFail'))
+      }
+      return { rows: response.data.dataList || [], total: response.data.total || 0 }
+    },
+    notifyExportResult (count, total, isSelected) {
+      if (isSelected) this.$message.success(this.$t('fundFlowPage.msgExportOkSelected', { count }))
+      else if (total != null && total > count) this.$message.success(this.$t('fundFlowPage.successExportedLimit', { count, total }))
+      else if (total != null) this.$message.success(this.$t('fundFlowPage.successExported', { count }))
+      else this.$message.success(this.$t('fundFlowPage.msgExportOk'))
     },
     async fetchExportRows () {
       const exportPayload = {

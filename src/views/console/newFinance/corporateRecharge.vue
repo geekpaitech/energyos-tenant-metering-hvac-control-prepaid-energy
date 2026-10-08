@@ -71,9 +71,16 @@
                   {{ $t('corporateRechargePage.btnSearch') }}
                 </el-button>
                 <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('corporateRechargePage.btnReset') }}</el-button>
-                <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">
-                  {{ $t('corporateRechargePage.btnExport') }}
+              <el-dropdown trigger="hover" @command="handleExportCommand">
+                <el-button type="success" size="small" icon="el-icon-download">
+                  {{ $t('corporateRechargePage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
                 </el-button>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="currentPage">{{ $t('corporateRechargePage.exportCurrentPage') }}</el-dropdown-item>
+                  <el-dropdown-item command="selected">{{ $t('corporateRechargePage.exportSelected') }}</el-dropdown-item>
+                  <el-dropdown-item command="all">{{ $t('corporateRechargePage.exportAll') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
               </div>
             </div>
           </el-form>
@@ -109,6 +116,8 @@
               v-loading="loading"
               border
               :data="tableData"
+              @selection-change="handleSelectionChange"
+              row-key="seqNo"
               stripe
               style="width: 100%"
               class="custom-table light-border-table"
@@ -118,20 +127,23 @@
                 fontWeight: '600',
               }"
             >
+              <el-table-column type="selection" width="55" align="center" reserve-selection fixed="left" />
               <el-table-column
                 prop="seqNo"
                 :label="$t('corporateRechargePage.colSeqNo')"
                 width="180"
                 align="center"
                 show-overflow-tooltip
+                fixed="left"
               />
               <el-table-column
                 prop="occurTime"
                 :label="$t('corporateRechargePage.colOccurTime')"
                 width="168"
                 align="center"
+                fixed="left"
               />
-              <el-table-column :label="$t('corporateRechargePage.colTenant')" min-width="200" show-overflow-tooltip>
+              <el-table-column :label="$t('corporateRechargePage.colTenant')" width="200" show-overflow-tooltip fixed="left">
                 <template slot-scope="scope">
                   <el-link
                     v-if="scope.row.tenantId"
@@ -144,7 +156,7 @@
                   <span v-else class="text-muted">{{ $displayBizHybrid(scope.row.tenantName || '') || '-' }}</span>
                 </template>
               </el-table-column>
-              <el-table-column :label="$t('corporateRechargePage.colRechargeAccount')" width="120" align="center">
+              <el-table-column :label="$t('corporateRechargePage.colRechargeAccount')" width="120" align="center" fixed="left">
                 <template slot-scope="scope">
                   {{ formatRechargeAccount(scope.row) }}
                 </template>
@@ -362,8 +374,11 @@ import {
   getSimpleTenantList
 } from '@/api/publicRecharge'
 import { mapGetters } from 'vuex'
+import { API_BASE_URL } from '@/config/services'
 import BankJournalHub from './components/bankJournal/BankJournalHub.vue'
 import * as XLSX from 'xlsx'
+
+const EXPORT_ALL_LIMIT = 2000
 
 export default {
   name: 'PublicRecharge',
@@ -381,6 +396,8 @@ export default {
       tenantList: [],
       tableData: [],
       loading: false,
+      selectedData: [],
+      exportAllLoading: false,
       pageData: {
         current: 1,
         size: 15,
@@ -402,7 +419,7 @@ export default {
       },
       managerList: [],
       rechargeTenantList: [],
-      uploadUrl: process.env.VUE_APP_BASE_API + '/api/ebc-content/file/upload',
+      uploadUrl: API_BASE_URL + '/api/ebc-content/file/upload',
       uploadHeaders: { userDeviceType: 'PC' },
       fileList: [],
       hasRechargePermission: false,
@@ -704,48 +721,107 @@ export default {
       this.handleSearch()
     },
 
-    handleExport () {
+    buildXlsx (exportData, isSelected, total) {
+      const headers = [
+        this.$t('corporateRechargePage.colSeqNo'),
+        this.$t('corporateRechargePage.colOccurTime'),
+        this.$t('corporateRechargePage.colTenant'),
+        this.$t('corporateRechargePage.colRechargeAccount'),
+        this.$t('corporateRechargePage.colAmount'),
+        this.$t('corporateRechargePage.colPayeeName'),
+        this.$t('corporateRechargePage.colBankNumber'),
+        this.$t('corporateRechargePage.colTransferRemark'),
+        this.$t('corporateRechargePage.colStatus')
+      ]
+      const data = exportData.map((row) => [
+        row.seqNo || '',
+        row.occurTime || '',
+        this.$displayBizHybrid(row.tenantName || '') || '',
+        this.formatRechargeAccount(row),
+        row.amount != null ? Number(row.amount).toFixed(2) : '',
+        row.payeeName || '',
+        row.bankNumber || '',
+        this.transferRemark(row),
+        this.getStatusLabel(row.status)
+      ])
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...data])
+      const headerRange = XLSX.utils.decode_range(ws['!ref'])
+      for (let c = headerRange.s.c; c <= headerRange.e.c; c++) {
+        const cell = XLSX.utils.encode_cell({ r: 0, c })
+        if (ws[cell]) {
+          ws[cell].s = { font: { bold: true, color: { rgb: '303133' } }, fill: { fgColor: { rgb: 'F5F7FA' } }, alignment: { horizontal: 'center', vertical: 'center' } }
+        }
+      }
+      const wb = XLSX.utils.book_new()
+      const sheetName = this.$t('corporateRechargePage.exportSheetName')
+      XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31))
+      const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
+      const filePrefix = this.$t('corporateRechargePage.filePrefix')
+      XLSX.writeFile(wb, `${filePrefix}_${timeStr}.xlsx`)
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) successMsg = this.$t('corporateRechargePage.msgExportOkSelected', { count: exportCount })
+      else if (total != null && total > exportCount) successMsg = this.$t('corporateRechargePage.successExportedLimit', { count: exportCount, total })
+      else if (total != null) successMsg = this.$t('corporateRechargePage.successExported', { count: exportCount })
+      else successMsg = this.$t('corporateRechargePage.msgExportOk', { count: exportCount })
+      this.$message.success(successMsg)
+    },
+    exportCurrentPage () {
       if (!this.tableData.length) {
         this.$message.warning(this.$t('corporateRechargePage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
+    exportSelected () {
+      if (!this.selectedData.length) {
+        this.$message.warning(this.$t('corporateRechargePage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+    async exportAll () {
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('corporateRechargePage.exporting') })
       try {
-        const headers = [
-          this.$t('corporateRechargePage.colSeqNo'),
-          this.$t('corporateRechargePage.colOccurTime'),
-          this.$t('corporateRechargePage.colTenant'),
-          this.$t('corporateRechargePage.colRechargeAccount'),
-          this.$t('corporateRechargePage.colAmount'),
-          this.$t('corporateRechargePage.colPayeeName'),
-          this.$t('corporateRechargePage.colBankNumber'),
-          this.$t('corporateRechargePage.colTransferRemark'),
-          this.$t('corporateRechargePage.colStatus')
-        ]
-        const data = this.tableData.map((row) => [
-          row.seqNo || '',
-          row.occurTime || '',
-          this.$displayBizHybrid(row.tenantName || '') || '',
-          this.formatRechargeAccount(row),
-          row.amount != null ? Number(row.amount).toFixed(2) : '',
-          row.payeeName || '',
-          row.bankNumber || '',
-          this.transferRemark(row),
-          this.getStatusLabel(row.status)
-        ])
-        const ws = XLSX.utils.aoa_to_sheet([headers, ...data])
-        const wb = XLSX.utils.book_new()
-        const sheetName = this.$t('corporateRechargePage.exportSheetName')
-        XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31))
-        const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
-        const filePrefix = this.$t('corporateRechargePage.filePrefix')
-        XLSX.writeFile(wb, `${filePrefix}_${timeStr}.xlsx`)
-        this.$message.success(
-          this.$t('corporateRechargePage.msgExportOk', { count: this.tableData.length })
-        )
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('corporateRechargePage.msgNoDataExport'))
+          return
+        }
+        this.buildXlsx(rows, false, total)
       } catch (e) {
         console.error(e)
         this.$apiError.notify(e, this.$t('corporateRechargePage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
       }
+    },
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+    handleSelectionChange (selection) {
+      this.selectedData = selection
+    },
+    async fetchAllForExport () {
+      const tenantId = this.normalizeSelect(this.queryData.tenantId)
+      const params = {
+        managerId: this.currentManagerId,
+        tenantId: tenantId === undefined ? null : tenantId,
+        startDate: this.queryData.timeRange && this.queryData.timeRange[0] ? `${this.queryData.timeRange[0]} 00:00:00` : '',
+        endDate: this.queryData.timeRange && this.queryData.timeRange[1] ? `${this.queryData.timeRange[1]} 23:59:59` : '',
+        channels: ['PUBLIC_TRANSFERS'],
+        page: { current: 1, size: EXPORT_ALL_LIMIT, orders: [{ asc: false, column: 'occurTime' }] }
+      }
+      const response = await capitalManagePageTenantRecord(params)
+      if (response.code !== 200 || !response.data) {
+        throw new Error(response.msg || this.$t('corporateRechargePage.msgFetchFail'))
+      }
+      return { rows: response.data.dataList || [], total: response.data.total || 0 }
     },
 
     handleViewImages (imageList) {

@@ -23,6 +23,8 @@ export default {
       tenantCount: '租户数（户）',
       monthNewTenants: '本月开户',
       offline: '离线',
+      abnormalOffline: '异常离线',
+      normalOffline: '正常离线',
       onlineRate: '在线率',
       meterElecCount: '电表台数（台）',
       waterMeterCount: '水表台数（台）',
@@ -30,14 +32,17 @@ export default {
       otherSmartDevices: '其他智能设备（台）'
     },
     trend: {
-      title: '用电用水统计',
-      subtitleDay: '用量与费用趋势',
-      subtitleMonth: '近半年用量与费用趋势',
+      title: '租户用电用水统计',
+      subtitleYesterday: '昨日用量与费用',
+      subtitleDay: '本月用量与费用趋势',
+      subtitleMonth: '本年用量与费用趋势',
       loading: '加载用电用水统计…',
-      last7d: '近七天',
-      lastHalfYear: '近半年',
-      last7dTab: '近七天',
-      lastHalfYearTab: '近半年',
+      yesterday: '昨日',
+      yesterdayTab: '昨日',
+      last7d: '本月',
+      lastHalfYear: '本年',
+      last7dTab: '本月',
+      lastHalfYearTab: '本年',
       elecKwh: '{period}用电(度)',
       waterTon: '{period}用水(吨)',
       chainRatio: '环比',
@@ -92,13 +97,15 @@ export default {
       parkTotal: '园区总用电',
       dedicated: '专用设备',
       shared: '公摊设备',
-      otherTenants: '其他租户'
+      otherTenants: '其他租户',
+      pv: '光伏',
+      grid: '市电'
     },
     subMetering: {
       title: '分项计量',
       demoTag: '示例',
       subtitle: '拓扑缩略预览',
-      goBuild: '去构建'
+      goBuild: '查看'
     },
     kpi: {
       yesterdayElec: '昨日用电',

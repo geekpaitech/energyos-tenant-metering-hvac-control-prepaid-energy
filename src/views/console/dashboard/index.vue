@@ -237,7 +237,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('manager', ['currentManagerId']),
+    ...mapGetters('manager', ['currentManagerId', 'managerList']),
     floatStyle () {
       if (this.floatPos.x == null || this.floatPos.y == null) return {}
       return {
@@ -292,6 +292,18 @@ export default {
     }
   },
   watch: {
+    $route: {
+      handler (route) {
+        this.applyGroupScreenManager(route)
+      },
+      immediate: true
+    },
+    managerList: {
+      handler () {
+        this.applyGroupScreenManager(this.$route)
+      },
+      immediate: true
+    },
     currentManagerId: {
       handler () {
         this.fetchTenantElecMonthFee()
@@ -325,6 +337,18 @@ export default {
     }
   },
   methods: {
+    applyGroupScreenManager (route) {
+      const query = route && route.query ? route.query : {}
+      if (query.source !== 'group-property-screen' || query.managerId == null) return
+      const targetId = String(query.managerId).trim()
+      if (!targetId) return
+      const targetManager = (Array.isArray(this.managerList) ? this.managerList : []).find(
+        manager => String(manager.managerId) === targetId
+      )
+      if (!targetManager || String(this.currentManagerId) === targetId) return
+      this.$store.commit('manager/SET_CURRENT_MANAGER_ID', targetManager.managerId)
+      this.$store.commit('manager/SET_CURRENT_MANAGER', targetManager)
+    },
     initDashboardResizeObserver () {
       if (this._dashboardRO || typeof ResizeObserver === 'undefined') return
       this._dashboardRO = new ResizeObserver(() => {
@@ -574,7 +598,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&display=swap');
+@import '~@/assets/fonts/oxanium/oxanium.css';
 
 .energy-dashboard {
   background: #F5F7FB;

@@ -299,7 +299,14 @@ export function donutWithTotal (data, centerText, centerSub, opts = {}) {
           : `{a|${centerText}}`,
         rich: {
           a: { fontSize: totalSize, fontWeight: 700, color: CHART_TEXT, fontFamily: CHART_NUM_FONT, lineHeight: 18, textShadowColor: '#7491BA', textShadowBlur: 2 },
-          b: { fontSize: subSize, color: CHART_SUB, padding: [2, 0, 0, 0] }
+          b: {
+            fontSize: subSize,
+            fontWeight: opts.subWeight || 400,
+            color: opts.subColor || CHART_SUB,
+            lineHeight: opts.subLineHeight || subSize + 2,
+            textShadowColor: opts.subTextShadowColor || 'transparent',
+            textShadowBlur: opts.subTextShadowBlur || 0
+          }
         }
       },
       data: [{ value: 1, itemStyle: { color: 'transparent' } }]

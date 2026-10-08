@@ -1,5 +1,5 @@
 <template>
-  <energy-panel title="用电趋势" period="近7日">
+  <energy-panel title="用电趋势" class="is-drillable" @click.native="handleDrilldown">
     <template #meta>
       <span class="panel-meta">总用电量：<b>{{ money(data.total) }}</b> 度</span>
     </template>
@@ -15,15 +15,20 @@ import { createTrendOption } from '../../utils/chartOptions'
 export default {
   name: 'EnergyTrendCard',
   components: { EnergyPanel, EChartHost },
-  props: { data: { type: Object, required: true } },
-  computed: { option () { return createTrendOption(this.data) } },
+  inject: ['energyScreenDrilldown'],
+  props: {
+    data: { type: Object, required: true },
+    period: { type: String, default: 'day' }
+  },
+  computed: { option () { return createTrendOption(this.data, this.period) } },
   methods: {
     resize () { if (this.$refs.chart) this.$refs.chart.resize() },
     money (value) {
       if (value === null || value === undefined || value === '') return '--'
       const number = Number(value)
       return Number.isFinite(number) ? number.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'
-    }
+    },
+    handleDrilldown () { this.energyScreenDrilldown('electricity-report') }
   }
 }
 </script>

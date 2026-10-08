@@ -22,11 +22,11 @@ export default {
 
     onMounted(async () => {
       // window.addEventListener('beforeunload', handleBeforeUnload);
-      // https://oss.example.com/doc/openApi.md
+      // https://ebc-cloud.oss-cn-shanghai.aliyuncs.com/ebc-img/openApi_202408071709.md
 
       try {
         const res = await fetch(
-          'https://oss.example.com/doc/api_iot_console.html'
+          'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/doc/api_iot_console.html'
         )
 
         htmlContent.value = await res.text()

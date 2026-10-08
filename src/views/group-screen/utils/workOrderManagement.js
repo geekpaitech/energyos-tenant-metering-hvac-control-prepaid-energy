@@ -7,10 +7,9 @@ export const EMPTY_TENANT_SERVICE = {
 }
 
 export const EMPTY_RECTIFICATION_TRACKING = [
-  { label: '待整改', count: '--', type: 'pending' },
-  { label: '整改中', count: '--', type: 'progress' },
+  { label: '整改总数', count: '--', type: 'total' },
   { label: '已整改', count: '--', type: 'done' },
-  { label: '未整改', count: '--', type: 'overdue' }
+  { label: '待整改', count: '--', type: 'pending' }
 ]
 
 function formatCount (val) {
@@ -20,7 +19,7 @@ function formatCount (val) {
   return num.toLocaleString()
 }
 
-/** 租户服务（咨询 / 投诉 / 满意度） */
+/** 租户服务（维修 / 投诉 / 满意度） */
 export function mapTenantService (data) {
   if (!data) return { ...EMPTY_TENANT_SERVICE }
   return {
@@ -36,18 +35,17 @@ export function mapTenantService (data) {
   }
 }
 
-/** 整改跟踪四格 */
+/** 安全/品质/专项整改跟踪三项 */
 export function mapRectificationTracking (data) {
   if (!data) return EMPTY_RECTIFICATION_TRACKING.map(i => ({ ...i }))
   return [
-    { label: '待整改', count: formatCount(data.pendingRectificationCount), type: 'pending' },
-    { label: '整改中', count: formatCount(data.inProgressRectificationCount), type: 'progress' },
+    { label: '整改总数', count: formatCount(data.rectificationTotalCount), type: 'total' },
     { label: '已整改', count: formatCount(data.rectifiedCount), type: 'done' },
-    { label: '未整改', count: formatCount(data.overdueRectificationCount), type: 'overdue' }
+    { label: '待整改', count: formatCount(data.pendingRectificationCount), type: 'pending' }
   ]
 }
 
-/** 顶部 KPI：工单闭环率 */
+/** 顶部 KPI：巡检工单闭环率 */
 export function formatWorkOrderCloseRate (val) {
   if (val == null || val === '') return '--'
   const num = Number(val)
@@ -55,7 +53,7 @@ export function formatWorkOrderCloseRate (val) {
   return num.toLocaleString(undefined, { maximumFractionDigits: 1 })
 }
 
-/** 顶部 KPI：重大隐患未整改 → 逾期未整改数 */
+/** 顶部 KPI：安全/品质未整改数 */
 export function formatHazardFixCount (val) {
   if (val == null || val === '') return '--'
   const num = Number(val)

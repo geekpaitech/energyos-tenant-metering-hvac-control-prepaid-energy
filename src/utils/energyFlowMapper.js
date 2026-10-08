@@ -509,6 +509,8 @@ function mapMonthRuntimeRecordItem (record) {
 
   return {
     label: dayLabel,
+    // 锦浪月接口返回的逐日天气编码（与和风天气图标编码一致）
+    weatherCode: record.condCodeD != null && record.condCodeD !== '' ? String(record.condCodeD) : '',
     generation: toRuntimeChartValue(generation),
     sell: toRuntimeChartValue(sell),
     buy: toRuntimeChartValue(buy),
@@ -532,6 +534,7 @@ export function mapMonthRuntimeRecords (records) {
 export function mapMonthRuntimeRecordsToFullMonth (records, { daysInMonth = 30 } = {}) {
   const slots = Array.from({ length: daysInMonth }, (_, index) => ({
     label: String(index + 1).padStart(2, '0'),
+    weatherCode: '',
     generation: null,
     sell: null,
     buy: null,

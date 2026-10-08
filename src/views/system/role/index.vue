@@ -262,8 +262,8 @@ export default {
             id: 1,
             username: 'admin',
             nickname: '超级管理员',
-            email: 'admin@example.com',
-            phone: '13800000000',
+            email: 'admin@yongzhen.com',
+            phone: '13800138000',
             status: 1,
             createTime: '2024-01-15 10:30'
           },
@@ -271,8 +271,8 @@ export default {
             id: 2,
             username: 'editor',
             nickname: '编辑员',
-            email: 'editor@example.com',
-            phone: '13800000001',
+            email: 'editor@yongzhen.com',
+            phone: '13800138001',
             status: 1,
             createTime: '2024-01-15 11:30'
           },
@@ -280,8 +280,8 @@ export default {
             id: 3,
             username: 'user001',
             nickname: '李小明',
-            email: 'user001@example.com',
-            phone: '13800000002',
+            email: 'lixiaoming@yongzhen.com',
+            phone: '13800138002',
             status: 0,
             createTime: '2024-01-15 12:30'
           },
@@ -289,8 +289,8 @@ export default {
             id: 4,
             username: 'user002',
             nickname: '张美丽',
-            email: 'user002@example.com',
-            phone: '13800000003',
+            email: 'zhangmeili@yongzhen.com',
+            phone: '13800138003',
             status: 1,
             createTime: '2024-01-16 09:15'
           },
@@ -298,8 +298,8 @@ export default {
             id: 5,
             username: 'manager',
             nickname: '部门经理',
-            email: 'manager@example.com',
-            phone: '13800000004',
+            email: 'manager@yongzhen.com',
+            phone: '13800138004',
             status: 1,
             createTime: '2024-01-16 14:20'
           }

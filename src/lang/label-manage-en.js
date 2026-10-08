@@ -25,6 +25,7 @@ export default {
     btnCancel: 'Cancel',
     btnConfirm: 'OK',
     dialogBindTitle: 'Batch assign tenants',
+    phTenantSearch: 'Tenant name / ID',
     bindCurrentLabel: 'Label:',
     btnSelectAll: 'Select all',
     btnClear: 'Clear',

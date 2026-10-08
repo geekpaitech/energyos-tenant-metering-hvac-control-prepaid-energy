@@ -214,7 +214,7 @@ import store from '@/store'
 import Cookies from 'js-cookie'
 import { getAiApiUrl } from '@/utils/aiServiceConfig'
 import { getSimpleTenantList } from '@/api/useReport'
-import { getElecStatistics, isDemoManager, queryTenantSankey } from '@/api/newDashboard'
+import { getElecStatisticsNew, isDemoManager, queryTenantSankey } from '@/api/newDashboard'
 
 const SANKEY_COLORS = [
   '#5B8FF9',
@@ -478,8 +478,8 @@ export default {
 
       const type = this.datePeriod === 'day' ? 2 : 3
       const [e, w] = await Promise.all([
-        getElecStatistics({ type, useType: 1, managerId }),
-        getElecStatistics({ type, useType: 2, managerId })
+        getElecStatisticsNew({ type, useType: 1, managerId }),
+        getElecStatisticsNew({ type, useType: 2, managerId })
       ]).catch(() => [{}, {}])
 
       const sort = (arr) => [...(arr || [])].sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -511,7 +511,7 @@ export default {
     async refreshMonthlyData () {
       const managerId = this.currentManagerId
       if (!managerId || isDemoManager(managerId)) return
-      const res = await getElecStatistics({ type: 3, useType: 1, managerId }).catch(() => ({}))
+      const res = await getElecStatisticsNew({ type: 3, useType: 1, managerId }).catch(() => ({}))
       const list = (res && res.code === 200 && Array.isArray(res.data)) ? res.data : []
       const sorted = [...list].sort((a, b) => new Date(a.date) - new Date(b.date))
       const last6 = sorted.slice(-6)

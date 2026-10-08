@@ -185,13 +185,6 @@ export function buildRankingRow (raw) {
   }
 }
 
-/** 按综合得分排序并写入排名 */
-export function buildMonthlyRanking (rawList) {
-  const rows = rawList.map(buildRankingRow)
-  rows.sort((a, b) => Number(b.score) - Number(a.score))
-  return rows.map((r, i) => ({ ...r, rank: i + 1 }))
-}
-
 function scoreTip (label, val) {
   if (val == null || val === '' || Number.isNaN(Number(val))) {
     return `${label}：--`
@@ -201,27 +194,32 @@ function scoreTip (label, val) {
 
 function mapScoreCell (val) {
   return {
-    score: formatScoreRank(val)
+    score: formatScoreCell(val)
   }
 }
 
 /** 接口 getProjectScoreRankings → 排名表展示行 */
 export function mapProjectScoreRankingItem (item) {
   if (!item) return null
-  const inspection = mapScoreCell(item.inspectionScore)
+  const inspectionScore = item.inspectionScore ?? item.patrolScore
+  const threeCloseScore = item.threeCloseOneShutScore ?? item.threeCloseScore
+  const totalScore = item.overallScore ?? item.totalScore
+  const inspection = mapScoreCell(inspectionScore)
   const maintenance = mapScoreCell(item.maintenanceScore)
-  const threeClose = mapScoreCell(item.threeCloseOneShutScore)
+  const threeClose = mapScoreCell(threeCloseScore)
   const safety = mapScoreCell(item.safetyScore)
   const quality = mapScoreCell(item.qualityScore)
 
   return {
     rank: item.rank != null ? Number(item.rank) : null,
+    businessUnitGuid: item.businessUnitGuid || item.buGuid || '',
+    projectGuid: item.projectGuid || '',
     name: item.projectName ? String(item.projectName).trim() : '--',
-    score: formatScoreRank(item.overallScore),
+    score: formatScoreCell(totalScore),
     workOrders: {
-      inspection: { ...inspection, tip: scoreTip('巡检', item.inspectionScore) },
+      inspection: { ...inspection, tip: scoreTip('巡检', inspectionScore) },
       maintenance: { ...maintenance, tip: scoreTip('维保', item.maintenanceScore) },
-      threeClose: { ...threeClose, tip: scoreTip('三关一闭', item.threeCloseOneShutScore) }
+      threeClose: { ...threeClose, tip: scoreTip('三关一闭', threeCloseScore) }
     },
     rectification: {
       safety: { ...safety, tip: scoreTip('安全', item.safetyScore) },
@@ -230,17 +228,9 @@ export function mapProjectScoreRankingItem (item) {
   }
 }
 
-/** 接口列表 → 按 rank 升序；无 rank 时按综合分降序补排名 */
+/** 接口列表 → 严格保持后端 items 原始顺序，仅补充展示序号。 */
 export function mapProjectScoreRankings (list) {
-  if (!Array.isArray(list)) return padMonthlyRankingList([])
+  if (!Array.isArray(list)) return []
   const rows = list.map(mapProjectScoreRankingItem).filter(Boolean)
-  const hasRank = rows.some(r => r.rank != null && !Number.isNaN(r.rank))
-
-  if (hasRank) {
-    rows.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999))
-    return padMonthlyRankingList(rows)
-  }
-
-  rows.sort((a, b) => Number(b.score) - Number(a.score))
-  return padMonthlyRankingList(rows.map((r, i) => ({ ...r, rank: i + 1 })))
+  return rows.map((row, index) => ({ ...row, rank: index + 1 }))
 }

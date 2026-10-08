@@ -26,7 +26,12 @@
                 :key="tenant.tenantId"
                 :label="formatTenantOptionLabel(tenant)"
                 :value="tenant.tenantId"
-              />
+              >
+                <span
+                  class="tenant-filter-option-label"
+                  :title="formatTenantOptionLabel(tenant)"
+                >{{ formatTenantOptionLabel(tenant) }}</span>
+              </el-option>
             </el-select>
           </div>
           <div class="field-item">
@@ -54,6 +59,7 @@
               <el-option :label="$t('tenantListPage.tenantType0')" :value="0" />
               <el-option :label="$t('tenantListPage.tenantType1')" :value="1" />
               <el-option :label="$t('tenantListPage.tenantType2')" :value="2" />
+              <el-option :label="$t('tenantListPage.tenantType3')" :value="3" />
             </el-select>
           </div>
           <div class="field-item">
@@ -77,9 +83,43 @@
             </el-select>
           </div>
           <div class="search-actions">
+            <span
+              v-if="hasAdvancedFields"
+              class="toggle-advanced"
+              @click="showAdvanced = !showAdvanced"
+            >
+              {{ showAdvanced ? $t('tenantListPage.btnCollapse') : $t('tenantListPage.btnExpand') }}
+              <i :class="showAdvanced ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" />
+            </span>
             <el-button type="primary" size="small" icon="el-icon-search" @click="handleSearch">{{ $t('tenantListPage.btnSearch') }}</el-button>
             <el-button size="small" icon="el-icon-refresh-left" @click="handleReset">{{ $t('tenantListPage.btnReset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">{{ $t('tenantListPage.btnExport') }}</el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button type="success" size="small" icon="el-icon-download" :loading="exportAllLoading">
+                {{ $t('tenantListPage.btnExport') }}<i class="el-icon-arrow-down el-icon--right"></i>
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('tenantListPage.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('tenantListPage.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('tenantListPage.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </div>
+        </div>
+
+        <!-- 高级筛选第二行 -->
+        <div v-if="showAdvanced && hasAdvancedFields" class="search-advanced-grid">
+          <div class="field-item">
+            <el-select
+              v-model="queryData.payType"
+              :placeholder="$t('tenantListPage.phPayType')"
+              clearable
+              size="small"
+              style="width: 100%"
+              @change="handleSearch"
+            >
+              <el-option :label="$t('tenantListPage.optPayPrepaid')" :value="0" />
+              <el-option :label="$t('tenantListPage.optPayPostpaid')" :value="1" />
+            </el-select>
           </div>
         </div>
       </el-form>
@@ -109,7 +149,7 @@
             </el-button>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item command="urge" disabled>{{ $t('tenantListPage.batchUrge') }}</el-dropdown-item>
-              <el-dropdown-item command="payMode" disabled>{{ $t('tenantListPage.batchPayMode') }}</el-dropdown-item>
+              <el-dropdown-item command="arrearsTrip">{{ $t('tenantListPage.batchArrearsTrip') }}</el-dropdown-item>
               <el-dropdown-item command="warnQuota" disabled>{{ $t('tenantListPage.batchWarnQuota') }}</el-dropdown-item>
               <el-dropdown-item command="billingPlan" disabled>{{ $t('tenantListPage.batchBillingPlan') }}</el-dropdown-item>
               <el-dropdown-item command="downloadAll">{{ $t('tenantListPage.batchDownloadCodes') }}</el-dropdown-item>
@@ -143,6 +183,7 @@
         <div v-show="viewType === 'table'" class="table-view-wrap">
           <el-table
             ref="multipleTable"
+            row-key="id"
             :data="tableData"
             v-loading="loading"
             border
@@ -159,7 +200,7 @@
             }"
           >
             <!-- 勾选列 -->
-            <el-table-column type="selection" align="center" />
+            <el-table-column type="selection" align="center" :reserve-selection="true" />
 
             <!-- 租户ID -->
             <el-table-column prop="id" :label="$t('tenantListPage.colTenantId')" width="80" align="left">
@@ -176,31 +217,82 @@
             <el-table-column
               prop="name"
               :label="$t('tenantListPage.colTenantName')"
-              min-width="150"
-              show-overflow-tooltip
+              min-width="320"
               sortable="custom"
               :sort-orders="['ascending', 'descending']"
             >
               <template slot-scope="scope">
-                <div class="tenant-name-cell">
-                  <img
-                    v-if="scope.row.logoUrl"
-                    :src="scope.row.logoUrl"
-                    class="tenant-logo-small"
-                    @error="handleImageError($event)"
-                  />
-                  <div v-else class="logo-placeholder-small">
-                    {{ tenantAvatarInitial(scope.row.name) }}
+                <el-popover
+                  v-if="shouldShowResourceTooltip(scope.row)"
+                  trigger="hover"
+                  placement="top-start"
+                  :width="360"
+                  :open-delay="150"
+                  popper-class="tenant-resource-popover"
+                >
+                  <div class="tenant-resource-tooltip-content">
+                    <div class="tenant-resource-tooltip-title">
+                      {{ $t('tenantListPage.resourceTooltipTitle', { n: tenantResources(scope.row).length }) }}
+                    </div>
+                    <div
+                      v-for="resource in tenantResources(scope.row)"
+                      :key="resource.id || resource.resourceGUID || resourceDisplayPath(resource)"
+                      class="tenant-resource-tooltip-item"
+                    >
+                      {{ resourceDisplayPath(resource) }}
+                    </div>
                   </div>
-                  <el-link
-                    v-if="canView"
-                    type="primary"
-                    @click="handleDetail(scope.row)"
-                  >
-                    {{ $displayBizHybrid(scope.row.name) }}
-                  </el-link>
-                  <span v-else>{{ $displayBizHybrid(scope.row.name) }}</span>
-                </div>
+                  <div slot="reference" class="tenant-name-cell">
+                    <img
+                      v-if="scope.row.logoUrl"
+                      :src="scope.row.logoUrl"
+                      class="tenant-logo-small"
+                      @error="handleImageError($event)"
+                    />
+                    <div v-else class="logo-placeholder-small">
+                      {{ tenantAvatarInitial(tenantDisplayName(scope.row)) }}
+                    </div>
+                    <span class="tenant-name-reference table-tenant-name-reference">
+                      <el-link
+                        v-if="canView"
+                        type="primary"
+                        @click="handleDetail(scope.row)"
+                      >
+                        {{ $displayBizHybrid(tenantDisplayName(scope.row)) }}
+                      </el-link>
+                      <span v-else>{{ $displayBizHybrid(tenantDisplayName(scope.row)) }}</span>
+                    </span>
+                  </div>
+                </el-popover>
+                <el-tooltip
+                  v-else
+                  effect="dark"
+                  placement="top-start"
+                  :open-delay="150"
+                  :content="$displayBizHybrid(tenantDisplayName(scope.row)) || '-'"
+                >
+                  <div class="tenant-name-cell">
+                    <img
+                      v-if="scope.row.logoUrl"
+                      :src="scope.row.logoUrl"
+                      class="tenant-logo-small"
+                      @error="handleImageError($event)"
+                    />
+                    <div v-else class="logo-placeholder-small">
+                      {{ tenantAvatarInitial(tenantDisplayName(scope.row)) }}
+                    </div>
+                    <span class="tenant-name-reference table-tenant-name-reference">
+                      <el-link
+                        v-if="canView"
+                        type="primary"
+                        @click="handleDetail(scope.row)"
+                      >
+                        {{ $displayBizHybrid(tenantDisplayName(scope.row)) }}
+                      </el-link>
+                      <span v-else>{{ $displayBizHybrid(tenantDisplayName(scope.row)) }}</span>
+                    </span>
+                  </div>
+                </el-tooltip>
               </template>
             </el-table-column>
 
@@ -237,10 +329,21 @@
               </template>
             </el-table-column>
 
-            <!-- 专用设备 -->
+            <!-- 总设备 -->
             <el-table-column prop="deviceCount" :label="$t('tenantListPage.colDedicatedMeters')" align="center">
               <template slot-scope="scope">
-                {{ scope.row.deviceCount || 0 }}
+                <el-tooltip
+                  effect="dark"
+                  placement="top"
+                  :open-delay="300"
+                >
+                  <div slot="content">
+                    <div>{{ $t('tenantListPage.colDeviceTipMeter') }}：{{ (scope.row.deviceDetail && scope.row.deviceDetail.meterCount) || 0 }}</div>
+                    <div>{{ $t('tenantListPage.colDeviceTipWater') }}：{{ (scope.row.deviceDetail && scope.row.deviceDetail.waterCount) || 0 }}</div>
+                    <div>{{ $t('tenantListPage.colDeviceTipAir') }}：{{ (scope.row.deviceDetail && scope.row.deviceDetail.airCount) || 0 }}</div>
+                  </div>
+                  <span>{{ scope.row.deviceCount || 0 }}</span>
+                </el-tooltip>
               </template>
             </el-table-column>
 
@@ -248,6 +351,7 @@
               prop="meterBalance"
               column-key="meterBalance"
               :label="$t('tenantListPage.colMeterBalanceYuan')"
+              min-width="140"
               align="right"
               sortable="custom"
               :sort-orders="['descending', 'ascending']"
@@ -263,6 +367,7 @@
               prop="waterBalance"
               column-key="waterBalance"
               :label="$t('tenantListPage.colWaterBalanceYuan')"
+              min-width="140"
               align="right"
               sortable="custom"
               :sort-orders="['descending', 'ascending']"
@@ -271,6 +376,24 @@
                 <span>{{
                   formatBalance(scope.row.waterAccountDto?.balance)
                 }}</span>
+              </template>
+            </el-table-column>
+
+            <!-- 付费模式 -->
+            <el-table-column :label="$t('tenantListPage.colPayType')" width="150" align="center">
+              <template slot-scope="scope">
+                <el-tooltip
+                  :disabled="!(scope.row.payType === 1 && scope.row.postPayComment)"
+                  :content="scope.row.postPayComment"
+                  placement="top"
+                >
+                  <el-tag
+                    :type="scope.row.payType === 0 ? 'success' : 'warning'"
+                    size="small"
+                  >
+                    {{ scope.row.payType === 0 ? $t('tenantListPage.optPayPrepaid') : $t('tenantListPage.optPayPostpaid') }}
+                  </el-tag>
+                </el-tooltip>
               </template>
             </el-table-column>
 
@@ -386,12 +509,46 @@
                   @error="handleImageError($event)"
                 />
                 <div v-else class="avatar-placeholder">
-                  {{ tenantAvatarInitial(item.name) }}
+                  {{ tenantAvatarInitial(tenantDisplayName(item)) }}
                 </div>
               </div>
               <div class="tenant-info">
-                <h3 class="tenant-name" :title="$displayBizHybrid(item.name)">
-                  <span class="tenant-name-text">{{ $displayBizHybrid(item.name) || "-" }}</span>
+                <h3 class="tenant-name">
+                  <el-popover
+                    v-if="shouldShowResourceTooltip(item)"
+                    trigger="hover"
+                    placement="top-start"
+                    :width="360"
+                    :open-delay="150"
+                    popper-class="tenant-resource-popover"
+                  >
+                    <div class="tenant-resource-tooltip-content">
+                      <div class="tenant-resource-tooltip-title">
+                        {{ $t('tenantListPage.resourceTooltipTitle', { n: tenantResources(item).length }) }}
+                      </div>
+                      <div
+                        v-for="resource in tenantResources(item)"
+                        :key="resource.id || resource.resourceGUID || resourceDisplayPath(resource)"
+                        class="tenant-resource-tooltip-item"
+                      >
+                        {{ resourceDisplayPath(resource) }}
+                      </div>
+                    </div>
+                    <span slot="reference" class="tenant-name-reference card-tenant-name-reference">
+                      <span class="tenant-name-text">{{ $displayBizHybrid(tenantDisplayName(item)) || "-" }}</span>
+                    </span>
+                  </el-popover>
+                  <el-tooltip
+                    v-else
+                    effect="dark"
+                    placement="top-start"
+                    :open-delay="150"
+                    :content="$displayBizHybrid(tenantDisplayName(item)) || '-'"
+                  >
+                    <span class="tenant-name-reference card-tenant-name-reference">
+                      <span class="tenant-name-text">{{ $displayBizHybrid(tenantDisplayName(item)) || "-" }}</span>
+                    </span>
+                  </el-tooltip>
                   <span
                     v-if="item.labelList && item.labelList.length"
                     class="tenant-label-inline"
@@ -424,7 +581,18 @@
               <div class="info-row">
                 <div class="info-item">
                   <span class="info-label">{{ $t('tenantListPage.cardDedicatedMeters') }}</span>
-                  <span class="info-value">{{ item.deviceCount || 0 }}{{ $t('tenantListPage.cardDeviceUnit') }}</span>
+                  <el-tooltip
+                    effect="dark"
+                    placement="top"
+                    :open-delay="300"
+                  >
+                    <div slot="content">
+                      <div>{{ $t('tenantListPage.cardDeviceTipMeter') }}：{{ (item.deviceDetail && item.deviceDetail.meterCount) || 0 }}</div>
+                      <div>{{ $t('tenantListPage.cardDeviceTipWater') }}：{{ (item.deviceDetail && item.deviceDetail.waterCount) || 0 }}</div>
+                      <div>{{ $t('tenantListPage.cardDeviceTipAir') }}：{{ (item.deviceDetail && item.deviceDetail.airCount) || 0 }}</div>
+                    </div>
+                    <span class="info-value">{{ item.deviceCount || 0 }}</span>
+                  </el-tooltip>
                 </div>
                 <div class="info-item">
                   <span class="info-label">{{ $t('tenantListPage.cardTenantBalance') }}</span>
@@ -454,6 +622,10 @@
 
               <div class="info-row">
                 <div class="info-item">
+                  <span class="info-label">{{ $t('tenantListPage.cardPayType') }}</span>
+                  <span class="info-value">{{ item.payType === 0 ? $t('tenantListPage.optPayPrepaid') : $t('tenantListPage.optPayPostpaid') }}</span>
+                </div>
+                <div class="info-item">
                   <span class="info-label">{{ $t('tenantListPage.cardTenantStatus') }}</span>
                   <el-tag
                     :type="item.tenantStatus === 0 ? 'success' : 'info'"
@@ -462,12 +634,6 @@
                   >
                     {{ item.tenantStatus === 0 ? $t('tenantListPage.optStatusNormal') : $t('tenantListPage.optStatusCancelled') }}
                   </el-tag>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">{{ $t('tenantListPage.cardCreatedAt') }}</span>
-                  <span class="info-value">{{
-                    formatDate(item.createTime)
-                  }}</span>
                 </div>
               </div>
             </div>
@@ -518,6 +684,7 @@
       :tenant-data="editForm"
       :label-list="labelList"
       :manager-id="currentManagerId"
+      :mysoft-enabled="dialogMysoftEnabled"
       @success="handleAddSuccess"
     />
 
@@ -543,11 +710,14 @@
 
     <!-- 二维码查看弹窗 -->
     <QrcodeDialog :visible.sync="qrcodeVisible" :tenant-data="currentTenant" />
+
+    <BatchArrearsTripDialog :visible.sync="batchArrearsTripVisible" />
   </div>
 </template>
 
 <script>
 import { tenantPageTenant, queryTenantDeviceCount } from '@/api/tenant'
+import { TENANT_PORTAL_URL } from '@/config/services'
 import { getSimpleTenantList } from '@/api/useReport'
 import { labelList } from '@/api/label'
 import { balancePush } from '@/api/pay'
@@ -561,6 +731,10 @@ import RechargeDialog from './components/RechargeDialog.vue'
 import DeductDialog from './components/DeductDialog.vue'
 import BatchManualDebitDialog from './components/BatchManualDebitDialog.vue'
 import QrcodeDialog from './components/QrcodeDialog.vue'
+import BatchArrearsTripDialog from './components/BatchArrearsTripDialog.vue'
+
+// 导出全部单次上限（与电表页一致）
+const EXPORT_ALL_LIMIT = 2000
 
 export default {
   name: 'TenantManagement',
@@ -569,7 +743,8 @@ export default {
     RechargeDialog,
     DeductDialog,
     BatchManualDebitDialog,
-    QrcodeDialog
+    QrcodeDialog,
+    BatchArrearsTripDialog
   },
   data () {
     // 大屏（工作台首页）跳转租户列表时默认按电费专户正序
@@ -579,14 +754,16 @@ export default {
       // 视图类型：默认卡片
       viewType: 'card',
       suppressSortChange: false,
+      showAdvanced: false,
 
       // 查询参数
       queryData: {
         id: '',
-        tenantStatus: null,
+        tenantStatus: 0,
         tenantType: null,
         managerId: '',
         labelIds: [],
+        payType: null,
         sortKey: initialSortKey
       },
 
@@ -604,6 +781,9 @@ export default {
       // 多选
       multipleSelection: [],
 
+      // 导出全部加载态
+      exportAllLoading: false,
+
       // 分页数据
       pageData: {
         current: 1,
@@ -616,16 +796,18 @@ export default {
       rechargeVisible: false,
       deductVisible: false,
       batchManualDebitVisible: false,
+      batchArrearsTripVisible: false,
       qrcodeVisible: false,
 
       // 当前操作的租户
       currentTenant: {},
-      editForm: {}
+      editForm: {},
+      dialogMysoftEnabled: false
     }
   },
 
   computed: {
-    ...mapGetters('manager', ['currentManagerId']),
+    ...mapGetters('manager', ['currentManagerId', 'currentManager', 'managerList']),
     ...mapGetters(['kztMenuNos']),
     ...mapGetters('treeSelection', ['selectedTenantIds', 'selectedIds']),
     hasKztPermission () {
@@ -668,6 +850,12 @@ export default {
       const w = this.$i18n.locale === 'en'
       if (this.onlyViewAction) return w ? 110 : 90
       return w ? 280 : 220
+    },
+    hasAdvancedFields () {
+      return true
+    },
+    isMysoftEnabled () {
+      return this.isManagerMysoftEnabled(this.currentManagerId)
     }
   },
 
@@ -710,10 +898,40 @@ export default {
   },
 
   methods: {
+    isManagerMysoftEnabled (managerId) {
+      const manager = Array.isArray(this.managerList)
+        ? this.managerList.find(item => String(item.managerId) === String(managerId))
+        : null
+      const switchValue = manager && manager.mysoftSwitch !== undefined
+        ? manager.mysoftSwitch
+        : this.currentManager && this.currentManager.mysoftSwitch
+      return Number(switchValue) === 1
+    },
     formatTenantOptionLabel (tenant) {
       const id = tenant.tenantId != null ? tenant.tenantId : ''
-      const nameDisp = tenant.name ? this.$displayBizHybrid(String(tenant.name)) : ''
+      const name = this.tenantDisplayName(tenant)
+      const nameDisp = name ? this.$displayBizHybrid(String(name)) : ''
       return nameDisp ? `${id} - ${nameDisp}` : String(id)
+    },
+    tenantDisplayName (tenant) {
+      if (!tenant) return ''
+      return tenant.name || ''
+    },
+    tenantResources (tenant) {
+      if (!this.isMysoftEnabled || !tenant || !Array.isArray(tenant.resourceList)) return []
+      return tenant.resourceList.filter(item => item && typeof item === 'object')
+    },
+    shouldShowResourceTooltip (tenant) {
+      return this.tenantResources(tenant).length > 0
+    },
+    resourceDisplayPath (resource) {
+      const parts = [
+        resource.projName,
+        resource.buildingName,
+        resource.floorName,
+        resource.resourceName || resource.resourceFullName || resource.resourceNo
+      ].filter(Boolean)
+      return [...new Set(parts)].join(' / ') || resource.resourceGUID || '-'
     },
     tenantAvatarInitial (name) {
       const n = (name || '').trim()
@@ -721,7 +939,7 @@ export default {
       return avatarInitial(n, this.$i18n.locale)
     },
     qrcodeDownloadNamePart (tenant) {
-      const raw = (tenant.name || '').trim()
+      const raw = String(this.tenantDisplayName(tenant) || '').trim()
       const disp = raw ? this.$displayBizHybrid(raw, 48) : String(this.$t('tenantListPage.unnamed'))
       return String(disp).replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_')
     },
@@ -841,6 +1059,9 @@ export default {
             : '',
           labelIds: this.formatLabelIdsParam(this.queryData.labelIds),
           balanceStatus: null,
+          payType: this.queryData.payType !== null && this.queryData.payType !== undefined && this.queryData.payType !== ''
+            ? this.queryData.payType
+            : null,
           idList: this.treeTenantIdList.length > 0 ? this.treeTenantIdList : undefined,
           tenantStatus: this.queryData.tenantStatus === '' || this.queryData.tenantStatus === null || this.queryData.tenantStatus === undefined
             ? null
@@ -851,7 +1072,7 @@ export default {
             orders: this.buildOrders()
           }
         }
-        if (this.queryData.tenantType === 0 || this.queryData.tenantType === 1 || this.queryData.tenantType === 2) {
+        if (this.queryData.tenantType === 0 || this.queryData.tenantType === 1 || this.queryData.tenantType === 2 || this.queryData.tenantType === 3) {
           params.tenantType = this.queryData.tenantType
         }
 
@@ -880,11 +1101,19 @@ export default {
         const response = await queryTenantDeviceCount({ ids })
 
         if (response.code === 200 && response.data) {
-          const deviceCountMap = response.data
-          this.tableData = this.tableData.map((tenant) => ({
-            ...tenant,
-            deviceCount: deviceCountMap[tenant.id] || 0
-          }))
+          // response.data 是 { tenantId: { tenantId, meterCount, waterCount, airCount } } 格式
+          const dataMap = response.data
+          this.tableData = this.tableData.map((tenant) => {
+            const d = dataMap[tenant.id]
+            const detail = d
+              ? { meterCount: d.meterCount || 0, waterCount: d.waterCount || 0, airCount: d.airCount || 0 }
+              : { meterCount: 0, waterCount: 0, airCount: 0 }
+            return {
+              ...tenant,
+              deviceCount: detail.meterCount + detail.waterCount + detail.airCount,
+              deviceDetail: detail
+            }
+          })
         }
       } catch (error) {
         console.error('获取设备数量失败:', error)
@@ -997,86 +1226,209 @@ export default {
     handleReset () {
       this.queryData = {
         id: '',
-        tenantStatus: null,
+        tenantStatus: 0,
         tenantType: null,
         managerId: this.currentManagerId,
         labelIds: [],
+        payType: null,
         sortKey: 'createTimeDesc'
       }
+      this.showAdvanced = false
       this.handleSearch()
       if (this.viewType === 'table') {
         this.$nextTick(() => this.syncTableSortToQuery())
       }
     },
 
-    // 导出
-    handleExport () {
+    // ===== 导出（参照电表页：导出本页 / 导出选中 / 导出全部）=====
+    // 入口分发
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+
+    // 导出行单元格格式化（与 exportColumns 的 key 对应）
+    formatExportCell (row, key) {
+      switch (key) {
+        case 'id':
+          return row.id != null && row.id !== '' ? row.id : ''
+        case 'name':
+          return this.$displayBizHybrid(this.tenantDisplayName(row) || '')
+        case 'deviceCount':
+          return row.deviceCount || 0
+        case 'payType':
+          return row.payType === 0
+            ? this.$t('tenantListPage.optPayPrepaid')
+            : this.$t('tenantListPage.optPayPostpaid')
+        case 'meterBalance':
+          return this.formatBalance(row.meterAccountDto?.balance)
+        case 'waterBalance':
+          return this.formatBalance(row.waterAccountDto?.balance)
+        case 'tenantStatus':
+          return row.tenantStatus === 0
+            ? this.$t('tenantListPage.optStatusNormal')
+            : this.$t('tenantListPage.optStatusCancelled')
+        case 'createTime':
+          return this.formatDateTime(row.createTime)
+        default:
+          return row[key] != null ? row[key] : ''
+      }
+    },
+
+    // 导出列定义（顺序即导出顺序）
+    exportColumns () {
+      return [
+        { key: 'id', label: this.$t('tenantListPage.expColId') },
+        { key: 'name', label: this.$t('tenantListPage.expColName') },
+        { key: 'deviceCount', label: this.$t('tenantListPage.expColDevices') },
+        { key: 'payType', label: this.$t('tenantListPage.expColPayType') },
+        { key: 'meterBalance', label: this.$t('tenantListPage.expColMeterBalance') },
+        { key: 'waterBalance', label: this.$t('tenantListPage.expColWaterBalance') },
+        { key: 'tenantStatus', label: this.$t('tenantListPage.expColStatus') },
+        { key: 'createTime', label: this.$t('tenantListPage.expColCreated') }
+      ]
+    },
+
+    // 生成并触发 xlsx 下载（入参为已 formatTableData 处理后的行）
+    buildXlsx (rows) {
+      const cols = this.exportColumns()
+      const headers = cols.map(col => col.label)
+      const keys = cols.map(col => col.key)
+      const data = rows.map(row => keys.map(key => this.formatExportCell(row, key)))
+      const wsData = [headers, ...data]
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+      ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 12) }))
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, this.$t('tenantListPage.exportSheetName'))
+
+      const now = new Date()
+      const pad = n => String(n).padStart(2, '0')
+      const timeStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+      const fileName = `${this.$t('tenantListPage.exportFileNamePrefix')}${timeStr}.xlsx`
+      XLSX.writeFile(wb, fileName)
+    },
+
+    // 导出本页（当前页已加载、已富化的 tableData）
+    exportCurrentPage () {
       if (this.tableData.length === 0) {
         this.$message.warning(this.$t('tenantListPage.msgNoDataExport'))
         return
       }
-
       try {
-        // 确定要导出的数据：优先导出选中数据，无选中则导出当前页
-        const exportData = this.multipleSelection.length > 0 ? this.multipleSelection : this.tableData
-
-        // 构建导出的表头和数据
-        const headers = [
-          this.$t('tenantListPage.expColId'),
-          this.$t('tenantListPage.expColName'),
-          this.$t('tenantListPage.expColDevices'),
-          this.$t('tenantListPage.expColMeterBalance'),
-          this.$t('tenantListPage.expColWaterBalance'),
-          this.$t('tenantListPage.expColStatus'),
-          this.$t('tenantListPage.expColCreated')
-        ]
-
-        const data = exportData.map(row => {
-          return [
-            row.id || '',
-            this.$displayBizHybrid(row.name || ''),
-            row.deviceCount || 0,
-            this.formatBalance(row.meterAccountDto?.balance),
-            this.formatBalance(row.waterAccountDto?.balance),
-            row.tenantStatus === 0 ? this.$t('tenantListPage.optStatusNormal') : this.$t('tenantListPage.optStatusCancelled'),
-            this.formatDateTime(row.createTime)
-          ]
-        })
-
-        // 创建工作表数据
-        const wsData = [headers, ...data]
-
-        // 创建工作表
-        const ws = XLSX.utils.aoa_to_sheet(wsData)
-
-        // 设置列宽
-        const colWidths = [
-          { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 20 }
-        ]
-        ws['!cols'] = colWidths
-
-        // 创建工作簿
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.$t('tenantListPage.exportSheetName'))
-
-        // 生成文件名
-        const now = new Date()
-        const timeStr = now.getFullYear() +
-          String(now.getMonth() + 1).padStart(2, '0') +
-          String(now.getDate()).padStart(2, '0') + '_' +
-          String(now.getHours()).padStart(2, '0') +
-          String(now.getMinutes()).padStart(2, '0') +
-          String(now.getSeconds()).padStart(2, '0')
-        const fileName = `${this.$t('tenantListPage.exportFileNamePrefix')}${timeStr}.xlsx`
-
-        // 导出文件
-        XLSX.writeFile(wb, fileName)
-
-        this.$message.success(this.$t('tenantListPage.msgExportSuccessN', { n: exportData.length }))
+        this.buildXlsx(this.tableData)
+        this.$message.success(this.$t('tenantListPage.msgExportSuccessN', { n: this.tableData.length }))
       } catch (error) {
         console.error('导出失败:', error)
         this.$apiError.notify(error, this.$t('tenantListPage.msgExportFail'))
       }
+    },
+
+    // 导出选中（多选行 multipleSelection，跨页保留）
+    exportSelected () {
+      if (this.multipleSelection.length === 0) {
+        this.$message.warning(this.$t('tenantListPage.warnNoSelectedExport'))
+        return
+      }
+      try {
+        this.buildXlsx(this.multipleSelection)
+        this.$message.success(this.$t('tenantListPage.msgExportSuccessN', { n: this.multipleSelection.length }))
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$apiError.notify(error, this.$t('tenantListPage.msgExportFail'))
+      }
+    },
+
+    // 导出全部（按当前查询条件重新拉取，上限 EXPORT_ALL_LIMIT）
+    async exportAll () {
+      if (!this.queryData.managerId || this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({
+        lock: true,
+        text: this.$t('tenantListPage.exporting'),
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
+      try {
+        const params = this.buildExportQueryParams(EXPORT_ALL_LIMIT, 1)
+        const response = await tenantPageTenant(params)
+        if (response.code === 200 && response.data) {
+          const rawList = response.data.dataList || []
+          const total = response.data.total || 0
+          if (rawList.length === 0) {
+            this.$message.warning(this.$t('tenantListPage.msgNoDataExport'))
+            return
+          }
+          // 富化设备数量（与列表展示一致）
+          const rows = await this.enrichDeviceCount(rawList)
+          this.buildXlsx(rows)
+          if (total > EXPORT_ALL_LIMIT) {
+            this.$message.success(this.$t('tenantListPage.successExportedLimit', { count: rows.length, total }))
+          } else {
+            this.$message.success(this.$t('tenantListPage.msgExportSuccessN', { n: rows.length }))
+          }
+        } else {
+          this.$message.error(response.msg || this.$t('tenantListPage.msgExportFail'))
+        }
+      } catch (error) {
+        console.error('导出全部失败:', error)
+        this.$apiError.notify(error, this.$t('tenantListPage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
+      }
+    },
+
+    // 构造导出全量的查询参数（与 fetchTableData 保持一致的过滤条件）
+    buildExportQueryParams (size, current) {
+      const p = {
+        id: this.queryData.id,
+        managerId: this.queryData.managerId != null ? String(this.queryData.managerId) : '',
+        labelIds: this.formatLabelIdsParam(this.queryData.labelIds),
+        balanceStatus: null,
+        payType: this.queryData.payType != null && this.queryData.payType !== '' ? this.queryData.payType : null,
+        idList: this.treeTenantIdList.length > 0 ? this.treeTenantIdList : undefined,
+        tenantStatus: this.queryData.tenantStatus === '' || this.queryData.tenantStatus == null ? null : String(this.queryData.tenantStatus),
+        page: {
+          current,
+          size,
+          orders: this.buildOrders()
+        }
+      }
+      if (this.queryData.tenantType === 0 || this.queryData.tenantType === 1 || this.queryData.tenantType === 2 || this.queryData.tenantType === 3) {
+        p.tenantType = this.queryData.tenantType
+      }
+      return p
+    },
+
+    // 富化设备数量（导出全部复用列表逻辑；失败时退化为 0）
+    async enrichDeviceCount (list) {
+      if (!list || list.length === 0) return list
+      try {
+        const ids = list.map(item => item.id).join(',')
+        const response = await queryTenantDeviceCount({ ids })
+        if (response.code === 200 && response.data) {
+          const dataMap = response.data
+          return list.map(tenant => {
+            const d = dataMap[tenant.id]
+            const detail = d
+              ? { meterCount: d.meterCount || 0, waterCount: d.waterCount || 0, airCount: d.airCount || 0 }
+              : { meterCount: 0, waterCount: 0, airCount: 0 }
+            return {
+              ...tenant,
+              deviceCount: detail.meterCount + detail.waterCount + detail.airCount,
+              deviceDetail: detail
+            }
+          })
+        }
+      } catch (error) {
+        console.error('导出全部：富化设备数量失败:', error)
+      }
+      return list.map(tenant => ({
+        ...tenant,
+        deviceCount: tenant.deviceCount || 0,
+        deviceDetail: tenant.deviceDetail || { meterCount: 0, waterCount: 0, airCount: 0 }
+      }))
     },
 
     // 新增
@@ -1086,6 +1438,7 @@ export default {
         return
       }
       this.editForm = {}
+      this.dialogMysoftEnabled = this.isManagerMysoftEnabled(this.currentManagerId)
       this.addDialogVisible = true
     },
 
@@ -1104,6 +1457,9 @@ export default {
             return
           }
           this.batchManualDebitVisible = true
+          break
+        case 'arrearsTrip':
+          this.batchArrearsTripVisible = true
           break
       }
     },
@@ -1211,7 +1567,7 @@ export default {
           tempDiv.style.left = '-9999px'
           document.body.appendChild(tempDiv)
 
-          const qrcodeValue = `https://example.com/wx/ebc/?tenantId=${tenant.id}`
+          const qrcodeValue = `${TENANT_PORTAL_URL}?tenantId=${tenant.id}`
           // qrcodejs2 通过构造函数副作用挂载 canvas
           // eslint-disable-next-line no-new
           new QRCode(tempDiv, {
@@ -1264,7 +1620,7 @@ export default {
             ctx.fillStyle = '#303133'
             ctx.font = 'bold 16px Arial'
 
-            const rawName = (tenant.name || '').trim()
+            const rawName = String(this.tenantDisplayName(tenant) || '').trim()
             let tenantName = rawName
               ? this.$displayBizHybrid(rawName, 80)
               : this.$t('tenantListPage.unnamed')
@@ -1324,6 +1680,7 @@ export default {
         return
       }
       this.editForm = { ...row }
+      this.dialogMysoftEnabled = this.isManagerMysoftEnabled(row.managerId || this.currentManagerId)
       this.addDialogVisible = true
     },
 
@@ -1335,7 +1692,7 @@ export default {
       }
       try {
         await this.$confirm(
-          this.$t('tenantListPage.confirmUrgeBody', { name: this.$displayBizHybrid(row.name, 120) }),
+          this.$t('tenantListPage.confirmUrgeBody', { name: this.$displayBizHybrid(this.tenantDisplayName(row), 120) }),
           this.$t('tenantListPage.titleTip'),
           {
             confirmButtonText: this.$t('tenantListPage.btnConfirm'),
@@ -1534,6 +1891,34 @@ $danger-color: #f56c6c;
       }
     }
   }
+
+  .toggle-advanced {
+    font-size: 12px;
+    color: #409eff;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+
+    &:hover {
+      color: #66b1ff;
+    }
+
+    i {
+      margin-left: 2px;
+      font-size: 12px;
+    }
+  }
+
+  .search-advanced-grid {
+    width: 100%;
+    display: grid;
+    align-items: center;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e4e7ed;
+  }
 }
 
 .content-box {
@@ -1700,12 +2085,15 @@ $danger-color: #f56c6c;
       display: flex;
       align-items: center;
       gap: 8px;
+      width: 100%;
+      min-width: 0;
 
       .tenant-logo-small {
         width: 28px;
         height: 28px;
         border-radius: 4px;
         object-fit: cover;
+        flex-shrink: 0;
       }
 
       .logo-placeholder-small {
@@ -1719,6 +2107,23 @@ $danger-color: #f56c6c;
         color: white;
         font-size: 12px;
         font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .table-tenant-name-reference {
+        flex: 1;
+        max-width: calc(100% - 36px);
+        overflow: hidden;
+        white-space: nowrap;
+
+        .el-link,
+        > span {
+          display: block;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
       }
     }
 
@@ -2031,5 +2436,45 @@ $danger-color: #f56c6c;
   &:active {
     color: #0958d9;
   }
+}
+
+.tenant-name-reference {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.tenant-filter-option-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-tenant-name-reference {
+  width: 100%;
+  max-width: 100%;
+  min-height: 24px;
+  overflow: hidden;
+}
+
+.tenant-resource-tooltip-content {
+  width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.tenant-resource-tooltip-title {
+  margin-bottom: 6px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.tenant-resource-tooltip-item {
+  padding: 5px 0;
+  color: #606266;
+  line-height: 1.45;
+  border-top: 1px solid #ebeef5;
+  word-break: break-all;
 }
 </style>

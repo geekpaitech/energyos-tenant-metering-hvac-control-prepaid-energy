@@ -11,6 +11,7 @@
           class="group-screen__refresh-target"
           :class="{ 'is-scope-switching': scopeSwitching }"
           :list="kpiList"
+          @select="handleKpiSelect"
         />
       </div>
 
@@ -24,7 +25,13 @@
           <span>正在更新 {{ activeScope }} · {{ activeTime }} 数据…</span>
         </div>
         <section class="group-screen__col">
-          <left-column ref="leftCol" :active-scope="activeScope" :active-time="activeTime" />
+          <left-column
+            ref="leftCol"
+            :active-scope="activeScope"
+            :active-time="activeTime"
+            :fire-management="fireManagement"
+            @open-property-detail="openPropertyDetail"
+          />
         </section>
         <section class="group-screen__col">
           <center-column
@@ -32,8 +39,13 @@
             :active-scope="activeScope"
             :active-time="activeTime"
             :energy-management="energyManagement"
+            :collection-management="collectionManagement"
             :parking-management="parkingManagement"
             :work-order-management="workOrderManagement"
+            @open-energy-detail="openEnergyDetail"
+            @open-collection-detail="openCollectionDetail"
+            @open-parking-order="openParkingOrder"
+            @open-property-detail="openPropertyDetail"
           />
         </section>
         <section class="group-screen__col">
@@ -42,11 +54,55 @@
             :active-scope="activeScope"
             :active-time="activeTime"
             :energy-management="energyManagement"
+            :device-management="deviceManagement"
+            :collection-management="collectionManagement"
             :parking-management="parkingManagement"
             :work-order-management="workOrderManagement"
+            @open-property-detail="openPropertyDetail"
           />
         </section>
       </main>
+
+      <energy-drilldown-panel
+        :visible="energyDetailVisible"
+        :active-scope="activeScope"
+        :active-time="activeTime"
+        :initial-resource="energyDetailResource"
+        :initial-tenant-type="energyDetailTenantType"
+        @close="energyDetailVisible = false"
+      />
+      <collection-drilldown-panel
+        :visible="collectionDetailVisible"
+        :active-scope="activeScope"
+        :active-time="activeTime"
+        @close="collectionDetailVisible = false"
+      />
+      <device-overview-panel
+        :visible="deviceOverviewVisible"
+        :active-scope="activeScope"
+        :overview="deviceManagement"
+        @close="deviceOverviewVisible = false"
+      />
+      <parking-order-dialog
+        :visible="parkingOrderVisible"
+        :parking-lots="parkingOrderLots"
+        :active-scope="activeScope"
+        :active-time="activeTime"
+        @close="parkingOrderVisible = false"
+      />
+      <property-drilldown-dialog
+        :visible="propertyDetailVisible"
+        :detail-type="propertyDetailType"
+        :active-scope="activeScope"
+        :active-time="activeTime"
+        @close="propertyDetailVisible = false"
+      />
+      <unit-area-energy-dialog
+        :visible="unitAreaEnergyVisible"
+        :active-scope="activeScope"
+        :active-time="activeTime"
+        @close="unitAreaEnergyVisible = false"
+      />
     </div>
 
     <!-- 首屏加载遮罩：置于 .group-screen 外，避免被 .group-screen>* 规则重置定位 -->
@@ -60,12 +116,23 @@ import CockpitBackdrop from './components/CockpitBackdrop.vue'
 import ScreenHeader from './components/ScreenHeader.vue'
 import ScreenLoading from './components/ScreenLoading.vue'
 import KpiBar from './components/KpiBar.vue'
+import EnergyDrilldownPanel from './components/EnergyDrilldownPanel.vue'
+import CollectionDrilldownPanel from './components/CollectionDrilldownPanel.vue'
+import DeviceOverviewPanel from './components/DeviceOverviewPanel.vue'
+import ParkingOrderDialog from './components/ParkingOrderDialog.vue'
+import PropertyDrilldownDialog from './components/PropertyDrilldownDialog.vue'
+import UnitAreaEnergyDialog from './components/UnitAreaEnergyDialog.vue'
 import LeftColumn from './components/modules/LeftColumn.vue'
 import CenterColumn from './components/modules/CenterColumn.vue'
 import RightColumn from './components/modules/RightColumn.vue'
 import { cloneKpiListTemplate } from './mock'
-import { getEnergyManagement, getParkingManagement, getFireManagement, getWorkOrderManagement } from '@/api/groupScreen'
-import { buildPropertyScreenDto, buildParkingScreenDto } from './utils/screenQuery'
+import { getEnergyManagement, getParkingManagement } from '@/api/groupScreen'
+import { queryWorkOrderOverview } from '@/api/groupPropertyMingYuan'
+import { getFireStatistics } from '@/api/fireStatistics'
+import { queryGroupBillCollection } from '@/api/groupBillCollection'
+import { queryGroupDeviceOverview } from '@/api/groupDeviceOverview'
+import { buildPropertyScreenDto, buildParkingScreenDto, getManagersByScope } from './utils/screenQuery'
+import { buildMingYuanQuery } from './utils/mingYuanQuery'
 import { applyScreenTopKpi } from './utils/kpiEnergy'
 
 export default {
@@ -76,6 +143,12 @@ export default {
     ScreenHeader,
     ScreenLoading,
     KpiBar,
+    EnergyDrilldownPanel,
+    CollectionDrilldownPanel,
+    DeviceOverviewPanel,
+    ParkingOrderDialog,
+    PropertyDrilldownDialog,
+    UnitAreaEnergyDialog,
     LeftColumn,
     CenterColumn,
     RightColumn
@@ -84,6 +157,8 @@ export default {
     return {
       kpiList: cloneKpiListTemplate(),
       energyManagement: null,
+      deviceManagement: null,
+      collectionManagement: null,
       parkingManagement: null,
       fireManagement: null,
       workOrderManagement: null,
@@ -92,7 +167,17 @@ export default {
       screenRequestId: 0,
       initialLoading: true,
       scopeSwitching: false,
-      scopeSwitchTimer: null
+      scopeSwitchTimer: null,
+      energyDetailVisible: false,
+      energyDetailResource: 'electricity',
+      energyDetailTenantType: null,
+      collectionDetailVisible: false,
+      deviceOverviewVisible: false,
+      parkingOrderVisible: false,
+      parkingOrderLots: [],
+      propertyDetailVisible: false,
+      propertyDetailType: 'provider',
+      unitAreaEnergyVisible: false
     }
   },
   watch: {
@@ -118,6 +203,36 @@ export default {
     if (app) app.classList.remove('group-screen-page')
   },
   methods: {
+    handleKpiSelect (item) {
+      if (item && item.key === 'onlineRate') {
+        this.deviceOverviewVisible = true
+      } else if (item && item.key === 'workOrderRate') {
+        this.openPropertyDetail('closure')
+      } else if (item && item.key === 'energyPerArea') {
+        this.unitAreaEnergyVisible = true
+      } else if (item && item.key === 'collectionRate') {
+        this.openCollectionDetail()
+      } else if (item && item.key === 'hazardFix') {
+        this.openPropertyDetail('hazard')
+      }
+    },
+    openCollectionDetail () {
+      this.collectionDetailVisible = true
+    },
+    openPropertyDetail (type) {
+      if (!['provider', 'closure', 'hazard', 'warehouse', 'serviceOrder', 'maintenance', 'satisfaction', 'rectification', 'videoAi'].includes(type)) return
+      this.propertyDetailType = type
+      this.propertyDetailVisible = true
+    },
+    openEnergyDetail ({ resource = 'electricity', tenantType = null } = {}) {
+      this.energyDetailResource = resource === 'water' ? 'water' : 'electricity'
+      this.energyDetailTenantType = tenantType === 0 || tenantType === 1 ? tenantType : null
+      this.energyDetailVisible = true
+    },
+    openParkingOrder (lots) {
+      this.parkingOrderLots = Array.isArray(lots) ? lots : []
+      this.parkingOrderVisible = true
+    },
     onScaleChange () {
       this.$nextTick(() => {
         ;['leftCol', 'centerCol', 'rightCol'].forEach(ref => {
@@ -129,6 +244,8 @@ export default {
     refreshTopKpi () {
       this.kpiList = applyScreenTopKpi(cloneKpiListTemplate(), {
         energy: this.energyManagement,
+        device: this.deviceManagement,
+        collection: this.collectionManagement,
         parking: this.parkingManagement,
         fire: this.fireManagement,
         workOrder: this.workOrderManagement
@@ -146,6 +263,9 @@ export default {
         totalRevenue: data.totalRevenue,
         parkingLotRevenueList: Array.isArray(data.parkingLotRevenueList)
           ? data.parkingLotRevenueList
+          : [],
+        parkingLotCarTypeList: Array.isArray(data.parkingLotCarTypeList)
+          ? data.parkingLotCarTypeList
           : []
       }
     },
@@ -157,8 +277,7 @@ export default {
       const period = this.activeTime
       const energyDto = buildPropertyScreenDto({ scope, period })
       const parkingDto = buildParkingScreenDto({ scope, period })
-      const fireDto = buildPropertyScreenDto({ scope, period })
-      const workOrderDto = buildPropertyScreenDto({ scope, period })
+      const workOrderDto = buildMingYuanQuery({ scope, period })
 
       await Promise.all([
         getEnergyManagement(energyDto).then(res => {
@@ -173,6 +292,29 @@ export default {
           console.error('[group-screen] getEnergyManagement failed', e)
           this.energyManagement = null
         }),
+        queryGroupBillCollection({ period, managers: getManagersByScope(scope) }).then(result => {
+          if (requestId !== this.screenRequestId) return
+          this.collectionManagement = result.complete
+            ? {
+              receivable: result.receivable,
+              collected: result.collected,
+              uncollected: result.uncollected,
+              rate: result.rate
+            }
+            : null
+        }).catch(e => {
+          if (requestId !== this.screenRequestId) return
+          console.error('[group-screen] queryGroupBillCollection failed', e)
+          this.collectionManagement = null
+        }),
+        queryGroupDeviceOverview({ managers: getManagersByScope(scope) }).then(result => {
+          if (requestId !== this.screenRequestId) return
+          this.deviceManagement = result
+        }).catch(e => {
+          if (requestId !== this.screenRequestId) return
+          console.error('[group-screen] queryGroupDeviceOverview failed', e)
+          this.deviceManagement = null
+        }),
         getParkingManagement(parkingDto).then(res => {
           if (requestId !== this.screenRequestId) return
           if (res && res.code === 200 && res.data) {
@@ -185,28 +327,24 @@ export default {
           console.error('[group-screen] getParkingManagement failed', e)
           this.parkingManagement = null
         }),
-        getFireManagement(fireDto).then(res => {
+        getFireStatistics().then(res => {
           if (requestId !== this.screenRequestId) return
-          if (res && res.code === 200 && res.data) {
+          if (res && res.code === 0 && res.data) {
             this.fireManagement = res.data
           } else {
             this.fireManagement = null
           }
         }).catch(e => {
           if (requestId !== this.screenRequestId) return
-          console.error('[group-screen] getFireManagement failed', e)
+          console.error('[group-screen] getFireStatistics failed', e)
           this.fireManagement = null
         }),
-        getWorkOrderManagement(workOrderDto).then(res => {
+        queryWorkOrderOverview(workOrderDto).then(data => {
           if (requestId !== this.screenRequestId) return
-          if (res && res.code === 200 && res.data) {
-            this.workOrderManagement = res.data
-          } else {
-            this.workOrderManagement = null
-          }
+          this.workOrderManagement = data
         }).catch(e => {
           if (requestId !== this.screenRequestId) return
-          console.error('[group-screen] getWorkOrderManagement failed', e)
+          console.error('[group-screen] queryWorkOrderOverview failed', e)
           this.workOrderManagement = null
         })
       ])

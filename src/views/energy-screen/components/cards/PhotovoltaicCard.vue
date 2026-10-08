@@ -1,29 +1,23 @@
 <template>
-  <energy-panel title="光伏电站信息">
-    <div class="pv-info">
-      <dl>
-        <div><dt>电站名称</dt><dd>{{ data.name }}</dd></div>
-        <div>
-          <dt>状态</dt>
-          <dd>
-            <i v-if="data.online !== null" class="online-dot" :class="{ offline: !data.online }" />
-            {{ data.online === null ? '--' : (data.online ? '在线' : '离线') }}
-          </dd>
-        </div>
-        <div><dt>装机容量</dt><dd>{{ data.capacity }}</dd></div>
-        <div><dt>逆变器</dt><dd>{{ data.inverter }}</dd></div>
-        <div><dt>电站地址</dt><dd class="is-address">{{ data.address }}</dd></div>
-      </dl>
-      <img
-        v-if="data.available"
-        class="solar-preview"
-        src="https://oss.example.com/web-file/station.png"
-        alt="光伏电站"
+  <energy-panel title="配电安全态势" class="power-safety-panel">
+    <div class="power-safety-grid">
+      <article
+        v-for="item in items"
+        :key="item.key"
+        class="power-safety-cell"
+        :class="`tone-${item.tone || 'green'}`"
       >
-      <div v-else class="solar-preview solar-preview--empty" aria-label="暂无光伏电站图片">
-        <energy-icon name="solar" />
-        <span>暂无电站图片</span>
-      </div>
+        <span class="power-safety-cell__icon"><energy-icon :name="item.icon" /></span>
+        <div class="power-safety-cell__body">
+          <span class="power-safety-cell__label">{{ item.label }}</span>
+          <div class="power-safety-cell__value-row">
+            <b class="power-safety-cell__value">{{ display(item.value) }}<small v-if="item.unit">{{ item.unit }}</small></b>
+            <em class="power-safety-cell__status" :class="`is-${item.statusTone || 'ok'}`">
+              <i class="status-dot" /> {{ item.status || '正常' }}
+            </em>
+          </div>
+        </div>
+      </article>
     </div>
   </energy-panel>
 </template>
@@ -32,9 +26,30 @@
 import EnergyPanel from '../EnergyPanel.vue'
 import EnergyIcon from '../EnergyIcon.vue'
 
+/**
+ * 配电安全态势（2×2 紧凑状态矩阵）
+ * 单元布局：左 icon → 右上 label → 右下 value+unit + status
+ *
+ * Props:
+ *  - data: { cells: [{ key, label, value, unit, icon, tone, status, statusTone }] }
+ */
 export default {
-  name: 'EnergyPhotovoltaicCard',
+  name: 'EnergyPowerSafetyCard',
   components: { EnergyPanel, EnergyIcon },
-  props: { data: { type: Object, required: true } }
+  props: { data: { type: Object, required: true } },
+  computed: {
+    items () {
+      return Array.isArray(this.data && this.data.cells) ? this.data.cells : []
+    }
+  },
+  methods: {
+    display (value) {
+      if (value === null || value === undefined || value === '') return '--'
+      const number = Number(value)
+      return Number.isFinite(number)
+        ? number.toLocaleString('zh-CN', { maximumFractionDigits: 2 })
+        : '--'
+    }
+  }
 }
 </script>

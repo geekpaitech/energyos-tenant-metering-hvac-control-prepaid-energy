@@ -1,0 +1,347 @@
+// Group dashboard: shared surfaces and layout, then compact-window overrides.
+.gmap {
+
+  background: #020e1b;
+  color: #e3f4ff;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  --surface: #061d30;
+  --line: #174562;
+  --muted: #8aadc4;
+  --ice: #b8eaff;  a { color: inherit; text-decoration: none; }
+  a:focus-visible { outline: 2px solid #9fffff; outline-offset: 4px; }
+  button { border: 0; background: transparent; color: inherit; }
+  .orange { color: #ffaa60 !important; }
+  .gmap-stage { position: relative; display: grid; grid-template-rows: 82px 98px minmax(0,1fr) 82px 22px; gap: 10px; padding: 0 20px 9px; overflow: hidden; background: radial-gradient(ellipse at 50% 30%,#0a2842,#031221 78%); }
+  .gmap-stage::before { position: absolute; inset: 0; pointer-events: none; content: ''; opacity: .15; background-image: linear-gradient(#1b739730 1px, transparent 1px), linear-gradient(90deg,#1b739730 1px,transparent 1px); background-size: 44px 44px; }
+  .gmap-header { position: relative; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1a7698; border-bottom-color: #1a5374; background: linear-gradient(#06182b88,#06182b88),url('./assets/group-header.png') center bottom / 100% 230px no-repeat; }
+  .gmap-header::after { content: ''; position: absolute; width: 49%; bottom: -1px; height: 2px; left: 25.5%; background: linear-gradient(90deg,transparent,#3ad8ff,transparent); box-shadow: 0 0 14px #008cff; }
+  .gmap-brand { display: flex; gap: 13px; align-items: center; }
+  .gmap-brand > .nandu-icon { font-size: 38px; color: #40d8ff; }
+  .gmap-brand strong { display: block; letter-spacing: 3px; font-size: 24px; }
+  .gmap-brand span { display: block; color: #75aac5; margin-top: 5px; font-size: 11px; letter-spacing: 1px; }
+  .gmap-title { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; width: 850px; pointer-events: none; }
+  .gmap-title h1 { font-weight: 600; background: linear-gradient(#fff 30%,#79d5ff); color: transparent; background-clip: text; font-size: 35px; letter-spacing: 4px; filter: none; }
+  .gmap-title p { font-size: 9px; letter-spacing: 3px; margin-top: 7px; color: #80b6d2; }
+  .gmap-header-actions { display: flex; align-items: center; color: #b2d5e7; font-size: 13px; gap: 16px; }
+  .gmap-demo { border: 1px solid #b59141; border-radius: 5px; color: #ffd680; padding: 6px 10px; font-size: 13px; box-shadow: inset 0 0 12px #aa840c21; }
+  .gmap-fullscreen { font-size: 13px; color: #76d6fc; padding: 6px; border: 1px solid #226483; border-radius: 4px; }
+  .gmap-kpis { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 12px; }
+  .gmap-panel { position: relative; min-width: 0; background: linear-gradient(115deg,#09273fbd,#061b2dc9); border: 1px solid var(--line); border-radius: 4px; box-shadow: none; }
+  .gmap-panel::before { display: none; content: ''; position: absolute; left: 14px; top: -1px; height: 1px; width: 45%; background: none; pointer-events: none; }
+  .gmap-kpi { display: flex; align-items: center; padding: 14px 17px; gap: 15px; text-align: left; background: linear-gradient(120deg,#0c314f,#061d31 67%,#0a2942); }
+  .gmap-kpi:hover { border-color: #4ad9fd; background: linear-gradient(125deg,#094360e6,#062238df); }
+  .gmap-orb { flex: 0 0 58px; display: grid; place-items: center; border-radius: 50%; border: 1px solid #2a9ed2; color: #49d6ff; width: 60px; height: 60px; flex-basis: 60px; background: linear-gradient(145deg,#0b4567,#082237); border-color: #21789e; box-shadow: inset 0 0 14px #1086c023; }
+  .gmap-orb .nandu-icon { font-size: 31px; filter: none; }
+  .gmap-orb.mint { color: #2cebc5; border-color: #237b85; }
+  .gmap-label { display: block; white-space: nowrap; color: #b7cfe0; font-size: 14px; margin-bottom: 7px; }
+  .gmap-kpi strong { font-family: Arial,sans-serif; line-height: 1.1; white-space: nowrap; font-size: 33px; color: #e0f3ff; font-weight: 600; letter-spacing: .3px; }
+  .gmap-kpi small { font-weight: 400; margin-left: 7px; font-size: 13px; color: #b6dcef; }
+  .gmap-kpi em { display: block; font-style: normal; color: #7da9c5; font-size: 11px; margin-top: 7px; }
+  .gmap-body { min-height: 0; display: grid; grid-template-columns: 350px minmax(0,1fr) 370px; gap: 16px; }
+  .gmap-side { display: grid; gap: 12px; min-height: 0; }
+  .gmap-side > section { min-height: 0; }
+  .gmap-left { grid-template-rows: minmax(0,1.2fr) minmax(0,.82fr) minmax(0,1fr); }
+  .gmap-right { grid-template-rows: 237px 280px minmax(0,1fr); }
+  .gmap-panel-heading { display: flex; align-items: center; gap: 10px; height: 47px; flex-shrink: 0; margin: 0; padding: 0 17px; border-bottom: 1px solid #174462; background: linear-gradient(90deg,#12344b77,#09243b22); }
+  .gmap-panel-heading h2 { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 20px; font-weight: 500; letter-spacing: .3px; color: #edf6ff; }
+  .gmap-panel-heading h2::before { content: ''; margin-right: 2px; width: 3px; height: 17px; box-shadow: 0 0 4px #00aacb60; background: #28d7e6; }
+  .gmap-panel-heading h2 .nandu-icon { font-size: 23px; color: #3be8e3; }
+  .gmap-panel-heading > span,.gmap-panel-heading > button { margin-left: auto; white-space: nowrap; color: #81b4d1; font-size: 11px; }
+  .gmap-panel-heading > button:hover { color: #ccffff; }
+  .gmap-energy { display: flex; flex-direction: column; }
+  .gmap-today { display: flex; align-items: center; padding: 17px 20px; gap: 16px; }
+  .gmap-today > .nandu-icon { font-size: 36px; color: #47d8ff; }
+  .gmap-today > span { font-size: 13px; color: #b2d5e5; }
+  .gmap-today strong { display: block; line-height: 1.2; font-family: Arial,sans-serif; font-size: 34px; margin-top: 5px; color: #d7efff; }
+  .gmap-today small { font-size: 13px; margin-left: 8px; font-weight: 400; }
+  .gmap-mini-stats { display: flex; justify-content: space-between; gap: 10px; margin: 0 17px; padding: 0; }
+  .gmap-mini-stats > div { flex: 1; }
+  .gmap-mini-stats > div + div { border-left: 1px solid #1d5269; padding-left: 17px; }
+  .gmap-mini-stats span { color: #a4c2d4; font-size: 12px; }
+  .gmap-mini-stats strong { display: block; font-family: Arial,sans-serif; font-size: 22px; margin-top: 7px; color: #9ee8fd; }
+  .gmap-mini-stats small { font-size: 11px; margin-left: 5px; }
+  .gmap-trend { flex: 1; min-height: 90px; margin: 0 10px 5px; }
+  .gmap-ranking { display: flex; flex-direction: column; padding-bottom: 10px; }
+  .gmap-ranking > button,.gmap-ranking > a { display: flex; align-items: center; gap: 10px; padding: 6px 16px; flex: 1; text-align: left; }
+  .gmap-ranking > a:hover { background: #0a557330; }
+  .gmap-rank { font-family: Arial,sans-serif; width: 16px; color: #9ebed3; font-size: 13px; }
+  .gmap-ranking-name { flex: 1; font-size: 14px; color: #c1d8e6; }
+  .gmap-ranking-name > i { display: block; margin-top: 6px; background: #153a53; height: 4px; border-radius: 3px; }
+  .gmap-ranking-name b { display: block; height: 100%; background: linear-gradient(90deg,#087fc7,#36c8e8); border-radius: inherit; }
+  .gmap-ranking strong { min-width: 44px; text-align: right; font-size: 15px; color: #90e3f5; }
+  .gmap-center { min-width: 0; min-height: 0; display: grid; grid-template-rows: 42px minmax(0,1fr) 207px; position: relative; overflow: hidden; background: #061c2d; }
+  .gmap-map-toolbar { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; padding: 0 17px; gap: 14px; background: #09283a88; }
+  .gmap-filters { display: flex; margin-right: auto; gap: 10px; }
+  .gmap-filters button,.gmap-return { font-size: 14px; border: 1px solid #1b6083; border-radius: 4px; padding: 8px 15px; background: #04223a; color: #91c6df; }
+  .gmap-filters button.active { color: #e7ffff; box-shadow: inset 0 0 12px #1889c65c; background: linear-gradient(#12619a,#0a3a65); border-color: #37aad6; }
+  .gmap-filters span { margin-left: 6px; font-family: Arial,sans-serif; }
+  .gmap-map-note { font-size: 10px; color: #6f9ab7; white-space: nowrap; }
+  .gmap-map { position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; container-type: size; isolation: isolate; overflow: hidden; background: #041827; }
+  .gmap-map-canvas { position: relative; height: min(100cqh,56.28cqw); width: min(100cqw,177.683cqh); max-width: 100%; aspect-ratio: 1672 / 941; container-type: inline-size; }
+  .gmap-map-canvas > img { width: 100%; height: 100%; pointer-events: none; user-select: none; object-fit: contain; mix-blend-mode: normal; mask-image: linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); }
+  .gmap-map-pin { position: absolute; transform: translate(-50%,-50%); padding: 0; z-index: 3; overflow: visible; width: 140px; height: 32px; }
+  .gmap-map-pin > span { position: absolute; display: flex; align-items: center; left: 50%; white-space: nowrap; border: 1px solid #329ec4; color: #e5faff; top: 50%; transform: translate(-50%,-50%); font-size: 14px; padding: 7px 10px; gap: 6px; border-radius: 3px; border-color: #338ab0; box-shadow: 0 2px 8px #0005; background: #04273de8; }
+  .gmap-map-pin > span::after { content: ''; position: absolute; width: 1px; height: 18px; top: 100%; left: 50%; background: #62d6ef; display: none; }
+  .gmap-map-pin span i { width: 6px; height: 6px; background: #2bf3d2; border-radius: 50%; }
+  .gmap-map-pin span b { color: #4eddff; margin-left: 5px; font-weight: 400; font-size: 15px; }
+  .gmap-map-pin.is-selected > span,.gmap-map-pin:focus-visible > span { border-color: #8af7ff; box-shadow: 0 0 19px #24cdff77; background: linear-gradient(120deg,#078cbbf5,#073351f5); }
+  .gmap-district { position: absolute; text-shadow: 0 1px 3px #031629; pointer-events: none; font-size: 11px; color: #a3bfd0; opacity: .65; }
+  .gmap-district--north { top: 17%; left: 56%; }
+  .gmap-district--east { top: 37%; left: 77%; }
+  .gmap-district--west { top: 42%; left: 27%; }
+  .gmap-district--south { top: 73%; left: 17%; }
+  .gmap-project-popover { position: absolute; z-index: 4; right: 18px; bottom: 16px; width: 362px; padding: 12px; display: flex; gap: 13px; border: 1px solid #28739a; border-radius: 4px; background: linear-gradient(120deg,#092f49f5,#041a2bf5); box-shadow: 0 6px 18px #0004; }
+  .gmap-popover-heading { border-bottom: 1px solid #1a6e8d; display: flex; align-items: center; padding: 4px 0 12px; font-size: 16px; font-weight: 500; gap: 7px; border-bottom-color: #1c4862; white-space: nowrap; }
+  .gmap-popover-heading em { margin-left: auto; color: #78c1de; font-style: normal; font-size: 10px; font-weight: 400; padding: 3px 5px; background: #103b55; border-radius: 2px; }
+  .gmap-project-popover > button,.gmap-project-popover > a { display: flex; justify-content: space-between; align-items: center; margin: 0 12px 12px; width: calc(100% - 24px); padding: 7px 12px; color: #d9faff; font-size: 12px; border: 1px solid #1599ce; border-radius: 3px; background: linear-gradient(90deg,#086caf,#07395d); }
+  .gmap-scene-pending { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: #08324a; color: #70adc7; font-size: 10px; }
+  .gmap-scene-pending .nandu-icon { font-size: 32px; }
+  .gmap-live { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #24eac3; box-shadow: 0 0 6px #12cba449; margin-right: 5px; flex-shrink: 0; }
+  .gmap-live.orange { background: #ffa24d; }
+  .gmap-projects { z-index: 4; overflow: hidden; margin: 0 10px 10px; background: #051b2de0; }
+  .gmap-projects .gmap-panel-heading > span { margin-left: 8px; font-size: 11px; color: #659cb6; }
+  .gmap-project-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); padding: 11px; gap: 11px; }
+  .gmap-project-card { display: block; min-width: 0; text-align: left; padding: 0; border: 1px solid #1c5979; overflow: hidden; background: #051b2e; transition: border-color .2s, box-shadow .2s; border-color: #214e6a; border-radius: 3px; }
+  .gmap-project-card:hover { border-color: #68e8ff; box-shadow: 0 0 12px #24c5ff42; }
+  .gmap-project-card > img { width: 100%; object-fit: cover; display: block; height: 93px; }
+  .gmap-project-card-title { display: flex; align-items: center; justify-content: space-between; font-size: 14px; padding: 8px 8px 6px; }
+  .gmap-project-card-title i { font-style: normal; color: #34cffa; }
+  .gmap-project-card-meta { padding: 0 8px 7px; display: flex; justify-content: space-between; gap: 6px; color: #8cbfd6; padding-bottom: 8px; font-size: 11px; }
+  .gmap-project-card-meta em { font-style: normal; color: #62c4ea; background: #0d324b; border: 1px solid #1a4661; border-radius: 2px; padding: 1px 4px; font-size: 9px; }
+  .gmap-project-card-meta .gmap-live { width: 5px; height: 5px; }
+  .gmap-solar-main { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px 0; height: 104px; }
+  .gmap-solar-main > div:first-child > span { font-size: 13px; color: #b0d0df; }
+  .gmap-solar-main strong { display: block; font: 600 32px Arial,sans-serif; margin-top: 7px; color: #68efd9; font-size: 34px; }
+  .gmap-solar-main small { font-size: 13px; margin-left: 7px; }
+  .gmap-solar-main .nandu-ring { flex: 0 0 90px; width: 88px; height: 88px; flex-basis: 88px; }
+  .gmap-solar-main .nandu-ring__value { font-size: 18px; }
+  .gmap-solar-main .nandu-ring__caption { font-size: 10px; }
+  .gmap-solar-track { border-radius: 9px; background: #268fe1; overflow: hidden; height: 8px; margin: 7px 19px 15px; }
+  .gmap-solar-track i { display: block; height: 100%; background: linear-gradient(90deg,#18d4ac,#52ffe0); border-radius: inherit; }
+  .gmap-source { color: #639bb4; margin: 14px 18px 10px; font-size: 10px; }
+  .gmap-device-counts { display: grid; grid-template-columns: repeat(3,1fr); margin-bottom: 10px; margin: 19px 19px 18px; }
+  .gmap-device-counts > * + * { border-left: 1px solid #185a76; padding-left: 23px; }
+  .gmap-device-counts > button { text-align: left; }
+  .gmap-device-counts span { font-size: 12px; color: #a6cbdc; }
+  .gmap-device-counts strong { display: block; font: 600 25px Arial,sans-serif; font-size: 28px; margin-top: 8px; color: #9ae6fa; }
+  .gmap-device-types { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 0 17px; }
+  .gmap-device-types > button { display: flex; text-align: left; border: 1px solid #155778; border-radius: 4px; align-items: center; border-color: #1b4661; background: #08283e; padding: 10px 7px; gap: 8px; }
+  .gmap-device-types .nandu-icon { color: #52d6ff; font-size: 25px; }
+  .gmap-device-types span { font-size: 10px; color: #a0cbdd; }
+  .gmap-device-types strong { display: block; font: 600 17px Arial,sans-serif; color: #80e7f9; margin-top: 5px; font-size: 17px; }
+  .gmap-device-types small { font-size: 10px; margin-left: 3px; }
+  .gmap-ac-title { color: #a8cedd; display: flex; justify-content: space-between; margin-top: 10px; margin: 18px 19px 10px; font-size: 12px; }
+  .gmap-ac-title > span { color: #6194ae; }
+  .gmap-ac-track { display: flex; border-radius: 8px; overflow: hidden; height: 8px; margin: 0 19px; }
+  .gmap-ac-labels { display: flex; justify-content: space-between; color: #a4cbdc; margin-top: 7px; margin-bottom: 7px; margin: 12px 19px 15px; font-size: 11px; }
+  .gmap-ac-labels i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+  .gmap-ac-labels b { color: #ceeffa; margin-left: 4px; font-size: 13px; }
+  .gmap-events { overflow: hidden; }
+  .gmap-event { display: flex; align-items: center; width: calc(100% - 28px); text-align: left; margin: 0 14px; border-bottom: 1px solid #154c66; padding: 17px 2px; gap: 16px; }
+  .gmap-event:last-child { border-bottom: 0; }
+  .gmap-event > .nandu-icon { color: #ffab5c; font-size: 22px; }
+  .gmap-event > span:not(.nandu-icon) { flex: 1; min-width: 0; }
+  .gmap-event strong { display: block; font-weight: 400; font-size: 14px; margin-bottom: 6px; }
+  .gmap-event span span { display: block; font-size: 12px; color: #8cb0c5; }
+  .gmap-event time { color: #7eacc3; font-size: 11px; }
+  .gmap-footer { display: grid; align-items: center; background: linear-gradient(90deg,#062c43ed,#03182bdf); grid-template-columns: 230px repeat(5,minmax(0,1fr)); }
+  .gmap-footer h2 { padding-left: 25px; font-weight: 500; font-size: 18px; }
+  .gmap-footer h2 .nandu-icon { color: #36d8ff; font-size: 28px; vertical-align: middle; margin-right: 9px; }
+  .gmap-footer h2 small { display: block; color: #629fba; font-size: 11px; margin: 9px 0 0 39px; }
+  .gmap-footer > button { border-left: 1px solid #1d5974; padding: 0 25px; text-align: left; }
+  .gmap-footer > button > span { color: #90b4cc; font-size: 12px; }
+  .gmap-footer strong { display: block; font: 600 29px Arial,sans-serif; margin-top: 8px; font-size: 30px; color: #b3e8ff; }
+  .gmap-footer small { font-size: 16px; margin-right: 7px; margin-left: 0; }
+  .gmap-bottom { display: flex; justify-content: space-between; align-items: center; letter-spacing: .5px; color: #7596b0; font-size: 10px; }
+  .gmap-no-scenes { height: 152px; display: flex; align-items: center; justify-content: center; gap: 20px; color: #79aec6; font-size: 15px; }
+  .gmap-no-scenes .nandu-icon { font-size: 38px; }
+  .gmap-solar-empty { height: calc(100% - 45px); min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #85afc3; font-size: 14px; }
+  .gmap-solar-empty .nandu-icon { font-size: 39px; color: #3989a5; }
+  .gmap-solar-empty span { font-size: 11px; color: #557f99; }
+  .gmap-pending-project { position: relative; min-height: 0; display: grid; place-items: center; overflow: hidden; }
+  .gmap-pending-project > img { position: absolute; inset: 0; height: 100%; width: 100%; object-fit: contain; opacity: .2; }
+  .gmap-pending-project > div { position: relative; text-align: center; }
+  .gmap-eyebrow { color: #4adee8; font-size: 13px; letter-spacing: 4px; }
+  .gmap-pending-project h2 { font-size: 32px; margin: 17px 0 12px; font-weight: 500; }
+  .gmap-pending-project p { font-size: 15px; color: #a5c8d9; }
+  .gmap-pending-metrics { display: flex; justify-content: center; gap: 80px; margin: 36px 0; }
+  .gmap-pending-metrics span { font-size: 14px; color: #9fcddd; }
+  .gmap-pending-metrics strong { display: block; margin-top: 12px; color: #64e1f2; font-size: 34px; }
+  .gmap-pending-metrics small { font-size: 14px; }
+  .gmap-pending-project .gmap-pending-note { font-size: 12px; color: #82a8bc; }
+  .gmap-pending-project button { border: 1px solid #2ab5da; padding: 10px 20px; border-radius: 4px; margin-top: 18px; background: #074c74; font-size: 14px; }
+  .gmap-dialog-backdrop { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; background: #00101cd6; backdrop-filter: blur(9px); padding: 30px; }
+  .gmap-project-dialog { width: 1200px; max-width: 100%; padding: 30px; background: linear-gradient(120deg,#07344e,#031a2e); box-shadow: 0 0 45px #16aee433; }
+  .gmap-project-dialog > header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #21728f; padding-bottom: 20px; }
+  .gmap-project-dialog header span { font-size: 12px; color: #63acc6; letter-spacing: 2px; }
+  .gmap-project-dialog h2 { font-size: 28px; margin-top: 10px; }
+  .gmap-project-dialog header button { font-size: 28px; padding: 10px; border: 1px solid #236b88; border-radius: 5px; }
+  .gmap-project-dialog > p { font-size: 14px; color: #88b6cc; margin: 20px 0; }
+  .gmap-directory { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 17px; }
+  .gmap-directory > a,.gmap-directory > button { text-align: left; padding: 0; border: 1px solid #236786; border-radius: 5px; background: #052339; overflow: hidden; }
+  .gmap-directory > a:hover { border-color: #65e3fa; }
+  .gmap-directory img,.gmap-directory-placeholder { display: block; width: 100%; height: 150px; object-fit: cover; }
+  .gmap-directory-placeholder { display: flex; gap: 14px; align-items: center; justify-content: center; color: #5995b2; background: radial-gradient(ellipse,#0a4560,#072a43); font-size: 13px; }
+  .gmap-directory-placeholder .nandu-icon { font-size: 45px; }
+  .gmap-directory > a > span:last-child,.gmap-directory > button > span:last-child { padding: 15px; display: flex; flex-direction: column; gap: 9px; }
+  .gmap-directory em { font-size: 11px; color: #4dd7db; font-style: normal; }
+  .gmap-directory strong { font-size: 18px; }
+  .gmap-directory small { font-size: 12px; color: #79a9be; margin: 0; }
+  .gmap-directory b { font-size: 14px; color: #4ed7f4; font-weight: 400; margin-top: 6px; }
+  .gmap-notice { position: absolute; z-index: 10; top: 90px; left: 50%; transform: translateX(-50%); background: #073d59; border: 1px solid #45cde9; padding: 12px 22px; font-size: 14px; }
+  .gmap-notice button { color: #8bffff; margin-left: 15px; text-decoration: underline; }
+  .nandu-dialog { max-height: calc(100% - 60px); }
+  .nandu-detail-table { table-layout: fixed; width: 100%; }
+  .nandu-detail-table td { overflow-wrap: anywhere; font-size: 14px; }
+  .nandu-detail-table th:first-child { width: 23%; }
+  .nandu-detail-table th:nth-child(2) { width: 40%; }
+  .gmap-map-lines { position: absolute; inset: 0; pointer-events: none; }
+  .gmap-map-lines .nandu-landmark { display: none; }
+  .gmap-solar-main .nandu-ring__caption strong { color: #e1f8fc; font-size: 20px; margin-top: 0; }
+  .gmap-solar-main .nandu-ring__caption small { font-size: 10px; margin-left: 0; }
+  .gmap-energy .gmap-panel-heading { flex-shrink: 0; }
+  .gmap-energy .gmap-today { padding-top: 10px; padding-bottom: 8px; padding: 17px 20px; }
+  .gmap-ranking .gmap-panel-heading { flex-shrink: 0; }
+  .gmap-ranking > a { padding-top: 4px; padding-bottom: 4px; min-height: 0; gap: 13px; padding: 6px 18px; }
+  .gmap-events .gmap-event { padding: 10px 2px; }
+  .gmap-events .gmap-event > span { text-align: left; }
+  .gmap-stage::before,.gmap-header::after,.gmap-panel::before { display: none; }
+  .gmap-energy .gmap-mini-stats { padding-top: 10px; border-top: 1px solid #153b52; }
+  .gmap-trend-panel { display: flex; flex-direction: column; }
+  .gmap-trend-panel .gmap-trend { min-height: 160px; margin: 8px 8px 0; }
+  .gmap-trend-caption { display: flex; justify-content: space-between; margin: 3px 17px 14px; color: #7b9fb7; font-size: 11px; }
+  .gmap-ranking > a:nth-of-type(-n+3) .gmap-rank { color: #f0cf8a; }
+  .gmap-map-toolbar h2 { font-size: 20px; font-weight: 500; color: #e7f4ff; white-space: nowrap; margin-right: 12px; }
+  .gmap-map-toolbar h2::before { content: ''; display: inline-block; height: 17px; width: 3px; background: #28d7e6; vertical-align: -2px; margin-right: 11px; }
+  .gmap-filters button { font-size: 12px; padding: 7px 13px; background: #07263a; border-color: #1b4d69; border-radius: 3px; }
+  .gmap-map::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url('./assets/group-map-terrain.png') center / cover no-repeat; opacity: .12; }
+  .gmap-map-pin.is-selected > span { background: #07506be8; box-shadow: 0 0 10px #11add03b; border-color: #71d9eb; }
+  .gmap-city-caption { position: absolute; left: 6%; top: 9%; z-index: 2; color: #84b4d0; font-size: 19px; letter-spacing: 5px; pointer-events: none; }
+  .gmap-city-caption span { display: block; margin-top: 7px; font-size: 9px; letter-spacing: 2px; color: #658fae; }
+  .gmap-popover-photo,.gmap-project-popover .gmap-scene-pending { width: 104px; height: 137px; flex: 0 0 104px; object-fit: cover; border: 1px solid #214963; border-radius: 2px; }
+  .gmap-popover-content { flex: 1; min-width: 0; }
+  .gmap-popover-metrics { display: flex; gap: 14px; margin: 11px 0; }
+  .gmap-popover-metrics > div + div { border-left: 1px solid #24516b; padding-left: 13px; }
+  .gmap-popover-metrics dt { font-size: 11px; color: #90b6cc; }
+  .gmap-popover-metrics dd { margin: 5px 0 0; font: 600 20px Arial,sans-serif; color: #78dedf; white-space: nowrap; }
+  .gmap-popover-metrics small { font-size: 10px; font-weight: 400; margin-left: 4px; }
+  .gmap-popover-content > a { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; font-size: 12px; background: linear-gradient(#0e669f,#094174); border: 1px solid #329cc9; border-radius: 3px; }
+  .gmap-popover-content > a:hover { background: #0d669b; }
+  .gmap-projects .gmap-panel-heading { height: 43px; padding: 0 13px; }
+  .gmap-projects .gmap-panel-heading h2 { font-size: 19px; }
+  .gmap-online-badge { margin-left: auto !important; font-size: 11px !important; color: #50dac8 !important; }
+  .gmap-device .gmap-panel-heading > button { margin-left: 0; }
+}
+@keyframes gmap-beacon { 0% { transform: scale(.5) scaleY(.45); opacity: .9; } 100% { transform: scale(2.2) scaleY(.45); opacity: 0; } }
+.gmap--paused .gmap-pin-dot::before,.gmap--paused .gmap-pin-dot::after { animation: none; }
+@media (prefers-reduced-motion: reduce) { .gmap * { animation: none !important; transition: none !important; } }
+.gmap.gmap--compact {
+
+  overflow-y: auto;  .gmap-stage { display: flex; flex-direction: column; padding: 12px; overflow: visible; gap: 12px; }
+  .gmap-header { min-height: 110px; align-items: flex-end; padding-bottom: 10px; background-size: auto 190px; }
+  .gmap-brand { display: none; }
+  .gmap-title { top: 0; width: 100%; }
+  .gmap-title h1 { letter-spacing: 2px; font-size: 25px; }
+  .gmap-title p { font-size: 7px; letter-spacing: 1px; }
+  .gmap-header-actions { width: 100%; justify-content: flex-end; font-size: 12px; }
+  .gmap-header-actions > span { margin-right: auto; }
+  .gmap-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .gmap-kpi { gap: 9px; padding: 13px 10px; }
+  .gmap-orb { width: 36px; height: 36px; flex-basis: 36px; }
+  .gmap-orb .nandu-icon { font-size: 23px; }
+  .gmap-label { font-size: 10px; }
+  .gmap-kpi strong { font-size: 22px; }
+  .gmap-kpi small { font-size: 9px; margin-left: 4px; }
+  .gmap-kpi em { font-size: 9px; }
+  .gmap-body { display: flex; flex-direction: column; gap: 12px; }
+  .gmap-center { order: -1; display: flex; flex-direction: column; }
+  .gmap-map-toolbar { flex-wrap: wrap; padding: 13px; gap: 12px; }
+  .gmap-filters button { font-size: 12px; padding: 8px 9px; }
+  .gmap-map-note { font-size: 10px; display: none; }
+  .gmap-map { margin-top: 15px; container-type: normal; display: flex; flex-direction: column; margin: 0; overflow: hidden; }
+  .gmap-map-canvas { width: 100%; height: auto; aspect-ratio: 1672 / 941; }
+  .gmap-map-canvas > img { width: 100%; height: 100%; aspect-ratio: auto; }
+  .gmap-map-pin { top: var(--pin-y) !important; }
+  .gmap-map-pin > span { top: 50%; font-size: 9px; padding: 5px; gap: 3px; }
+  .gmap-map-pin > span b { display: none; }
+  .gmap-district { display: none; }
+  .gmap-project-popover { position: relative; right: auto; bottom: auto; width: calc(100% - 20px); margin: 5px 10px 12px; }
+  .gmap-popover-heading { font-size: 12px; }
+  .gmap-project-popover > a { margin: 8px 12px; }
+  .gmap-project-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  .gmap-projects .gmap-panel-heading h2 { font-size: 16px; }
+  .gmap-projects .gmap-panel-heading > span { display: none; }
+  .gmap-project-card > img { height: 100px; }
+  .gmap-project-card-title { font-size: 11px; }
+  .gmap-project-card-meta { font-size: 9px; }
+  .gmap-left,.gmap-right { display: flex; flex-direction: column; }
+  .gmap-energy { height: 210px; }
+  .gmap-ranking { min-height: 265px; }
+  .gmap-solar { min-height: 270px; }
+  .gmap-device { min-height: 295px; }
+  .gmap-events { min-height: 220px; }
+  .gmap-trend { min-height: 125px; }
+  .gmap-footer { display: grid; padding: 18px 4px; gap: 18px 0; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .gmap-footer h2 { grid-column: 1 / -1; padding: 0 15px; }
+  .gmap-footer h2 small { display: inline; margin-left: 14px; }
+  .gmap-footer > button { padding: 0 15px; border-left: 0; }
+  .gmap-footer strong { font-size: 25px; }
+  .gmap-bottom { flex-direction: column; align-items: flex-start; gap: 8px; line-height: 1.6; font-size: 10px; }
+  .gmap-dialog-backdrop,.nandu-dialog-backdrop { position: fixed; padding: 12px; height: 100dvh; }
+  .gmap-project-dialog { padding: 16px; max-height: calc(100dvh - 24px); overflow: auto; }
+  .gmap-directory { grid-template-columns: 1fr; }
+  .gmap-directory img { height: 150px; }
+  .gmap-directory-placeholder { height: 90px; }
+  .gmap-project-dialog h2 { font-size: 23px; }
+  .gmap-project-dialog header span { font-size: 10px; }
+  .nandu-dialog { width: 100%; max-height: calc(100dvh - 24px); height: auto; overflow: auto; }
+  .nandu-dialog__body { display: block; padding: 15px; height: auto; }
+  .nandu-detail-visual { display: none; }
+  .nandu-dialog__header { padding: 15px; height: 95px; }
+  .nandu-dialog__header h2 { font-size: 22px; }
+  .nandu-dialog__header p { font-size: 12px; }
+  .nandu-dialog__header p span { display: none; }
+  .nandu-dialog__title-icon,.nandu-dialog__demo { display: none; }
+  .nandu-dialog__close { margin-left: auto; }
+  .nandu-detail-kpis strong { font-size: 23px; }
+  .nandu-detail-kpis > div { padding: 12px 8px; }
+  .nandu-detail-kpis small { font-size: 11px; }
+  .nandu-detail-kpis > div > span { font-size: 12px; }
+  .nandu-detail-filters { flex-wrap: wrap; gap: 10px; font-size: 12px; }
+  .nandu-detail-filters select { font-size: 12px; }
+  .nandu-detail-table td { font-size: 11px; padding: 6px; }
+  .nandu-detail-table th { font-size: 11px; padding: 6px; }
+  .nandu-detail-table th:first-child { width: 23%; }
+  .nandu-pagination > span:first-child { display: none; }
+  .nandu-pagination { font-size: 12px; justify-content: flex-end; }
+  .nandu-dialog__footer { flex-wrap: wrap; height: auto; padding: 15px; gap: 8px; font-size: 10px; }
+  .nandu-detail-section-heading > span { display: none; }
+  .nandu-data-notes > div { display: block; }
+  .nandu-data-notes dd { font-size: 14px; }
+  .nandu-detail-equation { font-size: 12px; }
+  .nandu-detail-energy em { margin-left: 7px; }
+  .gmap-pending-project { min-height: 390px; }
+  .gmap-pending-project h2 { font-size: 23px; }
+  .gmap-pending-metrics { gap: 40px; }
+  .gmap-map-lines { height: 100%; }
+  .gmap-map-toolbar h2 { width: 100%; font-size: 17px; }
+  .gmap-filters { gap: 7px; }
+  .gmap-city-caption { display: none; }
+  .gmap-popover-photo,.gmap-project-popover .gmap-scene-pending { width: 88px; flex-basis: 88px; height: 129px; }
+  .gmap-popover-metrics { gap: 8px; }
+  .gmap-popover-metrics dd { font-size: 17px; }
+  .gmap-popover-content > a { font-size: 11px; }
+  .gmap-trend-panel { height: 260px; }
+  .gmap-projects { margin: 0 10px 10px; }
+}
+.gmap:not(.gmap--compact) {
+  .gmap-stage { grid-template-rows: 80px 106px minmax(730px,1fr) 84px 20px; gap: 12px; padding: 0 24px 12px; }
+  .gmap-body { grid-template-columns: 374px minmax(0,1fr) 422px; gap: 14px; }
+  .gmap-left { grid-template-rows: 205px 240px minmax(257px,1fr); gap: 14px; }
+  .gmap-right { grid-template-rows: 256px 281px minmax(165px,1fr); gap: 14px; }
+  .gmap-kpi { min-height: 0; padding: 13px 20px; gap: 18px; }
+  .gmap-kpi strong { line-height: 1.1; }
+  .gmap-center { grid-template-rows: 48px minmax(0,1fr) 224px; gap: 0; }
+  .gmap-kpis { gap: 14px; min-height: 0; }
+  .gmap-project-popover { right: 18px; }
+}

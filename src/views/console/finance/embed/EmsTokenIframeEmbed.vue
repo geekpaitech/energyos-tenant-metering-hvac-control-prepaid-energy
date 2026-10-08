@@ -38,12 +38,12 @@
 
 <script>
 import axios from 'axios'
+import { EMS_ORIGIN, EMS_API_ROOT } from '@/config/services'
 import { mapGetters } from 'vuex'
 import { getEmsProjectIdByManagerId } from '@/config/emsEmbedProject'
 import { getUserInfo } from '@/api/user'
 
-const LOGIN_URL = 'https://cp-ems.szcloudpulse.com:86/prod-api/mockLogin'
-const EMS_ORIGIN = 'https://cp-ems.szcloudpulse.com:86'
+const LOGIN_URL = `${EMS_API_ROOT}/mockLogin`
 const LOGIN_PAYLOAD = {
   username: 'jipai',
   password: '123456'

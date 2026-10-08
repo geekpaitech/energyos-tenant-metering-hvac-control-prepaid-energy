@@ -6,6 +6,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import { FMCS_ROOT, PARKING_OAUTH_URL } from '@/config/services'
 import { logAppNavigate, maskTokenInUrl } from '@/utils/appNavigateLog'
 
 export default {
@@ -43,7 +44,7 @@ export default {
           platformName: String(this.platformName),
           parkId: String(this.currentManagerId)
         })
-        return `https://www.ai2park.cn/#/oauth?${q.toString()}`
+        return `${PARKING_OAUTH_URL}?${q.toString()}`
       }
 
       if (!this.externalPath) return ''
@@ -51,7 +52,7 @@ export default {
         token: String(this.token),
         projectId: String(this.currentManagerId)
       })
-      return `https://jp.brcon.com.cn${this.externalPath}?${q.toString()}`
+      return `${FMCS_ROOT}${this.externalPath}?${q.toString()}`
     },
     handleJump () {
       if (this.externalTarget !== 'ai2park' && !this.externalPath) {

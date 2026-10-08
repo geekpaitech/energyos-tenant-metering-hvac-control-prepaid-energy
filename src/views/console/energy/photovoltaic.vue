@@ -332,6 +332,7 @@ import {
   fetchStationDayRuntime,
   fetchStationMonthRuntime,
   fetchStationYearRuntime,
+  fetchOpenMeteoMonthWeather,
   peelPhotovoltaicPayload
 } from '@/api/photovoltaic'
 import {
@@ -380,12 +381,17 @@ import {
   expandHourlyToMinuteSlots,
   normalizeTrendValues
 } from '@/api/ems'
+import weatherSunnyIcon from '@/assets/images/weather/sunny.svg'
+import weatherCloudyIcon from '@/assets/images/weather/cloudy.svg'
+import weatherOvercastIcon from '@/assets/images/weather/overcast.svg'
+import weatherRainIcon from '@/assets/images/weather/rain.svg'
+import weatherSnowIcon from '@/assets/images/weather/snow.svg'
 
 /** EMS 区域 ID（南都广场） */
-const EMS_AREA_ID = ''
+const EMS_AREA_ID = '2062004309533409281'
 
 /** 电站信息固定封面（OSS 上传，不使用接口 picUrl） */
-const STATION_IMAGE_URL = 'https://oss.example.com/web-file/station.png'
+const STATION_IMAGE_URL = 'https://wu-cloud.oss-cn-shanghai.aliyuncs.com/web-file/nandu.png'
 
 const POLL_INTERVAL = 120000 // 120s，避免锦浪 API 429 限流
 const EMS_RECENT_WINDOW_MS = 60 * 60 * 1000
@@ -421,6 +427,85 @@ const COLORS = {
 }
 
 const DEFAULT_DAY_CHART_PARAMS = { power: true, grid: true, load: true }
+
+/**
+ * 月运行接口 condCodeD 使用的天气图标编码，压缩为适合月图常驻展示的五类图标。
+ */
+function getMonthlyWeatherStyle (weatherCode) {
+  const code = Number(weatherCode)
+  if (!Number.isFinite(code)) return 'weatherEmpty'
+  if (code === 100 || code === 150 || code === 900) return 'weatherSunny'
+  if (code === 104 || (code >= 500 && code <= 515)) return 'weatherOvercast'
+  if ((code >= 101 && code <= 103) || (code >= 151 && code <= 153)) return 'weatherCloudy'
+  if (code >= 300 && code <= 399) return 'weatherRain'
+  if ((code >= 400 && code <= 499) || code === 901) return 'weatherSnow'
+  return 'weatherEmpty'
+}
+
+const MONTHLY_WEATHER_LABELS = {
+  100: '晴',
+  101: '多云',
+  102: '少云',
+  103: '晴间多云',
+  104: '阴',
+  150: '晴',
+  151: '多云',
+  152: '少云',
+  153: '晴间多云',
+  300: '阵雨',
+  301: '强阵雨',
+  302: '雷阵雨',
+  303: '强雷阵雨',
+  304: '雷阵雨伴冰雹',
+  305: '小雨',
+  306: '中雨',
+  307: '大雨',
+  308: '极端降雨',
+  309: '毛毛雨',
+  310: '暴雨',
+  311: '大暴雨',
+  312: '特大暴雨',
+  313: '冻雨',
+  314: '小到中雨',
+  315: '中到大雨',
+  316: '大到暴雨',
+  317: '暴雨到大暴雨',
+  318: '大暴雨到特大暴雨',
+  399: '雨',
+  400: '小雪',
+  401: '中雪',
+  402: '大雪',
+  403: '暴雪',
+  404: '雨夹雪',
+  405: '雨雪天气',
+  406: '阵雨夹雪',
+  407: '阵雪',
+  408: '小到中雪',
+  409: '中到大雪',
+  410: '大到暴雪',
+  456: '阵雨夹雪',
+  457: '阵雪',
+  499: '雪'
+}
+
+function getMonthlyWeatherLabel (weatherCode) {
+  const code = Number(weatherCode)
+  if (!Number.isFinite(code)) return ''
+  if (MONTHLY_WEATHER_LABELS[code]) return MONTHLY_WEATHER_LABELS[code]
+  if (code >= 300 && code <= 399) return '雨'
+  if (code >= 400 && code <= 499) return '雪'
+  if (code >= 500 && code <= 515) return '雾霾'
+  if (code === 900) return '高温'
+  if (code === 901) return '低温'
+  return ''
+}
+
+function formatWeatherTemperature (value) {
+  if (value == null || value === '') return ''
+  const number = Number(value)
+  if (!Number.isFinite(number)) return ''
+  return `${Math.round(number)}℃`
+}
 
 /**
  * 计算 SVG 环形进度条的 stroke-dasharray 字符串
@@ -505,6 +590,10 @@ export default {
       runtimeDayRecords: [],
       runtimeMonthRecords: [],
       runtimeYearRecords: [],
+      monthWeatherByDate: {},
+      monthWeatherKey: '',
+      monthWeatherRequestSeq: 0,
+      monthWeatherAbortController: null,
       gridDayRule: {},
       dayParamDialogVisible: false,
       dayChartParams: { ...DEFAULT_DAY_CHART_PARAMS },
@@ -852,14 +941,18 @@ export default {
       const labelPrefix = prefixMap[this.runtimeType] || '日'
 
       if (this.runtimeType === 'month') {
-        const snapshot = getPeriodSnapshot(this.stationDetail, 'month')
+        // 月视图 KPI 改用月运行记录聚合，与下方 echarts 同源，避免切换月份后数值不变
         const summary = summarizeMonthRuntimeRecords(this.runtimeMonthRecords)
-        const emsLoadKwh = this.isEmsActive
-          ? (this.emsTrendMonth || []).reduce((s, v) => Number.isFinite(v) ? s + v : s, 0)
-          : 0
-        return this.buildSnapshotPeriodRuntime('月', snapshot, {
-          chart: mapMonthRuntimeRecordsToFullMonth(this.runtimeMonthRecords, { daysInMonth: this.selectedMonthDays })
-        }, this.runtimeDates.month, summary, emsLoadKwh)
+        const emsMonthLoadKwh = (this.emsTrendMonth || []).reduce(
+          (sum, value) => Number.isFinite(value) ? sum + value : sum,
+          0
+        )
+        const balancedSummary = this.mergeRuntimeSummaryWithEmsLoad(summary, emsMonthLoadKwh)
+        const monthChart = mapMonthRuntimeRecordsToFullMonth(this.runtimeMonthRecords, { daysInMonth: this.selectedMonthDays })
+        if (!hasRuntimeSummaryData(balancedSummary)) {
+          return this.buildEmptyPeriodRuntime('月', monthChart)
+        }
+        return this.buildMockPeriodRuntime('月', balancedSummary, { chart: monthChart }, this.runtimeDates.month)
       }
 
       if (this.runtimeType === 'year') {
@@ -917,6 +1010,7 @@ export default {
   },
   created () {
     this.resetRuntimeDatesToToday()
+    this.applyRuntimeTypeFromQuery()
   },
   mounted () {
     this.isPageActive = true
@@ -980,6 +1074,12 @@ export default {
         this.runtimeAbortController = null
       }
     },
+    _abortMonthWeatherRequest () {
+      if (this.monthWeatherAbortController) {
+        this.monthWeatherAbortController.abort()
+        this.monthWeatherAbortController = null
+      }
+    },
     _abortEmsRequest () {
       if (this.emsAbortController) {
         this.emsAbortController.abort()
@@ -997,9 +1097,11 @@ export default {
       this.dataReady = false
       this.detailRequestSeq += 1
       this.runtimeRequestSeq += 1
+      this.monthWeatherRequestSeq += 1
       this.stopPolling()
       this._abortDetailRequest()
       this._abortRuntimeRequest()
+      this._abortMonthWeatherRequest()
       this._abortEmsRequest()
       this._abortPowerParamRequest()
       this._abortRealtimePowerRequest()
@@ -1043,7 +1145,9 @@ export default {
         if (!this.isPageActive) return
         await Promise.all([
           this.loadRuntimeData(true),
-          this.fetchEmsLoadData(true)
+          this.fetchEmsLoadData(true),
+          // 首屏立即取得实时负载，避免等待下一轮轮询期间电网流向静止
+          this.fetchLatestEmsLoadPower(true)
         ])
         if (!this.isPageActive) return
         this.startPolling()
@@ -1117,6 +1221,13 @@ export default {
       if (value === null || value === undefined || value === '') return '--'
       return this.formatWeight(value)
     },
+    applyRuntimeTypeFromQuery () {
+      const query = this.$route && this.$route.query
+      const type = query && query.runtimeType
+      if (type === 'day' || type === 'month' || type === 'year') {
+        this.runtimeType = type
+      }
+    },
     resetRuntimeDatesToToday () {
       const now = new Date()
       this.runtimeDates = {
@@ -1139,6 +1250,52 @@ export default {
       if (peeled && Array.isArray(peeled.records)) return peeled.records
       if (peeled && Array.isArray(peeled.list)) return peeled.list
       return []
+    },
+    async loadMonthWeather (month) {
+      this._abortMonthWeatherRequest()
+      const requestSeq = ++this.monthWeatherRequestSeq
+      const station = this.stationDetail || {}
+      const hasCoordinates = station.latitude != null && station.latitude !== '' &&
+        station.longitude != null && station.longitude !== ''
+      const latitude = hasCoordinates ? Number(station.latitude) : NaN
+      const longitude = hasCoordinates ? Number(station.longitude) : NaN
+      const weatherKey = [station.id || this.currentStationId, month, latitude, longitude].join('|')
+
+      if (this.monthWeatherKey !== weatherKey) {
+        this.monthWeatherKey = weatherKey
+        this.monthWeatherByDate = {}
+      }
+      if (!this.isPageActive || this.runtimeType !== 'month' || !month ||
+          !Number.isFinite(latitude) || !Number.isFinite(longitude)) return
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 8000)
+      this.monthWeatherAbortController = controller
+      try {
+        const weatherByDate = await fetchOpenMeteoMonthWeather({
+          latitude,
+          longitude,
+          month,
+          signal: controller.signal
+        })
+        if (!this.isPageActive || requestSeq !== this.monthWeatherRequestSeq ||
+            this.runtimeType !== 'month' || this.runtimeDates.month !== month) return
+
+        this.monthWeatherByDate = weatherByDate
+        await this.$nextTick()
+        if (this.isPageActive && requestSeq === this.monthWeatherRequestSeq &&
+            this.runtimeType === 'month' && this.runtimeDates.month === month) {
+          this.updateTrendChart()
+        }
+      } catch (error) {
+        // 温度属于补充信息：失败或取消时静默降级，不影响锦浪运行数据和天气图标。
+        if (error && error.name === 'AbortError') return
+      } finally {
+        clearTimeout(timeout)
+        if (this.monthWeatherAbortController === controller) {
+          this.monthWeatherAbortController = null
+        }
+      }
     },
     async loadStationDetail (silent = false) {
       if (!this.isPageActive) return
@@ -1364,6 +1521,13 @@ export default {
       const timeKey = this.runtimeDates[type]
       if (!timeKey) return
 
+      if (type === 'month') {
+        // 独立补充天气详情，不纳入运行数据 loading，也不阻塞原图表渲染。
+        this.loadMonthWeather(timeKey)
+      } else {
+        this._abortMonthWeatherRequest()
+      }
+
       const requestSeq = ++this.runtimeRequestSeq
       if (!silent) this.beginRuntimeLoading()
       this._abortRuntimeRequest()
@@ -1540,6 +1704,25 @@ export default {
         selfUseRatio: 0,
         gridSellRatio: 0,
         hasData: false
+      }
+    },
+    mergeRuntimeSummaryWithEmsLoad (summary, emsLoadKwh) {
+      const loadKwh = Number(emsLoadKwh)
+      if (!summary || !Number.isFinite(loadKwh) || loadKwh <= 0) return summary
+
+      const pvEnergyKwh = Number(summary.pvEnergyKwh) || 0
+      const selfUseEnergyKwh = Math.min(pvEnergyKwh, loadKwh)
+      const gridSellEnergyKwh = Math.max(pvEnergyKwh - loadKwh, 0)
+
+      return {
+        ...summary,
+        loadEnergyKwh: loadKwh,
+        gridImportKwh: Math.max(loadKwh - pvEnergyKwh, 0),
+        gridExportKwh: gridSellEnergyKwh,
+        selfUseEnergyKwh,
+        gridSellEnergyKwh,
+        selfUseRatio: pvEnergyKwh > 0 ? (selfUseEnergyKwh / pvEnergyKwh) * 100 : 0,
+        gridSellRatio: pvEnergyKwh > 0 ? (gridSellEnergyKwh / pvEnergyKwh) * 100 : 0
       }
     },
     buildMockPeriodRuntime (labelPrefix, summary, mockEntry, dateLabel, sourceRecord = null) {
@@ -1864,22 +2047,43 @@ export default {
         series
       }
     },
-    formatComboChartTooltip (row, title, incomeUnit = '元') {
+    formatMonthWeatherTooltip (row) {
+      const date = `${this.runtimeDates.month || ''}-${row.label || ''}`
+      const weather = this.monthWeatherByDate[date] || {}
+      const weatherLabel = getMonthlyWeatherLabel(row.weatherCode)
+      const minText = formatWeatherTemperature(weather.temperatureMin)
+      const maxText = formatWeatherTemperature(weather.temperatureMax)
+      const temperatureText = minText && maxText
+        ? `${minText}～${maxText}`
+        : (minText || maxText)
+      const sunshineHours = weather.sunshineHours == null || weather.sunshineHours === ''
+        ? null
+        : Number(weather.sunshineHours)
+      const rows = []
+
+      if (weatherLabel) rows.push(`<div>天气：${weatherLabel}</div>`)
+      if (temperatureText) rows.push(`<div>温度：${temperatureText}</div>`)
+      if (sunshineHours != null && Number.isFinite(sunshineHours)) {
+        rows.push(`<div>日照时长：${sunshineHours.toFixed(1)}h</div>`)
+      }
+      if (!rows.length) return ''
+      return `<div style="margin:6px 0 8px;padding:6px 10px;border-left:2px solid #7fc8ff;background:rgba(255,255,255,.08);line-height:1.7;font-weight:500;">${rows.join('')}</div>`
+    },
+    formatComboChartTooltip (row, title, incomeUnit = '元', weatherHtml = '') {
       const fields = [
         { key: 'generation', label: '发电量', color: COLORS.pv, unit: 'kWh' },
-        { key: 'sell', label: '卖电', color: '#5b8ec8', unit: 'kWh' },
-        { key: 'buy', label: '买电', color: COLORS.red, unit: 'kWh' },
         { key: 'load', label: '负载用电', color: COLORS.orange, unit: 'kWh' },
         { key: 'hours', label: '满发小时数', color: COLORS.blue, unit: 'h' },
         { key: 'income', label: '收益', color: '#f47d0b', unit: incomeUnit }
       ]
       const rows = fields.map(field => `<div><span style="background:${field.color}"></span>${field.label}： ${this.valueText(row[field.key], field.unit)}</div>`).join('')
-      return `<div class="pv-tooltip"><div style="margin-bottom:8px">${title}</div>${rows}</div>`
+      return `<div class="pv-tooltip"><div style="margin-bottom:8px">${title}</div>${weatherHtml}${rows}</div>`
     },
     getMonthChartOption () {
       return this.buildPeriodChartOption({
         periodLabel: this.runtimeDates.month || '2026-06',
-        tooltipTitle: row => `${this.runtimeDates.month || '2026-06'}-${row.label}`
+        tooltipTitle: row => `${this.runtimeDates.month || '2026-06'}-${row.label}`,
+        showWeather: true
       })
     },
     getYearChartOption () {
@@ -1888,14 +2092,12 @@ export default {
         tooltipTitle: row => `${this.runtimeDates.year || '2026'}-${row.label}`
       })
     },
-    buildPeriodChartOption ({ tooltipTitle }) {
+    buildPeriodChartOption ({ tooltipTitle, showWeather = false }) {
       const chartData = this.activeRuntime.chart
       const yAxisRange = getRuntimeComboYAxisRange(chartData)
       const series = []
       const barDefs = [
         { key: 'generation', name: '发电量', color: COLORS.pv, width: 6 },
-        { key: 'sell', name: '卖电', color: '#5b8ec8', width: 6 },
-        { key: 'buy', name: '买电', color: COLORS.red, width: 6 },
         { key: 'load', name: '负载用电', color: COLORS.orange, width: 6 }
       ]
 
@@ -1932,7 +2134,8 @@ export default {
           },
           formatter: params => {
             const row = chartData[params[0].dataIndex] || {}
-            return this.formatComboChartTooltip(row, tooltipTitle(row))
+            const weatherHtml = showWeather ? this.formatMonthWeatherTooltip(row) : ''
+            return this.formatComboChartTooltip(row, tooltipTitle(row), '元', weatherHtml)
           }
         },
         legend: {
@@ -1961,11 +2164,53 @@ export default {
             }
           }
         ],
-        grid: { top: 54, left: 60, right: 70, bottom: 98, containLabel: true },
+        grid: { top: 54, left: 60, right: 70, bottom: showWeather ? 118 : 98, containLabel: true },
         xAxis: {
           type: 'category',
           data: chartData.map(item => item.label),
-          axisLabel: { color: '#666', fontSize: 13 },
+          axisLabel: {
+            color: '#666',
+            fontSize: 13,
+            lineHeight: 22,
+            interval: 0,
+            formatter: (value, index) => {
+              if (!showWeather) return value
+              const row = chartData[index] || {}
+              return `${value}\n{${getMonthlyWeatherStyle(row.weatherCode)}| }`
+            },
+            rich: {
+              weatherSunny: {
+                width: 20,
+                height: 20,
+                backgroundColor: { image: weatherSunnyIcon }
+              },
+              weatherCloudy: {
+                width: 20,
+                height: 20,
+                backgroundColor: { image: weatherCloudyIcon }
+              },
+              weatherOvercast: {
+                width: 20,
+                height: 20,
+                backgroundColor: { image: weatherOvercastIcon }
+              },
+              weatherRain: {
+                width: 20,
+                height: 20,
+                backgroundColor: { image: weatherRainIcon }
+              },
+              weatherSnow: {
+                width: 20,
+                height: 20,
+                backgroundColor: { image: weatherSnowIcon }
+              },
+              weatherEmpty: {
+                width: 20,
+                height: 20,
+                color: '#c0c4cc'
+              }
+            }
+          },
           axisTick: { alignWithLabel: true },
           axisLine: { lineStyle: { color: '#ddd' } }
         },

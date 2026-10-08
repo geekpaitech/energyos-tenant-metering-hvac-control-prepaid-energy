@@ -8,11 +8,16 @@ export default {
     phDeviceName: '设备名称',
     phTenant: '租户名称/编号',
     phOnlineStatus: '在线状态',
+    phPowerStatus: '空调开启状态',
+    all: '全部',
     online: '在线',
     offline: '离线',
     btnSearch: '查询',
     btnReset: '重置',
     btnExport: '导出',
+    exportCurrentPage: '导出本页',
+    exportSelected: '导出选中',
+    exportAll: '导出全部',
     sectionIndoorCard: '空调内机卡片',
     sectionIndoorList: '空调内机列表',
     batchAction: '批量操作',
@@ -41,7 +46,7 @@ export default {
     colTemp: '温度(℃)',
     colFanSpeed: '风速',
     colFault: '故障状态',
-    colCreateTime: '上线时间',
+    colLastReportTime: '空调最新上报时间',
     colSerialShort: '序列号',
     colId: 'Id',
     colOp: '操作',
@@ -212,6 +217,15 @@ export default {
     successSerialCopied: '序列号已复制',
     errCopy: '复制失败',
     errOutdoorFetch: '获取外机数据失败',
-    warnNoMeterForOutdoor: '该外机系统暂无关联电表'
+    warnNoMeterForOutdoor: '该外机系统暂无关联电表',
+
+    warnNoExportData: '暂无数据可导出',
+    warnNoSelectedExport: '请先勾选要导出的数据',
+    successExported: '成功导出 {count} 条数据',
+    successExportedLimit: '共 {total} 条，已导出前 {count} 条',
+    errExport: '导出失败',
+    exporting: '正在导出...',
+    exportSheetName: '空调内机',
+    exportFilePrefix: '空调内机'
   }
 }

@@ -540,8 +540,8 @@
     <el-dialog :title="$t('subMeteringPage.dlgBindMeter')" :visible.sync="meterDlg.show" width="860px" top="6vh" append-to-body @close="resetMeterDlg">
       <el-input v-model="meterDlg.kw" :placeholder="$t('subMeteringPage.phMeterSearch')" prefix-icon="el-icon-search" clearable
         style="margin-bottom:12px" @input="searchMeters" />
-      <el-table ref="meterTbl" :data="meterDlg.list" border size="small" v-loading="meterDlg.loading" height="360"
-        :row-style="meterRowStyle" @selection-change="r => meterDlg.selected = r">
+      <el-table ref="meterTbl" :data="meterDlg.list" border size="small" v-loading="meterDlg.loading" height="550"
+        row-key="meterId" :row-style="meterRowStyle" @selection-change="onMeterSelectionChange">
         <el-table-column type="selection" width="46" align="center" :selectable="singleSelectable" />
         <el-table-column prop="serial" :label="$t('subMeteringPage.colSerial')" min-width="160" show-overflow-tooltip />
         <el-table-column prop="meterName" :label="$t('subMeteringPage.colMeterName')" min-width="200" show-overflow-tooltip>
@@ -566,7 +566,7 @@
         </el-table-column>
       </el-table>
       <div slot="footer" class="dlg-footer">
-        <el-pagination small :current-page.sync="meterDlg.page" :page-sizes="[10, 30, 50]"
+        <el-pagination small :current-page.sync="meterDlg.page" :page-sizes="[10, 20, 30, 50]"
           :page-size.sync="meterDlg.size" :total="meterDlg.total" layout="total,sizes,prev,pager,next,jumper" />
         <div class="dlg-footer-btns">
           <el-button type="primary" :disabled="!meterDlg.selected.length || !canControl" @click="confirmBind(false)">{{ $t('subMeteringPage.btnConfirmBind') }}</el-button>
@@ -582,8 +582,8 @@
         :title="$t('subMeteringPage.dualDlgAlert')" />
       <el-input v-model="dualDlg.kw" :placeholder="$t('subMeteringPage.phMeterSearch')" prefix-icon="el-icon-search" clearable
         style="margin-bottom:12px" @input="searchDualMeters" />
-      <el-table ref="dualTbl" :data="dualDlg.list" border size="small" v-loading="dualDlg.loading" height="360"
-        :row-style="meterRowStyle" @selection-change="handleDualSelection">
+      <el-table ref="dualTbl" :data="dualDlg.list" border size="small" v-loading="dualDlg.loading" height="550"
+        row-key="meterId" :row-style="meterRowStyle" @selection-change="onDualSelectionChange">
         <el-table-column type="selection" width="46" align="center" :selectable="checkSelectable" />
         <el-table-column prop="serial" :label="$t('subMeteringPage.colSerial')" min-width="160" show-overflow-tooltip />
         <el-table-column prop="meterName" :label="$t('subMeteringPage.colMeterName')" min-width="200" show-overflow-tooltip>
@@ -616,7 +616,7 @@
         </span>
       </div>
       <div slot="footer" class="dlg-footer">
-        <el-pagination small :current-page.sync="dualDlg.page" :page-sizes="[10, 30, 50]" :page-size.sync="dualDlg.size"
+        <el-pagination small :current-page.sync="dualDlg.page" :page-sizes="[10, 20, 30, 50]" :page-size.sync="dualDlg.size"
           :total="dualDlg.total" layout="total,sizes,prev,pager,next,jumper" />
         <div class="dlg-footer-btns">
           <el-button type="primary" :disabled="dualDlg.selected.length !== 2 || !canControl"
@@ -1231,6 +1231,7 @@ export default {
     // ══ 电表列表 ══════════════════════════════════════════════════════════════
 
     async loadMeters () {
+      if (this.meterDlg.loading) return
       this.meterDlg.loading = true
       try {
         const res = await pageSubMeter({
@@ -1242,6 +1243,7 @@ export default {
         if (res.code === 200) {
           this.meterDlg.list = res.data.dataList || []
           this.meterDlg.total = res.data.total || 0
+          this.$nextTick(() => this._restoreMeterSelection())
         }
       } catch (e) {
         console.error('[SubMetering] loadMeters error:', e)
@@ -1252,6 +1254,7 @@ export default {
     },
 
     async loadDualMeters () {
+      if (this.dualDlg.loading) return
       this.dualDlg.loading = true
       try {
         const res = await pageSubMeter({
@@ -1263,6 +1266,7 @@ export default {
         if (res.code === 200) {
           this.dualDlg.list = res.data.dataList || []
           this.dualDlg.total = res.data.total || 0
+          this.$nextTick(() => this._restoreDualSelection())
         }
       } catch (e) {
         console.error('[SubMetering] loadDualMeters error:', e)
@@ -1270,6 +1274,32 @@ export default {
       } finally {
         this.dualDlg.loading = false
       }
+    },
+
+    _restoreMeterSelection () {
+      const table = this.$refs.meterTbl
+      if (!table || !this.meterDlg.list.length) return
+      const selectedIds = new Set(this.meterDlg.selected.map(s => s.meterId))
+      this._meterRestoring = true
+      this.meterDlg.list.forEach(row => {
+        if (selectedIds.has(row.meterId)) {
+          table.toggleRowSelection(row, true)
+        }
+      })
+      this._meterRestoring = false
+    },
+
+    _restoreDualSelection () {
+      const table = this.$refs.dualTbl
+      if (!table || !this.dualDlg.list.length) return
+      const selectedIds = new Set(this.dualDlg.selected.map(s => s.meterId))
+      this._dualRestoring = true
+      this.dualDlg.list.forEach(row => {
+        if (selectedIds.has(row.meterId)) {
+          table.toggleRowSelection(row, true)
+        }
+      })
+      this._dualRestoring = false
     },
 
     searchMeters () { this.meterDlg.page = 1; this.loadMeters() },
@@ -1350,8 +1380,8 @@ export default {
       const node = this.ctx.pendingNode
       this.closeCtx()
       if (action === A.GLOBAL_ADD_LAYER) { this.showLayerDialog = true; return }
-      if (action === A.BIND) { this.meterDlg.show = true; this.loadMeters(); return }
-      if (action === A.BIND_DUAL) { this.dualDlg.show = true; this.loadDualMeters(); return }
+      if (action === A.BIND) { this.meterDlg.show = true; this.$refs.meterTbl?.clearSelection(); this.loadMeters(); return }
+      if (action === A.BIND_DUAL) { this.dualDlg.show = true; this.$refs.dualTbl?.clearSelection(); this.loadDualMeters(); return }
       if (action === A.ADD_CAT) { this._doAddCat(node); return }
       if (action === A.RENAME) { this._doRename(node); return }
       if (action === A.DEL || action === A.UNBIND) this._doDelete(node, action === A.DEL)
@@ -1448,7 +1478,24 @@ export default {
 
     // ══ 绑定电表 ══════════════════════════════════════════════════════════════
 
-    handleDualSelection (val) { this.dualDlg.selected = val },
+    onMeterSelectionChange (rows) {
+      if (this._meterRestoring) return
+      // 跨页选择：当前页的选中行替换掉 selected 中同页的旧记录，保留其他页的
+      const currentIds = new Set(this.meterDlg.list.map(r => r.meterId))
+      this.meterDlg.selected = [
+        ...this.meterDlg.selected.filter(s => !currentIds.has(s.meterId)),
+        ...rows
+      ]
+    },
+
+    onDualSelectionChange (rows) {
+      if (this._dualRestoring) return
+      const currentIds = new Set(this.dualDlg.list.map(r => r.meterId))
+      this.dualDlg.selected = [
+        ...this.dualDlg.selected.filter(s => !currentIds.has(s.meterId)),
+        ...rows
+      ]
+    },
 
     checkSelectable (row) {
       if (row?.subId != null && row.subId !== '') return false
@@ -1530,6 +1577,7 @@ export default {
       this.meterDlg.page = 1
       this.meterDlg.selected = []
       this.meterDlg.list = []
+      this.$refs.meterTbl?.clearSelection()
     },
 
     resetDualDlg () {

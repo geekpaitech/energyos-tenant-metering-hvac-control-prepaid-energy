@@ -85,10 +85,12 @@ wyy-admin/
 │  ├─ main.js
 │  ├─ permission.js
 │  └─ settings.js
-├─ tests/unit/            # 单元测试示例
+├─ docs/CONFIGURATION.md  # 地址、启动、Mock 与部署配置说明
+├─ scripts/check-config.js # 离线配置检查（不请求后台）
+├─ tests/unit/            # 单元测试
 ├─ .env.development       # 开发环境变量
 ├─ .env.production        # 生产环境变量
-├─ vue.config.js          # 开发服务器/代理与 floors SVG loader 自定义
+├─ vue.config.js          # 服务地址统一入口、开发服务器与 floors SVG loader
 ├─ babel.config.js
 ├─ .eslintrc.js
 ├─ .editorconfig
@@ -98,43 +100,49 @@ wyy-admin/
 
 ## 环境要求
 
-- Node.js >= 14（推荐 16/18 LTS）
-- npm >= 7
+- 本项目以 **Node.js 14.21.3 + npm 6.14.18** 为验证基准，优先使用此组合。
+- 相近的 Node.js 14.x 版本需自行验证；其他版本暂不作为本项目的运行基准。
+- 本次整理保留现有 Vue 2 / Vue CLI 4 与依赖版本，不需要升级本机 Node.js。
+- 保留并提交 `package-lock.json`，便于复现依赖安装。
 
 ## 快速开始
 
 ```bash
-npm install
+npm ci
 npm run serve
 ```
 
 - 本地开发地址：http://localhost:8080
 - 代理配置：`/api` → `https://iot-test.geekpartytech.com`（详见 vue.config.js）
+- 修改主后台只需修改 `vue.config.js` 顶部 `services.backendRoot`，无需同步修改 `.env` 或请求封装。
+- AI、统计服务、EMS 与外部子系统地址也在同一文件中，默认保留现有服务。
+- 完整配置说明：[docs/CONFIGURATION.md](docs/CONFIGURATION.md)。
+- 完整业务运行需要兼容的后台、账号权限与独立服务；前端源码不包含后台服务。
 
 ## 构建与测试
 
 ```bash
 npm run build      # 生产构建
+npm run check:config # 离线检查开发/生产配置与 URL，不请求后台
 npm run test:unit  # 单元测试
 npm run lint       # 代码规范检查与修复
 ```
 
-## 环境变量
+## 配置入口
 
-- 开发环境（.env.development）
-  - VUE_APP_BASE_API=/dev-api
-  - VUE_APP_HTTPS=false
-  - PORT=8080
-  - OPEN=true
-- 生产环境（.env.production）
-  - VUE_APP_BASE_API=https://api.yourdomain.com
-  - VUE_APP_HTTPS=true
-    > 说明：实际 API 域名与 HTTPS 策略以部署环境为准，通过环境变量注入。
+- `vue.config.js` 的 `services`：主后台、AI、统计、EMS、楼控、停车、租户二维码、权限页面正式入口与主请求超时。
+- `vue.config.js` 的 `features`：全局 Mock 与区域模块 Mock。默认保持现有数据来源。
+- `vue.config.js` 的 `devServer`：端口 `8080`、自动打开浏览器、开发 HTTPS 与 `/api` 代理。
+- `vue.config.js` 的 `publicPath`：前端部署目录，默认 `/`。
+- `.env.development` / `.env.production` 仅保留构建模式，不再维护第二套后台地址。
+- 配置在启动或构建时注入前端；修改后需重启开发服务，生产环境需重新构建部署。
 
 ## 部署指南
 
 - 生产构建产物可部署至任意 Web 服务器或 CDN。
-- 确保后端 API 与 `VUE_APP_BASE_API` 对齐，必要时在网关配置反向代理。
+- 生产包主业务请求使用 `services.backendRoot`，上传地址也同步使用该地址；开发代理不会随生产包一起部署。
+- 前后端不同源时，后台需允许前端部署域名和现有鉴权请求头跨域；EMS、AI 等独立服务需保持可访问。
+- 部署到子目录时配置 `publicPath`，并检查外部系统回跳路径；当前路由使用 hash 模式。
 - PWA 图标路径在 `vue.config.js` 的 `pwa.iconPaths` 中已统一为 `favicon.ico`。
 
 ## 安全与合规

@@ -1,0 +1,8 @@
+Use case: style-transfer.
+Asset type: single regional map raster background for a premium energy monitoring dashboard; no UI.
+Input image 1 is the edit target and exact geographic geometry reference. Preserve its distinctive regional silhouette, all coastline bends, the long slender southwest tail and large northeast lobe, central narrow bridge, and exact internal administrative partition boundaries. Preserve map orientation and nearly frontal orthographic geographic projection.
+Primary request: Remove EVERY Chinese or other text label, every property marker, pin, gold light, card, legend, metric, statistic, frame and other UI. Reconstruct clean uninterrupted textured map underneath. Retain ONLY the unlabeled regional map shape, its internal geographic partitions, and a very subtle circular floating base underneath.
+Style: premium cinematic dark navy night digital terrain, blue fine street-like texture, thin luminous cyan outline, much dimmer cyan internal district boundaries, shallow subtle 3D extruded depth. Very restrained atmospheric blue glow.
+Scene: deep dark navy background (#030f24) with gentle vignette. Floating map above faint low-contrast circular blue base.
+Composition: wide 1400x850 canvas, entire geographic silhouette visible and centered with at least 8% clear margins on all sides including top and southwest tail. Near front orthographic camera; avoid changing source outline or flattening the northeast lobe. Map should be large and readable.
+Constraints: absolutely no text, letters, numbers, symbols, marker pins, annotations, icons, charts, boxes, decorative UI panels or logos. Only clean unlabelled map, boundary geometry and subtle base. Output one final image.

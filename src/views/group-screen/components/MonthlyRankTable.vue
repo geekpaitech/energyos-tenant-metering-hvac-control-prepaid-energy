@@ -1,14 +1,14 @@
 <template>
   <div ref="root" class="monthly-rank">
     <div class="monthly-rank__head">
-      <span class="th th--rank">排名</span>
+      <span class="th th--rank">序号</span>
       <span class="th th--name">项目</span>
       <span class="th">巡检</span>
       <span class="th">维保</span>
       <span class="th">三关</span>
       <span class="th">安全</span>
       <span class="th">品质</span>
-      <span class="th th--total">综合</span>
+      <span class="th th--total">得分</span>
     </div>
     <div v-if="loading" class="monthly-rank__body monthly-rank__body--loading" aria-busy="true">
       <div
@@ -26,15 +26,15 @@
         <span>评分加载中…</span>
       </div>
     </div>
-    <div v-else class="monthly-rank__body">
+    <div v-else class="monthly-rank__body monthly-rank__body--scrollable">
+      <div v-if="!rankedRows.length" class="monthly-rank__empty">暂无月度综合评分排名数据</div>
       <div
-        v-for="r in displayRows"
-        :key="r.rank"
+        v-for="(r, index) in rankedRows"
+        :key="r.projectGuid || r.businessUnitGuid || index"
         class="monthly-rank__row"
-        :class="{ 'monthly-rank__row--placeholder': r.placeholder }"
       >
         <span class="td td--rank">
-          <span class="rank-badge" :class="rankBadgeClass(r.rank)">{{ r.rank }}</span>
+          <span class="rank-badge">{{ r.rank }}</span>
         </span>
         <span class="td td--name" :title="r.name">{{ r.name }}</span>
         <span
@@ -79,39 +79,21 @@ export default {
     loading: { type: Boolean, default: false }
   },
   computed: {
-    displayRows () {
+    rankedRows () {
       const rows = Array.isArray(this.items) ? this.items : []
-      if (rows.length >= this.minDisplayRows) {
-        return rows.slice(0, this.minDisplayRows)
-      }
-      const padded = [...rows]
-      for (let i = rows.length; i < this.minDisplayRows; i += 1) {
-        padded.push({
-          rank: i + 1,
-          name: '--',
-          score: '--',
-          placeholder: true,
-          workOrders: {
-            inspection: { score: '--', tip: '巡检：--' },
-            maintenance: { score: '--', tip: '维保：--' },
-            threeClose: { score: '--', tip: '三关一闭：--' }
-          },
-          rectification: {
-            safety: { score: '--', tip: '安全：--' },
-            quality: { score: '--', tip: '品质：--' }
-          }
+      return rows
+        .map((row, sourceIndex) => ({ row, sourceIndex, score: Number(row.score) }))
+        .sort((a, b) => {
+          const aValid = Number.isFinite(a.score)
+          const bValid = Number.isFinite(b.score)
+          if (aValid && bValid && a.score !== b.score) return b.score - a.score
+          if (aValid !== bValid) return aValid ? -1 : 1
+          return a.sourceIndex - b.sourceIndex
         })
-      }
-      return padded
+        .map(({ row }, index) => ({ ...row, rank: index + 1 }))
     }
   },
   methods: {
-    rankBadgeClass (rank) {
-      if (rank === 1) return 'rank-badge--gold'
-      if (rank === 2) return 'rank-badge--silver'
-      if (rank === 3) return 'rank-badge--bronze'
-      return 'rank-badge--blue'
-    },
     /**
      * 条件着色：满分 100 弱化退后；低分（<20）琥珀跳出；'--' 占位降噪
      * 数据全保留，用视觉权重代替逐格阅读
@@ -146,7 +128,7 @@ export default {
 .monthly-rank__head,
 .monthly-rank__row {
   display: grid;
-  grid-template-columns: 30px minmax(68px, 1.25fr) repeat(5, minmax(30px, 0.62fr)) 46px;
+  grid-template-columns: 30px minmax(62px, 1.1fr) repeat(5, minmax(28px, 0.55fr)) 64px;
   align-items: center;
   column-gap: 4px;
   width: 100%;
@@ -187,6 +169,17 @@ export default {
   flex-direction: column;
   position: relative;
   overflow: hidden;
+
+  &--scrollable {
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(98, 168, 208, 0.38) transparent;
+
+    &::-webkit-scrollbar { width: 5px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { border-radius: 5px; background: rgba(98, 168, 208, 0.38); }
+  }
 }
 
 .monthly-rank__row {
@@ -207,17 +200,14 @@ export default {
     border-bottom: none;
   }
 
-  &:first-child:not(.monthly-rank__row--placeholder):not(.monthly-rank__row--skeleton) {
-    background: linear-gradient(90deg, rgba(185, 176, 124, 0.1), rgba(98, 168, 208, 0.03));
-    box-shadow: inset 2px 0 0 rgba(185, 176, 124, 0.48);
-  }
+}
 
-  &--placeholder {
-    .td--name,
-    .td--total {
-      color: rgba(168, 192, 220, 0.22);
-    }
-  }
+.monthly-rank__empty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  color: rgba(168, 192, 220, 0.46);
+  font-size: 12px;
 }
 
 .td {
@@ -246,14 +236,16 @@ export default {
     font-variant-numeric: tabular-nums;
     font-size: 12.5px;
     color: rgba(228, 238, 250, 0.94);
+    text-overflow: clip;
   }
 
   &--total {
     font-weight: 700;
-    font-size: 15px;
+    font-size: 13px;
     color: $ds-cyber;
     font-family: $ds-font-num;
     text-shadow: 0 0 8px rgba(122, 214, 212, 0.25);
+    text-overflow: clip;
   }
 }
 
@@ -379,10 +371,8 @@ export default {
   font-weight: 700;
   font-family: $ds-font-num;
   border: none;
-
-  &--gold { color: $ds-gold; background: rgba(185, 176, 124, 0.18); }
-  &--silver { color: $ds-silver; background: rgba(169, 201, 223, 0.14); }
-  &--bronze { color: $ds-bronze; background: rgba(201, 160, 120, 0.14); }
-  &--blue { color: $ds-cyan-bright; background: rgba(98, 168, 208, 0.14); }
+  color: rgba(184, 216, 234, 0.82);
+  background: rgba(98, 168, 208, 0.12);
 }
+
 </style>

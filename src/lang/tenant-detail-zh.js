@@ -9,6 +9,7 @@ export default {
     detailDeduction: '抵扣金',
     watermarkNoAccount: '未开户',
     labelPublicArea: '租占面积：',
+    labelPostPayComment: '后付费备注：',
     labelElectricAlarm1: '电费预警金额1：',
     labelElectricAlarm2: '电费预警金额2：',
     labelElectricOverdraw: '电费透支金额：',

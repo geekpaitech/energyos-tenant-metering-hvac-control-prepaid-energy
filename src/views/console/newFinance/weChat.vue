@@ -44,9 +44,16 @@
               {{ $t('wechatRechargePage.btnSearch') }}
             </el-button>
             <el-button size="small" icon="el-icon-refresh" @click="handleReset">{{ $t('wechatRechargePage.btnReset') }}</el-button>
-            <el-button type="success" size="small" icon="el-icon-download" @click="handleExport">
-              {{ $t('wechatRechargePage.btnExport') }}
-            </el-button>
+            <el-dropdown trigger="hover" @command="handleExportCommand">
+              <el-button type="success" size="small" icon="el-icon-download">
+                {{ $t('wechatRechargePage.btnExport') }}<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="currentPage">{{ $t('wechatRechargePage.exportCurrentPage') }}</el-dropdown-item>
+                <el-dropdown-item command="selected">{{ $t('wechatRechargePage.exportSelected') }}</el-dropdown-item>
+                <el-dropdown-item command="all">{{ $t('wechatRechargePage.exportAll') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </div>
         </div>
       </el-form>
@@ -73,6 +80,8 @@
           v-loading="loading"
           border
           :data="tableData"
+          @selection-change="handleSelectionChange"
+          row-key="seqNo"
           stripe
           style="width: 100%"
           class="custom-table light-border-table"
@@ -82,6 +91,7 @@
             fontWeight: '600',
           }"
         >
+          <el-table-column type="selection" width="55" align="center" reserve-selection />
           <el-table-column :label="$t('wechatRechargePage.colSeqNo')" width="200" align="center" show-overflow-tooltip>
             <template slot-scope="scope">
               {{ scope.row.seqNo || scope.row.rid || '-' }}
@@ -168,6 +178,8 @@ import { capitalManagePageTenantRecord, getSimpleTenantList } from '@/api/public
 import { mapGetters } from 'vuex'
 import * as XLSX from 'xlsx'
 
+const EXPORT_ALL_LIMIT = 2000
+
 export default {
   name: 'WechatRecharge',
   data () {
@@ -180,6 +192,8 @@ export default {
       tenantList: [],
       tableData: [],
       loading: false,
+      selectedData: [],
+      exportAllLoading: false,
       pageData: {
         current: 1,
         size: 15,
@@ -423,44 +437,105 @@ export default {
       this.handleSearch()
     },
 
-    handleExport () {
+    buildXlsx (exportData, isSelected, total) {
+      const headers = [
+        this.$t('wechatRechargePage.colSeqNo'),
+        this.$t('wechatRechargePage.colOccurTime'),
+        this.$t('wechatRechargePage.colTenantName'),
+        this.$t('wechatRechargePage.colRechargeAccount'),
+        this.$t('wechatRechargePage.colAmount'),
+        this.$t('wechatRechargePage.colFeeRate'),
+        this.$t('wechatRechargePage.colFee'),
+        this.$t('wechatRechargePage.colStatus')
+      ]
+      const rows = exportData.map((row) => [
+        row.seqNo || row.rid || '',
+        row.occurTime || '',
+        this.$displayBizHybrid(row.tenantName || ''),
+        row.rechargeAccount || '',
+        row.amount != null ? Number(row.amount).toFixed(2) : '',
+        this.formatFeeRate(row.feeRate),
+        row.fee != null ? Number(row.fee).toFixed(2) : '',
+        this.getStatusLabel(row.status)
+      ])
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+      const headerRange = XLSX.utils.decode_range(ws['!ref'])
+      for (let c = headerRange.s.c; c <= headerRange.e.c; c++) {
+        const cell = XLSX.utils.encode_cell({ r: 0, c })
+        if (ws[cell]) {
+          ws[cell].s = { font: { bold: true, color: { rgb: '303133' } }, fill: { fgColor: { rgb: 'F5F7FA' } }, alignment: { horizontal: 'center', vertical: 'center' } }
+        }
+      }
+      const wb = XLSX.utils.book_new()
+      const sheetName = this.$t('wechatRechargePage.exportSheetName').slice(0, 31)
+      XLSX.utils.book_append_sheet(wb, ws, sheetName)
+      const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
+      const filePrefix = this.$t('wechatRechargePage.filePrefix')
+      XLSX.writeFile(wb, `${filePrefix}_${timeStr}.xlsx`)
+      const exportCount = exportData.length
+      let successMsg
+      if (isSelected) successMsg = this.$t('wechatRechargePage.msgExportOkSelected', { count: exportCount })
+      else if (total != null && total > exportCount) successMsg = this.$t('wechatRechargePage.successExportedLimit', { count: exportCount, total })
+      else if (total != null) successMsg = this.$t('wechatRechargePage.successExported', { count: exportCount })
+      else successMsg = this.$t('wechatRechargePage.msgExportOk', { count: exportCount })
+      this.$message.success(successMsg)
+    },
+    exportCurrentPage () {
       if (!this.tableData.length) {
         this.$message.warning(this.$t('wechatRechargePage.msgNoDataExport'))
         return
       }
+      this.buildXlsx(this.tableData, false, null)
+    },
+    exportSelected () {
+      if (!this.selectedData.length) {
+        this.$message.warning(this.$t('wechatRechargePage.warnNoSelectedExport'))
+        return
+      }
+      this.buildXlsx(this.selectedData, true, null)
+    },
+    async exportAll () {
+      if (this.exportAllLoading) return
+      this.exportAllLoading = true
+      const loading = this.$loading({ lock: true, text: this.$t('wechatRechargePage.exporting') })
       try {
-        const headers = [
-          this.$t('wechatRechargePage.colSeqNo'),
-          this.$t('wechatRechargePage.colOccurTime'),
-          this.$t('wechatRechargePage.colTenantName'),
-          this.$t('wechatRechargePage.colRechargeAccount'),
-          this.$t('wechatRechargePage.colAmount'),
-          this.$t('wechatRechargePage.colFeeRate'),
-          this.$t('wechatRechargePage.colFee'),
-          this.$t('wechatRechargePage.colStatus')
-        ]
-        const rows = this.tableData.map((row) => [
-          row.seqNo || row.rid || '',
-          row.occurTime || '',
-          this.$displayBizHybrid(row.tenantName || ''),
-          row.rechargeAccount || '',
-          row.amount != null ? Number(row.amount).toFixed(2) : '',
-          this.formatFeeRate(row.feeRate),
-          row.fee != null ? Number(row.fee).toFixed(2) : '',
-          this.getStatusLabel(row.status)
-        ])
-        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-        const wb = XLSX.utils.book_new()
-        const sheetName = this.$t('wechatRechargePage.exportSheetName').slice(0, 31)
-        XLSX.utils.book_append_sheet(wb, ws, sheetName)
-        const timeStr = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')
-        const filePrefix = this.$t('wechatRechargePage.filePrefix')
-        XLSX.writeFile(wb, `${filePrefix}_${timeStr}.xlsx`)
-        this.$message.success(this.$t('wechatRechargePage.msgExportOk', { count: this.tableData.length }))
+        const { rows, total } = await this.fetchAllForExport()
+        if (!rows.length) {
+          this.$message.warning(this.$t('wechatRechargePage.msgNoDataExport'))
+          return
+        }
+        this.buildXlsx(rows, false, total)
       } catch (e) {
         console.error(e)
         this.$apiError.notify(e, this.$t('wechatRechargePage.msgExportFail'))
+      } finally {
+        loading.close()
+        this.exportAllLoading = false
       }
+    },
+    handleExportCommand (command) {
+      if (command === 'currentPage') this.exportCurrentPage()
+      else if (command === 'selected') this.exportSelected()
+      else if (command === 'all') this.exportAll()
+    },
+    handleSelectionChange (selection) {
+      this.selectedData = selection
+    },
+    async fetchAllForExport () {
+      const tenantId = this.normalizeSelect(this.queryData.tenantId)
+      const params = {
+        managerId: this.currentManagerId,
+        tenantId: tenantId === undefined ? null : tenantId,
+        startDate: this.queryData.timeRange && this.queryData.timeRange[0] ? `${this.queryData.timeRange[0]} 00:00:00` : '',
+        endDate: this.queryData.timeRange && this.queryData.timeRange[1] ? `${this.queryData.timeRange[1]} 23:59:59` : '',
+        channels: ['WECHAT'],
+        page: { current: 1, size: EXPORT_ALL_LIMIT, orders: [{ asc: false, column: 'occurTime' }] }
+      }
+      const response = await capitalManagePageTenantRecord(params)
+      if (response.code !== 200 || !response.data) {
+        throw new Error(response.msg || this.$t('wechatRechargePage.msgFetchFail'))
+      }
+      return { rows: response.data.dataList || [], total: response.data.total || 0 }
     },
 
     handleSizeChange (val) {

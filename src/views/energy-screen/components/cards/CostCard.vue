@@ -1,5 +1,5 @@
 <template>
-  <energy-panel title="费用构成" period="近7日">
+  <energy-panel title="费用构成" class="is-drillable" @click.native="handleDrilldown">
     <div class="cost-card">
       <div class="cost-card__chart">
         <e-chart-host ref="chart" :option="option" aria-label="近7日费用构成环形图" />
@@ -28,6 +28,7 @@ import { createCostOption } from '../../utils/chartOptions'
 export default {
   name: 'EnergyCostCard',
   components: { EnergyPanel, EChartHost },
+  inject: ['energyScreenDrilldown'],
   props: { data: { type: Object, required: true } },
   computed: { option () { return createCostOption(this.data) } },
   methods: {
@@ -36,7 +37,8 @@ export default {
       if (value === null || value === undefined || value === '') return '--'
       const number = Number(value)
       return Number.isFinite(number) ? number.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'
-    }
+    },
+    handleDrilldown () { this.energyScreenDrilldown('consumption-bill') }
   }
 }
 </script>

@@ -381,7 +381,7 @@ export default {
       }
     },
     goToSubMetering () {
-      this.$router.push({ path: '/energy/sub-metering' })
+      this.$router.push({ path: '/power-analysis/energy-overview' })
     },
     formatNumber (value, digits = 0) {
       if (value === null || value === undefined || value === '') return '-'

@@ -40,6 +40,31 @@ export function tenantUpdate (data) {
   })
 }
 
+// 分页查询明源承租方/客户列表
+export function mingYuanRenterPage (params) {
+  return request({
+    url: '/api/ebc-content/mingyuan/renters',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC'
+    },
+    params
+  })
+}
+
+// 分页查询明源资源列表（包含资源占用状态）
+export function mingYuanResourcePage (data) {
+  return request({
+    url: '/api/ebc-content/mingyuan/resources',
+    method: 'post',
+    headers: {
+      userDeviceType: 'PC',
+      'Content-Type': 'application/json'
+    },
+    data
+  })
+}
+
 // 根据ID查询租户详情
 export function tenantGetById (params) {
   return request({

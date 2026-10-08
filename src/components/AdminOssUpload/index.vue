@@ -39,10 +39,10 @@ export default {
       type: Number,
       default: 1
     },
-    /** OSS 对象前缀，与后端配置一致 */
+    /** OSS 对象前缀，与项目 wu-cloud 配置一致 */
     ossPrefix: {
       type: String,
-      default: ''
+      default: 'admin/water-import/'
     }
   },
   data () {
@@ -82,7 +82,7 @@ export default {
           accessKeyId: data.accessKeyId,
           accessKeySecret: data.accessKeySecret,
           stsToken: data.securityToken,
-          bucket: '',
+          bucket: 'wu-cloud',
           secure: true
         })
 
