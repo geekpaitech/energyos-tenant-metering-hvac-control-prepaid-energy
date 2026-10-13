@@ -1,328 +1,461 @@
-# 数字物宇-能源管理平台（分项计量-预付费-空调集控计费）
+<p align="center">
+  <a href="https://geekpartytech.com/"><img src="src/assets/images/wyy-logo.png" alt="数字物宇 · 极派科技 Logo" width="144" height="144"></a>
+</p>
 
-专注于写字楼，商业体，产业园，公寓等典型多租户用能场景的能源计量计费企业级前端项目，聚焦“多联机中央空调计费 + 中央空调智控 + 能源计费 + 分项计量（损耗分析&能耗分布） + 预付费（支付&开票） + AI Agent 能源运营一站式分析”。
-云-管-端架构，打通数据流-现金流-发票流，形成三流合一闭环。支持电费【智能电表】，水费【智能水表】，空调费【空调网关】等精准计量&分摊计费，账单溯源，在线支付，一键开票。500+项目落地验证，并同步线上版本迭代。
-遵循 AI Native 能源管理理念，基于 IoT + AI + Data 能力，支撑设备统一接入、能耗精细化管理与运营协同，满足百万设备并发与 99.99% 可用性目标。
+<h1 align="center">数字物宇</h1>
+<h3 align="center">智能水电与预付费能源管理平台</h3>
 
-- 产品介绍：https://vrf.geekpartytech.com/
-- 系统地址：https://iot.geekpartytech.com/
-- 演示账号：18866668888
-- 演示密码：Demo@2025
+<p align="center">面向写字楼、商业综合体、产业园与公寓</p>
+<p align="center"><strong>远程抄表 · 水电计费 · 中央空调集控 · 分项计量 · 能耗分析</strong></p>
 
-## 核心能力
+<p align="center">
+  <a href="#技术与目录"><img src="src/assets/readme/brand/vue.svg" alt="Vue 2" height="24"></a>
+  <a href="#技术与目录"><img src="src/assets/readme/brand/element.svg" alt="Element UI 2" height="24"></a>
+  <a href="#技术与目录"><img src="src/assets/readme/brand/echarts.svg" alt="ECharts 5" height="24"></a>
+  <a href="#运行环境"><img src="src/assets/readme/brand/node.svg" alt="Node.js 14.21.3" height="24"></a>
+  <a href="LICENSE"><img src="src/assets/readme/brand/license.svg" alt="Apache License 2.0" height="24"></a>
+</p>
 
-- 多品牌统一管控：兼容主流 VRF 厂商与 200+ 协议，统一接入与控制
-- 精准分户计量：冷量/电量分户与账单溯源，预付费模式零欠费
-- 集控与调度：设备组控、时序调度、运行日志与异常处理
-- 能源分析：电/水报表、桑基图、设备功率与用能分布、节能对比
-- 计费与结算：费率管理、分摊、浮动电价、手工账单与对账核验
-- 运营协同：租户管理、充值退款、发票、资金流水、工单与告警
-- AI Agent：费用智能核验与预测、故障分析与策略推荐
+<p align="center">
+  <a href="https://iot.geekpartytech.com/"><strong>在线体验</strong></a> ·
+  <a href="https://vrf.geekpartytech.com/"><strong>产品介绍</strong></a> ·
+  <a href="#快速开始"><strong>快速开始</strong></a> ·
+  <a href="docs/CONFIGURATION.md"><strong>配置文档</strong></a> ·
+  <a href="README.en.md">English</a>
+</p>
 
-## 系统架构
+<p align="center">
+  连接智能电表、智能水表与中央空调，覆盖设备管理、用能计量、费用分摊与租户结算。<br>
+  Web 管理端与「极物宇」微信小程序，协同物业运营和租户日常用能。
+</p>
 
-- 应用层：物业管理端、租户小程序、工程 App、开放 API
-- 平台层：设备管理、计费引擎、告警中心、数据分析中台
-- 边缘层：品牌网关、LoRa/NB/4G 通信模块、边缘计算与协议转换
-- 设备层：主流 VRF 与配套仪表；断网可脱机运行，数据本地缓存与同步
+<p align="center"><sub>本仓库开放 Web 前端源码，完整业务运行依赖配套后台、账号权限及相关服务。</sub></p>
 
-## 企业级特性
+[![数字物宇集团资产运营监控中心](src/assets/readme/集团大屏.png)](src/assets/readme/集团大屏.png)
 
-- 高可用与并发：目标 99.99% 可用性与百万级并发，前后端解耦，具备弹性扩展能力
-- 安全与治理：角色/菜单权限、操作审计、异常留痕、数据分级与多租户隔离
-- 可观测性：全链路告警中心、运行日志、策略触发与故障码解析，支持报表留档
-- 合规与隐私：不落地敏感凭据，前后端分离的密钥管理；支持 HTTPS 与域策略
-- 可维护性：策略模板化复用、工程模式批量控制、维护窗口与变更日志
+*集团视角：集中查看项目资产、能源费用收缴、用能概况与设备运行。*
 
-## 开放生态
+---
 
-- 接口形态：REST API、WebSocket、Webhook 与 SDK（示例与文档可在系统内查看）
-- 协议兼容：Modbus、BACnet、LonWorks 以及多品牌私有协议融合
-- 集成能力：与照明、门锁、停车等子系统联动；支持第三方数据源对接
+**阅读导航：** [产品能力](#产品能力) · [适用场景](#适用场景) · [业务界面](#业务界面) · [极物宇小程序](#极物宇小程序) · [开源范围](#开源范围) · [快速开始](#快速开始) · [体验与联系](#体验与联系)
 
-## 技术栈
+## 产品能力
 
-- 前端：Vue CLI、Vue Router、Vuex、Element UI
-- 可视化：ECharts、Konva
-- 工具：Axios、Ali-OSS、Mock.js、Moment、xlsx
-- PWA：register-service-worker，图标路径经 vue.config.js 配置
-- 测试：@vue/cli-plugin-unit-mocha + @vue/test-utils + chai
+| 业务方向 | 主要功能 | 管理重点 |
+| :--- | :--- | :--- |
+| **智能水电与远程抄表** | 智能电表、智能水表、设备状态、租户绑定、用能记录 | 设备归属清楚，读数与用能可查 |
+| **预付费与租户结算** | 专户余额、计费方案、费用分摊、租户账单、充值退款与资金流水 | 从计量到费用，关联租户账户与结算 |
+| **中央空调集控与计费** | 单台控制、群组控制、时序调度、内外机拓扑、空调用能 | 按设备、区域和租户管理空调 |
+| **分项计量与能耗分析** | 电水报表、用能明细、桑基图、设备功率、项目与集团看板 | 查看用能分布、运行情况和费用构成 |
+| **AI 辅助核查与运营** | 电费核查、文件解析、指标问答与分析建议 | 辅助理解账单与用能数据 |
+| **场景扩展与联动** | 智能照明、环境感知、配电，以及停车与充电桩相关模块 | 在统一入口查看关联业务 |
 
-## 目录结构
+> 业务流程：抄表采集 → 计量与分摊 → 账单结算 → 充值缴费 → 运营分析
 
-```
-wyy-admin/
-├─ public/                # 静态资源与模板 (index.html, favicon 等)
-│  ├─ img/icons/          # PWA 图标
-│  └─ robots.txt
-├─ src/
-│  ├─ api/                # 按领域划分的接口模块 (空调/水电/计费/租户/财务等)
-│  ├─ assets/             # 样式与图片 (floors SVG 使用自定义 loader)
-│  ├─ components/         # 公共组件 (Breadcrumb、Pagination、TagsView 等)
-│  ├─ layout/             # 应用布局 (Navbar、Sidebar、AppMain)
-│  ├─ mock/               # 本地模拟数据
-│  ├─ router/             # 全局路由
-│  ├─ store/              # Vuex 模块 (app、permission、user 等)
-│  ├─ utils/              # 请求封装/鉴权/菜单路由/校验工具
-│  ├─ views/              # 业务页面
-│  │  ├─ console/         # 设备/计费/能源/AI 助手等控制台模块
-│  │  ├─ device/          # 设备详情与协同 (空调/水表/电表/照明/门锁/停车)
-│  │  ├─ energy/          # 能源报表/桑基图/设备功率
-│  │  ├─ fee/             # 费率与服务方案
-│  │  ├─ finance/         # 资金流水/提现/退款/发票
-│  │  ├─ tenant/          # 租户档案/设备/账单/交易
-│  │  ├─ parking/         # 计费与规则配置
-│  │  ├─ dashboard/       # 运营看板与统计
-│  │  ├─ login/           # 登录页
-│  │  ├─ system/          # 用户/角色/菜单权限
-│  │  ├─ operator/        # 运维变更日志与管理
-│  │  ├─ order/           # 订单列表与详情
-│  │  ├─ report/          # 报表 (概览/销售/用户)
-│  │  ├─ ApiDocs.vue      # API 使用说明入口
-│  │  ├─ 401.vue / 404.vue
-│  │  └─ ...
-│  ├─ App.vue
-│  ├─ main.js
-│  ├─ permission.js
-│  └─ settings.js
-├─ docs/CONFIGURATION.md  # 地址、启动、Mock 与部署配置说明
-├─ scripts/check-config.js # 离线配置检查（不请求后台）
-├─ tests/unit/            # 单元测试
-├─ .env.development       # 开发环境变量
-├─ .env.production        # 生产环境变量
-├─ vue.config.js          # 服务地址统一入口、开发服务器与 floors SVG loader
-├─ babel.config.js
-├─ .eslintrc.js
-├─ .editorconfig
-├─ .browserslistrc
-└─ package.json
-```
+## 适用场景
 
-## 环境要求
+| 场景 | 管理需求 | 对应能力 |
+| :--- | :--- | :--- |
+| **写字楼与商业综合体** | 多租户水电与空调费用管理 | 租户设备关联、分户计量、公摊与账单 |
+| **产业园与多项目运营** | 跨项目查看能耗、收缴与设备状态 | 集团看板、项目能源大屏、分项报表 |
+| **公寓与租赁物业** | 水电预付费、余额查询与租户自助服务 | 账户管理、充值缴费、极物宇租户端 |
+| **物业与工程管理** | 日常设备巡查、状态查看与集中管理 | 水电设备管理、空调集控、移动管理端 |
 
-- 本项目以 **Node.js 14.21.3 + npm 6.14.18** 为验证基准，优先使用此组合。
-- 相近的 Node.js 14.x 版本需自行验证；其他版本暂不作为本项目的运行基准。
-- 本次整理保留现有 Vue 2 / Vue CLI 4 与依赖版本，不需要升级本机 Node.js。
-- 保留并提交 `package-lock.json`，便于复现依赖安装。
+## 业务界面
+
+### 运营数据看板
+
+汇总租户用能、应收与实收费用、欠费情况及设备状态，结合能源流向与分项计量，为物业日常运营提供项目概览。
+
+[![运营数据看板：租户用能、费用与设备概况](src/assets/readme/web/operations-dashboard.png)](src/assets/readme/web/operations-dashboard.png)
+
+### 智能水电与远程抄表
+
+将设备、租户、计费方案与用能记录关联起来，查看智能电表和智能水表的归属及运行状态。
+
+[![智能电表卡片：设备状态、租户绑定与计费方案](src/assets/readme/web/electricity-meter-cards.png)](src/assets/readme/web/electricity-meter-cards.png)
+
+*电表管理：集中查看设备状态、租户绑定与计费方案，支持卡片与列表视图。*
+
+<details>
+<summary>水表管理、设备详情与计费配置</summary>
+
+#### 智能水表管理
+
+[![智能水表卡片：设备归属、付费模式与阀控状态](src/assets/readme/web/water-meter-cards.png)](src/assets/readme/web/water-meter-cards.png)
+
+查看水表归属、付费模式与阀控状态，管理专用及公摊水表。
+
+#### 电表详情与用电记录
+
+[![智能电表管理与用电数据](src/assets/readme/电表管理.png)](src/assets/readme/电表管理.png)
+
+查看绑定信息、实时功率、功率曲线与历史用电记录。
+
+#### 电表批量绑定
+
+[![电表批量绑定](src/assets/readme/批量绑定电表.png)](src/assets/readme/批量绑定电表.png)
+
+批量建立电表与租户的关联，管理设备归属。
+
+#### 电表公摊组管理
+
+[![电表公摊组管理](src/assets/readme/电表公摊组管理.png)](src/assets/readme/电表公摊组管理.png)
+
+查看公摊组及关联设备，为费用分摊提供管理入口。
+
+#### 电费方案管理
+
+[![电费方案管理](src/assets/readme/电费方案管理.png)](src/assets/readme/电费方案管理.png)
+
+管理租户适用的电费方案与费率配置。
+
+</details>
+
+### 预付费与租户结算
+
+围绕租户账户组织账单、用能和资金记录，将水电计费与预付费管理放在同一业务流程中。
+
+[![租户账单列表与缴费状态](src/assets/readme/租户账单列表.png)](src/assets/readme/租户账单列表.png)
+
+*租户账单：按账期、费用类型与缴费状态查看结算记录。*
+
+<details>
+<summary>租户档案与账单明细</summary>
+
+#### 租户档案与关联设备
+
+[![租户档案与关联设备](src/assets/readme/租户详情与设备.png)](src/assets/readme/租户详情与设备.png)
+
+查看租户信息、关联设备及业务记录。
+
+#### 租户账单明细
+
+[![租户账单明细](src/assets/readme/租户账单明细.png)](src/assets/readme/租户账单明细.png)
+
+查看租户账户、水电费用汇总与逐笔账单。
+
+#### 账单详情
+
+[![账单详情](src/assets/readme/账单详情弹窗.png)](src/assets/readme/账单详情弹窗.png)
+
+查看单笔账单的费用构成与结算信息。
+
+</details>
+
+### 中央空调集控与计费
+
+覆盖单台设备、群组与系统拓扑等管理视角，结合空调用能数据支持日常运行管理与计费业务。
+
+[![中央空调集中控制与调度](src/assets/readme/空调集控.png)](src/assets/readme/空调集控.png)
+
+*空调集控：集中查看设备状态，进入设备控制与调度功能。*
+
+<details>
+<summary>单台控制、群组与系统拓扑</summary>
+
+#### 单台空调控制
+
+[![单台空调控制](src/assets/readme/单台空调控制.png)](src/assets/readme/单台空调控制.png)
+
+查看单台空调的运行状态及模式、温度等控制参数。
+
+#### 空调远程控制
+
+[![空调远程控制](src/assets/readme/空调远程控制.png)](src/assets/readme/空调远程控制.png)
+
+在管理端集中查看设备并使用远程控制入口。
+
+#### 空调群组控制
+
+[![空调群组控制](src/assets/readme/空调群组控制.png)](src/assets/readme/空调群组控制.png)
+
+按群组组织设备，管理批量控制场景。
+
+#### 空调内外机拓扑
+
+[![空调内外机拓扑](src/assets/readme/空调内外机拓扑.png)](src/assets/readme/空调内外机拓扑.png)
+
+查看内外机连接关系与运行状态。
+
+#### 空调外机系统
+
+[![空调外机系统](src/assets/readme/空调外机系统.png)](src/assets/readme/空调外机系统.png)
+
+从系统视角查看外机与相关运行信息。
+
+#### 空调设备关系图
+
+[![空调设备关系图](src/assets/readme/空调设备关系图.png)](src/assets/readme/空调设备关系图.png)
+
+查看设备层级及关联关系，辅助定位设备。
+
+</details>
+
+### 分项计量与能耗分析
+
+从单项目能源概况延伸到租户、设备和用能明细，结合报表与桑基图查看能源流向及费用分布。
+
+[![租户用电报表：用电量、费用趋势与分时电量](src/assets/readme/web/tenant-electricity-report.png)](src/assets/readme/web/tenant-electricity-report.png)
+
+*用电分析：按统计区间与租户维度查看电量、费用趋势及尖峰平谷构成。*
+
+<details>
+<summary>项目能源概览、用能明细与计量拓扑</summary>
+
+#### 项目能源概览
+
+[![项目能源管理与能耗分析大屏](src/assets/readme/项目能源大屏.png)](src/assets/readme/项目能源大屏.png)
+
+查看能源供给、负载、计费与光伏等业务信息。
+
+#### 用电报表
+
+[![用电报表](src/assets/readme/用电报表.png)](src/assets/readme/用电报表.png)
+
+按时间及业务维度查看用电与费用变化。
+
+#### 用能数据明细
+
+[![用能数据明细](src/assets/readme/用能数据明细表.png)](src/assets/readme/用能数据明细表.png)
+
+查看用能明细，为统计与账单核查提供数据依据。
+
+#### 租户用能报表
+
+[![租户用能报表](src/assets/readme/租户用能报表.png)](src/assets/readme/租户用能报表.png)
+
+查看租户用能与费用汇总，比较不同统计维度。
+
+#### 租户用电桑基图
+
+[![租户用电桑基图](src/assets/readme/租户用电桑基图.png)](src/assets/readme/租户用电桑基图.png)
+
+以能源流向展示租户及分项用电的分配关系。
+
+#### 空调用能数据
+
+[![空调用能数据](src/assets/readme/空调用能.png)](src/assets/readme/空调用能.png)
+
+查看空调相关用能与运行数据。
+
+#### 租户运营看板
+
+[![租户运营看板](src/assets/readme/租户看板.png)](src/assets/readme/租户看板.png)
+
+汇总查看租户、用能、账单与账户相关指标。
+
+#### 配电系统拓扑
+
+[![配电系统拓扑](src/assets/readme/配电系统拓扑图.png)](src/assets/readme/配电系统拓扑图.png)
+
+以拓扑视图展示配电层级与关联设备。
+
+</details>
+
+### AI 辅助核查与运营
+
+以电费核查和指标问答为入口，辅助理解费用构成与用能数据。相关能力依赖已配置的 AI 服务。
+
+[![AI 辅助电费核查与分析](src/assets/readme/电费核查.png)](src/assets/readme/电费核查.png)
+
+*电费核查：结合文件与业务数据，查看解析结果及分析内容。*
+
+<details>
+<summary>AI 助手</summary>
+
+#### AI 助手
+
+[![AI 助手](src/assets/readme/AI助手.png)](src/assets/readme/AI助手.png)
+
+通过对话入口进行业务指标问答与分析。
+
+</details>
+
+### 场景扩展与联动
+
+在能源管理之外，提供照明和环境感知等关联业务入口。
+
+[![智能照明可视化管理](src/assets/readme/智能照明.png)](src/assets/readme/智能照明.png)
+
+*照明管理：以可视化界面查看照明设备与运行状态。*
+
+<details>
+<summary>环境感知</summary>
+
+#### 环境感知
+
+[![环境感知](src/assets/readme/环境感知.png)](src/assets/readme/环境感知.png)
+
+查看温湿度、人体存在等环境信息及相关设备。
+
+</details>
+
+## 极物宇小程序
+
+「极物宇」是数字物宇配套的微信小程序，覆盖 **租户端** 与 **管理端**：租户查看账户、账单和用能，管理方查看租户统计并管理水电、空调设备。
+
+### 租户端 · 账户、账单与用能查询
+
+<table width="100%">
+  <tr>
+    <th align="center" width="33%">租户首页</th>
+    <th align="center" width="33%">租户账单</th>
+    <th align="center" width="33%">账户明细</th>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><a href="src/assets/readme/miniapp/tenant-home.jpg"><img src="src/assets/readme/miniapp/tenant-home.jpg" alt="租户首页" width="220"></a></td>
+    <td align="center" valign="top"><a href="src/assets/readme/miniapp/tenant-bills.jpg"><img src="src/assets/readme/miniapp/tenant-bills.jpg" alt="租户账单" width="220"></a></td>
+    <td align="center" valign="top"><a href="src/assets/readme/miniapp/tenant-account.jpg"><img src="src/assets/readme/miniapp/tenant-account.jpg" alt="账户明细" width="220"></a></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">查看账户余额、用能概览与关联设备</td>
+    <td align="center" valign="top">按账期查看水电费用与账单明细</td>
+    <td align="center" valign="top">查看账户余额变化与收支记录</td>
+  </tr>
+</table>
+
+### 管理端 · 租户运营与设备管理
+
+<table width="100%">
+  <tr>
+    <th align="center" width="33%">管理首页</th>
+    <th align="center" width="33%">水电设备管理</th>
+    <th align="center" width="33%">空调设备管理</th>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><a href="src/assets/readme/miniapp/manager-home.jpg"><img src="src/assets/readme/miniapp/manager-home.jpg" alt="管理首页" width="220"></a></td>
+    <td align="center" valign="top"><a href="src/assets/readme/miniapp/manager-meters.jpg"><img src="src/assets/readme/miniapp/manager-meters.jpg" alt="水电设备管理" width="220"></a></td>
+    <td align="center" valign="top"><a href="src/assets/readme/miniapp/manager-air-conditioning.jpg"><img src="src/assets/readme/miniapp/manager-air-conditioning.jpg" alt="空调设备管理" width="220"></a></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">查看租户统计，进入日常管理功能</td>
+    <td align="center" valign="top">查看水电设备状态与管理入口</td>
+    <td align="center" valign="top">查看空调运行状态，按条件筛选设备</td>
+  </tr>
+</table>
+
+[前往小程序体验与联系入口](#体验与联系)
+
+## 开源范围
+
+本仓库以 Web 管理端为开源内容。小程序、后台与设备接入服务是完整产品体系的配套组成部分，不包含在本仓库源码中。
+
+| 组成 | 本仓库提供的内容 | 运行依赖 |
+| :--- | :--- | :--- |
+| **Web 管理端** | Vue 页面、路由与状态管理、接口调用、可视化及配置 | Node.js 环境、兼容后台与账号权限 |
+| **极物宇小程序** | 本文提供租户端、管理端截图与体验入口 | 配套微信小程序服务 |
+| **后台与设备接入** | 前端接口调用及相关服务地址配置 | 后台业务服务、设备接入与项目配置 |
+| **AI 与外部子系统** | 前端调用、嵌入或跳转入口 | 对应服务及其认证与访问权限 |
+
+部分大屏使用演示快照；前端页面中也保留了现有 Mock 数据来源。启动前端不等于所有业务均可脱离后台离线运行，详情见[配置文档](docs/CONFIGURATION.md)。
+
+### 技术与目录
+
+| 用途 | 技术 |
+| :--- | :--- |
+| 页面与组件 | Vue 2、Element UI |
+| 路由与状态 | Vue Router、Vuex |
+| 图表与可视化 | ECharts、Konva |
+| 请求与构建 | Axios、Vue CLI 4 |
+| 数据与工具 | Mock.js、Moment、xlsx |
+| 单元测试 | Mocha、Vue Test Utils、Chai |
+
+| 目录或文件 | 用途 |
+| :--- | :--- |
+| `src/api/` | 按业务领域划分的接口模块 |
+| `src/views/` | 设备、计费、租户、财务、能源与看板等页面 |
+| `src/components/` | 公共组件 |
+| `src/config/`、`src/utils/` | 服务配置读取、请求封装与业务工具 |
+| `src/router/`、`src/store/` | 路由、权限与状态管理 |
+| `src/assets/readme/` | 本文截图、小程序与联系素材 |
+| `vue.config.js` | 服务地址、开发代理与构建配置 |
+| `docs/CONFIGURATION.md` | 完整启动、配置与部署说明 |
 
 ## 快速开始
 
+### 运行环境
+
+以 **Node.js 14.21.3 + npm 6.14.18** 为验证基准，保留现有 Vue 2 / Vue CLI 4 与依赖版本。相近 Node.js 14.x 版本需自行验证；使用已提交的 `package-lock.json` 安装依赖。
+
+在项目根目录执行：
+
 ```bash
+git clone https://gitee.com/geekpartytech/wyy-admin.git
+cd wyy-admin
 npm ci
 npm run serve
 ```
 
-- 本地开发地址：http://localhost:8080
-- 代理配置：`/api` → `https://iot-test.geekpartytech.com`（详见 vue.config.js）
-- 修改主后台只需修改 `vue.config.js` 顶部 `services.backendRoot`，无需同步修改 `.env` 或请求封装。
-- AI、统计服务、EMS 与外部子系统地址也在同一文件中，默认保留现有服务。
-- 完整配置说明：[docs/CONFIGURATION.md](docs/CONFIGURATION.md)。
-- 完整业务运行需要兼容的后台、账号权限与独立服务；前端源码不包含后台服务。
+本地默认访问 [http://localhost:8080](http://localhost:8080)。已有可正常运行的依赖时，修改地址或 README 无需重新安装依赖。
 
-## 构建与测试
+### 后台与服务配置
 
-```bash
-npm run build      # 生产构建
-npm run check:config # 离线检查开发/生产配置与 URL，不请求后台
-npm run test:unit  # 单元测试
-npm run lint       # 代码规范检查与修复
+主业务后台默认使用 **`https://iot-test.geekpartytech.com`**。切换后台只需修改 `vue.config.js` 顶部的 `services.backendRoot`：
+
+```js
+backendRoot: 'https://iot-test.geekpartytech.com'
 ```
 
-## 配置入口
+填写后台根地址，不附加 `/api` 或具体接口路径。开发环境的 `/api` 代理与生产环境请求会使用同一配置。
 
-- `vue.config.js` 的 `services`：主后台、AI、统计、EMS、楼控、停车、租户二维码、权限页面正式入口与主请求超时。
-- `vue.config.js` 的 `features`：全局 Mock 与区域模块 Mock。默认保持现有数据来源。
-- `vue.config.js` 的 `devServer`：端口 `8080`、自动打开浏览器、开发 HTTPS 与 `/api` 代理。
-- `vue.config.js` 的 `publicPath`：前端部署目录，默认 `/`。
-- `.env.development` / `.env.production` 仅保留构建模式，不再维护第二套后台地址。
-- 配置在启动或构建时注入前端；修改后需重启开发服务，生产环境需重新构建部署。
+| 配置入口 | 用途 |
+| :--- | :--- |
+| `services.backendRoot` | 主业务接口与相关上传地址 |
+| `services` 的其他字段 | AI、统计、EMS、楼控、停车及外部入口 |
+| `features` | 全局与区域模块的现有 Mock 开关 |
+| `devServer` | 本地端口、浏览器自动打开与代理 |
+| `publicPath` | 前端静态资源部署目录 |
 
-## 部署指南
+修改配置后需重启开发服务；已部署的生产环境需要重新构建。`.env.development` 与 `.env.production` 只保留构建模式，不再维护第二套服务地址。
 
-- 生产构建产物可部署至任意 Web 服务器或 CDN。
-- 生产包主业务请求使用 `services.backendRoot`，上传地址也同步使用该地址；开发代理不会随生产包一起部署。
-- 前后端不同源时，后台需允许前端部署域名和现有鉴权请求头跨域；EMS、AI 等独立服务需保持可访问。
-- 部署到子目录时配置 `publicPath`，并检查外部系统回跳路径；当前路由使用 hash 模式。
-- PWA 图标路径在 `vue.config.js` 的 `pwa.iconPaths` 中已统一为 `favicon.ico`。
+[查看所有配置项、默认值与常见问题](docs/CONFIGURATION.md)
 
-## 安全与合规
+### 构建与验证
 
-- 不在仓库中存储敏感密钥；Ali-OSS 等凭据通过后端签名或环境变量注入。
-- 演示账号与密码仅用于体验环境，勿用于生产。
-- 前端层面采用输入校验与 DOMPurify 等策略防止 XSS。
+```bash
+npm run build         # 生产构建，输出 dist/
+npm run check:config  # 离线配置与地址检查，不请求真实后台
+npm run test:unit     # 单元测试
+```
 
-## 接口与封装
-
-- `src/utils/request.js` 基于 Axios 封装，统一拦截器与错误处理。
-- `src/api/` 下按领域拆分接口文件（如 `airCondition.js`、`meter.js`、`billDetailApi.js`、`tenant.js`、`finance` 等）。
-
-## 业务模块导航
-
-- Conditioning：集控、抄表、运行日志、调度器
-- Billing：能耗账单、分摊、浮动电价、手工账单
-- Energy：电/水报表、桑基图、设备功率
-- Finance：资金流水、提现、退款、发票
-- Tenant：租户档案、设备、账单、交易
-- Device：空调/水表/电表/照明/门锁/停车
-- Parking：计费与规则配置
-- System：用户/角色/菜单权限
-- Dashboard：运营看板与统计
-
-## 演示与截图
-
-### 集团资产运营中心 · 物联中台视角
-
-![集团大屏](src/assets/readme/集团大屏.png)
-聚焦物联中台设备资产运营指标：能源，计费，空调，照明，配电，充电桩等
-
-### 项目能源大屏 · 单项目能源分析
-
-![项目能源大屏](src/assets/readme/项目能源大屏.png)
-单项目能源管理大屏，包含配电，负载，计费，光伏等一站式管控。
-
-### 空调 · 组控与时序调度
-
-![空调集控](src/assets/readme/空调集控.png)
-按区域/租户进行组控，策略模板复用；支持日/周时序调度、节能策略与联动条件配置；运行日志与故障码解析可追溯。
-
-### 空调 · 单台设备精细化控制
-
-![单台空调控制](src/assets/readme/单台空调控制.png)
-支持单台空调模式、温度、风速、摆风等参数精准控制；实时查看回风/送风温度、运行状态与故障信息；远程开关机与定时任务一键下发，操作留痕可追溯。
-
-### 空调 · 远程集中控制
-
-![空调远程控制](src/assets/readme/空调远程控制.png)
-批量远程操控空调设备，支持开关机、模式切换、温度设定等常用指令；指令下发状态实时回显，异常设备自动标记；支持工程模式与维护窗口期配置。
-
-### 空调 · 内外机拓扑结构
-
-![空调内外机拓扑](src/assets/readme/空调内外机拓扑.png)
-空调内外机拓扑结构一览图，支持全局实时监测内外机运行状态，远程控制。
-
-### 空调 · 外机系统管理
-
-![空调外机系统](src/assets/readme/空调外机系统.png)
-空调外机运行状态全景监控，压缩机、风扇、冷媒压力等关键参数实时采集；故障预警与诊断建议，支持外机与内机拓扑关系可视化。
-
-### 空调 · 群组批量控制
-
-![空调群组控制](src/assets/readme/空调群组控制.png)
-多维度群组创建与管理（按楼层、区域、租户），一键群控策略下发；支持群组内设备状态统计与异常隔离，批量操作结果实时反馈与重试机制。
-
-### 空调 · 设备关系拓扑
-
-![空调设备关系图](src/assets/readme/空调设备关系图.png)
-空调内外机关系图谱可视化，直观展示设备层级与连接关系；支持拓扑编辑、设备绑定关系维护，故障影响范围快速定位。
-
-### 照明 · 智能照明
-
-![智能照明落位图](src/assets/readme/智能照明.png)
-智能照明系统，可视化展示照明实时状态，支持实时远程控制，定时策略等。
-
-### 环境 · 环境感知
-
-![智能环境感知](src/assets/readme/环境感知.png)
-智能环境感知，可视化展示环境实时状态，包括温湿度、人体存在，支持指定环境&设备联动规则。
-
-### 用电报表 · 成本分析与节能对比
-
-![用电报表](src/assets/readme/用电报表.png)
-按分区/租户/时间维度对比，峰谷平结构与成本贡献分析；节能改造前后对比与基准线评估，支持 XLSX 导出与图表嵌入。
-
-### 用能数据 · 明细报表与溯源
-
-![用能数据明细表](src/assets/readme/用能数据明细表.png)
-用能数据明细级展示，支持按小时/日/月多粒度查询；分项计量数据溯源到仪表原始读数，异常数据自动标记与核查入口。
-
-### 租户用能 · 多维度统计报表
-
-![租户用能报表](src/assets/readme/租户用能报表.png)
-租户用能数据多维度汇总，支持按账期、能耗类型、计费方式筛选；费用构成拆解与同比环比分析，账单与用能数据联动穿透。
-
-### 租户用能 · 桑基图流向分析
-
-![租户用电桑基图](src/assets/readme/租户用电桑基图.png)
-电能流向桑基图可视化，清晰展示从配电到各租户/区域的能源分配；支持损耗节点识别与分摊合理性校验，助力能耗异常定位。
-
-### 空调设备数据 · 多维运行画像
-
-![空调用能](src/assets/readme/空调用能.png)
-展示冷量、回风/送风、开停机时长、能效比与健康评分；联动策略触发记录与异常埋点，支持按设备/策略筛选。
-
-### 租户看板 · KPI 与运营漏斗
-
-![租户看板](src/assets/readme/租户看板.png)
-租约/账期状态、能耗环比与目标对比、预付费余额与催缴提醒、异常告警汇总与处理 SLA。支持按租户/楼层/业态多维筛选与权限隔离，大屏 1920+ 自适应。
-
-### 租户 · 档案与设备详情
-
-![租户详情与设备](src/assets/readme/租户详情与设备.png)
-租户档案全信息展示，包含租约信息、关联设备、用能统计、账单记录等；设备绑定关系一览，支持设备解绑、更换与历史记录追溯。
-
-### 租户账单 · 列表与状态管理
-
-![租户账单列表](src/assets/readme/租户账单列表.png)
-租户账单列表全景展示，账期、金额、状态一目了然；支持批量出账、催缴通知、账单作废等操作，账单生命周期全流程管理。
-
-### 租户账单 · 明细详情
-
-![租户账单明细](src/assets/readme/租户账单明细.png)
-账单明细级展示，费用构成逐项拆解；用能数据、费率、分摊计算过程透明可查，支持账单明细导出与打印。
-
-### 账单 · 详情弹窗与快捷操作
-
-![账单详情弹窗](src/assets/readme/账单详情弹窗.png)
-账单详情弹窗快速预览，关键信息聚合展示；支持快捷支付、申诉、调整等操作，账单异常标记与处理流程一键触发。
-
-### 电表 · 分项计量与费率时段
-
-![电表管理](src/assets/readme/电表管理.png)
-支持峰谷平费率、需量与功率因数监控、异常波动检测与工单联动；抄表周期、对账核验与导出留痕，账单可追溯到仪表数据源。
-
-### 电表 · 批量绑定与配置
-
-![批量绑定电表](src/assets/readme/批量绑定电表.png)
-电表设备批量导入与绑定，支持模板下载与数据校验；快速建立电表与租户/区域的归属关系，绑定记录留档与解绑追溯。
-
-### 电表 · 公摊组管理
-
-![电表公摊组管理](src/assets/readme/电表公摊组管理.png)
-公摊用电灵活分组管理，支持按比例、面积、人数等多维度分摊规则；公摊组与租户绑定关系可视化，分摊结果自动计入账单。
-
-### 电费方案 · 费率策略配置
-
-![电费方案管理](src/assets/readme/电费方案管理.png)
-灵活配置电费计费方案，支持阶梯电价、峰谷平费率、浮动电价等多种模式；方案生效时段与适用租户范围自定义，历史版本追溯与变更记录。
-
-### 分项计量与电费核查 · AI 解释与建议
-
-![电费核查](src/assets/readme/电费核查.png)
-账单溯源到分项数据，异常账单核验与原因分析；AI 提供费用分摊合理性评估与优化建议，支持一键生成核查报告。
-
-### 基于 AI 的智能对话 · 调度与问答
-
-![AI助手](src/assets/readme/AI助手.png)
-支持指标问答、故障定位、节能策略推荐与可执行指令确认；对话上下文关联多源数据，满足物业与工程双角色使用。
-
-### 配电系统 · 拓扑可视化
-
-![配电系统拓扑图](src/assets/readme/配电系统拓扑图.png)
-配电系统拓扑图谱展示，变压器、配电柜、开关、电表等设备层级关系清晰呈现；支持设备状态监控、拓扑编辑、供电路径追溯，故障影响范围快速分析。
-
-## 部署形态
-
-- SaaS：开箱即用，按租户与项目维度授权，支持快速扩展
-- 私有化：与企业网关/协议栈对接，支持本地边缘节点与容灾方案
-- OEM/集成：品牌与域名可定制，接口与策略按项目场景深度融合
+生产构建产物可部署至 Web 服务器或 CDN。跨域访问需由后台允许前端域名与鉴权请求头；开发代理不会随生产包部署。详细说明见[部署配置](docs/CONFIGURATION.md)。
 
 ## 开源与贡献
 
-- 我们开放源代码，欢迎 Issue 与 PR
-- 建议遵循通用提交规范，说明变更范围与影响面，并附带复现步骤或截图
-- 新增功能请同时补充文档或示例入口，便于持续维护
+本项目采用 [Apache License 2.0](LICENSE)。欢迎通过 [Issues](https://gitee.com/geekpartytech/wyy-admin/issues) 反馈问题，或提交 [Pull Request](https://gitee.com/geekpartytech/wyy-admin/pulls)。
 
-## 相关链接
+反馈问题时，请说明运行环境、复现步骤与预期结果；提交变更时，请说明涉及的业务范围，并补充必要的文档或验证记录。
 
-- 极派科技官网：https://geekpartytech.com/
-- 数字物宇-能源管理平台：https://iot.geekpartytech.com/
+## 体验与联系
+
+### Web 管理端
+
+| 入口 | 信息 |
+| :--- | :--- |
+| 在线体验 | [数字物宇管理平台](https://iot.geekpartytech.com/) |
+| 演示账号 | `18866668888` |
+| 演示密码 | `Demo@2025` |
+| 产品介绍 | [中央空调与能源管理产品介绍](https://vrf.geekpartytech.com/) |
+| 企业官网 | [极派科技](https://geekpartytech.com/) |
+
+在线体验地址与本地开发默认后台不同。演示环境连接真实业务服务，体验时请仅浏览，不下发设备控制指令或发起交易。
+
+### 小程序与项目交流
+
+<table width="100%">
+  <tr>
+    <th align="center" width="50%">极物宇微信小程序</th>
+    <th align="center" width="50%">企业微信 · 项目咨询</th>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><a href="src/assets/readme/contact/miniapp-qrcode.jpg"><img src="src/assets/readme/contact/miniapp-qrcode.jpg" alt="极物宇微信小程序二维码" width="190"></a></td>
+    <td align="center" valign="top"><a href="src/assets/readme/contact/enterprise-wechat.png"><img src="src/assets/readme/contact/enterprise-wechat.png" alt="极派科技企业微信二维码" width="190"></a></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">微信扫码进入小程序<br>功能范围以账号权限与角色为准</td>
+    <td align="center" valign="top">产品咨询、项目对接与部署交流<br>极派科技</td>
+  </tr>
+</table>
+
+<p align="center"><sub>数字物宇能源管理平台 · 极物宇微信小程序 · 极派科技</sub></p>
